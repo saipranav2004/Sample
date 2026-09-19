@@ -1,0 +1,227 @@
+@import 'tailwindcss';
+@import './tokens.css';
+
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/* ==========================================================================
+   Base
+   ========================================================================== */
+@layer base {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--t-line-strong) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: var(--t-line-strong);
+    border: 3px solid transparent;
+    background-clip: content-box;
+    border-radius: 999px;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: var(--t-ink-3);
+    background-clip: content-box;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background: var(--t-canvas);
+    color: var(--t-ink);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.018em;
+    margin: 0;
+  }
+
+  /* Numeric data must never jitter between renders. */
+  [data-numeric],
+  th,
+  td {
+    font-variant-numeric: tabular-nums;
+  }
+
+  :focus-visible {
+    outline: none;
+    box-shadow: var(--t-focus-ring);
+    border-radius: 6px;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--t-accent) 26%, transparent);
+  }
+}
+
+/* ==========================================================================
+   Motion — every animation below is disabled under reduced-motion.
+   ========================================================================== */
+@keyframes dna-fade-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes dna-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes dna-slide-left {
+  from {
+    opacity: 0;
+    transform: translate3d(24px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes dna-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translate3d(0, 8px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes dna-shimmer {
+  from {
+    background-position: -140% 0;
+  }
+  to {
+    background-position: 240% 0;
+  }
+}
+
+@keyframes dna-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(240%);
+  }
+}
+
+@utility animate-rise {
+  animation: dna-fade-rise 0.42s var(--ease-out-quint) both;
+}
+@utility animate-fade {
+  animation: dna-fade 0.3s ease-out both;
+}
+@utility animate-pop {
+  animation: dna-pop 0.24s var(--ease-out-quint) both;
+}
+@utility animate-slide-left {
+  animation: dna-slide-left 0.34s var(--ease-out-quint) both;
+}
+
+/* Staggered section reveal: `data-stagger` index drives the delay. */
+@layer utilities {
+  [data-stagger] {
+    animation-delay: calc(var(--stagger, 0) * 55ms);
+  }
+
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+    background: var(--t-surface-3);
+    border-radius: 6px;
+  }
+
+  .skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      color-mix(in srgb, var(--t-surface) 62%, transparent) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: dna-shimmer 1.6s ease-in-out infinite;
+  }
+
+  .rail-gradient {
+    background:
+      radial-gradient(120% 55% at 0% 0%, rgba(18, 176, 240, 0.16) 0%, transparent 62%),
+      linear-gradient(180deg, var(--t-rail-2) 0%, var(--t-rail) 58%, var(--t-rail) 100%);
+  }
+
+  .auth-canvas {
+    background:
+      radial-gradient(90% 70% at 8% 4%, rgba(18, 176, 240, 0.2) 0%, transparent 58%),
+      radial-gradient(70% 60% at 96% 96%, rgba(12, 110, 180, 0.28) 0%, transparent 60%),
+      linear-gradient(145deg, #0a2748 0%, #08203c 45%, #061727 100%);
+  }
+
+  .hairline-grid {
+    background-image:
+      linear-gradient(to right, var(--t-line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--t-line) 1px, transparent 1px);
+    background-size: 44px 44px;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Table shell used by the data grid — keeps sticky headers crisp. */
+  .grid-sticky-head {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--t-surface-2);
+    backdrop-filter: saturate(1.1) blur(2px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .skeleton::after {
+    display: none;
+  }
+}

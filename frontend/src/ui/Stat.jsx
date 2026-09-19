@@ -1,0 +1,77 @@
+import { ArrowUpRight } from 'lucide-react';
+import { useCountUp } from '../lib/hooks';
+import { formatNumber } from '../lib/format';
+import { Meter } from './Meter';
+import { cn, TONE_FG, TONE_VAR } from './cn';
+
+/**
+ * Metric tile. The number is the loudest thing in the tile; the label,
+ * denominator and meter exist to make it interpretable at a glance.
+ * Tiles that lead somewhere render as links and say so on hover.
+ */
+export function MetricTile({
+  label,
+  value,
+  unit,
+  caption,
+  tone = 'brand',
+  meter,
+  meterLabel,
+  icon: Icon,
+  as: Tag = 'div',
+  className,
+  animate = true,
+  ...rest
+}) {
+  const numeric = Number(value);
+  const counted = useCountUp(animate && Number.isFinite(numeric) ? numeric : 0);
+  const display = Number.isFinite(numeric) ? formatNumber(animate ? counted : numeric) : '—';
+  const interactive = Tag !== 'div';
+
+  return (
+    <Tag
+      className={cn(
+        'group relative flex flex-col overflow-hidden rounded-[var(--radius-panel)] border border-line bg-surface p-4 text-left',
+        interactive &&
+          'transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-px hover:border-line-strong hover:shadow-md',
+        className,
+      )}
+      {...rest}
+    >
+      <span
+        aria-hidden="true"
+        className="absolute inset-y-0 left-0 w-[3px]"
+        style={{ background: TONE_VAR[tone] }}
+      />
+
+      <div className="flex items-start justify-between gap-3">
+        <span className="text-[11px] font-semibold tracking-[0.09em] text-ink-3 uppercase">
+          {label}
+        </span>
+        {Icon && <Icon aria-hidden="true" className={cn('size-4 shrink-0', TONE_FG[tone])} />}
+        {interactive && !Icon && (
+          <ArrowUpRight
+            aria-hidden="true"
+            className="size-4 shrink-0 text-ink-3 opacity-0 transition-opacity duration-150 group-hover:opacity-100"
+          />
+        )}
+      </div>
+
+      <div className="mt-2.5 flex items-baseline gap-1.5">
+        <span
+          data-numeric=""
+          className="font-display text-[30px] leading-none font-extrabold tracking-[-0.03em] text-ink"
+        >
+          {display}
+        </span>
+        {unit && <span className="text-[13px] font-medium text-ink-3">{unit}</span>}
+      </div>
+
+      {caption && <p className="mt-1.5 text-[12px] leading-snug text-ink-3">{caption}</p>}
+
+      {meter !== undefined && meter !== null && (
+        <Meter value={meter} tone={tone} height={4} className="mt-3" label={meterLabel || label} />
+      )}
+    </Tag>
+  );
+}
