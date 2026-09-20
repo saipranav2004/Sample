@@ -85,7 +85,7 @@ export default function ScansPage() {
       {loading && scans.length === 0 ? (
         <StatStripSkeleton count={4} />
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-3 @min-[30rem]:grid-cols-2 @min-[54rem]:grid-cols-4">
           <MetricTile
             label="Scans recorded"
             value={scans.length}

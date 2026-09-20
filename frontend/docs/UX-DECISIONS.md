@@ -537,3 +537,90 @@ Verified by comparing the indicator's box against the active tab's on every
 preset tab of `/identities`, on `/exposure`, on a cold load, on a reload, and
 after arriving from an exposure signal: `left` and `width` both match to 0px in
 every case.
+
+---
+
+## 10. Revision: container-relative density, and two broken controls
+
+### 10.1 The metric row was refusing space it already had
+
+Reported as a type-size problem: at 100% browser zoom the four metric tiles
+broke to two per row, and at 90% they fitted. Measured, the cause was a
+breakpoint, not type.
+
+The row was `sm:grid-cols-2 xl:grid-cols-4`, so four-up required a **1280px
+viewport**. At 1279px the content column is already **999px wide** - room for
+four 250px tiles with gaps. The layout was keyed to the window while the
+constraint is the column, and the sidebar takes 232px of that window before the
+grid sees any of it. Zooming to 90% only worked by pushing the viewport past
+1280.
+
+Shrinking every text size by 10% would also have worked, by accident, at the
+cost of legibility on every screen. Instead the content column is now a
+**query container** and the rows read `@min-[30rem]:grid-cols-2
+@min-[54rem]:grid-cols-4`, so the column count follows the width the grid
+actually has:
+
+| Viewport | Rail | Content | Columns (before → after) |
+|---|---|---|---|
+| 1024px | open | 744px | 2 → 2 |
+| 1024px | collapsed | 916px | 2 → **4** |
+| 1180px | open | 900px | 2 → **4** |
+| 1252px | open | 972px | 2 → **4** |
+| 1280px | open | 1000px | 4 → 4 |
+
+Note the second row: collapsing the sidebar now re-flows the metric row,
+because the grid is measuring the space it was given. A viewport breakpoint can
+never do that, at any value.
+
+The tile itself also runs about 10% tighter - 27px number, 10.5px label, 14px
+padding - since four in a row makes the uppercase label the thing that decides
+how narrow a readable tile can be. That is the requested reduction, applied
+where the crowding actually was rather than to every string in the product.
+
+### 10.2 Sign-in entrance
+
+Smoothness came from shape, not duration: travel cut to 8px so nothing appears
+to fly in, an easing that settles without a late snap (`--ease-soft`), an
+opacity ramp that completes at 60% of the movement, and 110ms steps against a
+0.72s duration so the parts overlap into one settle instead of queueing. The
+canvas fades up too, so the first frame is not a hard cut. `will-change` keeps
+each part on its own layer, which is what removes the sub-pixel jitter on large
+text.
+
+The sidebar's "Identity & credential posture" subtitle is gone. The module name
+is the label; the strapline underneath it was explaining the product to someone
+already inside it.
+
+### 10.3 The activity filter could not be used
+
+`GET /api/events` takes `identity_arn`, `scan_id` and pagination. Nothing else,
+and the ARN match is exact (`LOWER(TRIM(identity_arn)) = LOWER(TRIM(:1))`). A
+free-text box against an exact match is unusable: nobody types a full ARN from
+memory, so every attempt returned nothing and the filter read as broken.
+
+The ARN is now chosen rather than typed. `IdentityPicker` lists the scan's
+identities from `/api/identities` - an endpoint already in use, already scoped
+to the selected scan - searches them client-side on name and ARN, and emits the
+exact ARN the events endpoint requires. No endpoint gained a parameter and no
+value is guessed. The trade-off is stated in the picker's own footer: it offers
+the identities it has loaded, so on a very large account the search narrows a
+page rather than the estate.
+
+### 10.4 The timeline could only ever show page one
+
+```jsx
+{total > 0 && view === 'table' && <Pagination … />}
+```
+
+The pagination was gated on the table view, so switching to Timeline hid the
+only way to reach page 2 - the remaining events were unreachable. The gate is
+removed. Verified: Timeline now reads 1/10, and Next moves to 2/10 with
+different events.
+
+### 10.5 Sign out colours on hover
+
+It is the one destructive action in the menu, so it takes the critical tone on
+hover and on keyboard focus. Its resting state stays neutral: a permanently red
+row in a profile menu reads as an error rather than an action. Measured:
+`rgb(74,91,112)` at rest, `rgb(180,35,24)` on `rgb(253,236,235)` on hover.

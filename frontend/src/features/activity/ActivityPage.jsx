@@ -15,7 +15,6 @@ import {
 import { PageHeader } from '../../shell/PageHeader';
 import { Button } from '../../ui/Button';
 import { Panel, PanelHeader } from '../../ui/Panel';
-import { Input } from '../../ui/Field';
 import { AppliedFilters } from '../../ui/FacetRail';
 import { RecordBar, ResultCount } from '../../ui/WorkArea';
 import { RefreshButton, TableToolbar } from '../../ui/TableTools';
@@ -28,17 +27,20 @@ import { Tag } from '../../ui/Tag';
 import { CopyableValue } from '../../ui/Copyable';
 import { EmptyState, ErrorState } from '../../ui/States';
 import { ActivityFeed } from './ActivityFeed';
+import { IdentityPicker } from './IdentityPicker';
 
 /**
  * CloudTrail activity for the scan.
  *
  * Two honesty constraints shape this screen. The API filters events by an
  * exact `identity_arn` and by nothing else, so that is the only filter
- * offered - and it says it is exact, because a partial ARN silently matches
- * nothing. And no parameter separates mutating from read-only calls, so that
- * split is computed over the loaded window only and is labelled with the
- * window size everywhere it appears. Scan-level totals come from the scan
- * record itself.
+ * offered - and because the match is exact, the ARN is chosen from the scan's
+ * identities rather than typed (see `IdentityPicker`). A free-text box against
+ * an exact match is unusable: every partial value returns nothing, which reads
+ * as a broken filter. And no parameter separates mutating from read-only
+ * calls, so that split is computed over the loaded window only and is
+ * labelled with the window size everywhere it appears. Scan-level totals come
+ * from the scan record itself.
  */
 const VIEWS = [
   { value: 'table', label: 'Table', icon: List },
@@ -125,7 +127,7 @@ export default function ActivityPage() {
         lede="CloudTrail events captured by this scan, newest first. Mutating calls are marked separately from read-only ones, so privilege actually being used stands out from privilege merely existing."
       />
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 @min-[30rem]:grid-cols-2 @min-[54rem]:grid-cols-4">
         <MetricTile
           label="Events in this scan"
           value={activeScan?.total_events}
@@ -244,13 +246,10 @@ export default function ActivityPage() {
             </TableToolbar>
           }
         >
-          <Input
-            size="sm"
+          <IdentityPicker
+            scanId={selectedScanId}
             value={arnDraft}
-            onChange={(event) => setArnDraft(event.target.value)}
-            placeholder="Filter by exact identity ARN"
-            aria-label="Filter by exact identity ARN"
-            className="min-w-0 flex-1 basis-64 font-mono text-[12px] sm:max-w-md"
+            onChange={(arn) => setArnDraft(arn)}
           />
           <ResultCount
             shown={formatNumber(rows.length)}
@@ -259,8 +258,8 @@ export default function ActivityPage() {
             filtered={chips.length > 0}
             loading={loading}
           />
-          <span className="hidden text-[11.5px] text-ink-3 lg:inline">
-            Matches the full ARN exactly
+          <span className="hidden text-[11.5px] text-ink-3 xl:inline">
+            The events API matches one ARN exactly
           </span>
         </RecordBar>
 
@@ -393,7 +392,7 @@ export default function ActivityPage() {
           />
         )}
 
-        {total > 0 && view === 'table' && (
+        {total > 0 && (
           <Pagination
             page={filters.page}
             pageSize={filters.pageSize}

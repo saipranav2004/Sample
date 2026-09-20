@@ -240,4 +240,8 @@
   --shadow-lg: var(--t-shadow-lg);
 
   --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  /* Softer than out-quint: it leaves rest slowly and settles without the
+     late snap, which is what makes a long entrance read as smooth rather
+     than as a slide that stops. */
+  --ease-soft: cubic-bezier(0.16, 0.84, 0.24, 1);
 }

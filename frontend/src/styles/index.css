@@ -188,14 +188,22 @@
 }
 
 /* Sign-in entrance. The page assembles in sequence instead of appearing all
-   at once: the canvas settles, then the statement, then the card. Each part
-   moves once, for 0.44s, and the whole sequence is over inside 0.8s - long
-   enough to read as deliberate, short enough that it never delays a sign-in.
-   `--step` is the position in the sequence. */
+   at once: the statement in order, then the card.
+   Smoothness here comes from three things, not from a longer duration: a
+   short travel (8px, so nothing appears to fly in), an easing that settles
+   without a late snap (`--ease-soft`), and an opacity ramp that starts before
+   the movement finishes. Each part takes 0.72s and they overlap heavily at
+   110ms apart, so the page reads as one continuous settle rather than a queue
+   of separate slides. `--step` is the position in that sequence.
+   `will-change` keeps each part on its own compositor layer for the duration,
+   which is what removes the sub-pixel jitter on the text. */
 @keyframes dna-auth-in {
   from {
     opacity: 0;
-    transform: translate3d(0, 14px, 0);
+    transform: translate3d(0, 8px, 0);
+  }
+  60% {
+    opacity: 1;
   }
   to {
     opacity: 1;
@@ -206,7 +214,10 @@
 @keyframes dna-auth-card-in {
   from {
     opacity: 0;
-    transform: translate3d(0, 20px, 0) scale(0.985);
+    transform: translate3d(0, 12px, 0) scale(0.994);
+  }
+  55% {
+    opacity: 1;
   }
   to {
     opacity: 1;
@@ -215,13 +226,15 @@
 }
 
 @utility animate-auth {
-  animation: dna-auth-in 0.44s var(--ease-out-quint) both;
-  animation-delay: calc(var(--step, 0) * 80ms);
+  animation: dna-auth-in 0.72s var(--ease-soft) both;
+  animation-delay: calc(var(--step, 0) * 110ms);
+  will-change: opacity, transform;
 }
 
 @utility animate-auth-card {
-  animation: dna-auth-card-in 0.52s var(--ease-out-quint) both;
-  animation-delay: calc(var(--step, 0) * 80ms);
+  animation: dna-auth-card-in 0.86s var(--ease-soft) both;
+  animation-delay: calc(var(--step, 0) * 110ms);
+  will-change: opacity, transform;
 }
 
 /* Staggered section reveal: `data-stagger` index drives the delay. */
@@ -261,6 +274,7 @@
      was invention. */
   .auth-canvas {
     background: var(--t-auth-canvas);
+    animation: dna-fade 0.5s ease-out both;
     /* The sign-in screen already scales itself: every size on it is a `clamp()`
        against the viewport, calibrated so it matches the supplied design at
        that design's width. The console's root zoom would scale it a second

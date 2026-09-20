@@ -63,13 +63,8 @@ export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseMobile
             name would be one more thing to decode, and the expand control
             already says what the rail is. */}
         {!collapsed && (
-          <span className="min-w-0">
-            <span className="block truncate font-display text-[12px] leading-tight font-extrabold tracking-[0.1em] text-ink uppercase">
-              NHI Discovery
-            </span>
-            <span className="block truncate text-[10px] leading-tight text-ink-3">
-              Identity &amp; credential posture
-            </span>
+          <span className="min-w-0 truncate font-display text-[12px] leading-tight font-extrabold tracking-[0.1em] text-ink uppercase">
+            NHI Discovery
           </span>
         )}
         <button

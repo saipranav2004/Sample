@@ -72,7 +72,10 @@ export function AppShell() {
       >
         <ContextBar />
         <main id="main" className="flex-1 px-3 pt-4 pb-14 sm:px-5 lg:px-6">
-          <div className="mx-auto w-full max-w-[1760px]">
+          {/* A query container. The metric rows below key their column count
+              off this width, not the viewport's - see `docs/UX-DECISIONS.md`
+              §10. */}
+          <div className="@container mx-auto w-full max-w-[1760px]">
             <Outlet />
           </div>
         </main>

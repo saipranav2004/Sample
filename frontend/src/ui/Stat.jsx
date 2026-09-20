@@ -8,6 +8,10 @@ import { cn, TONE_FG, TONE_VAR } from './cn';
  * Metric tile. The number is the loudest thing in the tile; the label,
  * denominator and meter exist to make it interpretable at a glance.
  * Tiles that lead somewhere render as links and say so on hover.
+ *
+ * Its type and padding run about 10% tighter than the rest of the console on
+ * purpose: four of these sit in one row, and at that count the uppercase label
+ * is what decides how narrow a readable tile can be.
  */
 export function MetricTile({
   label,
@@ -34,7 +38,7 @@ export function MetricTile({
   return (
     <Tag
       className={cn(
-        'group relative flex flex-col overflow-hidden rounded-[var(--radius-panel)] border border-line bg-surface p-4 text-left',
+        'group relative flex flex-col overflow-hidden rounded-[var(--radius-panel)] border border-line bg-surface p-3.5 text-left',
         interactive &&
           'transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-px hover:border-line-strong hover:shadow-md',
         className,
@@ -48,7 +52,7 @@ export function MetricTile({
       />
 
       <div className="flex items-start justify-between gap-3">
-        <span className="text-[11px] font-semibold tracking-[0.09em] text-ink-3 uppercase">
+        <span className="text-[10.5px] font-semibold tracking-[0.085em] text-ink-3 uppercase">
           {label}
         </span>
         {Icon && <Icon aria-hidden="true" className={cn('size-4 shrink-0', TONE_FG[tone])} />}
@@ -60,17 +64,17 @@ export function MetricTile({
         )}
       </div>
 
-      <div className="mt-2.5 flex items-baseline gap-1.5">
+      <div className="mt-2 flex items-baseline gap-1.5">
         <span
           data-numeric=""
-          className="font-display text-[30px] leading-none font-extrabold tracking-[-0.03em] text-ink"
+          className="font-display text-[27px] leading-none font-extrabold tracking-[-0.03em] text-ink"
         >
           {display}
         </span>
-        {unit && <span className="text-[13px] font-medium text-ink-3">{unit}</span>}
+        {unit && <span className="text-[12px] font-medium text-ink-3">{unit}</span>}
       </div>
 
-      {caption && <p className="mt-1.5 text-[12px] leading-snug text-ink-3">{caption}</p>}
+      {caption && <p className="mt-1.5 text-[11.5px] leading-snug text-ink-3">{caption}</p>}
 
       {sparkline?.length > 1 && (
         <Sparkline values={sparkline} tone={tone} className="mt-3" />

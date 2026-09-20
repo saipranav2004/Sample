@@ -317,7 +317,7 @@ export default function CredentialsPage() {
       {severityCountQuery.isLoading && !severityCountQuery.data ? (
         <StatStripSkeleton count={4} />
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-3 @min-[30rem]:grid-cols-2 @min-[54rem]:grid-cols-4">
           <MetricTile
             label="Credentials in scope"
             value={summaryQuery.data?.total_credentials}

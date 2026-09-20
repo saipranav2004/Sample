@@ -192,7 +192,11 @@ export function TopBar({ onOpenNav, onOpenCommand }) {
                 role="menuitem"
                 type="button"
                 onClick={logout}
-                className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-[13px] text-ink-2 transition-colors hover:bg-surface-3 hover:text-ink"
+                /* Destructive-by-intent, so it colours red on hover rather
+                   than taking the neutral hover every other menu item gets.
+                   The resting state stays neutral: a permanently red row in a
+                   profile menu reads as an error, not an action. */
+                className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-[13px] text-ink-2 transition-colors duration-150 hover:bg-critical-soft hover:text-critical focus-visible:bg-critical-soft focus-visible:text-critical"
               >
                 <LogOut aria-hidden="true" className="size-4" />
                 Sign out
