@@ -347,10 +347,9 @@ export default function IdentitiesPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
       <PageHeader
         title="Identity explorer"
-        lede="Every principal discovered in this scan. Narrow with facets, then open a record to see its credentials, reach and callers."
         tabs={
           <Tabs
             size="sm"
@@ -380,7 +379,7 @@ export default function IdentitiesPage() {
           />
         }
       >
-        <Panel flush className="animate-rise overflow-hidden">
+        <Panel prominence="lead" flush className="animate-rise overflow-hidden">
           <RecordBar
             trailing={
               <TableToolbar>

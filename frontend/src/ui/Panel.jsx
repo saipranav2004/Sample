@@ -1,11 +1,39 @@
 import { cn } from './cn';
 
 /**
- * The single container primitive. Panels are hairline-bordered rather than
- * drop-shadowed so dense screens stay quiet; elevation is reserved for
- * overlays.
+ * The single container primitive.
+ *
+ * `prominence` is what stops a screen reading as a wall of equal cards. A
+ * dashboard where every panel carries the same border, radius and background
+ * gives the eye nowhere to land, so each screen names one panel `lead` - the
+ * thing the operator came for - and demotes the supporting ones to `quiet`.
+ * The difference is carried by surface, border and elevation rather than by
+ * colour, so the severity palette keeps its meaning.
+ *
+ *   lead    the work on this screen. Raised, stronger border, roomier.
+ *   default supporting detail. Hairline border on the base surface.
+ *   quiet   reference material. Recessed onto the canvas tint, no elevation.
  */
-export function Panel({ as: Tag = 'section', className, flush = false, children, ...rest }) {
+const PROMINENCE = {
+  lead: 'border-line-strong bg-surface shadow-[var(--t-shadow-md)]',
+  default: 'border-line bg-surface',
+  quiet: 'border-line bg-surface-2',
+};
+
+const PADDING = {
+  lead: 'p-4 sm:p-5 lg:p-6',
+  default: 'p-4 sm:p-5',
+  quiet: 'p-3.5 sm:p-4',
+};
+
+export function Panel({
+  as: Tag = 'section',
+  className,
+  flush = false,
+  prominence = 'default',
+  children,
+  ...rest
+}) {
   return (
     <Tag
       className={cn(
@@ -15,8 +43,9 @@ export function Panel({ as: Tag = 'section', className, flush = false, children,
         /* A query container too: what a panel holds should respond to the
            panel's width, not the window's. A legend or a two-up split inside a
            420px panel has no business consulting the viewport. */
-        '@container min-w-0 rounded-[var(--radius-panel)] border border-line bg-surface',
-        !flush && 'p-4 sm:p-5',
+        '@container min-w-0 rounded-[var(--radius-panel)] border',
+        PROMINENCE[prominence] ?? PROMINENCE.default,
+        !flush && (PADDING[prominence] ?? PADDING.default),
         className,
       )}
       {...rest}
@@ -26,7 +55,22 @@ export function Panel({ as: Tag = 'section', className, flush = false, children,
   );
 }
 
-export function PanelHeader({ title, subtitle, icon: Icon, actions, className, children, id }) {
+const TITLE_SIZE = {
+  lead: 'text-[17px] font-bold tracking-[-0.012em]',
+  default: 'text-[14.5px] font-semibold',
+  quiet: 'text-[13px] font-semibold',
+};
+
+export function PanelHeader({
+  title,
+  subtitle,
+  icon: Icon,
+  actions,
+  className,
+  children,
+  id,
+  prominence = 'default',
+}) {
   return (
     <header
       className={cn(
@@ -37,7 +81,10 @@ export function PanelHeader({ title, subtitle, icon: Icon, actions, className, c
       <div className="min-w-0">
         <h2
           id={id}
-          className="flex items-center gap-2 text-[14.5px] leading-tight font-semibold text-ink"
+          className={cn(
+            'flex items-center gap-2 leading-tight text-ink',
+            TITLE_SIZE[prominence] ?? TITLE_SIZE.default,
+          )}
         >
           {Icon && <Icon aria-hidden="true" className="size-4 shrink-0 text-brand" />}
           <span className="truncate">{title}</span>

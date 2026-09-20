@@ -52,7 +52,7 @@ export function BarList({ items, total, onSelect, valueSuffix, max: providedMax,
                     {formatPercent(value, sum, 1)}
                   </span>
                 </span>
-                <span className="h-1.5 w-full overflow-hidden rounded-full bg-surface-3">
+                <span className="h-1.5 w-full overflow-hidden rounded-full bg-track">
                   <span
                     className="block h-full rounded-full transition-[width] duration-[900ms] ease-[var(--ease-out-quint)] group-hover:brightness-110"
                     style={{

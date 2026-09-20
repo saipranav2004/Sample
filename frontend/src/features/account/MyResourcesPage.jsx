@@ -114,12 +114,12 @@ export default function MyResourcesPage() {
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
       <PageHeader
         title="My resources"
         lede={
           user?.email
-            ? `Identities in this scan whose owner, primary owner or creator resolves to ${user.email}. Ownership comes from resource tags and CloudTrail, so tagging is what puts something on this list.`
+            ? `Owner, primary owner or creator resolves to ${user.email}. Ownership comes from resource tags and CloudTrail - there is no assignment setting.`
             : 'Identities in this scan that resolve to your account.'
         }
       />
@@ -169,8 +169,8 @@ export default function MyResourcesPage() {
       )}
 
       {rows.length > 0 && (
-        <Panel className="animate-rise">
-          <PanelHeader
+        <Panel prominence="quiet" className="animate-rise">
+          <PanelHeader prominence="quiet"
             title="What I own, in view"
             subtitle={`Composition of the ${formatNumber(rows.length)} records on this page. The endpoint accepts no filters beyond the scan, so this is a page-level summary, not a total.`}
           />
@@ -207,7 +207,7 @@ export default function MyResourcesPage() {
         </Panel>
       )}
 
-      <Panel flush className="animate-rise overflow-hidden">
+      <Panel prominence="lead" flush className="animate-rise overflow-hidden">
         <RecordBar
           trailing={
             <TableToolbar>

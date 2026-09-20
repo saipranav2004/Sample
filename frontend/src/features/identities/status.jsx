@@ -167,7 +167,7 @@ export function ActivityCell({ identity, maxEvents }) {
         {formatRelativeShort(identity.last_active)}
       </span>
       <span className="mt-1.5 flex items-center gap-2">
-        <span className="block h-[3px] min-w-0 flex-1 overflow-hidden rounded-full bg-surface-3">
+        <span className="block h-[3px] min-w-0 flex-1 overflow-hidden rounded-full bg-track">
           <span
             className={cn(
               'block h-full rounded-full transition-[width] duration-700 ease-[var(--ease-out-quint)]',

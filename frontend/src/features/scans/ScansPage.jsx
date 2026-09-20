@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { ArrowDownRight, ArrowUpRight, Check, History, Minus, Target, TrendingUp } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, Check, History, Minus, Target } from 'lucide-react';
 import { useScanContext } from '../../app/ScanContext';
 import { scanStatusMeta } from '../../lib/domain';
 import {
@@ -76,10 +76,10 @@ export default function ScansPage() {
   );
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
       <PageHeader
         title="Discovery scans"
-        lede="Each scan is an immutable snapshot of the account. Select one to scope every screen in the product to it, and read the delta to see what the last run actually changed."
+        lede="Selecting a scan scopes every screen in the product to it."
       />
 
       {loading && scans.length === 0 ? (
@@ -127,9 +127,8 @@ export default function ScansPage() {
         </div>
       )}
 
-      <Panel className="animate-rise">
-        <PanelHeader
-          icon={TrendingUp}
+      <Panel prominence="quiet" className="animate-rise">
+        <PanelHeader prominence="quiet"
           title="Across completed scans"
           subtitle="One chart per measure - the three differ by orders of magnitude, so a shared axis would flatten two of them."
         />
@@ -170,7 +169,7 @@ export default function ScansPage() {
         </div>
       </Panel>
 
-      <Panel flush className="animate-rise overflow-hidden">
+      <Panel prominence="lead" flush className="animate-rise overflow-hidden">
         <RecordBar
           trailing={
             <TableToolbar>

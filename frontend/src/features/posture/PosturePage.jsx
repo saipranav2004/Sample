@@ -1,18 +1,6 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  Activity,
-  ArrowRight,
-  BarChart3,
-  Bot,
-  FileWarning,
-  Fingerprint,
-  KeyRound,
-  LineChart,
-  RotateCw,
-  ShieldAlert,
-  TrendingUp,
-} from 'lucide-react';
+import { ArrowRight, Bot, FileWarning, Fingerprint, KeyRound, LineChart, RotateCw } from 'lucide-react';
 import { useScanContext } from '../../app/ScanContext';
 import { fetchEvents, fetchFindings, fetchSummary } from '../../lib/api/endpoints';
 import { useQuery } from '../../lib/hooks';
@@ -51,7 +39,7 @@ import { ActivityFeed } from '../activity/ActivityFeed';
 import { describeScannerError, summariseFindings } from '../exposure/scannerState';
 
 export default function PosturePage() {
-  const { selectedScanId, scans, activeScan } = useScanContext();
+  const { selectedScanId, scans } = useScanContext();
 
   const summaryQuery = useQuery((signal) => fetchSummary({ scanId: selectedScanId }, signal), [
     selectedScanId,
@@ -118,7 +106,7 @@ export default function PosturePage() {
 
   if (summaryQuery.isError && !summary) {
     return (
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-6">
         <PageHeader
           title="Identity posture"
           lede="Discovery results for the selected scan could not be loaded."
@@ -134,10 +122,9 @@ export default function PosturePage() {
   const totalIdentities = Number(summary?.total_identities) || 0;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
       <PageHeader
         title="Identity posture"
-        lede="Where standing privilege, dormant accounts and exposed credentials sit right now - every figure drills through to the identities behind it."
         actions={
           <Button
             variant="secondary"
@@ -204,11 +191,9 @@ export default function PosturePage() {
 
       {/* ── Signals + population ────────────────────────────────────────── */}
       <div className="grid gap-4 @min-[52rem]:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
-        <Panel className="animate-rise" data-stagger="" style={{ '--stagger': 3 }}>
-          <PanelHeader
-            icon={ShieldAlert}
+        <Panel prominence="lead" className="animate-rise" data-stagger="" style={{ '--stagger': 3 }}>
+          <PanelHeader prominence="lead"
             title="Exposure signals"
-            subtitle="Ranked by share of the population each one is measured against. Select a signal to work the underlying identities."
           />
           <div className="mt-3">
             {summaryQuery.isError ? (
@@ -219,11 +204,9 @@ export default function PosturePage() {
           </div>
         </Panel>
 
-        <Panel className="animate-rise" data-stagger="" style={{ '--stagger': 4 }}>
-          <PanelHeader
-            icon={BarChart3}
+        <Panel prominence="quiet" className="animate-rise" data-stagger="" style={{ '--stagger': 4 }}>
+          <PanelHeader prominence="quiet"
             title="Classification mix"
-            subtitle="How the discovery engine classified each identity in this scan."
           />
           <div className="mt-4">
             {loadingSummary ? (
@@ -297,11 +280,9 @@ export default function PosturePage() {
 
       {/* ── Credential surface + trend ──────────────────────────────────── */}
       <div className="grid gap-4 @min-[52rem]:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)]">
-        <Panel className="animate-rise" data-stagger="" style={{ '--stagger': 5 }}>
-          <PanelHeader
-            icon={KeyRound}
+        <Panel prominence="quiet" className="animate-rise" data-stagger="" style={{ '--stagger': 5 }}>
+          <PanelHeader prominence="quiet"
             title="Credential surface"
-            subtitle="Credential types held across identities in this scan, ranked by volume."
             actions={
               <Button as={Link} to="/credentials" variant="secondary" size="sm" iconRight={ArrowRight}>
                 Inspect
@@ -349,11 +330,10 @@ export default function PosturePage() {
           </div>
         </Panel>
 
-        <Panel className="animate-rise" data-stagger="" style={{ '--stagger': 6 }}>
-          <PanelHeader
-            icon={TrendingUp}
+        <Panel prominence="quiet" className="animate-rise" data-stagger="" style={{ '--stagger': 6 }}>
+          <PanelHeader prominence="quiet"
             title="Discovery trend"
-            subtitle="Each completed scan as a point in time. Charts are separated because the three measures differ by orders of magnitude."
+            subtitle="One chart per measure: the three differ by orders of magnitude, so a shared axis would flatten two of them."
           />
           <div className="mt-4">
             {trendData.length === 0 ? (
@@ -409,15 +389,9 @@ export default function PosturePage() {
 
       {/* ── Activity + newest findings ──────────────────────────────────── */}
       <div className="grid gap-4 @min-[52rem]:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
-        <Panel className="animate-rise" data-stagger="" style={{ '--stagger': 7 }}>
-          <PanelHeader
-            icon={Activity}
+        <Panel prominence="quiet" className="animate-rise" data-stagger="" style={{ '--stagger': 7 }}>
+          <PanelHeader prominence="quiet"
             title="Latest API activity"
-            subtitle={
-              activeScan
-                ? 'Most recent CloudTrail events captured in this scan.'
-                : 'Most recent CloudTrail events.'
-            }
             actions={
               <Button as={Link} to="/activity" variant="secondary" size="sm" iconRight={ArrowRight}>
                 All activity
@@ -435,11 +409,9 @@ export default function PosturePage() {
           </div>
         </Panel>
 
-        <Panel className="animate-rise" data-stagger="" style={{ '--stagger': 8 }}>
+        <Panel prominence="default" className="animate-rise" data-stagger="" style={{ '--stagger': 8 }}>
           <PanelHeader
-            icon={FileWarning}
             title="Code exposure"
-            subtitle="Secrets committed to connected repositories, by actionable risk tier."
             actions={
               <Button as={Link} to="/exposure" variant="secondary" size="sm" iconRight={ArrowRight}>
                 Triage
@@ -531,7 +503,7 @@ function FindingsMiniPanel({ query, summary }) {
     .filter((row) => row.count > 0);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
       <ul className="flex flex-col divide-y divide-line">
         {tiers.map(({ tier, count }) => {
           const meta = severityMeta(tier);
@@ -540,7 +512,7 @@ function FindingsMiniPanel({ query, summary }) {
               <Tag tone={meta.tone} dot size="sm" className="w-24 justify-center">
                 {meta.label}
               </Tag>
-              <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-3">
+              <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-track">
                 <span
                   className="block h-full rounded-full transition-[width] duration-[900ms] ease-[var(--ease-out-quint)]"
                   style={{

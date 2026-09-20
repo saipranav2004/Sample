@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { Check, ChevronDown, Database, RotateCw } from 'lucide-react';
 import { useScanContext } from '../app/ScanContext';
+import { usePopover } from '../lib/hooks';
 import { formatDateTime, formatNumber, formatRelative } from '../lib/format';
 import { scanStatusMeta } from '../lib/domain';
 import { Skeleton } from '../ui/Skeleton';
@@ -17,29 +18,13 @@ import { cn } from '../ui/cn';
  * one screen, which understated it: changing it rescopes the whole product.
  *
  * It is styled against the top-bar tokens so it works on both the light and
- * the dark bar.
+ * the dark bar, and `usePopover` keeps its list inside the window.
  */
 export function ScanSwitcher() {
   const { scans, selectedScanId, setSelectedScanId, activeScan, isLatest, loading, error, refetch } =
     useScanContext();
   const [open, setOpen] = useState(false);
-  const wrapperRef = useRef(null);
-
-  useEffect(() => {
-    if (!open) return undefined;
-    const onPointerDown = (event) => {
-      if (!wrapperRef.current?.contains(event.target)) setOpen(false);
-    };
-    const onKeyDown = (event) => {
-      if (event.key === 'Escape') setOpen(false);
-    };
-    document.addEventListener('pointerdown', onPointerDown);
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown);
-      document.removeEventListener('keydown', onKeyDown);
-    };
-  }, [open]);
+  const { wrapperRef, triggerRef, panelProps } = usePopover(open, () => setOpen(false));
 
   if (loading) {
     return (
@@ -72,6 +57,7 @@ export function ScanSwitcher() {
   return (
     <div ref={wrapperRef} className="relative min-w-0 flex-1 sm:flex-none">
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-haspopup="listbox"
@@ -104,12 +90,13 @@ export function ScanSwitcher() {
         <div
           role="listbox"
           aria-label="Discovery scan"
-          className="animate-pop absolute right-0 z-50 mt-2 w-[min(92vw,24rem)] overflow-hidden rounded-[var(--radius-panel)] border border-line bg-surface shadow-lg"
+          {...panelProps}
+          className="animate-pop absolute right-0 z-50 w-[min(92vw,24rem)] rounded-[var(--radius-panel)] border border-line bg-surface shadow-lg"
         >
-          <p className="border-b border-line bg-surface-2 px-3 py-2 text-[10.5px] font-semibold tracking-[0.12em] text-ink-3 uppercase">
+          <p className="shrink-0 border-b border-line bg-surface-2 px-3 py-2 text-[10.5px] font-semibold tracking-[0.12em] text-ink-3 uppercase">
             Scope all views to
           </p>
-          <div className="max-h-[22rem] overflow-y-auto p-1">
+          <div className="min-h-0 flex-1 overflow-y-auto p-1">
             <ScanOption
               selected={isLatest}
               title="Latest completed scan"

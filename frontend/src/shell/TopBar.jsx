@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { LogOut, Menu, Monitor, Moon, Search, Sun } from 'lucide-react';
 import { useAuth } from '../app/AuthContext';
 import { useThemeMode } from '../app/ThemeContext';
+import { usePopover } from '../lib/hooks';
 import { BrandLockup } from './Brand';
 import { ScanSwitcher } from './ScanSwitcher';
 import { initialsOf, titleCaseEnum } from '../lib/format';
@@ -31,23 +32,9 @@ export function TopBar({ onOpenNav, onOpenCommand }) {
   const { user, logout } = useAuth();
   const { preference, setPreference } = useThemeMode();
   const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef(null);
-
-  useEffect(() => {
-    if (!menuOpen) return undefined;
-    const onPointerDown = (event) => {
-      if (!menuRef.current?.contains(event.target)) setMenuOpen(false);
-    };
-    const onKeyDown = (event) => {
-      if (event.key === 'Escape') setMenuOpen(false);
-    };
-    document.addEventListener('pointerdown', onPointerDown);
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown);
-      document.removeEventListener('keydown', onKeyDown);
-    };
-  }, [menuOpen]);
+  const { wrapperRef: menuRef, triggerRef, panelProps } = usePopover(menuOpen, () =>
+    setMenuOpen(false),
+  );
 
   const iconButton =
     'grid size-10 shrink-0 place-items-center rounded-[var(--radius-control)] text-topbar-muted transition-colors hover:bg-topbar-hover hover:text-topbar-ink';
@@ -104,6 +91,7 @@ export function TopBar({ onOpenNav, onOpenCommand }) {
       {/* Account - the avatar only. Identity details belong in the menu. */}
       <div ref={menuRef} className="relative shrink-0">
         <button
+          ref={triggerRef}
           type="button"
           onClick={() => setMenuOpen((value) => !value)}
           aria-haspopup="menu"
@@ -125,7 +113,8 @@ export function TopBar({ onOpenNav, onOpenCommand }) {
         {menuOpen && (
           <div
             role="menu"
-            className="animate-pop absolute right-0 z-50 mt-2 w-72 overflow-hidden rounded-[var(--radius-panel)] border border-line bg-surface shadow-lg"
+            {...panelProps}
+            className="animate-pop absolute right-0 z-50 w-72 overflow-y-auto rounded-[var(--radius-panel)] border border-line bg-surface shadow-lg"
           >
             <div className="flex items-start gap-3 border-b border-line bg-surface-2 px-3.5 py-3.5">
               <span

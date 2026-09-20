@@ -697,3 +697,112 @@ confirm nothing paints over it.
 below the fold. It scrolls internally and the scan switcher has the same shape,
 so it is a pre-existing pattern rather than a regression - but placing these
 popovers against available space is still open work.
+
+---
+
+## 12. Revision: hierarchy, copy, rhythm, and popover placement
+
+Acting on the audit in §5 of the review notes. Four of the five findings were
+worth doing as written; one needed qualifying first.
+
+### 12.1 What was not done, and why
+
+The finding said six of nine screens are the same screen, and that the fix is
+to design each for its task. That framing is half wrong. Consoles of this kind
+repeat a list pattern deliberately - AWS Console, Datadog and Splunk all ship
+near-identical record screens - because consistency across a register is what
+makes the tenth screen free to learn. Rearchitecting six screens into six
+archetypes trades learnability for novelty, and the honest version of it would
+mean stripping the metric rows from list pages, which was explicitly asked for
+and then reverted.
+
+So the emphasis differentiates instead of the skeleton. Each screen names the
+one panel that carries its work, and demotes the rest; the layout stays shared.
+
+### 12.2 Prominence: one thing leads, the rest support
+
+`Panel` and `PanelHeader` take a `prominence` of `lead`, `default` or `quiet`,
+carried by surface, border, padding and title weight rather than by colour, so
+the severity palette keeps its meaning.
+
+| | Surface | Elevation | Padding | Title |
+|---|---|---|---|---|
+| `lead` | base | raised | 24px | 17px bold |
+| `default` | base | none | 20px | 14.5px semibold |
+| `quiet` | recessed | none | 16px | 13px semibold |
+
+Posture went from six identical panels to one lead (Exposure signals - the
+ranked work, every row drilling into identities), one default (Code exposure -
+the other actionable queue) and four quiet (classification, credential surface,
+trend, activity feed - all reference). On a record screen the table leads and
+any analysis panel above it is quiet, which is the per-task differentiation
+§12.1 describes.
+
+Verified in both themes: lead 17px/700 raised on the base surface, quiet
+13px/600 recessed, text contrast 15:1 and above throughout.
+
+Recessing panels exposed a real defect: meter tracks were `surface-3` on a
+`surface-2` panel, 10/255 apart, so the bars looked like they were floating.
+Tracks are now `--t-track`, an ink wash at 20% (30% in dark), which holds the
+same contrast on any panel. Pills and hover fills keep `surface-3` - they are
+solid chips, not a backdrop a coloured bar has to read against.
+
+### 12.3 The product stopped explaining itself
+
+Nine pages each opened with a two-line paragraph, and thirteen panels carried a
+subtitle. A screen that describes itself on every visit is documentation; an
+operator reads it once and then it is furniture.
+
+The rule applied: keep a line only where it states something the interface
+cannot show - a constraint, a definition, or a consequence. Cut everything that
+describes what the title already says.
+
+Kept, shortened to the load-bearing clause:
+
+- Secrets: "A leaked secret grants working access to every identity on this list."
+- Dismissed: "Everything listed here is filtered out of live findings automatically."
+- Findings: "Values are masked by the scanner, so rotate at the source."
+- Scans: "Selecting a scan scopes every screen in the product to it."
+- My resources: how "mine" is actually resolved, and that there is no assignment setting.
+
+Cut: the posture, identities, credentials and activity ledes, and six panel
+subtitles that restated their own titles. Kept in full: the two subtitles that
+name an API limitation (my-resources has no filters beyond the scan; the events
+endpoint cannot separate read-only from mutating), because those are the reason
+a figure is scoped the way it is.
+
+Ledes went from nine paragraphs of 150-200 characters to five lines of 48-70.
+Seven decorative icons came off panel headers; icons that encode something - a
+severity, a mode, a row type - stayed.
+
+### 12.4 Spacing rhythm
+
+One gap everywhere is what made the pages read flat. There is now a ratio:
+**24px between sections**, 16px between columns within a section, 12px between
+cards in a group. The eye gets a grouping cue instead of an even field.
+
+### 12.5 Metric numbers are printed, not counted up to
+
+`useCountUp` ran on every mount. An operator reads these figures dozens of
+times a day and compares them against what they saw an hour ago; a 620ms
+roll-up delays every read and leaves the digits unstable while it runs. It is a
+first-impression effect on a screen nobody sees for the first time twice. The
+hook is deleted, not just unwired.
+
+### 12.6 Popovers are placed against the space available
+
+Every dropdown opened downward at a fixed height, so a tall one on a short
+window ran off the bottom and its last options were unreachable. `usePopover`
+now measures the room below the trigger and above it, then either caps the
+panel to what is there or flips it above the trigger when that is roomier. It
+re-measures on scroll and resize, uses `visualViewport` where available, and
+places the panel before paint so it never appears in the wrong spot.
+
+Applied to all five: the identity picker, the scan switcher, table settings,
+the overflow menu and the account menu. Each panel clips to its rounded corners
+and scrolls internally, so a capped panel can never hide its last row - the two
+flat menus were previously relying on their content happening to be short.
+
+Verified at 620px, 760px and 900px viewport heights, at the top of a page and
+scrolled to the bottom: every popover sits inside the viewport, and at 760px
+the identity picker correctly flips above its trigger.

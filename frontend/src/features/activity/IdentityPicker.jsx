@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, ChevronDown, Search, X } from 'lucide-react';
 import { fetchIdentities } from '../../lib/api/endpoints';
-import { useQuery } from '../../lib/hooks';
+import { usePopover, useQuery } from '../../lib/hooks';
 import { arnResource } from '../../lib/format';
 import { Skeleton } from '../../ui/Skeleton';
 import { cn } from '../../ui/cn';
@@ -23,14 +23,18 @@ import { cn } from '../../ui/cn';
  * No endpoint gained a parameter and no value is guessed. The trade-off is
  * stated in the footer: the picker offers the identities it has loaded, so for
  * a very large account the search box narrows a page rather than the estate.
+ *
+ * Placement comes from `usePopover`, so the list fits the space below the
+ * trigger, or flips above it when that is roomier - it never runs off the
+ * bottom of a short window.
  */
 const PAGE_SIZE = 100;
 
 export function IdentityPicker({ scanId, value, onChange }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const wrapperRef = useRef(null);
   const searchRef = useRef(null);
+  const { wrapperRef, triggerRef, panelProps } = usePopover(open, () => setOpen(false));
 
   /* Only fetched once the picker is opened - the activity screen should not
      pay for a second list on load. */
@@ -39,22 +43,6 @@ export function IdentityPicker({ scanId, value, onChange }) {
     [scanId, open],
     { enabled: open },
   );
-
-  useEffect(() => {
-    if (!open) return undefined;
-    const onPointerDown = (event) => {
-      if (!wrapperRef.current?.contains(event.target)) setOpen(false);
-    };
-    const onKeyDown = (event) => {
-      if (event.key === 'Escape') setOpen(false);
-    };
-    document.addEventListener('pointerdown', onPointerDown);
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown);
-      document.removeEventListener('keydown', onKeyDown);
-    };
-  }, [open]);
 
   useEffect(() => {
     if (open) searchRef.current?.focus();
@@ -81,6 +69,7 @@ export function IdentityPicker({ scanId, value, onChange }) {
     <div ref={wrapperRef} className="relative min-w-0 basis-72">
       <div className="flex min-w-0 items-center gap-1">
         <button
+          ref={triggerRef}
           type="button"
           onClick={() => setOpen((current) => !current)}
           aria-haspopup="listbox"
@@ -123,9 +112,10 @@ export function IdentityPicker({ scanId, value, onChange }) {
         <div
           role="listbox"
           aria-label="Filter events by identity"
-          className="animate-pop absolute left-0 z-40 mt-1.5 w-[min(92vw,26rem)] overflow-hidden rounded-[var(--radius-panel)] border border-line bg-surface shadow-lg"
+          {...panelProps}
+          className="animate-pop absolute left-0 z-40 w-[min(92vw,26rem)] rounded-[var(--radius-panel)] border border-line bg-surface shadow-lg"
         >
-          <div className="border-b border-line bg-surface-2 p-2">
+          <div className="shrink-0 border-b border-line bg-surface-2 p-2">
             <input
               ref={searchRef}
               type="text"
@@ -137,7 +127,7 @@ export function IdentityPicker({ scanId, value, onChange }) {
             />
           </div>
 
-          <div className="max-h-[19rem] overflow-y-auto p-1">
+          <div className="min-h-0 flex-1 overflow-y-auto p-1">
             <button
               type="button"
               role="option"
@@ -215,7 +205,7 @@ export function IdentityPicker({ scanId, value, onChange }) {
           </div>
 
           {query.data && (
-            <p className="border-t border-line bg-surface-2 px-2.5 py-2 text-[11px] leading-snug text-ink-3">
+            <p className="shrink-0 border-t border-line bg-surface-2 px-2.5 py-2 text-[11px] leading-snug text-ink-3">
               Offering the first {identities.length} identities in this scan. The events endpoint
               matches one ARN exactly, so the choice is made here rather than typed.
             </p>

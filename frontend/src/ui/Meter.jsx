@@ -23,7 +23,7 @@ export function Meter({ value, tone = 'brand', height = 6, className, label }) {
 
   return (
     <div
-      className={cn('w-full overflow-hidden rounded-full bg-surface-3', className)}
+      className={cn('w-full overflow-hidden rounded-full bg-track', className)}
       style={{ height }}
       role="meter"
       aria-valuenow={Math.round(pct)}
@@ -60,7 +60,7 @@ export function ProportionBar({ segments = [], total, height = 10, onSelect, cla
   if (sum <= 0) {
     return (
       <div
-        className={cn('w-full rounded-full bg-surface-3', className)}
+        className={cn('w-full rounded-full bg-track', className)}
         style={{ height }}
         aria-label={ariaLabel}
       />
@@ -69,7 +69,7 @@ export function ProportionBar({ segments = [], total, height = 10, onSelect, cla
 
   return (
     <div
-      className={cn('flex w-full gap-[2px] overflow-hidden rounded-full bg-surface-3', className)}
+      className={cn('flex w-full gap-[2px] overflow-hidden rounded-full bg-track', className)}
       style={{ height }}
       role="img"
       aria-label={

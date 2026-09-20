@@ -269,10 +269,10 @@ export default function SecretsPage() {
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
       <PageHeader
         title="Secret-backed identities"
-        lede="Principals whose credentials sit in a secret store entry. A leaked secret grants working access to every identity on this list, so the intersections below are the queue that matters."
+        lede="A leaked secret grants working access to every identity on this list."
       />
 
       {crossQuery.isLoading && !crossQuery.data ? (
@@ -324,7 +324,7 @@ export default function SecretsPage() {
           />
         }
       >
-        <Panel flush className="animate-rise overflow-hidden">
+        <Panel prominence="lead" flush className="animate-rise overflow-hidden">
           <RecordBar
             trailing={
               <TableToolbar>

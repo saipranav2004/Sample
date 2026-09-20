@@ -1,5 +1,4 @@
 import { ArrowUpRight } from 'lucide-react';
-import { useCountUp } from '../lib/hooks';
 import { formatNumber } from '../lib/format';
 import { Meter } from './Meter';
 import { cn, TONE_FG, TONE_VAR } from './cn';
@@ -27,12 +26,15 @@ export function MetricTile({
   icon: Icon,
   as: Tag = 'div',
   className,
-  animate = true,
   ...rest
 }) {
+  /* The number is printed, not counted up to. An operator reads these figures
+     dozens of times a day and needs to compare them against what they saw an
+     hour ago; a 620ms roll-up delays every one of those reads and makes the
+     digits unstable while it runs. Counting up is a first-impression effect on
+     a screen nobody sees for the first time twice. */
   const numeric = Number(value);
-  const counted = useCountUp(animate && Number.isFinite(numeric) ? numeric : 0);
-  const display = Number.isFinite(numeric) ? formatNumber(animate ? counted : numeric) : '-';
+  const display = Number.isFinite(numeric) ? formatNumber(numeric) : '-';
   const interactive = Tag !== 'div';
 
   return (

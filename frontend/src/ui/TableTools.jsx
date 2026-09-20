@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useId, useState } from 'react';
 import {
   Check,
   Download,
@@ -8,6 +8,7 @@ import {
   Rows3,
   Settings2,
 } from 'lucide-react';
+import { usePopover } from '../lib/hooks';
 import { cn } from './cn';
 
 /**
@@ -31,29 +32,9 @@ import { cn } from './cn';
  *   - Export lives in the overflow menu. It is real and it is used, but it is
  *     not what an operator came to this screen to do.
  *
- * Everything keeps its accessible name, its tooltip and its keyboard path.
+ * Everything keeps its accessible name, its tooltip and its keyboard path, and
+ * both popovers are placed by `usePopover` so neither runs off a short window.
  */
-
-/** Shared dismiss-on-outside-click / Escape behaviour for the two popovers. */
-function useDismiss(open, onDismiss) {
-  const ref = useRef(null);
-  useEffect(() => {
-    if (!open) return undefined;
-    const onPointerDown = (event) => {
-      if (!ref.current?.contains(event.target)) onDismiss();
-    };
-    const onKeyDown = (event) => {
-      if (event.key === 'Escape') onDismiss();
-    };
-    document.addEventListener('pointerdown', onPointerDown);
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown);
-      document.removeEventListener('keydown', onKeyDown);
-    };
-  }, [open, onDismiss]);
-  return ref;
-}
 
 const TOOL_BUTTON =
   'grid size-8 shrink-0 place-items-center rounded-[var(--radius-control)] border border-line-strong ' +
@@ -84,12 +65,13 @@ export function RefreshButton({ onRefresh, refreshing = false, label = 'Refresh 
 /** Table settings: display preferences for this surface. */
 export function TableSettings({ density, onDensityChange }) {
   const [open, setOpen] = useState(false);
-  const ref = useDismiss(open, () => setOpen(false));
+  const { wrapperRef, triggerRef, panelProps } = usePopover(open, () => setOpen(false));
   const labelId = useId();
 
   return (
-    <div ref={ref} className="relative shrink-0">
+    <div ref={wrapperRef} className="relative shrink-0">
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-haspopup="dialog"
@@ -105,15 +87,16 @@ export function TableSettings({ density, onDensityChange }) {
         <div
           role="dialog"
           aria-labelledby={labelId}
-          className="animate-pop absolute right-0 z-40 mt-1.5 w-64 overflow-hidden rounded-[var(--radius-panel)] border border-line bg-surface shadow-lg"
+          {...panelProps}
+          className="animate-pop absolute right-0 z-40 w-64 rounded-[var(--radius-panel)] border border-line bg-surface shadow-lg"
         >
           <p
             id={labelId}
-            className="border-b border-line bg-surface-2 px-3 py-2 text-[10.5px] font-semibold tracking-[0.12em] text-ink-3 uppercase"
+            className="shrink-0 border-b border-line bg-surface-2 px-3 py-2 text-[10.5px] font-semibold tracking-[0.12em] text-ink-3 uppercase"
           >
             Table settings
           </p>
-          <div className="p-2.5">
+          <div className="min-h-0 flex-1 overflow-y-auto p-2.5">
             <p className="text-[11.5px] font-semibold text-ink-2">Row density</p>
             <div role="radiogroup" aria-label="Row density" className="mt-1.5 flex flex-col gap-0.5">
               {DENSITIES.map((option) => {
@@ -167,13 +150,14 @@ export function TableSettings({ density, onDensityChange }) {
  */
 export function OverflowMenu({ items, label = 'More actions' }) {
   const [open, setOpen] = useState(false);
-  const ref = useDismiss(open, () => setOpen(false));
+  const { wrapperRef, triggerRef, panelProps } = usePopover(open, () => setOpen(false));
   const visible = (items || []).filter(Boolean);
   if (visible.length === 0) return null;
 
   return (
-    <div ref={ref} className="relative shrink-0">
+    <div ref={wrapperRef} className="relative shrink-0">
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-haspopup="menu"
@@ -188,35 +172,38 @@ export function OverflowMenu({ items, label = 'More actions' }) {
       {open && (
         <div
           role="menu"
-          className="animate-pop absolute right-0 z-40 mt-1.5 w-60 overflow-hidden rounded-[var(--radius-panel)] border border-line bg-surface p-1 shadow-lg"
+          {...panelProps}
+          className="animate-pop absolute right-0 z-40 w-60 rounded-[var(--radius-panel)] border border-line bg-surface shadow-lg"
         >
-          {visible.map((item) => {
-            const Icon = item.icon || Download;
-            return (
-              <button
-                key={item.key}
-                role="menuitem"
-                type="button"
-                disabled={item.disabled}
-                title={item.disabled ? item.disabledHint : undefined}
-                onClick={() => {
-                  item.onSelect();
-                  setOpen(false);
-                }}
-                className="flex w-full items-start gap-2.5 rounded-md px-2.5 py-2 text-left transition-colors hover:bg-surface-2 disabled:pointer-events-none disabled:opacity-50"
-              >
-                <Icon aria-hidden="true" className="mt-px size-4 shrink-0 text-ink-3" />
-                <span className="min-w-0">
-                  <span className="block text-[12.5px] font-medium text-ink">{item.label}</span>
-                  {(item.disabled ? item.disabledHint : item.hint) && (
-                    <span className="mt-0.5 block text-[11px] leading-snug text-ink-3">
-                      {item.disabled ? item.disabledHint : item.hint}
-                    </span>
-                  )}
-                </span>
-              </button>
-            );
-          })}
+          <div className="min-h-0 flex-1 overflow-y-auto p-1">
+            {visible.map((item) => {
+              const Icon = item.icon || Download;
+              return (
+                <button
+                  key={item.key}
+                  role="menuitem"
+                  type="button"
+                  disabled={item.disabled}
+                  title={item.disabled ? item.disabledHint : undefined}
+                  onClick={() => {
+                    item.onSelect();
+                    setOpen(false);
+                  }}
+                  className="flex w-full items-start gap-2.5 rounded-md px-2.5 py-2 text-left transition-colors hover:bg-surface-2 disabled:pointer-events-none disabled:opacity-50"
+                >
+                  <Icon aria-hidden="true" className="mt-px size-4 shrink-0 text-ink-3" />
+                  <span className="min-w-0">
+                    <span className="block text-[12.5px] font-medium text-ink">{item.label}</span>
+                    {(item.disabled ? item.disabledHint : item.hint) && (
+                      <span className="mt-0.5 block text-[11px] leading-snug text-ink-3">
+                        {item.disabled ? item.disabledHint : item.hint}
+                      </span>
+                    )}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

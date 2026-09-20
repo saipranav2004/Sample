@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 export { useQuery, useMutation } from './useQuery';
+export { usePopover } from './usePopover';
 
 export function useDebouncedValue(value, delay = 320) {
   const [debounced, setDebounced] = useState(value);
@@ -87,36 +88,3 @@ export function useFocusTrap(containerRef, active) {
   }, [containerRef, active]);
 }
 
-/**
- * Counts a metric up to its value once, on mount/value change. Respects
- * reduced-motion by jumping straight to the final number.
- */
-export function useCountUp(value, duration = 620) {
-  const target = Number.isFinite(Number(value)) ? Number(value) : 0;
-  const [display, setDisplay] = useState(target);
-  const previousRef = useRef(target);
-
-  useEffect(() => {
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const from = previousRef.current;
-    previousRef.current = target;
-
-    if (reduced || from === target || duration <= 0) {
-      setDisplay(target);
-      return undefined;
-    }
-
-    let raf = 0;
-    const start = performance.now();
-    const tick = (now) => {
-      const progress = Math.min(1, (now - start) / duration);
-      const eased = 1 - (1 - progress) ** 4;
-      setDisplay(Math.round(from + (target - from) * eased));
-      if (progress < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [target, duration]);
-
-  return display;
-}

@@ -28,6 +28,11 @@
   --t-surface-2: #f8fafc;
   --t-surface-3: #eef2f7;
   --t-surface-inset: #f1f5f9;
+  /* Meter and bar tracks. A wash rather than a fixed surface, so a track keeps
+     the same contrast whether it sits on a white panel or a recessed one -
+     `surface-3` on `surface-2` was only 10/255 apart and the bars looked like
+     they were floating. */
+  --t-track: color-mix(in srgb, var(--t-ink-3) 20%, transparent);
   --t-line: #e3e9f1;
   --t-line-strong: #cbd6e4;
   --t-overlay: rgba(7, 27, 51, 0.42);
@@ -120,6 +125,7 @@
   --t-surface-2: #111e31;
   --t-surface-3: #17263c;
   --t-surface-inset: #0a1322;
+  --t-track: color-mix(in srgb, var(--t-ink-3) 30%, transparent);
   --t-line: #1e2e46;
   --t-line-strong: #2b3f5c;
   --t-overlay: rgba(2, 7, 14, 0.66);
@@ -189,6 +195,7 @@
   --color-surface: var(--t-surface);
   --color-surface-2: var(--t-surface-2);
   --color-surface-3: var(--t-surface-3);
+  --color-track: var(--t-track);
   --color-inset: var(--t-surface-inset);
   --color-line: var(--t-line);
   --color-line-strong: var(--t-line-strong);

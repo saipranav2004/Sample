@@ -282,7 +282,7 @@ export default function CredentialsPage() {
             <span data-numeric="" className="block text-[12.5px] whitespace-nowrap text-ink-2">
               {formatNumber(age)} days
             </span>
-            <span className="mt-1.5 block h-[3px] w-full overflow-hidden rounded-full bg-surface-3">
+            <span className="mt-1.5 block h-[3px] w-full overflow-hidden rounded-full bg-track">
               <span
                 className={`block h-full rounded-full transition-[width] duration-700 ease-[var(--ease-out-quint)] ${tone}`}
                 style={{ width: `${share}%` }}
@@ -308,10 +308,9 @@ export default function CredentialsPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
       <PageHeader
         title="Credential register"
-        lede="Every access key, password and certificate recorded against an identity in this scan, flattened so rotation candidates surface directly."
       />
 
       {severityCountQuery.isLoading && !severityCountQuery.data ? (
@@ -357,10 +356,9 @@ export default function CredentialsPage() {
         </div>
       )}
 
-      <Panel className="animate-rise">
-        <PanelHeader
+      <Panel prominence="quiet" className="animate-rise">
+        <PanelHeader prominence="quiet"
           title="Rotation queue by severity"
-          subtitle="Exact totals for the selected scan, counted per tier. Select a band to filter the register."
         />
         <ProportionBar
           className="mt-3.5"
@@ -412,7 +410,7 @@ export default function CredentialsPage() {
           />
         }
       >
-      <Panel flush className="animate-rise overflow-hidden">
+      <Panel prominence="lead" flush className="animate-rise overflow-hidden">
         <RecordBar
           trailing={
             <TableToolbar>

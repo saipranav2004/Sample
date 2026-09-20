@@ -245,7 +245,7 @@ export default function DismissedPage() {
   if (query.isError && !query.data) {
     const detail = describeScannerError(query.error);
     return (
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-6">
         <PageHeader title="Dismissed findings" />
         <Panel>
           <ErrorState error={{ message: detail.message }} title={detail.title} onRetry={query.refetch} />
@@ -330,10 +330,10 @@ export default function DismissedPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
       <PageHeader
         title="Dismissed findings"
-        lede="Secrets a reviewer accepted as safe - rotated credentials, test fixtures, known placeholders. Everything listed here is filtered out of live findings automatically."
+        lede="Everything listed here is filtered out of live findings automatically."
         actions={
           <>
             <Button as={Link} to="/exposure" variant="ghost" icon={ArrowLeft}>
@@ -402,7 +402,7 @@ export default function DismissedPage() {
           />
         }
       >
-        <Panel flush className="animate-rise overflow-hidden">
+        <Panel prominence="lead" flush className="animate-rise overflow-hidden">
           <RecordBar
             trailing={
               <TableToolbar>

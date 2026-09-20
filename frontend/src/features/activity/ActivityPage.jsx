@@ -121,10 +121,9 @@ export default function ActivityPage() {
   const loading = query.isLoading && !query.data;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
       <PageHeader
         title="API activity"
-        lede="CloudTrail events captured by this scan, newest first. Mutating calls are marked separately from read-only ones, so privilege actually being used stands out from privilege merely existing."
       />
 
       <div className="grid gap-3 @min-[30rem]:grid-cols-2 @min-[54rem]:grid-cols-4">
@@ -173,8 +172,8 @@ export default function ActivityPage() {
         />
       </div>
 
-      <Panel className="animate-rise">
-        <PanelHeader
+      <Panel prominence="quiet" className="animate-rise">
+        <PanelHeader prominence="quiet"
           title="Shape of the loaded window"
           subtitle={`Computed over the ${formatNumber(shape.window)} events currently on screen. The API offers no filter for read-only versus mutating, so this cannot be stated for the whole scan.`}
         />
@@ -220,7 +219,7 @@ export default function ActivityPage() {
                     <span className="min-w-0 flex-1 truncate font-mono text-[12px] text-ink-2">
                       {source}
                     </span>
-                    <span className="h-1.5 w-24 overflow-hidden rounded-full bg-surface-3">
+                    <span className="h-1.5 w-24 overflow-hidden rounded-full bg-track">
                       <span
                         className="block h-full rounded-full bg-[var(--t-ramp-4)] transition-[width] duration-700 ease-[var(--ease-out-quint)]"
                         style={{ width: `${percentValue(count, shape.sources[0][1])}%` }}
@@ -237,7 +236,7 @@ export default function ActivityPage() {
         )}
       </Panel>
 
-      <Panel flush className="animate-rise overflow-hidden">
+      <Panel prominence="lead" flush className="animate-rise overflow-hidden">
         <RecordBar
           trailing={
             <TableToolbar>

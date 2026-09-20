@@ -253,7 +253,7 @@ export default function FindingsPage() {
   if (query.isError && !query.data) {
     const detail = describeScannerError(query.error);
     return (
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-6">
         <PageHeader
           title="Secret findings"
           lede="Credentials committed to connected repositories."
@@ -358,10 +358,10 @@ export default function FindingsPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
       <PageHeader
         title="Secret findings"
-        lede="Credentials committed into connected CodeCommit and GitHub repositories. Values are masked by the scanner - triage by risk, then rotate at the source."
+        lede="Values are masked by the scanner, so rotate at the source."
         tabs={
           <Tabs
             size="sm"
@@ -433,7 +433,7 @@ export default function FindingsPage() {
           />
         }
       >
-      <Panel flush className="animate-rise overflow-hidden">
+      <Panel prominence="lead" flush className="animate-rise overflow-hidden">
         <RecordBar
           trailing={
             <TableToolbar>
