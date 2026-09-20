@@ -94,6 +94,37 @@ export function formatRelative(input) {
   return DASH;
 }
 
+/**
+ * Compact relative time for table cells, where the long form ("3 months ago")
+ * is wider than the column can honestly give it. The full value always stays
+ * available as a title attribute at the call site.
+ */
+export function formatRelativeShort(input) {
+  const date = parseDate(input);
+  if (!date) return DASH;
+
+  const seconds = Math.round((Date.now() - date.getTime()) / 1000);
+  const abs = Math.abs(seconds);
+  const suffix = seconds < 0 ? '' : ' ago';
+
+  const steps = [
+    [60, 1, 's'],
+    [3600, 60, 'm'],
+    [86400, 3600, 'h'],
+    [2592000, 86400, 'd'],
+    [31536000, 2592000, 'mo'],
+    [Infinity, 31536000, 'y'],
+  ];
+
+  for (const [limit, divisor, unit] of steps) {
+    if (abs < limit) {
+      const amount = Math.max(1, Math.round(abs / divisor));
+      return `${amount}${unit}${suffix}`;
+    }
+  }
+  return DASH;
+}
+
 export function daysSince(input) {
   const date = parseDate(input);
   if (!date) return null;

@@ -1,4 +1,4 @@
-import { useId } from 'react';
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { cn } from './cn';
 
 /**
@@ -7,6 +7,31 @@ import { cn } from './cn';
  */
 export function Tabs({ tabs, value, onChange, className, size = 'md' }) {
   const baseId = useId();
+  const listRef = useRef(null);
+  const [indicator, setIndicator] = useState(null);
+
+  /* One indicator that slides between tabs, rather than a border per tab —
+     the movement is what tells you which sibling view you landed on. */
+  const measure = useCallback(() => {
+    const list = listRef.current;
+    if (!list) return;
+    const active = list.querySelector('[aria-selected="true"]');
+    if (!active) {
+      setIndicator(null);
+      return;
+    }
+    setIndicator({ left: active.offsetLeft, width: active.offsetWidth });
+  }, []);
+
+  useLayoutEffect(measure, [measure, value, tabs.length]);
+
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list || typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(measure);
+    observer.observe(list);
+    return () => observer.disconnect();
+  }, [measure]);
 
   const onKeyDown = (event) => {
     const currentIndex = tabs.findIndex((tab) => tab.value === value);
@@ -24,13 +49,18 @@ export function Tabs({ tabs, value, onChange, className, size = 'md' }) {
 
   return (
     <div
+      ref={listRef}
       role="tablist"
       onKeyDown={onKeyDown}
-      className={cn(
-        '-mb-px flex min-w-0 items-stretch gap-1 overflow-x-auto border-b border-line',
-        className,
-      )}
+      className={cn('relative flex min-w-0 items-stretch gap-1 overflow-x-auto', className)}
     >
+      {indicator && (
+        <span
+          aria-hidden="true"
+          className="absolute bottom-0 h-[2px] rounded-full bg-brand transition-[left,width] duration-260 ease-[var(--ease-out-quint)]"
+          style={{ left: indicator.left, width: indicator.width }}
+        />
+      )}
       {tabs.map((tab) => {
         const active = tab.value === value;
         return (
@@ -44,11 +74,9 @@ export function Tabs({ tabs, value, onChange, className, size = 'md' }) {
             tabIndex={active ? 0 : -1}
             onClick={() => onChange(tab.value)}
             className={cn(
-              'relative inline-flex shrink-0 items-center gap-2 border-b-2 px-3 font-medium transition-colors duration-150',
+              'relative inline-flex shrink-0 items-center gap-2 px-3 font-medium transition-colors duration-150',
               size === 'sm' ? 'h-9 text-[12.5px]' : 'h-11 text-[13.5px]',
-              active
-                ? 'border-brand text-ink'
-                : 'border-transparent text-ink-3 hover:border-line-strong hover:text-ink-2',
+              active ? 'text-ink' : 'text-ink-3 hover:text-ink-2',
             )}
           >
             {tab.icon && <tab.icon aria-hidden="true" className="size-4" />}

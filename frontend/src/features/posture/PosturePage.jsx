@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Activity,
+  ArrowRight,
   BarChart3,
   Bot,
   FileWarning,
@@ -117,9 +118,8 @@ export default function PosturePage() {
 
   if (summaryQuery.isError && !summary) {
     return (
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-4">
         <PageHeader
-          eyebrow="Posture"
           title="Identity posture"
           lede="Discovery results for the selected scan could not be loaded."
         />
@@ -134,9 +134,8 @@ export default function PosturePage() {
   const totalIdentities = Number(summary?.total_identities) || 0;
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <PageHeader
-        eyebrow="Posture"
         title="Identity posture"
         lede="Where standing privilege, dormant accounts and exposed credentials sit right now — every figure drills through to the identities behind it."
         actions={
@@ -303,7 +302,7 @@ export default function PosturePage() {
             title="Credential surface"
             subtitle="Credential types held across identities in this scan, ranked by volume."
             actions={
-              <Button as={Link} to="/credentials" variant="ghost" size="sm">
+              <Button as={Link} to="/credentials" variant="secondary" size="sm" iconRight={ArrowRight}>
                 Inspect
               </Button>
             }
@@ -418,7 +417,7 @@ export default function PosturePage() {
                 : 'Most recent CloudTrail events.'
             }
             actions={
-              <Button as={Link} to="/activity" variant="ghost" size="sm">
+              <Button as={Link} to="/activity" variant="secondary" size="sm" iconRight={ArrowRight}>
                 All activity
               </Button>
             }
@@ -440,7 +439,7 @@ export default function PosturePage() {
             title="Code exposure"
             subtitle="Secrets committed to connected repositories, by actionable risk tier."
             actions={
-              <Button as={Link} to="/exposure" variant="ghost" size="sm">
+              <Button as={Link} to="/exposure" variant="secondary" size="sm" iconRight={ArrowRight}>
                 Triage
               </Button>
             }

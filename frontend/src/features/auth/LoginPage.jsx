@@ -21,13 +21,13 @@ const TRUST_MARKS = [
 ];
 
 /**
- * Sign-in follows the supplied brand template: brand panel on the left,
- * credential card on the right.
+ * Sign-in, matching the supplied design: the navy canvas runs edge to edge and
+ * the credential card floats on top of it at the right — not a split layout.
  *
- * The field is labelled "Username" per that template and is submitted as the
- * `email` property the `POST /api/auth/login` contract defines — no second
- * field is invented, and no client-side format is imposed the API does not
- * enforce.
+ * The field is labelled "Username" per that design and submitted as the
+ * `email` property `POST /api/auth/login` defines. There is no password-reset
+ * link, no "remember me" and no SSO button, because no endpoint backs any of
+ * them; a dead control on a sign-in screen is worse than its absence.
  */
 export default function LoginPage() {
   const { signIn, isAuthenticated, expired, clearExpired } = useAuth();
@@ -38,7 +38,6 @@ export default function LoginPage() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [formError, setFormError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const [resetHintOpen, setResetHintOpen] = useState(false);
   const usernameRef = useRef(null);
 
   useEffect(() => {
@@ -46,8 +45,7 @@ export default function LoginPage() {
   }, []);
 
   if (isAuthenticated) {
-    const target = location.state?.from?.pathname || '/posture';
-    return <Navigate to={target} replace />;
+    return <Navigate to={location.state?.from?.pathname || '/posture'} replace />;
   }
 
   const onSubmit = async (event) => {
@@ -74,66 +72,64 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="grid min-h-dvh lg:grid-cols-[1.05fr_minmax(0,0.95fr)]">
-      {/* Brand panel */}
-      <section className="auth-canvas relative hidden flex-col justify-between overflow-hidden p-10 lg:flex xl:p-14">
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute -top-24 -left-20 h-[420px] w-[420px] rotate-[24deg] bg-[linear-gradient(115deg,transparent_46%,rgba(18,176,240,0.14)_48%,rgba(18,176,240,0.14)_52%,transparent_54%)]"
-        />
+    <div className="auth-canvas relative min-h-dvh overflow-hidden">
+      {/* Brand slash, echoing the mark's diagonal. */}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-40 -left-28 h-[560px] w-[560px] rotate-[24deg] bg-[linear-gradient(115deg,transparent_46%,rgba(18,176,240,0.13)_48%,rgba(18,176,240,0.13)_52%,transparent_54%)]"
+      />
 
-        <p className="relative inline-flex w-fit items-center gap-2 rounded-full border border-white/14 bg-white/[0.06] px-3.5 py-1.5 text-[10.5px] font-semibold tracking-[0.16em] text-[#9fd8f7] uppercase">
-          <span aria-hidden="true" className="size-1.5 rounded-full bg-accent" />
-          Enterprise Security Platform
-        </p>
+      <div className="relative mx-auto grid min-h-dvh w-full max-w-[1500px] items-center gap-10 px-6 py-10 lg:grid-cols-[minmax(0,1fr)_26rem] lg:gap-16 lg:px-14 xl:gap-24">
+        {/* Brand statement */}
+        <section className="order-2 max-w-xl lg:order-1">
+          <p className="inline-flex w-fit items-center gap-2 rounded-full border border-white/14 bg-white/[0.06] px-3.5 py-1.5 text-[10.5px] font-semibold tracking-[0.16em] text-[#9fd8f7] uppercase">
+            <span aria-hidden="true" className="size-1.5 rounded-full bg-accent" />
+            Enterprise Security Platform
+          </p>
 
-        <div className="relative max-w-xl">
-          <h1 className="font-display text-[46px] leading-[1.03] font-extrabold tracking-[-0.035em] text-white xl:text-[58px]">
+          <h1 className="mt-8 font-display text-[40px] leading-[1.04] font-extrabold tracking-[-0.035em] text-white sm:text-[48px] xl:text-[56px]">
             Non-Human
             <br />
             Identity
             <br />
             <span className="text-accent">Discovery</span>
           </h1>
-          <p className="mt-7 max-w-lg text-balance text-[15px] leading-relaxed text-[#aec6df]">
+
+          <p className="mt-6 max-w-lg text-balance text-[14.5px] leading-relaxed text-[#aec6df] sm:text-[15px]">
             Inventory every role, service principal and key across your AWS accounts, trace what
             they can reach, and catch credentials the moment they leak into source control.
           </p>
 
-          <ul className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-3">
+          <ul className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-3">
             {TRUST_MARKS.map((mark) => (
               <li key={mark.label} className="flex items-center gap-2 text-[13px] text-[#cfe0ef]">
-                <mark.icon aria-hidden="true" className="size-4 text-accent" />
+                <mark.icon aria-hidden="true" className="size-4 shrink-0 text-accent" />
                 {mark.label}
               </li>
             ))}
           </ul>
-        </div>
 
-        <p className="relative text-[12.5px] text-[#7d97b3]">
-          © {new Date().getFullYear()} Deep Algorithms · Fostering AI. Connecting Minds.
-        </p>
-      </section>
+          <p className="mt-12 text-[12.5px] text-[#7d97b3] lg:absolute lg:bottom-8 lg:left-14 lg:mt-0">
+            © {new Date().getFullYear()} Deep Algorithms · Fostering AI. Connecting Minds.
+          </p>
+        </section>
 
-      {/* Credential card */}
-      <section className="flex items-center justify-center bg-canvas px-4 py-10 sm:px-8">
-        <div className="w-full max-w-[26rem]">
-          <div className="animate-rise rounded-[18px] border border-line bg-surface p-6 shadow-md sm:p-8">
-            <div className="flex justify-center lg:justify-start">
-              <BrandLockup variant="default" height={30} />
-            </div>
+        {/* Credential card — floats on the navy, never on its own panel */}
+        <section className="order-1 w-full justify-self-center lg:order-2 lg:justify-self-end">
+          <div className="animate-rise rounded-[18px] bg-white p-6 shadow-[0_34px_80px_-28px_rgba(2,10,20,0.62)] sm:p-8">
+            <BrandLockup variant="default" height={30} />
 
-            <h2 className="mt-7 text-[25px] leading-tight font-extrabold tracking-[-0.025em] text-ink">
+            <h2 className="mt-7 font-display text-[25px] leading-tight font-extrabold tracking-[-0.025em] text-[#0b1b2e]">
               Welcome
             </h2>
-            <p className="mt-1.5 text-[13.5px] text-ink-3">Sign in to access the platform</p>
+            <p className="mt-1.5 text-[13.5px] text-[#7c8da3]">Sign in to access the platform</p>
 
             {expired && !formError && (
               <p
                 role="status"
-                className="mt-5 flex items-start gap-2 rounded-[var(--radius-control)] border border-medium/25 bg-medium-soft px-3 py-2.5 text-[12.5px] text-ink-2"
+                className="mt-5 flex items-start gap-2 rounded-[var(--radius-control)] border border-[#a06a02]/25 bg-[#fdf6e3] px-3 py-2.5 text-[12.5px] text-[#4a5b70]"
               >
-                <AlertTriangle aria-hidden="true" className="mt-px size-4 shrink-0 text-medium" />
+                <AlertTriangle aria-hidden="true" className="mt-px size-4 shrink-0 text-[#a06a02]" />
                 Your session expired. Sign in again to continue where you left off.
               </p>
             )}
@@ -141,14 +137,15 @@ export default function LoginPage() {
             {formError && (
               <p
                 role="alert"
-                className="mt-5 flex items-start gap-2 rounded-[var(--radius-control)] border border-critical/25 bg-critical-soft px-3 py-2.5 text-[12.5px] text-ink-2"
+                className="mt-5 flex items-start gap-2 rounded-[var(--radius-control)] border border-[#b42318]/25 bg-[#fdeceb] px-3 py-2.5 text-[12.5px] text-[#4a5b70]"
               >
-                <AlertTriangle aria-hidden="true" className="mt-px size-4 shrink-0 text-critical" />
+                <AlertTriangle aria-hidden="true" className="mt-px size-4 shrink-0 text-[#b42318]" />
                 {formError}
               </p>
             )}
 
-            <form onSubmit={onSubmit} noValidate className="mt-6 flex flex-col gap-5">
+            {/* The card is always light, so its controls opt out of theme inversion. */}
+            <form onSubmit={onSubmit} noValidate className="mt-6 flex flex-col gap-5" data-theme="light">
               <Field
                 label={
                   <span className="inline-flex items-center gap-2">
@@ -174,61 +171,38 @@ export default function LoginPage() {
                 />
               </Field>
 
-              <div>
-                <Field
-                  label={
-                    <span className="inline-flex items-center gap-2">
-                      <Lock aria-hidden="true" className="size-3.5 text-ink-3" />
-                      Password
-                    </span>
-                  }
-                  htmlFor="login-password"
-                  error={fieldErrors.password}
-                >
-                  <PasswordInput
-                    id="login-password"
-                    size="lg"
-                    autoComplete="current-password"
-                    placeholder="••••••••"
-                    value={values.password}
-                    invalid={Boolean(fieldErrors.password)}
-                    onChange={(event) => setValues((v) => ({ ...v, password: event.target.value }))}
-                  />
-                </Field>
-
-                <div className="mt-2 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => setResetHintOpen((value) => !value)}
-                    aria-expanded={resetHintOpen}
-                    className="text-[12.5px] font-medium text-brand hover:underline"
-                  >
-                    Forgot password?
-                  </button>
-                </div>
-                {resetHintOpen && (
-                  <p className="animate-fade mt-2 rounded-[var(--radius-control)] border border-line bg-surface-2 px-3 py-2.5 text-[12.5px] leading-relaxed text-ink-2">
-                    Credentials are issued by your platform administrator. Self-service reset is not
-                    enabled on this deployment — contact your administrator to have it reset.
-                  </p>
-                )}
-              </div>
+              <Field
+                label={
+                  <span className="inline-flex items-center gap-2">
+                    <Lock aria-hidden="true" className="size-3.5 text-ink-3" />
+                    Password
+                  </span>
+                }
+                htmlFor="login-password"
+                error={fieldErrors.password}
+              >
+                <PasswordInput
+                  id="login-password"
+                  size="lg"
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                  value={values.password}
+                  invalid={Boolean(fieldErrors.password)}
+                  onChange={(event) => setValues((v) => ({ ...v, password: event.target.value }))}
+                />
+              </Field>
 
               <Button type="submit" variant="accent" size="lg" loading={submitting} iconRight={ArrowRight}>
                 {submitting ? 'Signing in…' : 'Sign in securely'}
               </Button>
             </form>
 
-            <p className="mt-6 text-center text-[11.5px] leading-relaxed text-ink-3">
+            <p className="mt-6 text-center text-[11.5px] leading-relaxed text-[#7c8da3]">
               Authorized use only. Every access attempt is logged and monitored.
             </p>
           </div>
-
-          <p className="mt-6 text-center text-[11.5px] text-ink-3 lg:hidden">
-            © {new Date().getFullYear()} Deep Algorithms · Fostering AI. Connecting Minds.
-          </p>
-        </div>
-      </section>
+        </section>
+      </div>
     </div>
   );
 }

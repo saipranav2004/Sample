@@ -32,20 +32,3 @@ export function BrandMark({ className, size = 26 }) {
     />
   );
 }
-
-/** Product name set beside the mark, used where the full lockup is too wide. */
-export function ProductWordmark({ className }) {
-  return (
-    <span className={cn('flex min-w-0 items-center gap-2.5', className)}>
-      <BrandMark size={24} />
-      <span className="min-w-0">
-        <span className="block truncate font-display text-[13.5px] leading-tight font-extrabold tracking-[-0.01em] text-rail-ink">
-          NHI Console
-        </span>
-        <span className="block truncate text-[10px] leading-tight font-semibold tracking-[0.1em] text-rail-muted uppercase">
-          Deep Algorithms
-        </span>
-      </span>
-    </span>
-  );
-}

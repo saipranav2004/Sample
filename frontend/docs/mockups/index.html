@@ -1,0 +1,691 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>NHI Console — UI mockups</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+/* ── tokens (mirror of src/styles/tokens.css) ───────────────────────────── */
+:root{
+  --brand:#0c6eb4; --brand-strong:#095a95; --accent:#12b0f0;
+  --topbar:#071b33; --topbar-2:#0a2745; --topbar-line:rgba(255,255,255,.1);
+  --topbar-ink:#e2ecf7; --topbar-muted:#8ba3c0;
+  --canvas:#f3f6fa; --surface:#fff; --surface-2:#f8fafc; --surface-3:#eef2f7;
+  --line:#e3e9f1; --line-strong:#cbd6e4;
+  --ink:#0b1b2e; --ink-2:#4a5b70; --ink-3:#7c8da3;
+  --critical:#b42318; --critical-soft:#fdeceb;
+  --high:#c4520a; --high-soft:#fdf0e6;
+  --medium:#a06a02; --medium-soft:#fdf6e3;
+  --low:#05734b; --low-soft:#e7f6ef;
+  --info:#0c6eb4; --info-soft:#e8f2fb;
+  --s1:#1668b0;--s2:#c4520a;--s3:#0f8f7a;--s4:#7a4fd0;--s5:#1f8fb5;--s6:#7d8b1c;--s7:#b03a86;--s8:#64748b;
+  --ramp:#1668b0;
+  --shadow-sm:0 1px 2px rgba(11,27,46,.06);
+  --shadow-md:0 4px 16px -4px rgba(11,27,46,.12),0 1px 3px rgba(11,27,46,.05);
+  --shadow-lg:0 24px 60px -18px rgba(11,27,46,.28);
+  --sans:'Inter',system-ui,sans-serif; --display:'Manrope','Inter',sans-serif; --mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--canvas);color:var(--ink);font:400 14px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--display);letter-spacing:-.02em;margin:0}
+td,th,[data-num]{font-variant-numeric:tabular-nums}
+
+/* ── mockup chrome ──────────────────────────────────────────────────────── */
+.mockbar{position:sticky;top:0;z-index:99;display:flex;align-items:center;gap:14px;
+  background:#0b1b2e;color:#dbe7f5;padding:10px 16px;font-size:12.5px;flex-wrap:wrap}
+.mockbar strong{font-family:var(--display);font-size:13px;letter-spacing:0}
+.mockbar .tabs{display:flex;gap:4px;flex-wrap:wrap}
+.mockbar button{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);
+  color:#dbe7f5;border-radius:7px;padding:5px 11px;font:500 12.5px var(--sans);cursor:pointer}
+.mockbar button[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:#06263b}
+.mockbar .note{color:#8ba3c0;margin-left:auto;font-size:11.5px}
+.screen{display:none}
+.screen.on{display:block}
+.frame{margin:18px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--canvas);box-shadow:var(--shadow-md)}
+.caption{margin:18px 18px -6px;font:600 11px/1.4 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+.annot{margin:8px 18px 0;color:var(--ink-2);font-size:12.5px;max-width:78ch}
+
+/* ── app shell ──────────────────────────────────────────────────────────── */
+.topbar{display:flex;align-items:center;gap:12px;height:56px;padding:0 16px;
+  background:linear-gradient(90deg,var(--topbar) 0%,var(--topbar-2) 55%,var(--topbar) 100%);
+  border-bottom:1px solid var(--topbar-line)}
+.topbar .logo{height:24px;width:auto}
+.topbar .divider{width:1px;height:24px;background:var(--topbar-line)}
+.gsearch{display:flex;align-items:center;gap:8px;width:280px;
+  background:rgba(255,255,255,.08);border:1px solid var(--topbar-line);border-radius:8px;
+  padding:7px 10px;color:var(--topbar-muted);font-size:12.5px}
+.gsearch kbd{margin-left:auto;background:rgba(255,255,255,.1);border:1px solid var(--topbar-line);
+  border-radius:4px;padding:1px 5px;font:500 10.5px var(--mono)}
+.scope{display:flex;align-items:center;gap:9px;background:rgba(255,255,255,.07);
+  border:1px solid var(--topbar-line);border-radius:8px;padding:5px 10px;color:var(--topbar-ink)}
+.scope .k{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--topbar-muted)}
+.scope .v{font:600 12.5px var(--sans)}
+.tbicon{width:32px;height:32px;display:grid;place-items:center;border-radius:7px;color:var(--topbar-muted)}
+.who{display:flex;align-items:center;gap:8px;color:var(--topbar-ink)}
+.av{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font:700 11.5px var(--sans);
+  color:#fff;background:linear-gradient(135deg,var(--brand),var(--accent))}
+.body{display:flex;min-height:640px}
+.side{width:236px;flex:0 0 236px;background:var(--surface-2);border-right:1px solid var(--line);padding:12px 10px;display:flex;flex-direction:column;gap:4px}
+.side .grp{margin:12px 0 4px;padding:0 10px;font:600 10px var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+.side a{position:relative;display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;
+  color:var(--ink-2);text-decoration:none;font:500 13px var(--sans)}
+.side a .ic{width:16px;height:16px;flex:none;opacity:.75}
+.side a.on{background:var(--info-soft);color:var(--brand);font-weight:600}
+.side a.on::before{content:'';position:absolute;left:-10px;top:50%;translate:0 -50%;width:3px;height:18px;border-radius:0 3px 3px 0;background:var(--brand)}
+.side .foot{margin-top:auto;padding:10px;border-top:1px solid var(--line);color:var(--ink-3);font-size:11.5px}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.crumb{display:flex;align-items:center;gap:7px;height:36px;padding:0 20px;border-bottom:1px solid var(--line);
+  background:var(--surface);color:var(--ink-3);font-size:12px}
+.crumb b{color:var(--ink-2);font-weight:500}
+.titlerow{display:flex;align-items:flex-end;gap:16px;padding:16px 20px 12px;background:var(--surface);border-bottom:1px solid var(--line)}
+.titlerow h1{font-size:21px;font-weight:800}
+.titlerow p{margin:5px 0 0;color:var(--ink-2);font-size:12.5px;max-width:70ch}
+.titlerow .acts{margin-left:auto;display:flex;gap:8px}
+.content{padding:16px 20px 32px;display:flex;flex-direction:column;gap:14px}
+
+/* ── controls ───────────────────────────────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 12px;border-radius:8px;
+  border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);font:500 12.5px var(--sans);cursor:pointer;box-shadow:var(--shadow-sm)}
+.btn.pri{background:var(--brand);border-color:var(--brand-strong);color:#fff}
+.btn.acc{background:linear-gradient(135deg,var(--accent),var(--brand));border-color:transparent;color:#fff}
+.btn.gh{border-color:transparent;background:transparent;color:var(--ink-2);box-shadow:none}
+.vtabs{display:flex;gap:2px;border-bottom:1px solid var(--line);background:var(--surface);padding:0 20px}
+.vtabs span{position:relative;padding:10px 12px;font:500 13px var(--sans);color:var(--ink-3);cursor:pointer}
+.vtabs span.on{color:var(--ink);font-weight:600}
+.vtabs span.on::after{content:'';position:absolute;inset:auto 8px -1px;height:2px;background:var(--brand);border-radius:2px}
+.vtabs span em{font-style:normal;margin-left:6px;background:var(--surface-3);border-radius:99px;padding:1px 6px;font-size:11px;color:var(--ink-3)}
+.vtabs span.on em{background:var(--info-soft);color:var(--brand)}
+
+/* ── panels ─────────────────────────────────────────────────────────────── */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;min-width:0}
+.panel.p{padding:16px}
+.ph{display:flex;align-items:flex-start;gap:10px}
+.ph h2{font-size:14px;font-weight:700;display:flex;align-items:center;gap:7px}
+.ph p{margin:4px 0 0;color:var(--ink-3);font-size:12px;max-width:62ch}
+.ph .a{margin-left:auto}
+.dot{width:8px;height:8px;border-radius:50%;flex:none}
+.grid2{display:grid;gap:14px;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr)}
+.grid3{display:grid;gap:14px;grid-template-columns:repeat(4,minmax(0,1fr))}
+.kpi{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 14px 12px;overflow:hidden;transition:transform .18s,box-shadow .18s}
+.kpi:hover{transform:translateY(-1px);box-shadow:var(--shadow-md)}
+.kpi::before{content:'';position:absolute;inset:0 auto 0 0;width:3px;background:var(--bar,var(--brand))}
+.kpi .l{font:600 10.5px var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+.kpi .v{font-family:var(--display);font-size:29px;font-weight:800;letter-spacing:-.03em;line-height:1;margin-top:9px}
+.kpi .c{margin-top:6px;color:var(--ink-3);font-size:11.5px}
+.kpi .spark{margin-top:9px;height:22px;opacity:.35;transition:opacity .24s}
+.kpi:hover .spark{opacity:1}
+.meter{height:5px;border-radius:99px;background:var(--surface-3);overflow:hidden;margin-top:9px}
+.meter i{display:block;height:100%;border-radius:99px;background:var(--bar,var(--brand))}
+
+/* signal list */
+.sig{display:flex;align-items:center;gap:14px;padding:11px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.sig:last-child{border-bottom:0}
+.sig:hover{background:var(--surface-2);box-shadow:-8px 0 0 var(--surface-2),8px 0 0 var(--surface-2)}
+.sig .t{font:600 13px var(--sans)}
+.sig .d{color:var(--ink-3);font-size:11.5px;margin-top:2px}
+.sig .n{margin-left:auto;text-align:right;min-width:104px}
+.sig .n b{display:block;font-family:var(--display);font-size:19px;font-weight:800;line-height:1}
+.sig .n s{display:block;text-decoration:none;color:var(--ink-3);font-size:11px;margin-top:3px}
+
+/* legend/donut */
+.legend{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}
+.legend div{display:flex;align-items:center;gap:9px;padding:5px 6px;border-radius:6px;font-size:12.5px;color:var(--ink-2)}
+.legend div:hover{background:var(--surface-2)}
+.legend b{margin-left:auto;color:var(--ink);font-size:12.5px}
+.legend s{text-decoration:none;color:var(--ink-3);width:44px;text-align:right;font-size:11.5px}
+
+/* bar list */
+.bl{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
+.bl:last-child{border-bottom:0}
+.bl .w{flex:1;min-width:0}
+.bl .r{display:flex;justify-content:space-between;font-size:12.5px}
+.bl .r i{font-style:normal;color:var(--ink-3);font-size:11.5px}
+.bl .t{height:6px;border-radius:99px;background:var(--surface-3);margin-top:6px;overflow:hidden}
+.bl .t i{display:block;height:100%;background:var(--ramp);border-radius:99px}
+.bl .n{width:52px;text-align:right;font-family:var(--display);font-weight:700;font-size:15px}
+
+/* ── facet rail + table ─────────────────────────────────────────────────── */
+.work{display:grid;grid-template-columns:232px minmax(0,1fr);gap:14px;align-items:start}
+.facets{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;position:sticky;top:12px}
+.facets .fh{display:flex;align-items:center;gap:8px;padding:11px 13px;border-bottom:1px solid var(--line);
+  background:var(--surface-2);font:600 10.5px var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3)}
+.facets .fh span{margin-left:auto;text-transform:none;letter-spacing:0;font-weight:500;font-size:11.5px;color:var(--brand)}
+.fgrp{padding:11px 13px;border-bottom:1px solid var(--line)}
+.fgrp:last-child{border-bottom:0}
+.fgrp .gt{display:flex;align-items:center;font:600 11.5px var(--sans);color:var(--ink-2);margin-bottom:8px}
+.fgrp .gt s{text-decoration:none;margin-left:auto;color:var(--ink-3);font-size:11px}
+.fopt{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12.5px;color:var(--ink-2);cursor:pointer}
+.fopt input{accent-color:var(--brand);margin:0}
+.fopt b{margin-left:auto;font-weight:500;color:var(--ink-3);font-size:11.5px}
+.fopt:hover{color:var(--ink)}
+.fopt.sel{color:var(--brand);font-weight:600}
+.tablewrap{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;min-width:0}
+.tbar{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+.tbar .sq{display:flex;align-items:center;gap:8px;flex:1;max-width:340px;background:var(--surface);
+  border:1px solid var(--line-strong);border-radius:8px;padding:6px 10px;color:var(--ink-3);font-size:12.5px}
+.seg{display:inline-flex;gap:2px;background:var(--surface-3);border:1px solid var(--line);border-radius:8px;padding:2px}
+.seg i{font-style:normal;padding:4px 9px;border-radius:6px;font:500 12px var(--sans);color:var(--ink-3);cursor:pointer}
+.seg i.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow-sm)}
+table{width:100%;border-collapse:collapse}
+thead th{position:sticky;top:0;background:var(--surface-2);text-align:left;padding:9px 12px;
+  font:600 10.5px var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);border-bottom:1px solid var(--line)}
+tbody td{padding:10px 12px;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--ink-2);vertical-align:middle}
+tbody tr{position:relative}
+tbody tr:hover{background:var(--surface-2)}
+tbody tr:hover td:first-child{box-shadow:inset 2px 0 0 var(--brand)}
+tbody tr .ract{opacity:0;display:flex;gap:4px;justify-content:flex-end}
+tbody tr:hover .ract{opacity:1}
+.nm{display:flex;align-items:center;gap:9px;min-width:0}
+.nm .ico{width:26px;height:26px;border-radius:7px;border:1px solid var(--line);background:var(--surface-2);display:grid;place-items:center;flex:none;color:var(--ink-3)}
+.nm b{display:block;font-weight:600;font-size:12.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nm s{display:block;text-decoration:none;font-family:var(--mono);font-size:11px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tag{display:inline-flex;align-items:center;gap:5px;border:1px solid;border-radius:99px;padding:2px 8px;font:500 11px var(--sans);white-space:nowrap}
+.t-cr{color:var(--critical);background:var(--critical-soft);border-color:color-mix(in srgb,var(--critical) 25%,transparent)}
+.t-hi{color:var(--high);background:var(--high-soft);border-color:color-mix(in srgb,var(--high) 25%,transparent)}
+.t-me{color:var(--medium);background:var(--medium-soft);border-color:color-mix(in srgb,var(--medium) 25%,transparent)}
+.t-lo{color:var(--low);background:var(--low-soft);border-color:color-mix(in srgb,var(--low) 25%,transparent)}
+.t-nu{color:var(--ink-2);background:var(--surface-3);border-color:var(--line-strong)}
+.fp{display:inline-flex;align-items:center;gap:3px;vertical-align:middle;margin-right:7px}
+.fp i{display:block;width:5px;height:16px;border-radius:99px}
+.fp i.f{background:var(--critical)}
+.fp i.w{background:var(--medium)}
+.fp i.p{background:color-mix(in srgb,var(--low) 55%,transparent)}
+.fp i.n{background:var(--line-strong)}
+.pager{display:flex;align-items:center;gap:12px;padding:10px 12px;border-top:1px solid var(--line);color:var(--ink-3);font-size:12.5px}
+.pager .r{margin-left:auto;display:flex;align-items:center;gap:8px}
+
+/* ── drawer ─────────────────────────────────────────────────────────────── */
+.drawerdemo{position:relative}
+.scrim{position:absolute;inset:0;background:rgba(7,27,51,.34);backdrop-filter:blur(2px)}
+.drawer{position:absolute;top:0;right:0;bottom:0;width:640px;background:var(--surface);
+  border-left:1px solid var(--line);box-shadow:var(--shadow-lg);display:flex;flex-direction:column}
+.dh{padding:14px 18px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+.dh .e{font:600 10.5px var(--sans);letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3)}
+.dh h3{font-size:16px;font-weight:700;margin-top:3px}
+.dh .arn{font-family:var(--mono);font-size:12px;color:var(--ink-3);margin-top:5px}
+.dh .tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+.dtabs{display:flex;gap:2px;padding:0 18px;border-bottom:1px solid var(--line);background:var(--surface)}
+.dtabs span{position:relative;padding:9px 11px;font:500 12.5px var(--sans);color:var(--ink-3)}
+.dtabs span.on{color:var(--ink);font-weight:600}
+.dtabs span.on::after{content:'';position:absolute;inset:auto 6px -1px;height:2px;background:var(--brand)}
+.dbody{padding:14px 18px;overflow:auto}
+.sl{font:600 10.5px var(--sans);letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3);margin:14px 0 2px}
+.sl:first-child{margin-top:0}
+.dl{display:grid;grid-template-columns:150px minmax(0,1fr);border-top:1px solid var(--line)}
+.dl dt,.dl dd{margin:0;padding:8px 0;border-bottom:1px solid var(--line);font-size:12.5px}
+.dl dt{color:var(--ink-3)}
+.dl dd{color:var(--ink)}
+.dl dd.mono{font-family:var(--mono);font-size:12px}
+.dfoot{margin-top:auto;display:flex;justify-content:flex-end;gap:8px;padding:12px 18px;border-top:1px solid var(--line);background:var(--surface-2)}
+
+/* ── login ──────────────────────────────────────────────────────────────── */
+.auth{position:relative;min-height:660px;overflow:hidden;
+  background:radial-gradient(90% 70% at 8% 4%,rgba(18,176,240,.20) 0%,transparent 58%),
+             radial-gradient(70% 60% at 96% 96%,rgba(12,110,180,.28) 0%,transparent 60%),
+             linear-gradient(145deg,#0a2748 0%,#08203c 45%,#061727 100%)}
+.auth .slash{position:absolute;top:-180px;left:-120px;width:520px;height:520px;rotate:24deg;
+  background:linear-gradient(115deg,transparent 46%,rgba(18,176,240,.14) 48%,rgba(18,176,240,.14) 52%,transparent 54%)}
+.auth .inner{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 424px;gap:48px;
+  align-items:center;padding:56px 64px;min-height:660px}
+.auth .badge{display:inline-flex;align-items:center;gap:9px;border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.06);border-radius:99px;padding:6px 14px;
+  font:600 10.5px var(--sans);letter-spacing:.16em;text-transform:uppercase;color:#9fd8f7}
+.auth h1{font-size:54px;line-height:1.03;font-weight:800;letter-spacing:-.035em;color:#fff;margin-top:34px}
+.auth h1 span{color:var(--accent)}
+.auth .lede{margin-top:26px;max-width:46ch;color:#aec6df;font-size:15px;line-height:1.6}
+.auth .marks{display:flex;gap:30px;flex-wrap:wrap;margin-top:38px;color:#cfe0ef;font-size:13px}
+.auth .marks i{font-style:normal;display:flex;align-items:center;gap:8px}
+.auth .copy{position:absolute;left:64px;bottom:28px;color:#7d97b3;font-size:12.5px}
+.card{background:#fff;border-radius:18px;box-shadow:0 34px 80px -28px rgba(2,10,20,.6);padding:30px 30px 26px}
+.card img{height:30px;width:auto;display:block}
+.card h2{font-size:25px;font-weight:800;margin-top:26px;color:var(--ink)}
+.card .sub{color:var(--ink-3);font-size:13.5px;margin-top:6px}
+.fl{display:flex;align-items:center;gap:8px;font:500 12.5px var(--sans);color:var(--ink-2);margin:18px 0 7px}
+.inp{height:46px;border:1px solid var(--line-strong);border-radius:9px;display:flex;align-items:center;
+  padding:0 13px;font-size:15px;color:var(--ink);background:#fff}
+.inp.focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(18,176,240,.22)}
+.inp .eye{margin-left:auto;color:var(--ink-3)}
+.signin{width:100%;height:46px;margin-top:24px;border:0;border-radius:9px;color:#fff;
+  background:linear-gradient(135deg,var(--accent),var(--brand));font:600 14.5px var(--sans);
+  display:flex;align-items:center;justify-content:center;gap:9px}
+.fine{margin-top:20px;text-align:center;color:var(--ink-3);font-size:11.5px;line-height:1.6}
+
+svg.ic{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+svg.ic.sm{width:13px;height:13px}
+@media (max-width:1100px){.grid3{grid-template-columns:repeat(2,minmax(0,1fr))}.grid2{grid-template-columns:minmax(0,1fr)}.work{grid-template-columns:minmax(0,1fr)}.auth .inner{grid-template-columns:minmax(0,1fr)}}
+</style>
+</head>
+<body>
+
+<div class="mockbar">
+  <strong>NHI Console — UI mockups</strong>
+  <div class="tabs">
+    <button data-go="s-login" aria-pressed="true">Sign in</button>
+    <button data-go="s-posture">Posture</button>
+    <button data-go="s-ident">Identity explorer</button>
+    <button data-go="s-drawer">Record drawer</button>
+    <button data-go="s-find">Code exposure</button>
+  </div>
+  <span class="note">Static mockup · figures illustrative · logo left, controls right · posture fingerprint replaces tag soup</span>
+</div>
+
+<!-- ══════════════════════════════ SIGN IN ══════════════════════════════ -->
+<section id="s-login" class="screen on">
+  <p class="caption">Screen 1 — Sign in</p>
+  <p class="annot">Full-bleed navy canvas; the credential card floats on top of it at the right. Copy describes the actual product; structure, proportions, badge, trust marks and footer follow the supplied design.</p>
+  <div class="frame">
+    <div class="auth">
+      <div class="slash"></div>
+      <div class="inner">
+        <div>
+          <span class="badge"><span class="dot" style="background:var(--accent)"></span> Enterprise Security Platform</span>
+          <h1>Non-Human<br />Identity<br /><span>Discovery</span></h1>
+          <p class="lede">Inventory every role, service principal and key across your AWS accounts, trace what they can reach, and catch credentials the moment they leak into source control.</p>
+          <div class="marks">
+            <i><svg class="ic" viewBox="0 0 24 24" style="color:var(--accent)"><path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg> SOC 2 Type II Certified</i>
+            <i><svg class="ic" viewBox="0 0 24 24" style="color:var(--accent)"><path d="M12 2l2.4 4.8 5.3.8-3.8 3.7.9 5.3-4.8-2.5-4.8 2.5.9-5.3L4.3 7.6l5.3-.8z"/></svg> ISO 27001 Compliant</i>
+            <i><svg class="ic" viewBox="0 0 24 24" style="color:var(--accent)"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> 24/7 Monitoring</i>
+          </div>
+          <p class="copy">© 2026 Deep Algorithms · Fostering AI. Connecting Minds.</p>
+        </div>
+        <div class="card">
+          <img src="../../public/brand/logo-lockup.png" alt="Deep Algorithms" />
+          <h2>Welcome</h2>
+          <p class="sub">Sign in to access the platform</p>
+          <p class="fl"><svg class="ic sm" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg> Username</p>
+          <div class="inp focus">das_admin</div>
+          <p class="fl"><svg class="ic sm" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg> Password</p>
+          <div class="inp">••••••••<span class="eye"><svg class="ic" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></span></div>
+          <button class="signin">Sign in securely <svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></button>
+          <p class="fine">Authorized use only. Every access attempt is logged and monitored.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════ POSTURE ══════════════════════════════ -->
+<section id="s-posture" class="screen">
+  <p class="caption">Screen 2 — Posture</p>
+  <p class="annot">Brand and scope live in the full-width top bar. Sidebar begins beneath it and is navigation only. Exposure signals get the largest panel because they are the only ranked-by-consequence element on the page.</p>
+  <div class="frame">
+    <div class="topbar">
+      <img class="logo" src="../../public/brand/logo-lockup-inverse.png" alt="Deep Algorithms" />
+      <span class="spacer" style="flex:1"></span>
+      <div class="gsearch"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg> Search… <kbd>⌘K</kbd></div>
+      <div class="scope">
+        <svg class="ic" viewBox="0 0 24 24" style="color:var(--accent)"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/></svg>
+        <span><span class="k">Scan scope</span><br /><span class="v">prod-platform · latest</span></span>
+        <svg class="ic sm" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+      </div>
+      <span class="tbicon"><svg class="ic" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z"/></svg></span>
+      <div class="who"><span class="av">DA</span><span style="font-size:12.5px"><b style="font-weight:600">Devika Ananth</b><br /><span style="color:var(--topbar-muted);font-size:10.5px">Admin · Platform Security</span></span></div>
+    </div>
+    <div class="body">
+      <nav class="side">
+        <p class="grp">Posture</p>
+        <a class="on" href="#"><svg class="ic" viewBox="0 0 24 24"><path d="M12 14l4-4"/><path d="M3 18a9 9 0 1118 0"/></svg> Overview</a>
+        <p class="grp">Inventory</p>
+        <a href="#"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M6 7v10"/><path d="M18 7v10"/></svg> Identities</a>
+        <a href="#"><svg class="ic" viewBox="0 0 24 24"><circle cx="8" cy="12" r="4"/><path d="M12 12h9l-2 2"/></svg> Credentials</a>
+        <a href="#"><svg class="ic" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="12" cy="12" r="3"/></svg> Secret-backed</a>
+        <p class="grp">Code exposure</p>
+        <a href="#"><svg class="ic" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M12 11v4"/></svg> Findings <span style="margin-left:auto"><span class="tag t-hi">6</span></span></a>
+        <a href="#"><svg class="ic" viewBox="0 0 24 24"><path d="M4 4l16 16"/><path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"/></svg> Dismissed</a>
+        <p class="grp">Operations</p>
+        <a href="#"><svg class="ic" viewBox="0 0 24 24"><path d="M3 12h4l3 7 4-14 3 7h4"/></svg> Activity</a>
+        <a href="#"><svg class="ic" viewBox="0 0 24 24"><path d="M3 12a9 9 0 109-9"/><path d="M12 7v5l4 2"/></svg> Scans</a>
+        <p class="grp">Assigned to me</p>
+        <a href="#"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="9" r="3"/><path d="M5 20a7 7 0 0114 0"/></svg> My resources</a>
+        <div class="foot">Scan completed 14m 0s ago<br />428913377211 · ap-south-1</div>
+      </nav>
+      <div class="main">
+        <div class="crumb">Home <svg class="ic sm" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg> <b>Posture</b></div>
+        <div class="titlerow">
+          <div><h1>Identity posture</h1><p>Where standing privilege, dormant accounts and exposed credentials sit right now — every figure drills through to the identities behind it.</p></div>
+          <div class="acts"><button class="btn gh">Export</button><button class="btn">⟳ Refresh</button></div>
+        </div>
+        <div class="content">
+          <div class="grid3">
+            <div class="kpi" style="--bar:var(--s1)"><p class="l">Identities discovered</p><p class="v">137</p><p class="c">18 human · 119 non-human</p>
+              <svg class="spark" viewBox="0 0 120 22" preserveAspectRatio="none"><path d="M0 18L20 16L40 13L60 12L80 8L100 6L120 3" stroke="var(--s1)" fill="none" stroke-width="2"/></svg></div>
+            <div class="kpi" style="--bar:var(--s5)"><p class="l">Non-human identities</p><p class="v">119</p><p class="c">Roles, services, agents and pipelines</p><div class="meter"><i style="width:87%"></i></div></div>
+            <div class="kpi" style="--bar:var(--medium)"><p class="l">Credentials in use</p><p class="v">136</p><p class="c">Keys, passwords and certificates</p><div class="meter"><i style="width:64%;background:var(--medium)"></i></div></div>
+            <div class="kpi" style="--bar:var(--critical)"><p class="l">Secrets in code</p><p class="v">18</p><p class="c">6 high or critical · 5 repositories</p><div class="meter"><i style="width:33%;background:var(--critical)"></i></div></div>
+          </div>
+
+          <div class="grid2">
+            <div class="panel p">
+              <div class="ph"><div><h2><svg class="ic" viewBox="0 0 24 24" style="color:var(--brand)"><path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"/><path d="M12 9v4"/></svg> Exposure signals</h2>
+                <p>Ranked by share of the population each one is measured against. Select a signal to work the underlying identities.</p></div></div>
+              <div style="margin-top:10px">
+                <div class="sig"><div><p class="t" style="color:var(--critical)">Humans without MFA</p><p class="d">Console identities that can authenticate with a password alone.</p><div class="meter" style="--bar:var(--critical)"><i style="width:33%"></i></div></div><div class="n"><b>6</b><s>33.3% of human identities</s></div></div>
+                <div class="sig"><div><p class="t" style="color:var(--critical)">Admin-level access</p><p class="d">Identities carrying an administrator-equivalent policy.</p><div class="meter" style="--bar:var(--critical)"><i style="width:12%"></i></div></div><div class="n"><b>16</b><s>11.7% of all identities</s></div></div>
+                <div class="sig"><div><p class="t" style="color:var(--high)">Orphaned identities</p><p class="d">No owner, team or creator could be resolved from tags or CloudTrail.</p><div class="meter" style="--bar:var(--high)"><i style="width:20%"></i></div></div><div class="n"><b>27</b><s>19.7% of all identities</s></div></div>
+                <div class="sig"><div><p class="t" style="color:var(--high)">Stale for 90+ days</p><p class="d">No recorded activity in over 90 days — candidates for removal.</p><div class="meter" style="--bar:var(--high)"><i style="width:16%"></i></div></div><div class="n"><b>22</b><s>16.1% of all identities</s></div></div>
+                <div class="sig"><div><p class="t" style="color:var(--medium)">Inactive 30–90 days</p><p class="d">Dormant but not yet stale. Worth confirming they are still needed.</p><div class="meter" style="--bar:var(--medium)"><i style="width:23%"></i></div></div><div class="n"><b>31</b><s>22.6% of all identities</s></div></div>
+              </div>
+            </div>
+
+            <div class="panel p">
+              <div class="ph"><div><h2><svg class="ic" viewBox="0 0 24 24" style="color:var(--brand)"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20v-3"/></svg> Classification mix</h2><p>How the discovery engine classified each identity.</p></div></div>
+              <div style="display:flex;gap:18px;align-items:center;margin-top:14px">
+                <svg width="150" height="150" viewBox="0 0 42 42" style="flex:none">
+                  <g transform="rotate(-90 21 21)" fill="none" stroke-width="6">
+                    <circle cx="21" cy="21" r="16" stroke="var(--s1)" stroke-dasharray="13.1 86.9" stroke-dashoffset="0" pathLength="100"/>
+                    <circle cx="21" cy="21" r="16" stroke="var(--s2)" stroke-dasharray="12.4 87.6" stroke-dashoffset="-13.1" pathLength="100"/>
+                    <circle cx="21" cy="21" r="16" stroke="var(--s3)" stroke-dasharray="12.4 87.6" stroke-dashoffset="-25.5" pathLength="100"/>
+                    <circle cx="21" cy="21" r="16" stroke="var(--s4)" stroke-dasharray="12.4 87.6" stroke-dashoffset="-37.9" pathLength="100"/>
+                    <circle cx="21" cy="21" r="16" stroke="var(--s5)" stroke-dasharray="12.4 87.6" stroke-dashoffset="-50.3" pathLength="100"/>
+                    <circle cx="21" cy="21" r="16" stroke="var(--s6)" stroke-dasharray="12.4 87.6" stroke-dashoffset="-62.7" pathLength="100"/>
+                    <circle cx="21" cy="21" r="16" stroke="var(--s7)" stroke-dasharray="12.4 87.6" stroke-dashoffset="-75.1" pathLength="100"/>
+                    <circle cx="21" cy="21" r="16" stroke="var(--s8)" stroke-dasharray="12.4 87.6" stroke-dashoffset="-87.5" pathLength="100"/>
+                  </g>
+                  <text x="21" y="20.5" text-anchor="middle" style="font:800 7px var(--display);fill:var(--ink)">137</text>
+                  <text x="21" y="25" text-anchor="middle" style="font:600 2.6px var(--sans);letter-spacing:.14em;fill:var(--ink-3)">IDENTITIES</text>
+                </svg>
+                <div class="legend">
+                  <div><span class="dot" style="background:var(--s1)"></span>Human<b>18</b><s>13.1%</s></div>
+                  <div><span class="dot" style="background:var(--s2)"></span>Service<b>17</b><s>12.4%</s></div>
+                  <div><span class="dot" style="background:var(--s3)"></span>Agent<b>17</b><s>12.4%</s></div>
+                  <div><span class="dot" style="background:var(--s4)"></span>CI/CD<b>17</b><s>12.4%</s></div>
+                  <div><span class="dot" style="background:var(--s5)"></span>SaaS<b>17</b><s>12.4%</s></div>
+                  <div><span class="dot" style="background:var(--s6)"></span>Ephemeral<b>17</b><s>12.4%</s></div>
+                  <div><span class="dot" style="background:var(--s7)"></span>Dual identity<b>17</b><s>12.4%</s></div>
+                  <div><span class="dot" style="background:var(--s8)"></span>Unclassified<b>17</b><s>12.4%</s></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid2">
+            <div class="panel p">
+              <div class="ph"><div><h2>Credential surface</h2><p>Credential types held across identities, ranked by volume.</p></div><span class="a"><button class="btn gh">Inspect</button></span></div>
+              <div style="margin-top:8px">
+                <div class="bl"><div class="w"><p class="r">Console password <i>20.6%</i></p><div class="t"><i style="width:100%"></i></div></div><span class="n">28</span></div>
+                <div class="bl"><div class="w"><p class="r">Server certificate <i>19.9%</i></p><div class="t"><i style="width:96%"></i></div></div><span class="n">27</span></div>
+                <div class="bl"><div class="w"><p class="r">SSH public key <i>19.9%</i></p><div class="t"><i style="width:96%"></i></div></div><span class="n">27</span></div>
+                <div class="bl"><div class="w"><p class="r">Service-specific credential <i>19.9%</i></p><div class="t"><i style="width:96%"></i></div></div><span class="n">27</span></div>
+                <div class="bl"><div class="w"><p class="r">Access key <i>19.9%</i></p><div class="t"><i style="width:96%"></i></div></div><span class="n">27</span></div>
+              </div>
+            </div>
+            <div class="panel p">
+              <div class="ph"><div><h2>Discovery trend</h2><p>One chart per measure — a shared axis would flatten two of three. Hovering any chart moves the crosshair on all three.</p></div></div>
+              <div style="margin-top:12px;display:flex;flex-direction:column;gap:12px">
+                <div>
+                  <div style="display:flex;justify-content:space-between;font-size:12px"><b style="color:var(--ink-2)">Identities</b><span style="color:var(--ink-3)">latest 138</span></div>
+                  <svg viewBox="0 0 320 54" style="width:100%;height:54px"><defs><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--s1)" stop-opacity=".26"/><stop offset="1" stop-color="var(--s1)" stop-opacity="0"/></linearGradient></defs>
+                    <path d="M0 42L53 38L106 33L160 30L213 22L266 16L320 10L320 54L0 54Z" fill="url(#g1)"/>
+                    <path d="M0 42L53 38L106 33L160 30L213 22L266 16L320 10" stroke="var(--s1)" fill="none" stroke-width="2"/>
+                    <line x1="213" y1="0" x2="213" y2="54" stroke="var(--ink-3)" stroke-dasharray="3 3" opacity=".55"/>
+                    <circle cx="213" cy="22" r="4" fill="var(--s1)" stroke="#fff" stroke-width="2"/></svg>
+                </div>
+                <div>
+                  <div style="display:flex;justify-content:space-between;font-size:12px"><b style="color:var(--ink-2)">CloudTrail events</b><span style="color:var(--ink-3)">latest 4,520</span></div>
+                  <svg viewBox="0 0 320 54" style="width:100%;height:54px"><defs><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--s5)" stop-opacity=".26"/><stop offset="1" stop-color="var(--s5)" stop-opacity="0"/></linearGradient></defs>
+                    <path d="M0 44L53 40L106 36L160 28L213 24L266 17L320 8L320 54L0 54Z" fill="url(#g2)"/>
+                    <path d="M0 44L53 40L106 36L160 28L213 24L266 17L320 8" stroke="var(--s5)" fill="none" stroke-width="2"/>
+                    <line x1="213" y1="0" x2="213" y2="54" stroke="var(--ink-3)" stroke-dasharray="3 3" opacity=".55"/>
+                    <circle cx="213" cy="24" r="4" fill="var(--s5)" stroke="#fff" stroke-width="2"/></svg>
+                </div>
+                <div>
+                  <div style="display:flex;justify-content:space-between;font-size:12px"><b style="color:var(--ink-2)">Secret-backed identities</b><span style="color:var(--ink-3)">latest 11</span></div>
+                  <svg viewBox="0 0 320 54" style="width:100%;height:54px"><defs><linearGradient id="g3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--s2)" stop-opacity=".26"/><stop offset="1" stop-color="var(--s2)" stop-opacity="0"/></linearGradient></defs>
+                    <path d="M0 34L53 30L106 26L160 18L213 30L266 24L320 20L320 54L0 54Z" fill="url(#g3)"/>
+                    <path d="M0 34L53 30L106 26L160 18L213 30L266 24L320 20" stroke="var(--s2)" fill="none" stroke-width="2"/>
+                    <line x1="213" y1="0" x2="213" y2="54" stroke="var(--ink-3)" stroke-dasharray="3 3" opacity=".55"/>
+                    <circle cx="213" cy="30" r="4" fill="var(--s2)" stroke="#fff" stroke-width="2"/></svg>
+                  <div style="display:flex;justify-content:space-between;color:var(--ink-3);font-size:10.5px;margin-top:2px"><span>Jul 25</span><span>Aug 08</span><span>Aug 22</span><span>Sep 05</span><span>Sep 19</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════ IDENTITY EXPLORER ══════════════════════ -->
+<section id="s-ident" class="screen">
+  <p class="caption">Screen 3 — Identity explorer</p>
+  <p class="annot">Persistent facet rail with live counts from the scan summary, preset view tabs, density control, export of what is on screen, and row actions that appear on hover. This is the biggest behavioural change from the previous build.</p>
+  <div class="frame">
+    <div class="topbar">
+      <img class="logo" src="../../public/brand/logo-lockup-inverse.png" alt="Deep Algorithms" />
+      <span class="spacer" style="flex:1"></span>
+      <div class="gsearch"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg> Search… <kbd>⌘K</kbd></div>
+      <div class="scope"><svg class="ic" viewBox="0 0 24 24" style="color:var(--accent)"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/></svg><span><span class="k">Scan scope</span><br /><span class="v">prod-platform · latest</span></span><svg class="ic sm" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></div>
+      <span class="tbicon"><svg class="ic" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z"/></svg></span>
+      <div class="who"><span class="av">DA</span><span style="font-size:12.5px"><b style="font-weight:600">Devika Ananth</b><br /><span style="color:var(--topbar-muted);font-size:10.5px">Admin · Platform Security</span></span></div>
+    </div>
+    <div class="body">
+      <nav class="side">
+        <p class="grp">Posture</p><a href="#"><svg class="ic" viewBox="0 0 24 24"><path d="M12 14l4-4"/><path d="M3 18a9 9 0 1118 0"/></svg> Overview</a>
+        <p class="grp">Inventory</p>
+        <a class="on" href="#"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M6 7v10"/><path d="M18 7v10"/></svg> Identities</a>
+        <a href="#"><svg class="ic" viewBox="0 0 24 24"><circle cx="8" cy="12" r="4"/><path d="M12 12h9l-2 2"/></svg> Credentials</a>
+        <a href="#"><svg class="ic" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="12" cy="12" r="3"/></svg> Secret-backed</a>
+        <p class="grp">Code exposure</p>
+        <a href="#"><svg class="ic" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/></svg> Findings</a>
+        <a href="#"><svg class="ic" viewBox="0 0 24 24"><path d="M4 4l16 16"/><path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"/></svg> Dismissed</a>
+        <p class="grp">Operations</p>
+        <a href="#"><svg class="ic" viewBox="0 0 24 24"><path d="M3 12h4l3 7 4-14 3 7h4"/></svg> Activity</a>
+        <a href="#"><svg class="ic" viewBox="0 0 24 24"><path d="M3 12a9 9 0 109-9"/><path d="M12 7v5l4 2"/></svg> Scans</a>
+      </nav>
+      <div class="main">
+        <div class="crumb">Home <svg class="ic sm" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg> Inventory <svg class="ic sm" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg> <b>Identities</b></div>
+        <div class="titlerow"><div><h1>Identity explorer</h1><p>Every principal discovered in this scan. Narrow with facets, then open a record to see its credentials, reach and callers.</p></div>
+          <div class="acts"><button class="btn gh"><svg class="ic sm" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 21h16"/></svg> Export page</button><button class="btn">⟳ Refresh</button></div></div>
+        <div class="vtabs"><span class="on">All identities <em>137</em></span><span>Non-human <em>119</em></span><span>Admin access <em>16</em></span><span>Stale 90+ <em>22</em></span><span>Secret-backed <em>23</em></span></div>
+        <div class="content">
+          <div class="work">
+            <aside class="facets">
+              <div class="fh"><svg class="ic sm" viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M7 12h10"/><path d="M10 18h4"/></svg> Filters <span>Clear all</span></div>
+              <div class="fgrp"><p class="gt">Classification <s>8</s></p>
+                <label class="fopt sel"><input type="checkbox" checked /> Human <b>18</b></label>
+                <label class="fopt"><input type="checkbox" /> Service <b>17</b></label>
+                <label class="fopt"><input type="checkbox" /> Agent <b>17</b></label>
+                <label class="fopt"><input type="checkbox" /> CI/CD <b>17</b></label>
+                <label class="fopt"><input type="checkbox" /> SaaS <b>17</b></label>
+              </div>
+              <div class="fgrp"><p class="gt">Posture</p>
+                <label class="fopt sel"><input type="checkbox" checked /> No MFA <b>6</b></label>
+                <label class="fopt"><input type="checkbox" /> Admin access <b>16</b></label>
+                <label class="fopt"><input type="checkbox" /> Stale 90+ days <b>22</b></label>
+                <label class="fopt"><input type="checkbox" /> Inactive 30–90 <b>31</b></label>
+                <label class="fopt"><input type="checkbox" /> Secret-backed <b>23</b></label>
+                <label class="fopt"><input type="checkbox" /> Federated trust <b>35</b></label>
+              </div>
+              <div class="fgrp"><p class="gt">Ownership</p>
+                <label class="fopt"><input type="checkbox" /> Human owner</label>
+                <label class="fopt"><input type="checkbox" /> CI/CD managed</label>
+                <label class="fopt"><input type="checkbox" /> IaC managed</label>
+                <label class="fopt"><input type="checkbox" /> Orphaned <b>27</b></label>
+              </div>
+            </aside>
+            <div class="tablewrap">
+              <div class="tbar">
+                <div class="sq"><svg class="ic sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg> Search name, ARN or evidence…</div>
+                <span style="color:var(--ink-3);font-size:12.5px">6 of 137 · 2 filters</span>
+                <span style="margin-left:auto"></span>
+                <span class="seg"><i class="on">Compact</i><i>Comfortable</i></span>
+              </div>
+              <table>
+                <thead><tr><th style="width:30%">Identity</th><th style="width:13%">Classification</th><th style="width:18%">Owner</th><th style="width:14%">Trust</th><th style="width:15%">Posture &#9432;</th><th style="width:10%">Last active</th><th style="width:44px"></th></tr></thead>
+                <tbody>
+                  <tr><td><div class="nm"><span class="ico"><svg class="ic sm" viewBox="0 0 24 24"><circle cx="12" cy="9" r="3"/><path d="M5 20a7 7 0 0114 0"/></svg></span><span><b>person.3@example.com</b><s>user/platform/person.3</s></span></div></td>
+                    <td><span class="dot" style="background:var(--s1);display:inline-block;margin-right:7px"></span>Human</td><td>team-3@example.com<br /><span style="color:var(--ink-3);font-size:11px">Human owner</span></td><td>Federated<br /><span style="font-family:var(--mono);font-size:11px;color:var(--ink-3)">sts.amazonaws.com</span></td>
+                    <td><span class="fp"><i class="f"></i><i class="f"></i><i class="p"></i><i class="w"></i><i class="p"></i></span> <span class="tag t-cr">2 issues</span></td><td>21 days ago<br /><span style="color:var(--ink-3);font-size:11px">111 events</span></td>
+                    <td><div class="ract"><button class="btn gh" style="height:26px;padding:0 6px">⧉</button><button class="btn gh" style="height:26px;padding:0 6px">⋯</button></div></td></tr>
+                  <tr><td><div class="nm"><span class="ico"><svg class="ic sm" viewBox="0 0 24 24"><circle cx="12" cy="9" r="3"/><path d="M5 20a7 7 0 0114 0"/></svg></span><span><b>person.9@example.com</b><s>user/platform/person.9</s></span></div></td>
+                    <td><span class="dot" style="background:var(--s1);display:inline-block;margin-right:7px"></span>Human</td><td><span style="color:var(--ink-3)">Unassigned</span><br /><span style="color:var(--high);font-size:11px">Orphaned</span></td><td>Service</td>
+                    <td><span class="fp"><i class="f"></i><i class="p"></i><i class="f"></i><i class="w"></i><i class="p"></i></span> <span class="tag t-cr">2 issues</span></td><td>2 months ago<br /><span style="color:var(--ink-3);font-size:11px">333 events</span></td>
+                    <td><div class="ract"><button class="btn gh" style="height:26px;padding:0 6px">⧉</button><button class="btn gh" style="height:26px;padding:0 6px">⋯</button></div></td></tr>
+                  <tr><td><div class="nm"><span class="ico"><svg class="ic sm" viewBox="0 0 24 24"><circle cx="12" cy="9" r="3"/><path d="M5 20a7 7 0 0114 0"/></svg></span><span><b>person.15@example.com</b><s>user/platform/person.15</s></span></div></td>
+                    <td><span class="dot" style="background:var(--s1);display:inline-block;margin-right:7px"></span>Human</td><td>team-3@example.com<br /><span style="color:var(--ink-3);font-size:11px">Human owner</span></td><td>Service</td>
+                    <td><span class="fp"><i class="f"></i><i class="p"></i><i class="p"></i><i class="w"></i><i class="p"></i></span> <span class="tag t-cr">1 issue</span></td><td>4 months ago<br /><span style="color:var(--ink-3);font-size:11px">555 events</span></td>
+                    <td><div class="ract"><button class="btn gh" style="height:26px;padding:0 6px">⧉</button><button class="btn gh" style="height:26px;padding:0 6px">⋯</button></div></td></tr>
+                  <tr><td><div class="nm"><span class="ico"><svg class="ic sm" viewBox="0 0 24 24"><circle cx="12" cy="9" r="3"/><path d="M5 20a7 7 0 0114 0"/></svg></span><span><b>person.21@example.com</b><s>user/platform/person.21</s></span></div></td>
+                    <td><span class="dot" style="background:var(--s1);display:inline-block;margin-right:7px"></span>Human</td><td>team-3@example.com<br /><span style="color:var(--ink-3);font-size:11px">CI/CD managed</span></td><td>Federated</td>
+                    <td><span class="fp"><i class="f"></i><i class="p"></i><i class="p"></i><i class="w"></i><i class="w"></i></span> <span class="tag t-cr">1 issue</span></td><td>5 months ago<br /><span style="color:var(--ink-3);font-size:11px">777 events</span></td>
+                    <td><div class="ract"><button class="btn gh" style="height:26px;padding:0 6px">⧉</button><button class="btn gh" style="height:26px;padding:0 6px">⋯</button></div></td></tr>
+                  <tr><td><div class="nm"><span class="ico"><svg class="ic sm" viewBox="0 0 24 24"><circle cx="12" cy="9" r="3"/><path d="M5 20a7 7 0 0114 0"/></svg></span><span><b>svc-deploy-24</b><s>role/platform/svc-deploy-24</s></span></div></td>
+                    <td><span class="dot" style="background:var(--s1);display:inline-block;margin-right:7px"></span>Human</td><td><span style="color:var(--ink-3)">Unassigned</span><br /><span style="color:var(--high);font-size:11px">Orphaned</span></td><td>Federated</td>
+                    <td><span class="fp"><i class="f"></i><i class="p"></i><i class="f"></i><i class="f"></i><i class="w"></i></span> <span class="tag t-cr">3 issues</span></td><td>6 months ago<br /><span style="color:var(--ink-3);font-size:11px">888 events</span></td>
+                    <td><div class="ract"><button class="btn gh" style="height:26px;padding:0 6px">⧉</button><button class="btn gh" style="height:26px;padding:0 6px">⋯</button></div></td></tr>
+                </tbody>
+              </table>
+              <div class="pager">1–6 of 6 identities<span class="r">Rows <span class="btn" style="height:26px">25 ▾</span> <span class="btn" style="height:26px;padding:0 8px">‹</span> 1 / 1 <span class="btn" style="height:26px;padding:0 8px">›</span></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════ RECORD DRAWER ══════════════════════════ -->
+<section id="s-drawer" class="screen">
+  <p class="caption">Screen 4 — Record drawer</p>
+  <p class="annot">Detail opens over the list so filters and scroll position survive. Tabs fetch on first open; nothing loads that the operator has not asked for.</p>
+  <div class="frame drawerdemo">
+    <div class="topbar">
+      <img class="logo" src="../../public/brand/logo-lockup-inverse.png" alt="Deep Algorithms" />
+      <span class="spacer" style="flex:1"></span>
+      <div class="gsearch"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg> Search… <kbd>⌘K</kbd></div>
+      <div class="scope"><span><span class="k">Scan scope</span><br /><span class="v">prod-platform · latest</span></span></div>
+      <div class="who"><span class="av">DA</span></div>
+    </div>
+    <div class="body" style="min-height:560px">
+      <nav class="side"><p class="grp">Inventory</p><a class="on" href="#"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M6 7v10"/><path d="M18 7v10"/></svg> Identities</a><a href="#"><svg class="ic" viewBox="0 0 24 24"><circle cx="8" cy="12" r="4"/><path d="M12 12h9l-2 2"/></svg> Credentials</a></nav>
+      <div class="main"><div class="crumb">Home <svg class="ic sm" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg> Inventory <svg class="ic sm" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg> <b>Identities</b></div>
+        <div class="content"><div class="tablewrap"><table><thead><tr><th>Identity</th><th>Classification</th><th>Markers</th></tr></thead><tbody>
+          <tr><td><div class="nm"><span class="ico">◈</span><span><b>svc-deploy-0</b><s>role/platform/svc-deploy-0</s></span></div></td><td>Human</td><td><span class="tag t-cr">Admin</span></td></tr>
+          <tr><td><div class="nm"><span class="ico">◈</span><span><b>person.1@example.com</b><s>user/platform/person.1</s></span></div></td><td>Service</td><td>—</td></tr>
+          <tr><td><div class="nm"><span class="ico">◈</span><span><b>svc-deploy-2</b><s>role/platform/svc-deploy-2</s></span></div></td><td>Agent</td><td><span class="tag t-me">Secret</span></td></tr>
+        </tbody></table></div></div></div>
+    </div>
+    <div class="scrim"></div>
+    <aside class="drawer">
+      <div class="dh">
+        <p class="e">Human</p><h3>svc-deploy-0</h3>
+        <p class="arn">arn:aws:iam::428913377211:role/platform/svc-deploy-0 ⧉</p>
+        <div class="tags"><span class="tag t-nu">IAM role</span><span class="tag t-cr">Admin access</span><span class="tag t-cr">MFA disabled</span><span class="tag t-me">Secret-backed</span><span class="tag t-nu">Federated</span></div>
+      </div>
+      <div class="dtabs"><span class="on">Overview</span><span>Credentials <em style="font-style:normal;color:var(--ink-3)">0</em></span><span>Service access</span><span>Consumers <em style="font-style:normal;color:var(--ink-3)">6</em></span><span>Activity</span></div>
+      <div class="dbody">
+        <p class="sl">Identity</p>
+        <dl class="dl"><dt>Name</dt><dd>svc-deploy-0</dd><dt>AWS account</dt><dd class="mono">428913377211</dd><dt>Resource type</dt><dd>IAM role</dd><dt>Classification</dt><dd>Human</dd><dt>Created</dt><dd>May 07, 2025, 08:27 PM</dd></dl>
+        <p class="sl">Ownership</p>
+        <dl class="dl"><dt>Owner</dt><dd>team-0@example.com</dd><dt>Owner type</dt><dd>Human owner</dd><dt>Created by</dt><dd>terraform-ci</dd></dl>
+        <p class="sl">Access &amp; posture</p>
+        <dl class="dl"><dt>Trust type</dt><dd>Federated</dd><dt>Trust service</dt><dd class="mono">sts.amazonaws.com</dd><dt>Last active</dt><dd>7 minutes ago <span style="color:var(--ink-3)">(Sep 19, 2026, 08:27 PM)</span></dd><dt>Recorded events</dt><dd>0</dd></dl>
+        <p class="sl">Why it was classified this way</p>
+        <div style="border:1px solid var(--line);background:var(--surface-2);border-radius:9px;padding:12px;margin-top:6px">
+          <p style="font-family:var(--mono);font-size:12px;color:var(--ink-2);margin:0">rule:naming.cicd, rule:trust.oidc</p>
+          <p style="font-size:12.5px;color:var(--ink-2);margin:8px 0 0">Matched CI/CD naming convention and was observed assuming deploy roles from a GitHub Actions runner.</p>
+        </div>
+      </div>
+      <div class="dfoot"><button class="btn gh">Copy ARN</button><button class="btn">Open in AWS ↗</button></div>
+    </aside>
+  </div>
+</section>
+
+<!-- ══════════════════════════ CODE EXPOSURE ══════════════════════════ -->
+<section id="s-find" class="screen">
+  <p class="caption">Screen 5 — Code exposure</p>
+  <p class="annot">Both scanners arrive merged through one endpoint, so platform is a facet, not a separate screen. The whole live set is client-side, which is the one place sorting is offered honestly.</p>
+  <div class="frame">
+    <div class="topbar">
+      <img class="logo" src="../../public/brand/logo-lockup-inverse.png" alt="Deep Algorithms" />
+      <span class="spacer" style="flex:1"></span>
+      <div class="gsearch"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg> Search… <kbd>⌘K</kbd></div>
+      <div class="scope"><span><span class="k">Scan scope</span><br /><span class="v">prod-platform · latest</span></span></div>
+      <span class="tbicon"><svg class="ic" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z"/></svg></span>
+      <div class="who"><span class="av">DA</span></div>
+    </div>
+    <div class="body">
+      <nav class="side"><p class="grp">Code exposure</p>
+        <a class="on" href="#"><svg class="ic" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/></svg> Findings <span style="margin-left:auto"><span class="tag t-hi">6</span></span></a>
+        <a href="#"><svg class="ic" viewBox="0 0 24 24"><path d="M4 4l16 16"/><path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"/></svg> Dismissed <span style="margin-left:auto;color:var(--ink-3);font-size:11.5px">4</span></a>
+      </nav>
+      <div class="main">
+        <div class="crumb">Home <svg class="ic sm" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg> Code exposure <svg class="ic sm" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg> <b>Findings</b></div>
+        <div class="titlerow"><div><h1>Secret findings</h1><p>Credentials committed into connected CodeCommit and GitHub repositories. Values are masked by the scanner — triage by risk, then rotate at the source.</p></div>
+          <div class="acts"><button class="btn gh">Export page</button><button class="btn">⟳ Refresh</button></div></div>
+        <div class="vtabs"><span class="on">All platforms <em>18</em></span><span>GitHub <em>12</em></span><span>CodeCommit <em>6</em></span><span>By push <em>14</em></span></div>
+        <div class="content">
+          <div class="grid3">
+            <div class="kpi" style="--bar:var(--high)"><p class="l">Live findings</p><p class="v">18</p><p class="c">Excludes anything already allowlisted</p></div>
+            <div class="kpi" style="--bar:var(--critical)"><p class="l">High or critical</p><p class="v">6</p><p class="c">Actionable risk tier, not detector severity</p><div class="meter"><i style="width:33%;background:var(--critical)"></i></div></div>
+            <div class="kpi" style="--bar:var(--s5)"><p class="l">Repositories affected</p><p class="v">5</p><p class="c">Distinct across both platforms</p></div>
+            <div class="kpi" style="--bar:var(--medium)"><p class="l">Detector types</p><p class="v">5</p><p class="c">Most common: Postgresql connection string</p></div>
+          </div>
+          <div class="work">
+            <aside class="facets">
+              <div class="fh"><svg class="ic sm" viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M7 12h10"/><path d="M10 18h4"/></svg> Filters <span>Clear all</span></div>
+              <div class="fgrp"><p class="gt">Risk tier</p>
+                <label class="fopt sel"><input type="checkbox" checked /> High <b>6</b></label>
+                <label class="fopt"><input type="checkbox" /> Medium <b>6</b></label>
+                <label class="fopt"><input type="checkbox" /> Low <b>6</b></label>
+                <p style="margin:8px 0 0;color:var(--ink-3);font-size:11px;line-height:1.5">Critical cannot occur on this deployment — liveness verification is unavailable.</p>
+              </div>
+              <div class="fgrp"><p class="gt">Detector</p>
+                <label class="fopt"><input type="checkbox" /> Postgresql connection string <b>4</b></label>
+                <label class="fopt"><input type="checkbox" /> AWS access key id <b>4</b></label>
+                <label class="fopt"><input type="checkbox" /> Slack webhook <b>4</b></label>
+                <label class="fopt"><input type="checkbox" /> Github token <b>3</b></label>
+              </div>
+              <div class="fgrp"><p class="gt">Repository</p>
+                <label class="fopt"><input type="checkbox" /> Naresh-commits464/test1 <b>4</b></label>
+                <label class="fopt"><input type="checkbox" /> Naresh-commits464/test2 <b>4</b></label>
+                <label class="fopt"><input type="checkbox" /> test-sample-0 <b>6</b></label>
+              </div>
+            </aside>
+            <div class="tablewrap">
+              <div class="tbar"><div class="sq"><svg class="ic sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg> Search repository, file, branch, detector…</div>
+                <span style="color:var(--ink-3);font-size:12.5px">6 of 18 · 1 filter</span><span style="margin-left:auto"></span><span class="seg"><i class="on">Compact</i><i>Comfortable</i></span></div>
+              <table>
+                <thead><tr><th style="width:28%">Secret ↓</th><th style="width:10%">Risk ↓</th><th style="width:20%">Repository ↓</th><th style="width:16%">Author</th><th style="width:13%">Recommended</th><th style="width:13%">Detected ↓</th><th style="width:44px"></th></tr></thead>
+                <tbody>
+                  <tr><td><div class="nm"><span class="ico"><svg class="ic sm" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/></svg></span><span><b>Postgresql connection string</b><s>payments-service/config.py:2</s></span></div></td>
+                    <td><span class="tag t-hi">High</span></td><td>test-sample-0<br /><span style="font-family:var(--mono);font-size:11px;color:var(--ink-3)">feature/branch-risk-test · 0000000</span></td>
+                    <td>Naresh<br /><span style="color:var(--ink-3);font-size:11px">naresh@das357…</span></td><td style="color:var(--critical);font-weight:500">Page on-call</td><td>7 minutes ago</td>
+                    <td><div class="ract"><button class="btn gh" style="height:26px;padding:0 6px">↗</button><button class="btn gh" style="height:26px;padding:0 6px">⋯</button></div></td></tr>
+                  <tr><td><div class="nm"><span class="ico"><svg class="ic sm" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/></svg></span><span><b>Generic password assignment</b><s>app/settings.py:5</s></span></div></td>
+                    <td><span class="tag t-hi">High</span></td><td>test-sample-0<br /><span style="font-family:var(--mono);font-size:11px;color:var(--ink-3)">feature/branch-risk-test · 00005ff</span></td>
+                    <td>Naresh<br /><span style="color:var(--ink-3);font-size:11px">naresh@das357…</span></td><td style="color:var(--critical);font-weight:500">Trigger remediation</td><td>5 hours ago</td>
+                    <td><div class="ract"><button class="btn gh" style="height:26px;padding:0 6px">↗</button><button class="btn gh" style="height:26px;padding:0 6px">⋯</button></div></td></tr>
+                  <tr><td><div class="nm"><span class="ico"><svg class="ic sm" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/></svg></span><span><b>AWS access key id</b><s>scripts/deploy.sh:8</s></span></div></td>
+                    <td><span class="tag t-hi">High</span></td><td>test-sample-0<br /><span style="font-family:var(--mono);font-size:11px;color:var(--ink-3)">feature/branch-risk-test · 0000bcc</span></td>
+                    <td>Naresh<br /><span style="color:var(--ink-3);font-size:11px">naresh@das357…</span></td><td style="color:var(--ink-3)">Log only</td><td>9 hours ago</td>
+                    <td><div class="ract"><button class="btn gh" style="height:26px;padding:0 6px">↗</button><button class="btn gh" style="height:26px;padding:0 6px">⋯</button></div></td></tr>
+                  <tr><td><div class="nm"><span class="ico"><svg class="ic sm" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/></svg></span><span><b>Github token</b><s>infra/terraform.tfvars:11</s></span></div></td>
+                    <td><span class="tag t-hi">High</span></td><td>Naresh-commits464/test1<br /><span style="font-family:var(--mono);font-size:11px;color:var(--ink-3)">main · 00011ab</span></td>
+                    <td>Naresh<br /><span style="color:var(--ink-3);font-size:11px">naresh@das357…</span></td><td style="color:var(--high);font-weight:500">Notify SOC</td><td>14 hours ago</td>
+                    <td><div class="ract"><button class="btn gh" style="height:26px;padding:0 6px">↗</button><button class="btn gh" style="height:26px;padding:0 6px">⋯</button></div></td></tr>
+                </tbody>
+              </table>
+              <div class="pager">Showing 4 of 6 matching · 18 live findings<span class="r"><span class="btn" style="height:26px">Group by push</span></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+const btns=[...document.querySelectorAll('.mockbar button')];
+btns.forEach(b=>b.addEventListener('click',()=>{
+  btns.forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
+  document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===b.dataset.go));
+  window.scrollTo({top:0,behavior:'instant'});
+}));
+</script>
+</body>
+</html>

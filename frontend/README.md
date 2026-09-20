@@ -56,6 +56,26 @@ Environment variables:
 | `SCANNER_UPSTREAM` | dev server | Scanner origin. Default `https://js-dev.adapid.link`. |
 | `SCANNER_DASHBOARD_KEY` | dev server | The scanner key. Never exposed to the client. |
 
+## Design documents
+
+Read these before changing layout or adding a control:
+
+* **`docs/UX-DECISIONS.md`** — the product archetype and why, the shell
+  specification, every screen validated against the same eleven UX questions,
+  the posture-fingerprint and facet-rail patterns, the motion inventory, and
+  the list of things deliberately left out with the reason for each.
+* **`docs/mockups/index.html`** — static mockups of sign-in, posture, the
+  identity explorer, the record drawer and code exposure. Open it directly in
+  a browser; it is the visual reference the implementation follows.
+
+## Shell
+
+A fixed full-width navy top bar carries brand (left corner) and every control
+(right corner): search, scan scope, theme, account. The sidebar starts beneath
+it and is navigation only. Each screen then owns a breadcrumb, a title strip
+with its primary actions, optional view tabs, and a work area that pairs a
+persistent facet rail with the record surface.
+
 ## Information architecture
 
 Grouped by the question an operator is answering, not by the API surface.
@@ -101,6 +121,19 @@ misrepresent the data, so it is absent elsewhere.
 **Option lists come from the data.** Classification and credential-type filters
 are built from the scan's own breakdown, so they can never offer a value this
 snapshot does not contain.
+
+**Posture is a fingerprint, not a tag list.** Five checks in a fixed order,
+one slot each, so the column reads vertically — see `docs/UX-DECISIONS.md` §4.
+The badge counts failing checks; no risk score is invented, because nothing in
+the API supports one.
+
+**Filters are a rail with real counts.** Option counts come from the scan
+summary (identities, credentials) or the live finding set (code exposure), so
+an operator knows the size of a filter before applying it. A facet with no
+counterpart aggregate shows no number rather than an estimate.
+
+**Export means what it says.** There is no export endpoint, so the control is
+labelled "Export page" / "Export view" and writes exactly the rows on screen.
 
 **Loading states mirror their content.** Table skeletons use the grid's column
 template; the dashboard has its own metric, donut and chart placeholders. A

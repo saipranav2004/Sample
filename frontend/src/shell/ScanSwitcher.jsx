@@ -4,7 +4,6 @@ import { useScanContext } from '../app/ScanContext';
 import { formatDateTime, formatNumber, formatRelative } from '../lib/format';
 import { scanStatusMeta } from '../lib/domain';
 import { Skeleton } from '../ui/Skeleton';
-import { Button } from '../ui/Button';
 import { Tag } from '../ui/Tag';
 import { cn } from '../ui/cn';
 
@@ -37,18 +36,24 @@ export function ScanSwitcher() {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 rounded-[var(--radius-control)] border border-line bg-surface px-2.5 py-1.5">
-        <Skeleton className="size-4 rounded" />
-        <Skeleton className="h-3 w-32 rounded" />
+      <div className="flex items-center gap-2 rounded-[var(--radius-control)] border border-topbar-line bg-white/[0.07] px-2.5 py-1.5">
+        <Skeleton className="size-4 rounded bg-white/15" />
+        <Skeleton className="hidden h-3 w-28 rounded bg-white/15 sm:block" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <Button variant="secondary" size="sm" icon={RotateCw} onClick={refetch} className="text-critical">
-        Scan list unavailable — retry
-      </Button>
+      <button
+        type="button"
+        onClick={refetch}
+        className="flex items-center gap-2 rounded-[var(--radius-control)] border border-critical/40 bg-critical/15 px-2.5 py-1.5 text-[12px] font-medium text-[#f2837a]"
+      >
+        <RotateCw aria-hidden="true" className="size-3.5" />
+        <span className="hidden sm:inline">Scan list unavailable — retry</span>
+        <span className="sm:hidden">Retry</span>
+      </button>
     );
   }
 
@@ -65,20 +70,28 @@ export function ScanSwitcher() {
         aria-haspopup="listbox"
         aria-expanded={open}
         className={cn(
-          'flex w-full min-w-0 items-center gap-2.5 rounded-[var(--radius-control)] border px-2.5 py-1.5 text-left transition-colors duration-150 sm:w-auto sm:max-w-[16rem]',
-          open ? 'border-brand/50 bg-surface' : 'border-line bg-surface hover:border-line-strong',
+          'flex min-w-0 items-center gap-2.5 rounded-[var(--radius-control)] border px-2.5 py-1.5 text-left transition-colors duration-150 sm:max-w-[15rem]',
+          open
+            ? 'border-white/25 bg-white/[0.13]'
+            : 'border-topbar-line bg-white/[0.07] hover:border-white/20 hover:bg-white/[0.11]',
         )}
       >
-        <Database aria-hidden="true" className="size-4 shrink-0 text-brand" />
-        <span className="min-w-0">
-          <span className="block truncate text-[12.5px] leading-tight font-semibold text-ink">{label}</span>
-          <span className="block truncate text-[11px] leading-tight text-ink-3">
-            {isLatest ? `Latest scan · ${meta}` : meta}
+        <Database aria-hidden="true" className="size-4 shrink-0 text-accent" />
+        <span className="hidden min-w-0 sm:block">
+          <span className="block text-[9.5px] leading-tight font-semibold tracking-[0.12em] text-topbar-muted uppercase">
+            Scan scope
+          </span>
+          <span className="block truncate text-[12.5px] leading-tight font-semibold text-topbar-ink">
+            {label}
+            <span className="font-normal text-topbar-muted"> · {isLatest ? 'latest' : meta}</span>
           </span>
         </span>
         <ChevronDown
           aria-hidden="true"
-          className={cn('size-3.5 shrink-0 text-ink-3 transition-transform duration-200', open && 'rotate-180')}
+          className={cn(
+            'size-3.5 shrink-0 text-topbar-muted transition-transform duration-200',
+            open && 'rotate-180',
+          )}
         />
       </button>
 
@@ -86,7 +99,7 @@ export function ScanSwitcher() {
         <div
           role="listbox"
           aria-label="Discovery scan"
-          className="animate-pop absolute left-0 z-50 mt-1.5 w-[min(92vw,24rem)] overflow-hidden rounded-[var(--radius-panel)] border border-line bg-surface shadow-lg"
+          className="animate-pop absolute right-0 z-50 mt-1.5 w-[min(92vw,24rem)] overflow-hidden rounded-[var(--radius-panel)] border border-line bg-surface shadow-lg"
         >
           <p className="border-b border-line bg-surface-2 px-3 py-2 text-[10.5px] font-semibold tracking-[0.12em] text-ink-3 uppercase">
             Scope all views to

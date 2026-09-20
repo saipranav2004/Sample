@@ -8,7 +8,7 @@ import { PageHeader } from '../../shell/PageHeader';
 import { Button } from '../../ui/Button';
 import { Panel } from '../../ui/Panel';
 import { SearchInput } from '../../ui/Field';
-import { Toolbar } from '../../ui/Toolbar';
+import { RecordBar, ResultCount } from '../../ui/WorkArea';
 import { CellStack, DataGrid } from '../../ui/DataGrid';
 import { Modal } from '../../ui/Overlay';
 import { DetailList, DetailRow } from '../../ui/Panel';
@@ -90,8 +90,8 @@ export default function DismissedPage() {
   if (query.isError && !query.data) {
     const detail = describeScannerError(query.error);
     return (
-      <div className="flex flex-col gap-5">
-        <PageHeader eyebrow="Code exposure" title="Dismissed findings" />
+      <div className="flex flex-col gap-4">
+        <PageHeader title="Dismissed findings" />
         <Panel>
           <ErrorState error={{ message: detail.message }} title={detail.title} onRetry={query.refetch} />
         </Panel>
@@ -100,9 +100,8 @@ export default function DismissedPage() {
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <PageHeader
-        eyebrow="Code exposure"
         title="Dismissed findings"
         lede="Secrets a reviewer accepted as safe — rotated credentials, test fixtures, known placeholders. Anything listed here is filtered out of the live findings automatically."
         actions={
@@ -118,20 +117,22 @@ export default function DismissedPage() {
       />
 
       <Panel flush className="animate-rise overflow-hidden">
-        <Toolbar
-          trailing={
-            <p className="hidden text-[12.5px] text-ink-3 sm:block" data-numeric="">
-              {query.isLoading && !query.data ? '—' : formatNumber(entries.length)} entries
-            </p>
-          }
-        >
+        <RecordBar>
           <SearchInput
             value={search}
             onChange={setSearch}
+            size="sm"
             placeholder="Search file, detector, reason or reviewer…"
             className="w-full min-w-0 sm:max-w-sm"
           />
-        </Toolbar>
+          <ResultCount
+            shown={formatNumber(entries.length)}
+            total={formatNumber((query.data ?? []).length)}
+            unit="entries"
+            filtered={Boolean(search.trim())}
+            loading={query.isLoading && !query.data}
+          />
+        </RecordBar>
 
         <DataGrid
           caption="Allowlisted findings"

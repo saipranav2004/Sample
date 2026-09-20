@@ -38,9 +38,8 @@ export default function ScansPage() {
   );
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <PageHeader
-        eyebrow="Operations"
         title="Discovery scans"
         lede="Each scan is an immutable snapshot of the account. Select one to scope every screen in the product to it."
         actions={

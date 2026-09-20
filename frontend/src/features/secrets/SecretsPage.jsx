@@ -9,17 +9,12 @@ import { PageHeader } from '../../shell/PageHeader';
 import { Button } from '../../ui/Button';
 import { Panel } from '../../ui/Panel';
 import { SearchInput } from '../../ui/Field';
-import { Toolbar } from '../../ui/Toolbar';
+import { RecordBar, ResultCount } from '../../ui/WorkArea';
 import { DataGrid } from '../../ui/DataGrid';
 import { Pagination } from '../../ui/Pagination';
 import { ClearState, EmptyState, ErrorState } from '../../ui/States';
-import {
-  ActivityCell,
-  ClassificationCell,
-  IdentityNameCell,
-  OwnerCell,
-  RiskMarkersCell,
-} from '../identities/cells';
+import { ClassificationCell, IdentityNameCell, OwnerCell } from '../identities/cells';
+import { ActivityCell, PostureLegend, PostureStrip } from '../identities/PostureStrip';
 import { IdentityDrawer } from '../identities/IdentityDrawer';
 
 /**
@@ -71,10 +66,15 @@ export default function SecretsPage() {
   const rows = query.data?.rows ?? [];
   const total = query.data?.total ?? 0;
 
+  /* Event bars use a page-local scale — the comparison a reviewer is making. */
+  const maxEvents = useMemo(
+    () => rows.reduce((max, row) => Math.max(max, Number(row.total_events) || 0), 0),
+    [rows],
+  );
+
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <PageHeader
-        eyebrow="Inventory"
         title="Secret-backed identities"
         lede="Principals whose credentials are held in a secret store entry. These are the identities where a leaked secret grants working access, so they are worth reviewing first."
         actions={
@@ -85,20 +85,22 @@ export default function SecretsPage() {
       />
 
       <Panel flush className="animate-rise overflow-hidden">
-        <Toolbar
-          trailing={
-            <p className="hidden text-[12.5px] text-ink-3 sm:block" data-numeric="">
-              {query.isLoading && !query.data ? '—' : formatNumber(total)} identities
-            </p>
-          }
-        >
+        <RecordBar>
           <SearchInput
             value={searchDraft}
             onChange={setSearchDraft}
+            size="sm"
             placeholder="Search name, ARN or classification evidence…"
             className="w-full min-w-0 sm:max-w-sm"
           />
-        </Toolbar>
+          <ResultCount
+            shown={formatNumber(rows.length)}
+            total={formatNumber(total)}
+            unit="identities"
+            filtered={Boolean(filters.search)}
+            loading={query.isLoading && !query.data}
+          />
+        </RecordBar>
 
         {query.isError && !query.data ? (
           <ErrorState error={query.error} onRetry={query.refetch} />
@@ -122,16 +124,16 @@ export default function SecretsPage() {
                 },
                 { key: 'owner', header: 'Owner', width: '20%', cell: (row) => <OwnerCell identity={row} /> },
                 {
-                  key: 'risk',
-                  header: 'Markers',
+                  key: 'posture',
+                  header: <PostureLegend />,
                   width: '18%',
-                  cell: (row) => <RiskMarkersCell identity={row} />,
+                  cell: (row) => <PostureStrip identity={row} />,
                 },
                 {
                   key: 'activity',
                   header: 'Last active',
                   width: '15%',
-                  cell: (row) => <ActivityCell identity={row} />,
+                  cell: (row) => <ActivityCell identity={row} maxEvents={maxEvents} />,
                 },
               ]}
               rows={rows}

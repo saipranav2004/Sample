@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { KeyRound, RotateCw, SearchX } from 'lucide-react';
+import { Columns3, Download, KeyRound, Rows3, SearchX } from 'lucide-react';
 import { fetchCredentials, fetchSummary } from '../../lib/api/endpoints';
 import { useDebouncedValue, useQuery } from '../../lib/hooks';
 import { useScanContext } from '../../app/ScanContext';
@@ -12,11 +12,15 @@ import {
   formatRelative,
   titleCaseEnum,
 } from '../../lib/format';
+import { exportRowsToCsv, timestampedName } from '../../lib/csv';
 import { PageHeader } from '../../shell/PageHeader';
 import { Button } from '../../ui/Button';
 import { DetailList, DetailRow, Panel, SectionLabel } from '../../ui/Panel';
-import { SearchInput, Select } from '../../ui/Field';
-import { ActiveFilters, Toolbar } from '../../ui/Toolbar';
+import { SearchInput } from '../../ui/Field';
+import { AppliedFilters, FacetRail } from '../../ui/FacetRail';
+import { RecordBar, ResultCount, WorkArea } from '../../ui/WorkArea';
+import { SegmentedControl } from '../../ui/Tabs';
+import { useToast } from '../../ui/Toast';
 import { CellStack, DataGrid } from '../../ui/DataGrid';
 import { Pagination } from '../../ui/Pagination';
 import { Drawer } from '../../ui/Overlay';
@@ -29,10 +33,29 @@ import { EmptyState, ErrorState } from '../../ui/States';
  * identity, which is the shape an operator needs when the question is
  * "what needs rotating" rather than "who owns what".
  */
+const DENSITY_KEY = 'dna.grid.density';
+
 export default function CredentialsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { selectedScanId } = useScanContext();
+  const { selectedScanId, activeScan } = useScanContext();
+  const { notify } = useToast();
   const [selected, setSelected] = useState(null);
+  const [density, setDensity] = useState(() => {
+    try {
+      return localStorage.getItem(DENSITY_KEY) || 'comfortable';
+    } catch {
+      return 'comfortable';
+    }
+  });
+
+  const setDensityPref = (value) => {
+    setDensity(value);
+    try {
+      localStorage.setItem(DENSITY_KEY, value);
+    } catch {
+      /* per-viewer convenience only */
+    }
+  };
   const [searchDraft, setSearchDraft] = useState(() => searchParams.get('search') || '');
   const debouncedSearch = useDebouncedValue(searchDraft, 320);
 
@@ -73,8 +96,13 @@ export default function CredentialsPage() {
     return Object.entries(breakdown)
       .filter(([, count]) => Number(count) > 0)
       .sort((a, b) => b[1] - a[1])
-      .map(([key, count]) => ({ value: key, label: `${titleCaseEnum(key)} (${formatNumber(count)})` }));
-  }, [summaryQuery.data]);
+      .map(([key, count]) => ({
+        value: key,
+        label: titleCaseEnum(key),
+        count: Number(count),
+        active: searchParams.get('type') === key,
+      }));
+  }, [summaryQuery.data, searchParams]);
 
   const setParam = useCallback(
     (key, value) => {
@@ -102,8 +130,61 @@ export default function CredentialsPage() {
     setSearchDraft('');
   };
 
+  const toggleParam = (key, value) => {
+    const next = new URLSearchParams(searchParams);
+    if (next.get(key) === value) next.delete(key);
+    else next.set(key, value);
+    next.delete('page');
+    setSearchParams(next, { replace: true });
+  };
+
+  /* Severity has no counter on the summary endpoint, so those options carry
+     no number rather than a guess. */
+  const facetGroups = [
+    {
+      key: 'type',
+      label: 'Credential type',
+      options: typeOptions,
+      onToggle: (value) => toggleParam('type', value),
+    },
+    {
+      key: 'severity',
+      label: 'Severity',
+      options: SEVERITY_ORDER.map((value) => ({
+        value,
+        label: severityMeta(value).label,
+        active: searchParams.get('severity') === value,
+      })),
+      onToggle: (value) => toggleParam('severity', value),
+    },
+  ];
+
   const rows = query.data?.rows ?? [];
   const total = query.data?.total ?? 0;
+
+  const onExport = () => {
+    exportRowsToCsv({
+      filename: timestampedName(`credentials-${activeScan?.target_name || 'scan'}`),
+      columns: [
+        { header: 'Credential type', value: (row) => row.type },
+        { header: 'Credential id', value: (row) => row.cred_id },
+        { header: 'Severity', value: (row) => row.severity },
+        { header: 'Status', value: (row) => row.status },
+        { header: 'Identity', value: (row) => row.identity_name },
+        { header: 'Identity ARN', value: (row) => row.identity_arn },
+        { header: 'Created', value: (row) => row.created_at },
+        { header: 'Expires', value: (row) => row.expires_at },
+        { header: 'Last used', value: (row) => row.last_used_date },
+        { header: 'Last used service', value: (row) => row.last_used_service },
+      ],
+      rows,
+    });
+    notify({
+      variant: 'success',
+      title: 'Exported this page',
+      description: `${formatNumber(rows.length)} rows written to CSV. The API has no bulk export, so only the loaded page is included.`,
+    });
+  };
 
   const columns = [
     {
@@ -179,51 +260,63 @@ export default function CredentialsPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <PageHeader
-        eyebrow="Inventory"
         title="Credential register"
         lede="Every access key, password and certificate recorded against an identity in this scan, flattened so rotation candidates surface directly."
         actions={
-          <Button variant="secondary" icon={RotateCw} onClick={query.refetch} loading={query.isRefreshing}>
-            Refresh
-          </Button>
+          <>
+            <Button variant="ghost" icon={Download} onClick={onExport} disabled={rows.length === 0}>
+              Export page
+            </Button>
+            <Button variant="secondary" onClick={query.refetch} loading={query.isRefreshing}>
+              Refresh
+            </Button>
+          </>
         }
       />
 
+      <WorkArea
+        rail={
+          <FacetRail
+            groups={facetGroups}
+            appliedCount={chips.length}
+            onClearAll={clearAll}
+            mobileTitle="Filter credentials"
+          />
+        }
+      >
       <Panel flush className="animate-rise overflow-hidden">
-        <Toolbar
+        <RecordBar
           trailing={
-            <p className="hidden text-[12.5px] text-ink-3 sm:block" data-numeric="">
-              {query.isLoading && !query.data ? '—' : formatNumber(total)} credentials
-            </p>
+            <SegmentedControl
+              label="Row density"
+              value={density}
+              onChange={setDensityPref}
+              options={[
+                { value: 'compact', label: 'Compact', icon: Rows3 },
+                { value: 'comfortable', label: 'Comfortable', icon: Columns3 },
+              ]}
+            />
           }
         >
           <SearchInput
+            size="sm"
             value={searchDraft}
             onChange={setSearchDraft}
             placeholder="Search identity name, ARN or credential id…"
             className="w-full min-w-0 sm:max-w-sm"
           />
-          <Select
-            value={filters.type}
-            onChange={(event) => setParam('type', event.target.value)}
-            options={typeOptions}
-            placeholder="All credential types"
-            aria-label="Filter by credential type"
-            className="w-full sm:w-56"
+          <ResultCount
+            shown={formatNumber(rows.length)}
+            total={formatNumber(total)}
+            unit="credentials"
+            filtered={chips.length > 0}
+            loading={query.isLoading && !query.data}
           />
-          <Select
-            value={filters.severity}
-            onChange={(event) => setParam('severity', event.target.value)}
-            options={SEVERITY_ORDER.map((value) => ({ value, label: severityMeta(value).label }))}
-            placeholder="Any severity"
-            aria-label="Filter by severity"
-            className="w-full sm:w-40"
-          />
-        </Toolbar>
+        </RecordBar>
 
-        <ActiveFilters filters={chips} onRemove={(key) => setParam(key, '')} onClearAll={clearAll} />
+        <AppliedFilters filters={chips} onRemove={(key) => setParam(key, '')} onClearAll={clearAll} />
 
         {query.isError && !query.data ? (
           <ErrorState error={query.error} onRetry={query.refetch} />
@@ -237,6 +330,7 @@ export default function CredentialsPage() {
               loading={query.isLoading && !query.data}
               refreshing={query.isRefreshing}
               onRowClick={setSelected}
+              density={density}
               skeletonRows={10}
               emptyState={
                 chips.length > 0 ? (
@@ -278,6 +372,7 @@ export default function CredentialsPage() {
           </>
         )}
       </Panel>
+      </WorkArea>
 
       <CredentialDrawer credential={selected} onClose={() => setSelected(null)} />
     </div>

@@ -29,6 +29,10 @@ export function DataGrid({
   caption,
   skeletonRows = 8,
   rowActions,
+  /** 'compact' | 'comfortable' — client-side only, a table-reading preference. */
+  density = 'comfortable',
+  /** Per-row accent colour, e.g. the identity's classification hue. */
+  rowAccent,
   className,
 }) {
   const isWide = useMediaQuery('(min-width: 768px)');
@@ -44,6 +48,8 @@ export function DataGrid({
   }
 
   if (!rows || rows.length === 0) return <div className={className}>{emptyState}</div>;
+
+  const cellPadding = density === 'compact' ? 'px-3 py-2' : 'px-3.5 py-3';
 
   const toggleSort = (column) => {
     if (!column.sortable || !onSortChange) return;
@@ -122,7 +128,7 @@ export function DataGrid({
                   style={column.width ? { width: column.width } : undefined}
                   aria-sort={active ? (sort.direction === 'asc' ? 'ascending' : 'descending') : undefined}
                   className={cn(
-                    'px-4 py-2.5 text-[11px] font-semibold tracking-[0.07em] text-ink-3 uppercase',
+                    'px-3.5 py-2.5 text-[11px] font-semibold tracking-[0.07em] text-ink-3 uppercase',
                     column.align === 'right' && 'text-right',
                     column.align === 'center' && 'text-center',
                   )}
@@ -173,15 +179,17 @@ export function DataGrid({
                 tabIndex={interactive ? 0 : undefined}
                 aria-label={interactive ? 'Open record detail' : undefined}
                 className={cn(
-                  'border-b border-line/80 transition-colors duration-100 last:border-b-0',
+                  'grid-row border-b border-line/80 transition-colors duration-100 last:border-b-0',
                   interactive && 'cursor-pointer hover:bg-surface-2 focus-visible:bg-surface-2',
                 )}
+                style={rowAccent ? { '--t-brand': rowAccent(row) } : undefined}
               >
                 {visibleColumns.map((column) => (
                   <td
                     key={column.key}
                     className={cn(
-                      'max-w-0 px-4 py-3 align-middle text-[13px] text-ink-2',
+                      'max-w-0 align-middle text-[13px] text-ink-2',
+                      cellPadding,
                       column.align === 'right' && 'text-right',
                       column.align === 'center' && 'text-center',
                     )}
@@ -190,7 +198,9 @@ export function DataGrid({
                   </td>
                 ))}
                 {rowActions && (
-                  <td className="px-2 py-3 text-right align-middle">{rowActions(row)}</td>
+                  <td className={cn('text-right align-middle', density === 'compact' ? 'px-2 py-2' : 'px-2 py-3')}>
+                    <span className="row-actions inline-flex justify-end">{rowActions(row)}</span>
+                  </td>
                 )}
               </tr>
             );

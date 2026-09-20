@@ -12,13 +12,8 @@ import { Panel } from '../../ui/Panel';
 import { DataGrid } from '../../ui/DataGrid';
 import { Pagination } from '../../ui/Pagination';
 import { EmptyState, ErrorState } from '../../ui/States';
-import {
-  ActivityCell,
-  ClassificationCell,
-  IdentityNameCell,
-  RiskMarkersCell,
-  TrustCell,
-} from '../identities/cells';
+import { ClassificationCell, IdentityNameCell, TrustCell } from '../identities/cells';
+import { ActivityCell, PostureLegend, PostureStrip } from '../identities/PostureStrip';
 import { IdentityDrawer } from '../identities/IdentityDrawer';
 
 /**
@@ -57,10 +52,15 @@ export default function MyResourcesPage() {
   const rows = query.data?.rows ?? [];
   const total = query.data?.total ?? 0;
 
+  /* Event bars use a page-local scale — the comparison a reviewer is making. */
+  const maxEvents = useMemo(
+    () => rows.reduce((max, row) => Math.max(max, Number(row.total_events) || 0), 0),
+    [rows],
+  );
+
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <PageHeader
-        eyebrow="Assigned to me"
         title="My resources"
         lede={
           user?.email
@@ -112,16 +112,16 @@ export default function MyResourcesPage() {
                   cell: (row) => <TrustCell identity={row} />,
                 },
                 {
-                  key: 'risk',
-                  header: 'Markers',
+                  key: 'posture',
+                  header: <PostureLegend />,
                   width: '18%',
-                  cell: (row) => <RiskMarkersCell identity={row} />,
+                  cell: (row) => <PostureStrip identity={row} />,
                 },
                 {
                   key: 'activity',
                   header: 'Last active',
                   width: '15%',
-                  cell: (row) => <ActivityCell identity={row} />,
+                  cell: (row) => <ActivityCell identity={row} maxEvents={maxEvents} />,
                 },
               ]}
               rows={rows}

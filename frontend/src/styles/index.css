@@ -177,10 +177,10 @@
     animation: dna-shimmer 1.6s ease-in-out infinite;
   }
 
-  .rail-gradient {
+  .topbar-gradient {
     background:
-      radial-gradient(120% 55% at 0% 0%, rgba(18, 176, 240, 0.16) 0%, transparent 62%),
-      linear-gradient(180deg, var(--t-rail-2) 0%, var(--t-rail) 58%, var(--t-rail) 100%);
+      radial-gradient(60% 300% at 22% 50%, rgba(18, 176, 240, 0.13) 0%, transparent 70%),
+      linear-gradient(90deg, var(--t-topbar) 0%, var(--t-topbar-2) 52%, var(--t-topbar) 100%);
   }
 
   .auth-canvas {
@@ -208,6 +208,30 @@
     z-index: 2;
     background: var(--t-surface-2);
     backdrop-filter: saturate(1.1) blur(2px);
+    box-shadow: 0 1px 0 var(--t-line);
+  }
+
+  /* Row hover: a 2px accent on the leading cell confirms the hit target
+     without repainting the whole row. */
+  .grid-row:hover > :first-child,
+  .grid-row:focus-visible > :first-child {
+    box-shadow: inset 2px 0 0 var(--t-brand);
+  }
+
+  .row-actions {
+    opacity: 0;
+    transition: opacity 120ms ease-out;
+  }
+
+  .grid-row:hover .row-actions,
+  .grid-row:focus-within .row-actions {
+    opacity: 1;
+  }
+
+  @media (hover: none) {
+    .row-actions {
+      opacity: 1;
+    }
   }
 }
 

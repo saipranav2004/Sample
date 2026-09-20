@@ -5,14 +5,60 @@
  * accepts. Filter state lives in the URL so a drill-through from the posture
  * dashboard, a bookmark and a shared link all produce the same list.
  */
+/**
+ * `summaryField` names the counter on `GET /api/dashboard/summary` that sizes
+ * the facet. Facets with no counterpart counter simply show no number rather
+ * than an estimate — `has_credentials` is the only one in that position.
+ */
 export const FACETS = [
-  { param: 'without_mfa', label: 'No MFA', tone: 'critical', hint: 'Human identities with MFA disabled' },
-  { param: 'is_admin', label: 'Admin access', tone: 'critical', hint: 'Administrator-equivalent policy attached' },
-  { param: 'is_stale', label: 'Stale 90+ days', tone: 'high', hint: 'No recorded activity for over 90 days' },
-  { param: 'is_inactive', label: 'Inactive 30–90 days', tone: 'medium', hint: 'Dormant but not yet stale' },
-  { param: 'is_secret', label: 'Secret-backed', tone: 'medium', hint: 'Credentials stored in a secret store entry' },
-  { param: 'has_credentials', label: 'Holds credentials', tone: 'info', hint: 'Owns at least one key, password or certificate' },
-  { param: 'is_federated', label: 'Federated trust', tone: 'info', hint: 'Assumed via SAML or OIDC' },
+  {
+    param: 'without_mfa',
+    label: 'No MFA',
+    tone: 'critical',
+    summaryField: 'total_humans_without_mfa',
+    hint: 'Human identities with MFA disabled',
+  },
+  {
+    param: 'is_admin',
+    label: 'Admin access',
+    tone: 'critical',
+    summaryField: 'total_admin',
+    hint: 'Administrator-equivalent policy attached',
+  },
+  {
+    param: 'is_stale',
+    label: 'Stale 90+ days',
+    tone: 'high',
+    summaryField: 'total_stale_90plus',
+    hint: 'No recorded activity for over 90 days',
+  },
+  {
+    param: 'is_inactive',
+    label: 'Inactive 30–90 days',
+    tone: 'medium',
+    summaryField: 'total_inactive_30plus',
+    hint: 'Dormant but not yet stale',
+  },
+  {
+    param: 'is_secret',
+    label: 'Secret-backed',
+    tone: 'medium',
+    summaryField: 'total_secrets',
+    hint: 'Credentials stored in a secret store entry',
+  },
+  {
+    param: 'has_credentials',
+    label: 'Holds credentials',
+    tone: 'info',
+    hint: 'Owns at least one key, password or certificate',
+  },
+  {
+    param: 'is_federated',
+    label: 'Federated trust',
+    tone: 'info',
+    summaryField: 'total_federated',
+    hint: 'Assumed via SAML or OIDC',
+  },
 ];
 
 export const OWNER_TYPE_OPTIONS = [

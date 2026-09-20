@@ -1,46 +1,72 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Fingerprint, RotateCw, SearchX } from 'lucide-react';
+import { Columns3, Copy, Download, Fingerprint, Rows3, SearchX } from 'lucide-react';
 import { fetchIdentities, fetchSummary } from '../../lib/api/endpoints';
 import { useDebouncedValue, useQuery } from '../../lib/hooks';
 import { useScanContext } from '../../app/ScanContext';
-import { classificationMeta } from '../../lib/domain';
-import { formatNumber, titleCaseEnum } from '../../lib/format';
+import { classificationMeta, ownerTypeMeta } from '../../lib/domain';
+import { arnResource, formatNumber, titleCaseEnum } from '../../lib/format';
+import { exportRowsToCsv, timestampedName } from '../../lib/csv';
 import { PageHeader } from '../../shell/PageHeader';
-import { Button } from '../../ui/Button';
+import { Button, IconButton } from '../../ui/Button';
 import { Panel } from '../../ui/Panel';
-import { SearchInput, Select } from '../../ui/Field';
-import { ActiveFilters, Toolbar } from '../../ui/Toolbar';
+import { SearchInput } from '../../ui/Field';
+import { AppliedFilters, FacetRail } from '../../ui/FacetRail';
+import { RecordBar, ResultCount, WorkArea } from '../../ui/WorkArea';
+import { SegmentedControl, Tabs } from '../../ui/Tabs';
 import { DataGrid } from '../../ui/DataGrid';
 import { Pagination } from '../../ui/Pagination';
 import { EmptyState, ErrorState } from '../../ui/States';
-import { cn, TONE_CLASSES } from '../../ui/cn';
-import {
-  ActivityCell,
-  ClassificationCell,
-  IdentityNameCell,
-  OwnerCell,
-  RiskMarkersCell,
-  TrustCell,
-} from './cells';
+import { useToast } from '../../ui/Toast';
 import { IdentityDrawer } from './IdentityDrawer';
-import { describeFilters, FACETS, FILTER_PARAMS, OWNER_TYPE_OPTIONS, readFilters } from './filters';
+import { ActivityCell, PostureLegend, PostureStrip } from './PostureStrip';
+import { FACETS, FILTER_PARAMS, OWNER_TYPE_OPTIONS, describeFilters, readFilters } from './filters';
 
 /**
  * Identity explorer — the workbench every posture signal leads into.
  *
- * Filter state is held in the URL, so a drill-through from the dashboard, a
- * bookmark and a shared link all resolve to the same list, and the applied
- * filters are always visible as removable chips.
+ * Filter state lives in the URL, so a dashboard drill-through, a bookmark and
+ * a shared link all resolve to the same list. View tabs are single-parameter
+ * presets that *replace* the current filters; the facet rail refines
+ * additively. Both only ever emit parameters `GET /api/identities` accepts.
  */
+
+/** Each preset must be expressible in one request — no client-side unions. */
+const VIEW_PRESETS = [
+  { key: 'all', label: 'All identities', params: {}, countField: 'total_identities' },
+  { key: 'mfa', label: 'No MFA', params: { without_mfa: 'true' }, countField: 'total_humans_without_mfa' },
+  { key: 'admin', label: 'Admin access', params: { is_admin: 'true' }, countField: 'total_admin' },
+  { key: 'stale', label: 'Stale 90+', params: { is_stale: 'true' }, countField: 'total_stale_90plus' },
+  { key: 'orphaned', label: 'Orphaned', params: { owner_type: 'ORPHANED' }, countField: 'total_orphaned' },
+  { key: 'secret', label: 'Secret-backed', params: { is_secret: 'true' }, countField: 'total_secrets' },
+];
+
+const DENSITY_KEY = 'dna.grid.density';
+
 export default function IdentitiesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { selectedScanId } = useScanContext();
+  const { selectedScanId, activeScan } = useScanContext();
+  const { notify } = useToast();
   const [selected, setSelected] = useState(null);
   const [searchDraft, setSearchDraft] = useState(() => searchParams.get('search') || '');
   const debouncedSearch = useDebouncedValue(searchDraft, 320);
+  const [density, setDensity] = useState(() => {
+    try {
+      return localStorage.getItem(DENSITY_KEY) || 'comfortable';
+    } catch {
+      return 'comfortable';
+    }
+  });
 
-  /* Keep the URL in step with the debounced search box, resetting paging. */
+  const setDensityPref = (value) => {
+    setDensity(value);
+    try {
+      localStorage.setItem(DENSITY_KEY, value);
+    } catch {
+      /* per-viewer convenience only */
+    }
+  };
+
   useEffect(() => {
     const current = searchParams.get('search') || '';
     if (debouncedSearch === current) return;
@@ -59,32 +85,13 @@ export default function IdentitiesPage() {
     [JSON.stringify(filters), selectedScanId],
   );
 
-  /* Classification options come from the scan's own breakdown, so the filter
-     can never offer a value this data set does not contain. */
+  /* Facet counts and classification options come from the scan's own
+     aggregates, so a filter never offers a value this snapshot lacks and the
+     operator knows the size of a filter before applying it. */
   const summaryQuery = useQuery((signal) => fetchSummary({ scanId: selectedScanId }, signal), [
     selectedScanId,
   ]);
-
-  const classificationOptions = useMemo(() => {
-    const breakdown = summaryQuery.data?.classification_breakdown || {};
-    return Object.entries(breakdown)
-      .filter(([, count]) => Number(count) > 0)
-      .map(([key, count]) => ({
-        value: key,
-        label: `${classificationMeta(key).label} (${formatNumber(count)})`,
-      }));
-  }, [summaryQuery.data]);
-
-  /* The API exposes no endpoint enumerating resource types, so the options are
-     derived from the values present in the loaded page plus any active
-     selection — never a hard-coded guess at what AWS might return. */
-  const typeOptions = useMemo(() => {
-    const values = new Set(
-      (query.data?.rows ?? []).map((row) => row.identity_type).filter(Boolean),
-    );
-    if (filters.identityType) values.add(filters.identityType);
-    return [...values].sort().map((value) => ({ value, label: titleCaseEnum(value) }));
-  }, [query.data, filters.identityType]);
+  const summary = summaryQuery.data;
 
   const setParam = useCallback(
     (key, value) => {
@@ -97,11 +104,11 @@ export default function IdentitiesPage() {
     [searchParams, setSearchParams],
   );
 
-  const toggleFacet = useCallback(
-    (param) => {
+  const toggleParam = useCallback(
+    (key, value) => {
       const next = new URLSearchParams(searchParams);
-      if (next.get(param) === 'true') next.delete(param);
-      else next.set(param, 'true');
+      if (next.get(key) === value) next.delete(key);
+      else next.set(key, value);
       next.delete('page');
       setSearchParams(next, { replace: true });
     },
@@ -116,191 +123,384 @@ export default function IdentitiesPage() {
     setSearchDraft('');
   }, [searchParams, setSearchParams]);
 
-  const removeChip = useCallback(
+  const applyPreset = useCallback(
     (key) => {
-      if (key === 'search') setSearchDraft('');
-      setParam(key, '');
+      const preset = VIEW_PRESETS.find((entry) => entry.key === key);
+      if (!preset) return;
+      const next = new URLSearchParams(searchParams);
+      for (const param of FILTER_PARAMS) next.delete(param);
+      for (const [param, value] of Object.entries(preset.params)) next.set(param, value);
+      next.delete('page');
+      setSearchParams(next, { replace: true });
+      setSearchDraft('');
     },
-    [setParam],
+    [searchParams, setSearchParams],
+  );
+
+  /* A preset is active only when the URL holds exactly its parameters. */
+  const activePreset = useMemo(() => {
+    const applied = FILTER_PARAMS.filter((param) => searchParams.get(param));
+    const match = VIEW_PRESETS.find((preset) => {
+      const keys = Object.keys(preset.params);
+      return (
+        keys.length === applied.length &&
+        keys.every((key) => searchParams.get(key) === preset.params[key])
+      );
+    });
+    return match?.key ?? null;
+  }, [searchParams]);
+
+  const classificationOptions = useMemo(() => {
+    const breakdown = summary?.classification_breakdown || {};
+    return Object.entries(breakdown)
+      .filter(([, count]) => Number(count) > 0)
+      .sort((a, b) => b[1] - a[1])
+      .map(([key, count]) => ({
+        value: key,
+        label: classificationMeta(key).label,
+        count: Number(count),
+        active: searchParams.get('classification') === key,
+      }));
+  }, [summary, searchParams]);
+
+  const facetGroups = useMemo(
+    () => [
+      {
+        key: 'classification',
+        label: 'Classification',
+        options: classificationOptions,
+        onToggle: (value) => toggleParam('classification', value),
+      },
+      {
+        key: 'posture',
+        label: 'Posture',
+        options: FACETS.map((facet) => ({
+          value: facet.param,
+          label: facet.label,
+          count: facet.summaryField ? Number(summary?.[facet.summaryField]) : undefined,
+          active: searchParams.get(facet.param) === 'true',
+        })),
+        onToggle: (value) => toggleParam(value, 'true'),
+      },
+      {
+        key: 'ownership',
+        label: 'Ownership',
+        options: OWNER_TYPE_OPTIONS.map((option) => ({
+          value: option.value,
+          label: option.label,
+          count: option.value === 'ORPHANED' ? Number(summary?.total_orphaned) : undefined,
+          active: searchParams.get('owner_type') === option.value,
+        })),
+        onToggle: (value) => toggleParam('owner_type', value),
+      },
+    ],
+    [classificationOptions, summary, searchParams, toggleParam],
   );
 
   const rows = query.data?.rows ?? [];
   const total = query.data?.total ?? 0;
   const filtered = chips.length > 0;
 
+  /* Event bars are relative to the busiest row on screen — a page-local scale,
+     which is the comparison a reviewer is actually making. */
+  const maxEvents = useMemo(
+    () => rows.reduce((max, row) => Math.max(max, Number(row.total_events) || 0), 0),
+    [rows],
+  );
+
+  const onExport = () => {
+    exportRowsToCsv({
+      filename: timestampedName(`identities-${activeScan?.target_name || 'scan'}`),
+      columns: [
+        { header: 'Name', value: (row) => row.name },
+        { header: 'ARN', value: (row) => row.arn },
+        { header: 'Resource type', value: (row) => row.identity_type },
+        { header: 'Classification', value: (row) => row.classification },
+        { header: 'Owner', value: (row) => row.owner_name || row.primary_owner },
+        { header: 'Owner type', value: (row) => row.owner_type },
+        { header: 'Trust type', value: (row) => row.trust_type },
+        { header: 'Admin', value: (row) => (row.is_admin ? 'yes' : 'no') },
+        { header: 'MFA enabled', value: (row) => (row.mfa_enabled ? 'yes' : 'no') },
+        { header: 'Secret-backed', value: (row) => (row.is_secret ? 'yes' : 'no') },
+        { header: 'Last active', value: (row) => row.last_active },
+        { header: 'Events', value: (row) => row.total_events },
+      ],
+      rows,
+    });
+    notify({
+      variant: 'success',
+      title: 'Exported this page',
+      description: `${formatNumber(rows.length)} rows written to CSV. The API has no bulk export, so only the loaded page is included.`,
+    });
+  };
+
   const columns = [
     {
       key: 'identity',
       header: 'Identity',
       primary: true,
-      width: '30%',
-      cell: (row) => <IdentityNameCell identity={row} />,
+      width: '26%',
+      cell: (row) => {
+        const meta = classificationMeta(row.classification);
+        const isHuman = meta.kind === 'human';
+        return (
+          <span className="flex min-w-0 items-center gap-3">
+            <span
+              aria-hidden="true"
+              className="grid size-8 shrink-0 place-items-center rounded-[9px] border text-[10px] font-bold tracking-tight"
+              style={{
+                borderColor: `color-mix(in srgb, ${meta.color} 34%, transparent)`,
+                background: `color-mix(in srgb, ${meta.color} 10%, transparent)`,
+                color: meta.color,
+              }}
+            >
+              {isHuman ? 'HU' : 'NHI'}
+            </span>
+            <span className="min-w-0">
+              <span className="block truncate text-[13px] font-semibold text-ink" title={row.name || row.arn}>
+                {row.name || arnResource(row.arn)}
+              </span>
+              <span className="mt-0.5 flex min-w-0 items-center gap-1.5">
+                <span
+                  className="truncate font-mono text-[11px] text-ink-3"
+                  title={row.arn}
+                >
+                  {arnResource(row.arn)}
+                </span>
+              </span>
+            </span>
+          </span>
+        );
+      },
+    },
+    {
+      key: 'posture',
+      header: <PostureLegend />,
+      width: '16%',
+      cell: (row) => <PostureStrip identity={row} />,
     },
     {
       key: 'classification',
-      header: 'Classification',
-      width: '13%',
-      cell: (row) => <ClassificationCell identity={row} />,
+      header: 'Class',
+      width: '12%',
+      cell: (row) => {
+        const meta = classificationMeta(row.classification);
+        return (
+          <span className="flex min-w-0 items-center gap-2">
+            <span
+              aria-hidden="true"
+              className="size-2 shrink-0 rounded-[3px]"
+              style={{ background: meta.color }}
+            />
+            <span className="truncate text-[12.5px] text-ink-2">{meta.label}</span>
+          </span>
+        );
+      },
     },
-    { key: 'owner', header: 'Owner', width: '17%', cell: (row) => <OwnerCell identity={row} /> },
+    {
+      key: 'owner',
+      header: 'Owner',
+      width: '16%',
+      cell: (row) => {
+        const meta = ownerTypeMeta(row.owner_type);
+        const owner = row.owner_name || row.primary_owner || row.created_by_name;
+        const orphaned = String(row.owner_type).toUpperCase() === 'ORPHANED';
+        return (
+          <span className="block min-w-0">
+            <span
+              className={cnOwner(orphaned)}
+              title={owner || undefined}
+            >
+              {owner || 'Unassigned'}
+            </span>
+            <span className={`block truncate text-[11px] ${orphaned ? 'text-high' : 'text-ink-3'}`}>
+              {meta.label}
+            </span>
+          </span>
+        );
+      },
+    },
     {
       key: 'trust',
       header: 'Trust',
-      width: '14%',
+      width: '12%',
       priority: 'wide',
-      cell: (row) => <TrustCell identity={row} />,
+      cell: (row) => (
+        <span className="block min-w-0">
+          <span className="block truncate text-[12.5px] text-ink-2">
+            {row.trust_type ? titleCaseEnum(row.trust_type) : '—'}
+          </span>
+          <span className="block truncate text-[11px] text-ink-3" title={row.identity_type}>
+            {row.identity_type ? titleCaseEnum(row.identity_type) : '—'}
+          </span>
+        </span>
+      ),
     },
-    { key: 'risk', header: 'Markers', width: '15%', cell: (row) => <RiskMarkersCell identity={row} /> },
     {
       key: 'activity',
-      header: 'Last active',
-      width: '11%',
-      cell: (row) => <ActivityCell identity={row} />,
+      header: 'Activity',
+      width: '18%',
+      cell: (row) => <ActivityCell identity={row} maxEvents={maxEvents} />,
     },
   ];
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <PageHeader
-        eyebrow="Inventory"
         title="Identity explorer"
-        lede="Every principal the discovery engine found in this scan — filter by classification, ownership and posture, then open a record to see its credentials, reach and callers."
+        lede="Every principal discovered in this scan. Narrow with facets, then open a record to see its credentials, reach and callers."
         actions={
-          <Button variant="secondary" icon={RotateCw} onClick={query.refetch} loading={query.isRefreshing}>
-            Refresh
-          </Button>
+          <>
+            <Button variant="ghost" icon={Download} onClick={onExport} disabled={rows.length === 0}>
+              Export page
+            </Button>
+            <Button variant="secondary" onClick={query.refetch} loading={query.isRefreshing}>
+              Refresh
+            </Button>
+          </>
+        }
+        tabs={
+          <Tabs
+            size="sm"
+            value={activePreset ?? 'custom'}
+            onChange={applyPreset}
+            tabs={[
+              ...VIEW_PRESETS.map((preset) => ({
+                value: preset.key,
+                label: preset.label,
+                count: summary ? Number(summary[preset.countField]) : undefined,
+              })),
+              ...(activePreset === null ? [{ value: 'custom', label: 'Custom filter' }] : []),
+            ]}
+          />
         }
       />
 
-      <Panel flush className="animate-rise overflow-hidden">
-        <Toolbar
-          trailing={
-            <p className="hidden text-[12.5px] text-ink-3 sm:block" data-numeric="">
-              {query.isLoading && !query.data ? '—' : formatNumber(total)} matching
-            </p>
-          }
-        >
-          <SearchInput
-            value={searchDraft}
-            onChange={setSearchDraft}
-            placeholder="Search name, ARN or classification evidence…"
-            className="w-full min-w-0 sm:max-w-sm"
+      <WorkArea
+        rail={
+          <FacetRail
+            groups={facetGroups}
+            appliedCount={chips.length}
+            onClearAll={clearAll}
+            mobileTitle="Filter identities"
           />
-          <Select
-            size="md"
-            value={filters.classification}
-            onChange={(event) => setParam('classification', event.target.value)}
-            options={classificationOptions}
-            placeholder="All classifications"
-            aria-label="Filter by classification"
-            className="w-full sm:w-52"
-          />
-          <Select
-            size="md"
-            value={filters.ownerType}
-            onChange={(event) => setParam('owner_type', event.target.value)}
-            options={OWNER_TYPE_OPTIONS}
-            placeholder="Any ownership"
-            aria-label="Filter by owner type"
-            className="w-full sm:w-44"
-          />
-          {typeOptions.length > 1 && (
-            <Select
-              size="md"
-              value={filters.identityType}
-              onChange={(event) => setParam('identity_type', event.target.value)}
-              options={typeOptions}
-              placeholder="Any resource type"
-              aria-label="Filter by resource type"
-              className="w-full sm:w-44"
-            />
-          )}
-        </Toolbar>
-
-        <div className="flex flex-wrap items-center gap-1.5 border-b border-line bg-surface px-4 py-2.5">
-          {FACETS.map((facet) => {
-            const active = searchParams.get(facet.param) === 'true';
-            return (
-              <button
-                key={facet.param}
-                type="button"
-                onClick={() => toggleFacet(facet.param)}
-                aria-pressed={active}
-                title={facet.hint}
-                className={cn(
-                  'rounded-full border px-2.5 py-1 text-[11.5px] font-medium transition-colors duration-150',
-                  active
-                    ? TONE_CLASSES[facet.tone]
-                    : 'border-line text-ink-3 hover:border-line-strong hover:text-ink-2',
-                )}
-              >
-                {facet.label}
-              </button>
-            );
-          })}
-        </div>
-
-        <ActiveFilters filters={chips} onRemove={removeChip} onClearAll={clearAll} />
-
-        {query.isError && !query.data ? (
-          <ErrorState error={query.error} onRetry={query.refetch} />
-        ) : (
-          <>
-            <DataGrid
-              caption="Discovered identities"
-              columns={columns}
-              rows={rows}
-              rowKey={(row) => row.id ?? row.arn}
-              loading={query.isLoading && !query.data}
-              refreshing={query.isRefreshing}
-              onRowClick={setSelected}
-              skeletonRows={10}
-              emptyState={
-                filtered ? (
-                  <EmptyState
-                    icon={SearchX}
-                    title="No identities match these filters"
-                    description="The scan contains identities, but none satisfy every filter currently applied."
-                    action={
-                      <Button variant="secondary" size="sm" onClick={clearAll}>
-                        Clear filters
-                      </Button>
-                    }
-                  />
-                ) : (
-                  <EmptyState
-                    icon={Fingerprint}
-                    title="No identities in this scan"
-                    description="This discovery scan recorded no IAM principals. Pick another scan from the switcher, or run a new discovery."
-                  />
-                )
-              }
-            />
-
-            {total > 0 && (
-              <Pagination
-                page={filters.page}
-                pageSize={filters.pageSize}
-                total={total}
-                unit="identities"
-                onPageChange={(page) => setParam('page', String(page))}
-                onPageSizeChange={(size) => {
-                  const next = new URLSearchParams(searchParams);
-                  next.set('page_size', String(size));
-                  next.delete('page');
-                  setSearchParams(next, { replace: true });
-                }}
+        }
+      >
+        <Panel flush className="animate-rise overflow-hidden">
+          <RecordBar
+            trailing={
+              <SegmentedControl
+                label="Row density"
+                value={density}
+                onChange={setDensityPref}
+                options={[
+                  { value: 'compact', label: 'Compact', icon: Rows3 },
+                  { value: 'comfortable', label: 'Comfortable', icon: Columns3 },
+                ]}
               />
-            )}
-          </>
-        )}
-      </Panel>
+            }
+          >
+            <SearchInput
+              size="sm"
+              value={searchDraft}
+              onChange={setSearchDraft}
+              placeholder="Search name, ARN or classification evidence…"
+              className="w-full min-w-0 sm:max-w-sm"
+            />
+            <ResultCount
+              shown={formatNumber(rows.length)}
+              total={formatNumber(total)}
+              unit="identities"
+              filtered={filtered}
+              loading={query.isLoading && !query.data}
+            />
+          </RecordBar>
 
-      <IdentityDrawer
-        identity={selected}
-        open={Boolean(selected)}
-        onClose={() => setSelected(null)}
-      />
+          <AppliedFilters
+            filters={chips}
+            onRemove={(key) => {
+              if (key === 'search') setSearchDraft('');
+              setParam(key, '');
+            }}
+            onClearAll={clearAll}
+          />
+
+          {query.isError && !query.data ? (
+            <ErrorState error={query.error} onRetry={query.refetch} />
+          ) : (
+            <>
+              <DataGrid
+                caption="Discovered identities"
+                columns={columns}
+                rows={rows}
+                rowKey={(row) => row.id ?? row.arn}
+                loading={query.isLoading && !query.data}
+                refreshing={query.isRefreshing}
+                onRowClick={setSelected}
+                density={density}
+                rowAccent={(row) => classificationMeta(row.classification).color}
+                skeletonRows={10}
+                rowActions={(row) => (
+                  <IconButton
+                    icon={Copy}
+                    label={`Copy ARN for ${row.name || row.arn}`}
+                    size="sm"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      navigator.clipboard?.writeText(row.arn);
+                      notify({ variant: 'success', title: 'ARN copied', duration: 2200 });
+                    }}
+                  />
+                )}
+                emptyState={
+                  filtered ? (
+                    <EmptyState
+                      icon={SearchX}
+                      title="No identities match these filters"
+                      description="The scan contains identities, but none satisfy every filter currently applied."
+                      action={
+                        <Button variant="secondary" size="sm" onClick={clearAll}>
+                          Clear filters
+                        </Button>
+                      }
+                    />
+                  ) : (
+                    <EmptyState
+                      icon={Fingerprint}
+                      title="No identities in this scan"
+                      description="This discovery scan recorded no IAM principals. Pick another scan from the switcher, or run a new discovery."
+                    />
+                  )
+                }
+              />
+
+              {total > 0 && (
+                <Pagination
+                  page={filters.page}
+                  pageSize={filters.pageSize}
+                  total={total}
+                  unit="identities"
+                  onPageChange={(page) => setParam('page', String(page))}
+                  onPageSizeChange={(size) => {
+                    const next = new URLSearchParams(searchParams);
+                    next.set('page_size', String(size));
+                    next.delete('page');
+                    setSearchParams(next, { replace: true });
+                  }}
+                />
+              )}
+            </>
+          )}
+        </Panel>
+      </WorkArea>
+
+      <IdentityDrawer identity={selected} open={Boolean(selected)} onClose={() => setSelected(null)} />
     </div>
   );
+}
+
+function cnOwner(orphaned) {
+  return orphaned
+    ? 'block truncate text-[12.5px] text-ink-3 italic'
+    : 'block truncate text-[12.5px] text-ink-2';
 }

@@ -1,11 +1,10 @@
-import { Bot, ShieldAlert, ShieldOff, User, Vault } from 'lucide-react';
+import { Bot, User } from 'lucide-react';
 import { classificationMeta, ownerTypeMeta } from '../../lib/domain';
-import { arnResource, formatNumber, formatRelative, titleCaseEnum } from '../../lib/format';
+import { arnResource, titleCaseEnum } from '../../lib/format';
 import { CellStack } from '../../ui/DataGrid';
-import { Tag } from '../../ui/Tag';
 
 /** Human identities read differently from machine ones; the icon says which. */
-export function identityIcon(identity) {
+function identityIcon(identity) {
   const meta = classificationMeta(identity.classification);
   return meta.kind === 'human' ? User : Bot;
 }
@@ -44,45 +43,6 @@ export function OwnerCell({ identity }) {
         {owner || 'Unassigned'}
       </span>
       <span className="block truncate text-[11px] text-ink-3">{meta.label}</span>
-    </span>
-  );
-}
-
-/**
- * Posture markers, shown only when true. Absence of a marker is not a claim
- * that the opposite is verified — it just means the flag is not set.
- */
-export function RiskMarkersCell({ identity }) {
-  const markers = [];
-  if (identity.is_admin) markers.push({ key: 'admin', label: 'Admin', tone: 'critical', icon: ShieldAlert });
-  if (String(identity.classification).toUpperCase() === 'HUMAN' && !identity.mfa_enabled) {
-    markers.push({ key: 'mfa', label: 'No MFA', tone: 'critical', icon: ShieldOff });
-  }
-  if (identity.is_secret) markers.push({ key: 'secret', label: 'Secret', tone: 'medium', icon: Vault });
-  if (String(identity.owner_type).toUpperCase() === 'ORPHANED') {
-    markers.push({ key: 'orphan', label: 'Orphaned', tone: 'high' });
-  }
-
-  if (markers.length === 0) return <span className="text-[12.5px] text-ink-3">—</span>;
-
-  return (
-    <span className="flex flex-wrap items-center gap-1.5">
-      {markers.map((marker) => (
-        <Tag key={marker.key} tone={marker.tone} size="sm" icon={marker.icon}>
-          {marker.label}
-        </Tag>
-      ))}
-    </span>
-  );
-}
-
-export function ActivityCell({ identity }) {
-  return (
-    <span className="block min-w-0">
-      <span className="block text-[12.5px] text-ink-2">{formatRelative(identity.last_active)}</span>
-      <span className="block text-[11px] text-ink-3" data-numeric="">
-        {formatNumber(identity.total_events)} events
-      </span>
     </span>
   );
 }

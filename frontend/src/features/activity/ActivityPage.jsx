@@ -9,7 +9,8 @@ import { PageHeader } from '../../shell/PageHeader';
 import { Button } from '../../ui/Button';
 import { Panel } from '../../ui/Panel';
 import { Input } from '../../ui/Field';
-import { ActiveFilters, Toolbar } from '../../ui/Toolbar';
+import { AppliedFilters } from '../../ui/FacetRail';
+import { RecordBar, ResultCount } from '../../ui/WorkArea';
 import { CellStack, DataGrid } from '../../ui/DataGrid';
 import { Pagination } from '../../ui/Pagination';
 import { Tag } from '../../ui/Tag';
@@ -69,9 +70,8 @@ export default function ActivityPage() {
     : [];
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <PageHeader
-        eyebrow="Operations"
         title="API activity"
         lede="CloudTrail events captured by this scan, newest first. Mutating calls are marked separately from read-only ones so privilege use stands out."
         actions={
@@ -82,13 +82,7 @@ export default function ActivityPage() {
       />
 
       <Panel flush className="animate-rise overflow-hidden">
-        <Toolbar
-          trailing={
-            <p className="hidden text-[12.5px] text-ink-3 sm:block" data-numeric="">
-              {query.isLoading && !query.data ? '—' : formatNumber(total)} events
-            </p>
-          }
-        >
+        <RecordBar>
           <Input
             value={arnDraft}
             onChange={(event) => setArnDraft(event.target.value)}
@@ -96,9 +90,16 @@ export default function ActivityPage() {
             aria-label="Filter by exact identity ARN"
             className="w-full min-w-0 font-mono text-[12.5px] sm:max-w-lg"
           />
-        </Toolbar>
+          <ResultCount
+            shown={formatNumber(rows.length)}
+            total={formatNumber(total)}
+            unit="events"
+            filtered={chips.length > 0}
+            loading={query.isLoading && !query.data}
+          />
+        </RecordBar>
 
-        <ActiveFilters
+        <AppliedFilters
           filters={chips}
           onRemove={() => {
             setArnDraft('');

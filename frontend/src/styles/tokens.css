@@ -29,12 +29,17 @@
   --t-ink-3: #7c8da3;
   --t-ink-inverse: #f7fafe;
 
-  /* Rail (always dark — brand anchor) ------------------------------------ */
-  --t-rail: #071b33;
-  --t-rail-2: #0a2745;
-  --t-rail-line: rgba(255, 255, 255, 0.09);
-  --t-rail-ink: #dbe7f5;
-  --t-rail-ink-muted: #8ba3c0;
+  /* Top bar (always dark — the brand surface, full viewport width) -------- */
+  --t-topbar: #071b33;
+  --t-topbar-2: #0a2745;
+  --t-topbar-line: rgba(255, 255, 255, 0.1);
+  --t-topbar-ink: #e2ecf7;
+  --t-topbar-muted: #8ba3c0;
+  --t-topbar-hover: rgba(255, 255, 255, 0.08);
+
+  /* Sidebar — an application surface that recedes behind the content ----- */
+  --t-sidebar: #f8fafc;
+  --t-sidebar-line: #e3e9f1;
 
   /* Risk / status -------------------------------------------------------- */
   --t-critical: #b42318;
@@ -96,9 +101,13 @@
   --t-ink-3: #6f8098;
   --t-ink-inverse: #0b1b2e;
 
-  --t-rail: #040c18;
-  --t-rail-2: #08192d;
-  --t-rail-line: rgba(255, 255, 255, 0.07);
+  --t-topbar: #040c18;
+  --t-topbar-2: #08192d;
+  --t-topbar-line: rgba(255, 255, 255, 0.08);
+  --t-topbar-hover: rgba(255, 255, 255, 0.07);
+
+  --t-sidebar: #0a1322;
+  --t-sidebar-line: #1e2e46;
 
   --t-brand: #2f92d8;
   --t-brand-strong: #1c7cbf;
@@ -159,11 +168,14 @@
   --color-ink-3: var(--t-ink-3);
   --color-ink-inverse: var(--t-ink-inverse);
 
-  --color-rail: var(--t-rail);
-  --color-rail-2: var(--t-rail-2);
-  --color-rail-line: var(--t-rail-line);
-  --color-rail-ink: var(--t-rail-ink);
-  --color-rail-muted: var(--t-rail-ink-muted);
+  --color-topbar: var(--t-topbar);
+  --color-topbar-2: var(--t-topbar-2);
+  --color-topbar-line: var(--t-topbar-line);
+  --color-topbar-ink: var(--t-topbar-ink);
+  --color-topbar-muted: var(--t-topbar-muted);
+  --color-topbar-hover: var(--t-topbar-hover);
+  --color-sidebar: var(--t-sidebar);
+  --color-sidebar-line: var(--t-sidebar-line);
 
   --color-critical: var(--t-critical);
   --color-critical-soft: var(--t-critical-soft);

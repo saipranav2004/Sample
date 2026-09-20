@@ -1,11 +1,13 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
+  Columns3,
+  Download,
   ExternalLink,
   FileWarning,
   GitCommitHorizontal,
   List,
-  RotateCw,
+  Rows3,
   SearchX,
   ShieldOff,
 } from 'lucide-react';
@@ -28,11 +30,13 @@ import {
   shortBranch,
   shortCommit,
 } from '../../lib/format';
+import { exportRowsToCsv, timestampedName } from '../../lib/csv';
 import { PageHeader } from '../../shell/PageHeader';
 import { Button } from '../../ui/Button';
 import { Panel } from '../../ui/Panel';
-import { SearchInput, Select } from '../../ui/Field';
-import { ActiveFilters, Toolbar } from '../../ui/Toolbar';
+import { SearchInput } from '../../ui/Field';
+import { AppliedFilters, FacetRail } from '../../ui/FacetRail';
+import { RecordBar, ResultCount, WorkArea } from '../../ui/WorkArea';
 import { SegmentedControl, Tabs } from '../../ui/Tabs';
 import { CellStack, DataGrid } from '../../ui/DataGrid';
 import { Menu } from '../../ui/Menu';
@@ -66,7 +70,9 @@ export default function FindingsPage() {
   const [platform, setPlatform] = useState('all');
   const [tier, setTier] = useState('');
   const [detector, setDetector] = useState('');
+  const [repository, setRepository] = useState('');
   const [search, setSearch] = useState('');
+  const [density, setDensity] = useState('comfortable');
   const [view, setView] = useState('findings');
   const [sort, setSort] = useState({ key: 'detected', direction: 'desc' });
   const [selected, setSelected] = useState(null);
@@ -95,12 +101,13 @@ export default function FindingsPage() {
     return platformFiltered.filter((finding) => {
       if (tier && String(finding.risk_tier).toUpperCase() !== tier) return false;
       if (detector && finding.detector !== detector) return false;
+      if (repository && finding.repository !== repository) return false;
       if (!needle) return true;
       return [finding.repository, finding.file_path, finding.author, finding.detector, finding.branch]
         .filter(Boolean)
         .some((field) => String(field).toLowerCase().includes(needle));
     });
-  }, [platformFiltered, tier, detector, search]);
+  }, [platformFiltered, tier, detector, repository, search]);
 
   const sorted = useMemo(() => {
     const rows = [...filtered];
@@ -124,13 +131,52 @@ export default function FindingsPage() {
     return groups.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   }, [sorted]);
 
-  const detectorOptions = useMemo(
-    () =>
-      summary.detectors.map((entry) => ({
-        value: entry.key,
-        label: `${humanizeToken(entry.key)} (${entry.value})`,
-      })),
-    [summary.detectors],
+  /* Every facet count is computed from the live set the service returned, so
+     the numbers and the rows can never disagree. */
+  const repositoryOptions = useMemo(() => {
+    const counts = new Map();
+    for (const finding of platformFiltered) {
+      if (!finding.repository) continue;
+      counts.set(finding.repository, (counts.get(finding.repository) || 0) + 1);
+    }
+    return [...counts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([key, count]) => ({ value: key, label: key, count, active: repository === key }));
+  }, [platformFiltered, repository]);
+
+  const facetGroups = useMemo(
+    () => [
+      {
+        key: 'tier',
+        label: 'Risk tier',
+        options: SEVERITY_ORDER.filter((value) => (summary.byTier[value] || 0) > 0).map((value) => ({
+          value,
+          label: severityMeta(value).label,
+          count: summary.byTier[value],
+          active: tier === value,
+        })),
+        onToggle: (value) => setTier((current) => (current === value ? '' : value)),
+        note: 'Critical cannot occur on this deployment — liveness verification is unavailable, so the scanner never raises that tier.',
+      },
+      {
+        key: 'detector',
+        label: 'Detector',
+        options: summary.detectors.map((entry) => ({
+          value: entry.key,
+          label: humanizeToken(entry.key),
+          count: entry.value,
+          active: detector === entry.key,
+        })),
+        onToggle: (value) => setDetector((current) => (current === value ? '' : value)),
+      },
+      {
+        key: 'repository',
+        label: 'Repository',
+        options: repositoryOptions,
+        onToggle: (value) => setRepository((current) => (current === value ? '' : value)),
+      },
+    ],
+    [summary, tier, detector, repositoryOptions],
   );
 
   const chips = useMemo(() => {
@@ -138,19 +184,49 @@ export default function FindingsPage() {
     if (search.trim()) list.push({ key: 'search', label: 'Search', value: search.trim() });
     if (tier) list.push({ key: 'tier', label: 'Risk', value: severityMeta(tier).label });
     if (detector) list.push({ key: 'detector', label: 'Detector', value: humanizeToken(detector) });
+    if (repository) list.push({ key: 'repository', label: 'Repo', value: repository });
     return list;
-  }, [search, tier, detector]);
+  }, [search, tier, detector, repository]);
 
   const removeChip = (key) => {
     if (key === 'search') setSearch('');
     if (key === 'tier') setTier('');
     if (key === 'detector') setDetector('');
+    if (key === 'repository') setRepository('');
   };
 
   const clearAll = () => {
     setSearch('');
     setTier('');
     setDetector('');
+    setRepository('');
+  };
+
+  const onExport = () => {
+    exportRowsToCsv({
+      filename: timestampedName('code-exposure-findings'),
+      columns: [
+        { header: 'Detector', value: (row) => row.detector },
+        { header: 'Risk tier', value: (row) => row.risk_tier },
+        { header: 'Recommended action', value: (row) => row.recommended_action },
+        { header: 'Platform', value: (row) => row.platform || 'codecommit' },
+        { header: 'Repository', value: (row) => row.repository },
+        { header: 'Branch', value: (row) => row.branch },
+        { header: 'Commit', value: (row) => row.commit_id },
+        { header: 'File', value: (row) => row.file_path },
+        { header: 'Line', value: (row) => row.line_number },
+        { header: 'Masked value', value: (row) => row.redacted },
+        { header: 'Author', value: (row) => row.author },
+        { header: 'Detected (UTC)', value: (row) => row.created_at },
+        { header: 'Link', value: (row) => row.codecommit_uri || row.github_uri || '' },
+      ],
+      rows: sorted,
+    });
+    notify({
+      variant: 'success',
+      title: 'Exported current view',
+      description: `${formatNumber(sorted.length)} findings written to CSV, with masked values only.`,
+    });
   };
 
   const onDismiss = useCallback(
@@ -178,9 +254,8 @@ export default function FindingsPage() {
   if (query.isError && !query.data) {
     const detail = describeScannerError(query.error);
     return (
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-4">
         <PageHeader
-          eyebrow="Code exposure"
           title="Secret findings"
           lede="Credentials committed to connected repositories."
         />
@@ -284,17 +359,31 @@ export default function FindingsPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <PageHeader
-        eyebrow="Code exposure"
         title="Secret findings"
         lede="Credentials committed into connected CodeCommit and GitHub repositories. Values are masked by the scanner — triage by risk, then rotate at the source."
+        tabs={
+          <Tabs
+            size="sm"
+            value={platform}
+            onChange={setPlatform}
+            tabs={[
+              { value: 'all', label: 'All platforms', count: summary.total },
+              { value: 'github', label: 'GitHub', count: summary.byPlatform.github },
+              { value: 'codecommit', label: 'CodeCommit', count: summary.byPlatform.codecommit },
+            ]}
+          />
+        }
         actions={
           <>
             <Button as={Link} to="/exposure/dismissed" variant="ghost" icon={ShieldOff}>
               Dismissed
             </Button>
-            <Button variant="secondary" icon={RotateCw} onClick={query.refetch} loading={query.isRefreshing}>
+            <Button variant="ghost" icon={Download} onClick={onExport} disabled={sorted.length === 0}>
+              Export view
+            </Button>
+            <Button variant="secondary" onClick={query.refetch} loading={query.isRefreshing}>
               Refresh
             </Button>
           </>
@@ -339,53 +428,50 @@ export default function FindingsPage() {
         </div>
       )}
 
-      <Panel flush className="animate-rise overflow-hidden">
-        <div className="px-4 pt-1">
-          <Tabs
-            size="sm"
-            value={platform}
-            onChange={setPlatform}
-            tabs={[
-              { value: 'all', label: 'All platforms', count: summary.total },
-              { value: 'github', label: 'GitHub', count: summary.byPlatform.github },
-              { value: 'codecommit', label: 'CodeCommit', count: summary.byPlatform.codecommit },
-            ]}
+      <WorkArea
+        rail={
+          <FacetRail
+            groups={facetGroups}
+            appliedCount={chips.length}
+            onClearAll={clearAll}
+            mobileTitle="Filter findings"
           />
-        </div>
-
-        <Toolbar
+        }
+      >
+      <Panel flush className="animate-rise overflow-hidden">
+        <RecordBar
           trailing={
-            <SegmentedControl label="View mode" options={VIEWS} value={view} onChange={setView} />
+            <>
+              <SegmentedControl label="View mode" options={VIEWS} value={view} onChange={setView} />
+              <SegmentedControl
+                label="Row density"
+                value={density}
+                onChange={setDensity}
+                options={[
+                  { value: 'compact', label: 'Compact', icon: Rows3 },
+                  { value: 'comfortable', label: 'Comfortable', icon: Columns3 },
+                ]}
+              />
+            </>
           }
         >
           <SearchInput
+            size="sm"
             value={search}
             onChange={setSearch}
             placeholder="Search repository, file, branch, detector or author…"
             className="w-full min-w-0 sm:max-w-sm"
           />
-          <Select
-            value={tier}
-            onChange={(event) => setTier(event.target.value)}
-            options={SEVERITY_ORDER.filter((value) => (summary.byTier[value] || 0) > 0).map((value) => ({
-              value,
-              label: `${severityMeta(value).label} (${summary.byTier[value]})`,
-            }))}
-            placeholder="Any risk tier"
-            aria-label="Filter by risk tier"
-            className="w-full sm:w-44"
+          <ResultCount
+            shown={formatNumber(sorted.length)}
+            total={formatNumber(summary.total)}
+            unit="findings"
+            filtered={chips.length > 0 || platform !== 'all'}
+            loading={loading}
           />
-          <Select
-            value={detector}
-            onChange={(event) => setDetector(event.target.value)}
-            options={detectorOptions}
-            placeholder="Any detector"
-            aria-label="Filter by detector"
-            className="w-full sm:w-60"
-          />
-        </Toolbar>
+        </RecordBar>
 
-        <ActiveFilters filters={chips} onRemove={removeChip} onClearAll={clearAll} />
+        <AppliedFilters filters={chips} onRemove={removeChip} onClearAll={clearAll} />
 
         {loading ? (
           <GridSkeleton columns={5} rows={10} />
@@ -397,6 +483,7 @@ export default function FindingsPage() {
             rowKey={(row) => row.finding_id}
             refreshing={query.isRefreshing}
             onRowClick={setSelected}
+            density={density}
             sort={sort}
             onSortChange={setSort}
             rowActions={(row) => {
@@ -457,6 +544,7 @@ export default function FindingsPage() {
           <PushList pushes={pushes} onSelect={setSelected} />
         )}
       </Panel>
+      </WorkArea>
 
       <FindingDrawer
         finding={selected}

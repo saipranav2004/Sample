@@ -20,7 +20,8 @@ import {
 export const NAV_GROUPS = [
   {
     key: 'overview',
-    items: [{ to: '/posture', label: 'Posture', icon: Gauge, end: true }],
+    label: 'Posture',
+    items: [{ to: '/posture', label: 'Overview', icon: Gauge, end: true }],
   },
   {
     key: 'inventory',
@@ -55,5 +56,22 @@ export const NAV_GROUPS = [
 ];
 
 export const ALL_NAV_ITEMS = NAV_GROUPS.flatMap((group) =>
-  group.items.map((item) => ({ ...item, group: group.label || 'Overview' })),
+  group.items.map((item) => ({ ...item, group: group.label || 'Posture' })),
 );
+
+/**
+ * Breadcrumb trail per route. A console is a place people get lost in, so
+ * every screen states where it sits. Kept as data rather than derived from the
+ * path so the labels match the navigation exactly.
+ */
+export const BREADCRUMBS = {
+  '/posture': ['Posture'],
+  '/identities': ['Inventory', 'Identities'],
+  '/credentials': ['Inventory', 'Credentials'],
+  '/secrets': ['Inventory', 'Secret-backed'],
+  '/exposure': ['Code exposure', 'Findings'],
+  '/exposure/dismissed': ['Code exposure', 'Dismissed'],
+  '/activity': ['Operations', 'Activity'],
+  '/scans': ['Operations', 'Scans'],
+  '/my-resources': ['Assigned to me', 'My resources'],
+};
