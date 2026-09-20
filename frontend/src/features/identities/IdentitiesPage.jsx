@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Columns3, Copy, Download, Fingerprint, Rows3, SearchX } from 'lucide-react';
+import { Copy, Fingerprint, SearchX } from 'lucide-react';
 import { fetchIdentities, fetchSummary } from '../../lib/api/endpoints';
 import { useDebouncedValue, useQuery } from '../../lib/hooks';
 import { useScanContext } from '../../app/ScanContext';
@@ -11,9 +11,10 @@ import { PageHeader } from '../../shell/PageHeader';
 import { Button, IconButton } from '../../ui/Button';
 import { Panel } from '../../ui/Panel';
 import { SearchInput } from '../../ui/Field';
-import { AppliedFilters, FacetRail } from '../../ui/FacetRail';
-import { RecordBar, ResultCount, WorkArea } from '../../ui/WorkArea';
-import { SegmentedControl, Tabs } from '../../ui/Tabs';
+import { AppliedFilters, FacetRail, useFacetRail } from '../../ui/FacetRail';
+import { RecordBar, ResultCount, ShowFiltersButton, WorkArea } from '../../ui/WorkArea';
+import { Tabs } from '../../ui/Tabs';
+import { OverflowMenu, RefreshButton, TableSettings, TableToolbar } from '../../ui/TableTools';
 import { DataGrid } from '../../ui/DataGrid';
 import { Pagination } from '../../ui/Pagination';
 import { EmptyState, ErrorState } from '../../ui/States';
@@ -50,6 +51,7 @@ export default function IdentitiesPage() {
   const [selected, setSelected] = useState(null);
   const [searchDraft, setSearchDraft] = useState(() => searchParams.get('search') || '');
   const debouncedSearch = useDebouncedValue(searchDraft, 320);
+  const { railOpen, toggleRail } = useFacetRail();
   const [density, setDensity] = useState(() => {
     try {
       return localStorage.getItem(DENSITY_KEY) || 'comfortable';
@@ -349,16 +351,6 @@ export default function IdentitiesPage() {
       <PageHeader
         title="Identity explorer"
         lede="Every principal discovered in this scan. Narrow with facets, then open a record to see its credentials, reach and callers."
-        actions={
-          <>
-            <Button variant="ghost" icon={Download} onClick={onExport} disabled={rows.length === 0}>
-              Export page
-            </Button>
-            <Button variant="secondary" onClick={query.refetch} loading={query.isRefreshing}>
-              Refresh
-            </Button>
-          </>
-        }
         tabs={
           <Tabs
             size="sm"
@@ -377,11 +369,13 @@ export default function IdentitiesPage() {
       />
 
       <WorkArea
+        railOpen={railOpen}
         rail={
           <FacetRail
             groups={facetGroups}
             appliedCount={chips.length}
             onClearAll={clearAll}
+            onClose={toggleRail}
             mobileTitle="Filter identities"
           />
         }
@@ -389,15 +383,25 @@ export default function IdentitiesPage() {
         <Panel flush className="animate-rise overflow-hidden">
           <RecordBar
             trailing={
-              <SegmentedControl
-                label="Row density"
-                value={density}
-                onChange={setDensityPref}
-                options={[
-                  { value: 'compact', label: 'Compact', icon: Rows3 },
-                  { value: 'comfortable', label: 'Comfortable', icon: Columns3 },
-                ]}
-              />
+              <TableToolbar>
+                {!railOpen && (
+                  <ShowFiltersButton onClick={toggleRail} appliedCount={chips.length} />
+                )}
+                <RefreshButton onRefresh={query.refetch} refreshing={query.isRefreshing} />
+                <TableSettings density={density} onDensityChange={setDensityPref} />
+                <OverflowMenu
+                  items={[
+                    {
+                      key: 'export',
+                      label: 'Export this page',
+                      hint: `CSV of the ${rows.length} rows shown`,
+                      onSelect: onExport,
+                      disabled: rows.length === 0,
+                      disabledHint: 'Nothing to export - no rows match',
+                    },
+                  ]}
+                />
+              </TableToolbar>
             }
           >
             <SearchInput

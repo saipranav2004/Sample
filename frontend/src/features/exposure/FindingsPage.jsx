@@ -1,13 +1,10 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Columns3,
-  Download,
   ExternalLink,
   FileWarning,
   GitCommitHorizontal,
   List,
-  Rows3,
   SearchX,
   ShieldOff,
 } from 'lucide-react';
@@ -35,9 +32,10 @@ import { PageHeader } from '../../shell/PageHeader';
 import { Button } from '../../ui/Button';
 import { Panel } from '../../ui/Panel';
 import { SearchInput } from '../../ui/Field';
-import { AppliedFilters, FacetRail } from '../../ui/FacetRail';
-import { RecordBar, ResultCount, WorkArea } from '../../ui/WorkArea';
+import { AppliedFilters, FacetRail, useFacetRail } from '../../ui/FacetRail';
+import { RecordBar, ResultCount, ShowFiltersButton, WorkArea } from '../../ui/WorkArea';
 import { SegmentedControl, Tabs } from '../../ui/Tabs';
+import { OverflowMenu, RefreshButton, TableSettings, TableToolbar } from '../../ui/TableTools';
 import { CellStack, DataGrid } from '../../ui/DataGrid';
 import { Menu } from '../../ui/Menu';
 import { Tag } from '../../ui/Tag';
@@ -72,6 +70,7 @@ export default function FindingsPage() {
   const [detector, setDetector] = useState('');
   const [repository, setRepository] = useState('');
   const [search, setSearch] = useState('');
+  const { railOpen, toggleRail } = useFacetRail();
   const [density, setDensity] = useState('comfortable');
   const [view, setView] = useState('findings');
   const [sort, setSort] = useState({ key: 'detected', direction: 'desc' });
@@ -380,12 +379,6 @@ export default function FindingsPage() {
             <Button as={Link} to="/exposure/dismissed" variant="ghost" icon={ShieldOff}>
               Dismissed
             </Button>
-            <Button variant="ghost" icon={Download} onClick={onExport} disabled={sorted.length === 0}>
-              Export view
-            </Button>
-            <Button variant="secondary" onClick={query.refetch} loading={query.isRefreshing}>
-              Refresh
-            </Button>
           </>
         }
       />
@@ -429,11 +422,13 @@ export default function FindingsPage() {
       )}
 
       <WorkArea
+        railOpen={railOpen}
         rail={
           <FacetRail
             groups={facetGroups}
             appliedCount={chips.length}
             onClearAll={clearAll}
+            onClose={toggleRail}
             mobileTitle="Filter findings"
           />
         }
@@ -441,18 +436,28 @@ export default function FindingsPage() {
       <Panel flush className="animate-rise overflow-hidden">
         <RecordBar
           trailing={
-            <>
+            <TableToolbar>
+              {/* View mode stays in the open: it changes which records are
+                  listed, which is not a display preference. */}
               <SegmentedControl label="View mode" options={VIEWS} value={view} onChange={setView} />
-              <SegmentedControl
-                label="Row density"
-                value={density}
-                onChange={setDensity}
-                options={[
-                  { value: 'compact', label: 'Compact', icon: Rows3 },
-                  { value: 'comfortable', label: 'Comfortable', icon: Columns3 },
+              {!railOpen && (
+                <ShowFiltersButton onClick={toggleRail} appliedCount={chips.length} />
+              )}
+              <RefreshButton onRefresh={query.refetch} refreshing={query.isRefreshing} />
+              <TableSettings density={density} onDensityChange={setDensity} />
+              <OverflowMenu
+                items={[
+                  {
+                    key: 'export',
+                    label: 'Export this view',
+                    hint: `CSV of all ${sorted.length} matching findings`,
+                    onSelect: onExport,
+                    disabled: sorted.length === 0,
+                    disabledHint: 'Nothing to export - no findings match',
+                  },
                 ]}
               />
-            </>
+            </TableToolbar>
           }
         >
           <SearchInput

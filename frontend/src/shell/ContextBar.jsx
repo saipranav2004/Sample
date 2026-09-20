@@ -1,16 +1,16 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ChevronRight } from 'lucide-react';
 import { BREADCRUMBS } from './navigation';
-import { ScanSwitcher } from './ScanSwitcher';
 import { cn } from '../ui/cn';
 
 /**
- * Context row: where am I, how do I get back, and what data am I looking at.
+ * Context row: where am I, and how do I get back.
  *
- * Scan scope sits here rather than in the top bar because it is a statement
- * about the records on this screen, not global chrome - so it belongs beside
- * the words that name the screen. The back control exists because a console is
- * a place people navigate into, and the browser's own button is not a UI.
+ * Scan scope used to sit here too. It moved to the top bar, because it is
+ * global state rather than a property of this screen - see `TopBar`. What is
+ * left is location, which is what a context row is for. The back control exists
+ * because a console is a place people navigate into, and the browser's own
+ * button is not a UI.
  */
 export function ContextBar() {
   const { pathname, key } = useLocation();
@@ -59,10 +59,6 @@ export function ContextBar() {
           );
         })}
       </nav>
-
-      <div className="ml-auto flex shrink-0 items-center gap-2">
-        <ScanSwitcher />
-      </div>
     </div>
   );
 }

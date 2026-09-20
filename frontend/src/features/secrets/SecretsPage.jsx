@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Columns3, Copy, Download, Lock, Rows3, SearchX, ShieldCheck } from 'lucide-react';
+import { Copy, Lock, SearchX, ShieldCheck } from 'lucide-react';
 import { countIdentities, fetchIdentities } from '../../lib/api/endpoints';
 import { useDebouncedValue, useQuery } from '../../lib/hooks';
 import { useScanContext } from '../../app/ScanContext';
@@ -11,9 +11,9 @@ import { PageHeader } from '../../shell/PageHeader';
 import { Button, IconButton } from '../../ui/Button';
 import { Panel } from '../../ui/Panel';
 import { SearchInput } from '../../ui/Field';
-import { AppliedFilters, FacetRail } from '../../ui/FacetRail';
-import { RecordBar, ResultCount, WorkArea } from '../../ui/WorkArea';
-import { SegmentedControl } from '../../ui/Tabs';
+import { AppliedFilters, FacetRail, useFacetRail } from '../../ui/FacetRail';
+import { RecordBar, ResultCount, ShowFiltersButton, WorkArea } from '../../ui/WorkArea';
+import { OverflowMenu, RefreshButton, TableSettings, TableToolbar } from '../../ui/TableTools';
 import { MetricTile } from '../../ui/Stat';
 import { StatStripSkeleton } from '../../ui/Skeleton';
 import { DataGrid } from '../../ui/DataGrid';
@@ -77,6 +77,7 @@ export default function SecretsPage() {
   const [selected, setSelected] = useState(null);
   const [searchDraft, setSearchDraft] = useState(() => searchParams.get('search') || '');
   const debouncedSearch = useDebouncedValue(searchDraft, 320);
+  const { railOpen, toggleRail } = useFacetRail();
   const [density, setDensity] = useState(() => {
     try {
       return localStorage.getItem(DENSITY_KEY) || 'comfortable';
@@ -272,16 +273,6 @@ export default function SecretsPage() {
       <PageHeader
         title="Secret-backed identities"
         lede="Principals whose credentials sit in a secret store entry. A leaked secret grants working access to every identity on this list, so the intersections below are the queue that matters."
-        actions={
-          <>
-            <Button variant="ghost" icon={Download} onClick={onExport} disabled={rows.length === 0}>
-              Export page
-            </Button>
-            <Button variant="secondary" onClick={query.refetch} loading={query.isRefreshing}>
-              Refresh
-            </Button>
-          </>
-        }
       />
 
       {crossQuery.isLoading && !crossQuery.data ? (
@@ -322,11 +313,13 @@ export default function SecretsPage() {
       )}
 
       <WorkArea
+        railOpen={railOpen}
         rail={
           <FacetRail
             groups={facetGroups}
             appliedCount={refined ? refinementChips.length - 1 : 0}
             onClearAll={clearRefinements}
+            onClose={toggleRail}
             mobileTitle="Refine secret-backed"
           />
         }
@@ -334,15 +327,28 @@ export default function SecretsPage() {
         <Panel flush className="animate-rise overflow-hidden">
           <RecordBar
             trailing={
-              <SegmentedControl
-                label="Row density"
-                value={density}
-                onChange={setDensityPref}
-                options={[
-                  { value: 'compact', label: 'Compact', icon: Rows3 },
-                  { value: 'comfortable', label: 'Comfortable', icon: Columns3 },
-                ]}
-              />
+              <TableToolbar>
+                {!railOpen && (
+                  <ShowFiltersButton
+                    onClick={toggleRail}
+                    appliedCount={refined ? refinementChips.length - 1 : 0}
+                  />
+                )}
+                <RefreshButton onRefresh={query.refetch} refreshing={query.isRefreshing} />
+                <TableSettings density={density} onDensityChange={setDensityPref} />
+                <OverflowMenu
+                  items={[
+                    {
+                      key: 'export',
+                      label: 'Export this page',
+                      hint: `CSV of the ${rows.length} rows shown`,
+                      onSelect: onExport,
+                      disabled: rows.length === 0,
+                      disabledHint: 'Nothing to export - no rows match',
+                    },
+                  ]}
+                />
+              </TableToolbar>
             }
           >
             <SearchInput

@@ -13,7 +13,7 @@ export function PageHeader({ title, lede, actions, tabs, meta, className }) {
         className,
       )}
     >
-      <div className="mx-auto w-full max-w-[1640px]">
+      <div className="mx-auto w-full max-w-[1760px]">
         <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3 pb-3.5">
           <div className="min-w-0">
             <h1 className="text-[21px] leading-tight font-extrabold tracking-[-0.026em] text-ink sm:text-[23px]">

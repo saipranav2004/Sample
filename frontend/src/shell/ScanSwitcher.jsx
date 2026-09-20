@@ -8,9 +8,16 @@ import { Tag } from '../ui/Tag';
 import { cn } from '../ui/cn';
 
 /**
- * Global scan scope. Every figure in the product is "as of" one scan, so the
- * switcher sits in the top bar rather than being repeated per page - and it
- * shows which snapshot is in effect even when the default (latest) is used.
+ * Global scan scope.
+ *
+ * It lives in the top bar, beside the account. Every figure in the product is
+ * "as of" one scan, so this is global state, and the top bar is where a console
+ * keeps global state - the same slot AWS gives its region selector and
+ * Cloudscape reserves for scope. In the context row it read as a property of
+ * one screen, which understated it: changing it rescopes the whole product.
+ *
+ * It is styled against the top-bar tokens so it works on both the light and
+ * the dark bar.
  */
 export function ScanSwitcher() {
   const { scans, selectedScanId, setSelectedScanId, activeScan, isLatest, loading, error, refetch } =
@@ -36,8 +43,8 @@ export function ScanSwitcher() {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 rounded-[var(--radius-control)] border border-line bg-surface-2 px-2.5 py-1">
-        <Skeleton className="size-3.5 rounded" />
+      <div className="flex h-9 items-center gap-2 rounded-[var(--radius-control)] border border-topbar-line bg-topbar-field px-2.5">
+        <Skeleton className="size-4 rounded" />
         <Skeleton className="hidden h-2.5 w-28 rounded sm:block" />
       </div>
     );
@@ -48,9 +55,9 @@ export function ScanSwitcher() {
       <button
         type="button"
         onClick={refetch}
-        className="flex items-center gap-2 rounded-[var(--radius-control)] border border-critical/30 bg-critical-soft px-2.5 py-1 text-[12px] font-medium text-critical"
+        className="flex h-9 items-center gap-2 rounded-[var(--radius-control)] border border-critical/40 bg-critical-soft px-2.5 text-[12.5px] font-medium text-critical"
       >
-        <RotateCw aria-hidden="true" className="size-3.5" />
+        <RotateCw aria-hidden="true" className="size-4" />
         <span className="hidden sm:inline">Scan list unavailable - retry</span>
         <span className="sm:hidden">Retry</span>
       </button>
@@ -70,24 +77,24 @@ export function ScanSwitcher() {
         aria-haspopup="listbox"
         aria-expanded={open}
         className={cn(
-          'flex h-7 min-w-0 items-center gap-2 rounded-[var(--radius-control)] border px-2 text-left text-[12px] transition-colors duration-150 sm:max-w-[19rem]',
+          'flex h-9 min-w-0 items-center gap-2 rounded-[var(--radius-control)] border px-2.5 text-left text-[12.5px] transition-colors duration-150 sm:max-w-[20rem]',
           open
-            ? 'border-brand/45 bg-info-soft'
-            : 'border-line bg-surface-2 hover:border-line-strong hover:bg-surface-3',
+            ? 'border-brand/55 bg-topbar-field'
+            : 'border-topbar-line bg-topbar-field hover:border-ink-3/45',
         )}
       >
-        <Database aria-hidden="true" className="size-3.5 shrink-0 text-brand" />
-        <span className="hidden text-[10.5px] font-semibold tracking-[0.1em] text-ink-3 uppercase sm:inline">
+        <Database aria-hidden="true" className="size-4 shrink-0 text-brand" />
+        <span className="hidden text-[10.5px] font-semibold tracking-[0.1em] text-topbar-muted uppercase lg:inline">
           Scan
         </span>
-        <span className="min-w-0 truncate font-semibold text-ink">{label}</span>
-        <span className="hidden shrink-0 text-ink-3 sm:inline">
+        <span className="min-w-0 truncate font-semibold text-topbar-ink">{label}</span>
+        <span className="hidden shrink-0 text-topbar-muted sm:inline">
           {isLatest ? 'latest' : meta}
         </span>
         <ChevronDown
           aria-hidden="true"
           className={cn(
-            'size-3.5 shrink-0 text-ink-3 transition-transform duration-200',
+            'size-4 shrink-0 text-topbar-muted transition-transform duration-200',
             open && 'rotate-180',
           )}
         />
@@ -97,7 +104,7 @@ export function ScanSwitcher() {
         <div
           role="listbox"
           aria-label="Discovery scan"
-          className="animate-pop absolute right-0 z-50 mt-1.5 w-[min(92vw,24rem)] overflow-hidden rounded-[var(--radius-panel)] border border-line bg-surface shadow-lg"
+          className="animate-pop absolute right-0 z-50 mt-2 w-[min(92vw,24rem)] overflow-hidden rounded-[var(--radius-panel)] border border-line bg-surface shadow-lg"
         >
           <p className="border-b border-line bg-surface-2 px-3 py-2 text-[10.5px] font-semibold tracking-[0.12em] text-ink-3 uppercase">
             Scope all views to

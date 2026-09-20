@@ -18,6 +18,7 @@ import { Panel, PanelHeader } from '../../ui/Panel';
 import { Input } from '../../ui/Field';
 import { AppliedFilters } from '../../ui/FacetRail';
 import { RecordBar, ResultCount } from '../../ui/WorkArea';
+import { RefreshButton, TableToolbar } from '../../ui/TableTools';
 import { SegmentedControl } from '../../ui/Tabs';
 import { CellStack, DataGrid } from '../../ui/DataGrid';
 import { Pagination } from '../../ui/Pagination';
@@ -122,11 +123,6 @@ export default function ActivityPage() {
       <PageHeader
         title="API activity"
         lede="CloudTrail events captured by this scan, newest first. Mutating calls are marked separately from read-only ones, so privilege actually being used stands out from privilege merely existing."
-        actions={
-          <Button variant="secondary" onClick={query.refetch} loading={query.isRefreshing}>
-            Refresh
-          </Button>
-        }
       />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -241,7 +237,12 @@ export default function ActivityPage() {
 
       <Panel flush className="animate-rise overflow-hidden">
         <RecordBar
-          trailing={<SegmentedControl label="View mode" options={VIEWS} value={view} onChange={setView} />}
+          trailing={
+            <TableToolbar>
+              <SegmentedControl label="View mode" options={VIEWS} value={view} onChange={setView} />
+              <RefreshButton onRefresh={query.refetch} refreshing={query.isRefreshing} label="Refresh events" />
+            </TableToolbar>
+          }
         >
           <Input
             size="sm"

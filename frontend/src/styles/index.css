@@ -1,7 +1,14 @@
 @import 'tailwindcss';
 @import './tokens.css';
 
-@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+/* `dark:` applies inside a dark document, except within a subtree that has
+   opted back into light. Without the exclusion, utilities like `dark:hidden`
+   would still fire inside the sign-in card, which is light in both themes. */
+@custom-variant dark (
+  &:where([data-theme='dark'], [data-theme='dark'] *):not(
+      :where([data-theme='light'], [data-theme='light'] *)
+    )
+);
 
 /* ==========================================================================
    Base
@@ -33,6 +40,36 @@
   html {
     -webkit-text-size-adjust: 100%;
     text-rendering: optimizeLegibility;
+  }
+
+  /* Large displays should show a BIGGER console, not the same console pushed
+     into a corner. The layout is built in px, so widening the container alone
+     just makes every control look further away. Scaling the root enlarges
+     type, controls and spacing together and keeps every proportion the design
+     was tuned at.
+     `zoom` on the root element is the one property that does this without
+     breaking fixed positioning - a transform would detach the fixed top bar
+     and the drawers from the viewport. The factor is kept in a variable so a
+     subtree can cancel it exactly; see `.auth-canvas`. */
+  html {
+    --app-zoom: 1;
+    zoom: var(--app-zoom);
+  }
+
+  @media (min-width: 1800px) {
+    html {
+      --app-zoom: 1.08;
+    }
+  }
+  @media (min-width: 2300px) {
+    html {
+      --app-zoom: 1.18;
+    }
+  }
+  @media (min-width: 3000px) {
+    html {
+      --app-zoom: 1.32;
+    }
   }
 
   body {
@@ -150,6 +187,43 @@
   animation: dna-slide-left 0.34s var(--ease-out-quint) both;
 }
 
+/* Sign-in entrance. The page assembles in sequence instead of appearing all
+   at once: the canvas settles, then the statement, then the card. Each part
+   moves once, for 0.44s, and the whole sequence is over inside 0.8s - long
+   enough to read as deliberate, short enough that it never delays a sign-in.
+   `--step` is the position in the sequence. */
+@keyframes dna-auth-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes dna-auth-card-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 20px, 0) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@utility animate-auth {
+  animation: dna-auth-in 0.44s var(--ease-out-quint) both;
+  animation-delay: calc(var(--step, 0) * 80ms);
+}
+
+@utility animate-auth-card {
+  animation: dna-auth-card-in 0.52s var(--ease-out-quint) both;
+  animation-delay: calc(var(--step, 0) * 80ms);
+}
+
 /* Staggered section reveal: `data-stagger` index drives the delay. */
 @layer utilities {
   [data-stagger] {
@@ -181,11 +255,21 @@
     background: var(--t-topbar);
   }
 
+  /* Sampled from the supplied sign-in design: one flat navy across the whole
+     canvas (top-left, centre and bottom all read #0a192f), with the only
+     modelling coming from the brand slash. The previous three-layer gradient
+     was invention. */
   .auth-canvas {
-    background:
-      radial-gradient(90% 70% at 8% 4%, rgba(18, 176, 240, 0.2) 0%, transparent 58%),
-      radial-gradient(70% 60% at 96% 96%, rgba(12, 110, 180, 0.28) 0%, transparent 60%),
-      linear-gradient(145deg, #0a2748 0%, #08203c 45%, #061727 100%);
+    background: var(--t-auth-canvas);
+    /* The sign-in screen already scales itself: every size on it is a `clamp()`
+       against the viewport, calibrated so it matches the supplied design at
+       that design's width. The console's root zoom would scale it a second
+       time, so it is cancelled here - zoom is multiplicative, and this subtree
+       has no fixed-position chrome that could be disturbed by it. */
+    zoom: calc(1 / var(--app-zoom));
+    /* Viewport units ignore zoom, so the cancelled factor has to be put back
+       for the canvas to fill the screen exactly. */
+    min-height: calc(100dvh * var(--app-zoom));
   }
 
   .hairline-grid {
@@ -241,6 +325,14 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
+  }
+
+  /* Zero the delays too: with only the duration clamped, a staggered item
+     would still wait out its delay while invisible. */
+  *,
+  *::before,
+  *::after {
+    animation-delay: 0ms !important;
   }
 
   .skeleton::after {

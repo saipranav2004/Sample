@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Copy, Download, UserCircle } from 'lucide-react';
+import { Copy, UserCircle } from 'lucide-react';
 import { fetchMyResources } from '../../lib/api/endpoints';
 import { useQuery } from '../../lib/hooks';
 import { useScanContext } from '../../app/ScanContext';
@@ -9,9 +9,10 @@ import { classificationMeta } from '../../lib/domain';
 import { arnResource, formatNumber, percentValue } from '../../lib/format';
 import { exportRowsToCsv, timestampedName } from '../../lib/csv';
 import { PageHeader } from '../../shell/PageHeader';
-import { Button, IconButton } from '../../ui/Button';
+import { IconButton } from '../../ui/Button';
 import { Panel, PanelHeader } from '../../ui/Panel';
 import { RecordBar, ResultCount } from '../../ui/WorkArea';
+import { OverflowMenu, RefreshButton, TableToolbar } from '../../ui/TableTools';
 import { DataGrid } from '../../ui/DataGrid';
 import { Pagination } from '../../ui/Pagination';
 import { ProportionBar } from '../../ui/Meter';
@@ -121,16 +122,6 @@ export default function MyResourcesPage() {
             ? `Identities in this scan whose owner, primary owner or creator resolves to ${user.email}. Ownership comes from resource tags and CloudTrail, so tagging is what puts something on this list.`
             : 'Identities in this scan that resolve to your account.'
         }
-        actions={
-          <>
-            <Button variant="ghost" icon={Download} onClick={onExport} disabled={rows.length === 0}>
-              Export page
-            </Button>
-            <Button variant="secondary" onClick={query.refetch} loading={query.isRefreshing}>
-              Refresh
-            </Button>
-          </>
-        }
       />
 
       {query.isLoading && !query.data ? (
@@ -217,7 +208,25 @@ export default function MyResourcesPage() {
       )}
 
       <Panel flush className="animate-rise overflow-hidden">
-        <RecordBar>
+        <RecordBar
+          trailing={
+            <TableToolbar>
+              <RefreshButton onRefresh={query.refetch} refreshing={query.isRefreshing} />
+              <OverflowMenu
+                items={[
+                  {
+                    key: 'export',
+                    label: 'Export this page',
+                    hint: `CSV of the ${rows.length} rows shown`,
+                    onSelect: onExport,
+                    disabled: rows.length === 0,
+                    disabledHint: 'Nothing to export - no rows on this page',
+                  },
+                ]}
+              />
+            </TableToolbar>
+          }
+        >
           <ResultCount
             shown={formatNumber(rows.length)}
             total={formatNumber(total)}

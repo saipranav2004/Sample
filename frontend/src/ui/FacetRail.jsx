@@ -1,8 +1,35 @@
-import { useState } from 'react';
-import { ChevronDown, Lock, SlidersHorizontal, X } from 'lucide-react';
+import { useCallback, useState } from 'react';
+import { ChevronDown, Lock, PanelLeftClose, SlidersHorizontal, X } from 'lucide-react';
 import { formatNumber } from '../lib/format';
 import { Button } from './Button';
 import { cn } from './cn';
+
+const RAIL_KEY = 'dna.facets.open';
+
+/** Whether the desktop rail is showing. Persisted per viewer. */
+export function useFacetRail() {
+  const [open, setOpen] = useState(() => {
+    try {
+      return localStorage.getItem(RAIL_KEY) !== '0';
+    } catch {
+      return true;
+    }
+  });
+
+  const toggle = useCallback(() => {
+    setOpen((value) => {
+      const next = !value;
+      try {
+        localStorage.setItem(RAIL_KEY, next ? '1' : '0');
+      } catch {
+        /* per-viewer convenience only - safe to lose */
+      }
+      return next;
+    });
+  }, []);
+
+  return { railOpen: open, toggleRail: toggle };
+}
 
 /**
  * Persistent filter rail - the defining control of a triage console.
@@ -11,8 +38,21 @@ import { cn } from './cn';
  * full client-side finding set), so an operator knows the size of a filter
  * before applying it. A group with no counts available simply omits them
  * rather than showing a guess.
+ *
+ * The rail closes. Filtering is a phase of work, not a permanent state, and an
+ * operator reading a wide table wants those 232px back - so the header carries
+ * a close control and the work area gives the records the full width. The
+ * choice is remembered, and any applied filters stay applied and stay visible
+ * as chips above the records, so closing the rail never hides active scoping.
  */
-export function FacetRail({ groups, appliedCount, onClearAll, className, mobileTitle = 'Filters' }) {
+export function FacetRail({
+  groups,
+  appliedCount,
+  onClearAll,
+  onClose,
+  className,
+  mobileTitle = 'Filters',
+}) {
   const [openOnMobile, setOpenOnMobile] = useState(false);
 
   const body = (
@@ -34,6 +74,20 @@ export function FacetRail({ groups, appliedCount, onClearAll, className, mobileT
           <Button variant="link" size="sm" onClick={onClearAll} className="ml-auto text-[11.5px]">
             Clear all
           </Button>
+        )}
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Hide filters"
+            title="Hide filters"
+            className={cn(
+              'hidden size-6 place-items-center rounded-md text-ink-3 transition-colors hover:bg-surface-3 hover:text-ink lg:grid',
+              appliedCount > 0 ? '' : 'ml-auto',
+            )}
+          >
+            <PanelLeftClose aria-hidden="true" className="size-3.5" />
+          </button>
         )}
       </div>
 
@@ -83,7 +137,7 @@ export function FacetRail({ groups, appliedCount, onClearAll, className, mobileT
       <aside
         aria-label="Filters"
         className={cn(
-          'sticky top-[92px] hidden overflow-hidden rounded-[var(--radius-panel)] border border-line bg-surface lg:block',
+          'sticky top-[104px] hidden overflow-hidden rounded-[var(--radius-panel)] border border-line bg-surface lg:block',
           className,
         )}
       >

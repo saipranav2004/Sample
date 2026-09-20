@@ -318,3 +318,175 @@ All disabled under `prefers-reduced-motion`; none blocks input.
   "Export view" and means it.
 - **Mutating-vs-read-only totals for the whole scan** - no filter exists, so
   the split is shown only over the loaded window and labelled as such.
+
+---
+
+## 8. Revision: sign-in from measurement, toolbar from the design systems
+
+Seven changes, each with the evidence that drove it.
+
+### 8.1 The sign-in card went dark in Edge - and it was never an Edge bug
+
+Reported as "Edge renders the right panel dark, Chrome renders it correctly".
+Chrome was not correct; it was light-themed. The cause was in our CSS:
+
+```css
+/* before */
+:root                  { --t-surface: #ffffff; /* light palette */ }
+:root[data-theme='dark'] { --t-surface: #0c1626; /* dark palette */ }
+```
+
+The sign-in card carried `data-theme="light"` to opt out of theme inversion.
+That did nothing. The light values existed only on `:root`, so there was no
+rule for a nested `[data-theme='light']` to match, and the dark values
+inherited straight through it. Anyone whose theme resolved to dark - Edge with
+a dark OS, or our own Dark/System setting - got dark fields inside a white
+card. Two fixes:
+
+- The light palette is now declared for `:root, [data-theme='light']`, and the
+  dark palette for `[data-theme='dark']` (no `:root` prefix), so either palette
+  can be re-established on any subtree.
+- Both blocks now declare `color-scheme`. Without it the UA picks form-control
+  chrome from the OS preference, which is the *other* half of why Edge and
+  Chrome disagreed. Declaring `color-scheme: light` on the card's subtree is
+  what makes a browser paint light controls there regardless of OS.
+
+The `dark:` variant is also scoped out of light subtrees, or `dark:hidden`
+would still fire inside a card that is light in both themes.
+
+Verified: with the root theme dark, the card is `rgb(255,255,255)`, the fields
+`rgb(248,250,252)` and the ink `rgb(11,27,46)` - in light, dark and system.
+
+### 8.2 The sign-in screen is measured from the supplied design, not eyeballed
+
+Every colour was sampled and every size measured off the artwork:
+
+| | Sampled / measured | Was |
+|---|---|---|
+| Canvas | `#0a192f`, flat - identical at top-left, centre and bottom | a 3-layer radial + linear gradient |
+| Action button | `#1492c4`, flat - identical at both ends of its width | a cyan→blue gradient |
+| Headline accent | `#53c9ed` | `--t-accent` `#12b0f0` |
+| Body / trust text | `#94a3b8` (cool slate) | `#aec6df` / `#cfe0ef` (blue-tinted) |
+| Card | `#ffffff` on a `#e2e8f0` border | white, borderless |
+| Field fill | `#f8fafc` | `--t-surface` white |
+| Link accent | `#1aa6d9` | - |
+| Headline | 92px, line-height 1.08, 4 lines | 56px |
+| Card | 620px wide, 54px padding | 416px wide, 32px padding |
+| Action | 70px tall | 44px |
+| Logo | tagline lockup, centred, 56px tall | wordmark, left-aligned, 30px |
+
+Because the reference is a ~1894px rendering, every one of those is now a
+`clamp()` against the viewport calibrated to hit the measured value at that
+width - so the screen *is* the artwork at the artwork's size, and scales
+down rather than being redrawn. Measured at 1894px: card 619px, action 70px,
+headline 92px, badge 15px.
+
+The decorative diagonal was removed: the reference canvas samples flat, so it
+was invention.
+
+**Both columns now start on the same line.** The grid was `items-center`,
+which centres each column independently and is what pushed the statement below
+the card. `items-start` with `content-center` aligns the tops and still centres
+the pair vertically. Measured at 1894px: badge top 129px, card top 129px.
+
+**Absent, deliberately.** The reference also shows "Forgot password?",
+"Onboard Tenant" and "Try it now". There is no password-reset, tenant-signup or
+demo endpoint anywhere in the API, and a dead control on a sign-in screen is
+worse than a missing one. Colour, type, logo and layout were taken; the links
+were not.
+
+**Motion.** The page assembles in sequence rather than appearing at once:
+badge → headline → body → trust marks → footnote, 80ms apart, 0.44s each, with
+the card on its own slightly longer curve. The whole sequence finishes inside
+0.8s, so it never delays a sign-in. Under `prefers-reduced-motion` both the
+durations *and the delays* are zeroed - clamping only the duration would leave
+a staggered item invisible for its delay.
+
+### 8.3 Table tools: the controls were right, the presentation was wrong
+
+The question was whether `Export page`, `Refresh`, `Compact` and `Comfortable`
+belong in an enterprise product at all. They do - "comfortable" and "compact"
+are literally Cloudscape's two density modes, and it *requires* a service to
+offer a mechanism to choose between them and to persist the choice. What was
+wrong is that ours sat in the open as four full-width controls.
+
+Both Carbon and PatternFly give the same rule. PatternFly: *"No more than two
+items should be exposed as buttons. If you have more than two items, use an
+overflow menu component to save space,"* with secondary actions such as export
+as icons. Carbon reserves the table toolbar for global table actions, caps it
+at five, and moves the rest to an overflow menu. Cloudscape puts display
+preferences behind collection preferences.
+
+So, per screen: **Refresh** is an icon button. **Density** moved into a table
+settings popover. **Export** moved into an overflow menu, where a disabled
+entry still says why rather than vanishing. **View mode** (Findings/By push,
+Table/Timeline) stayed in the open, because it changes *which records are
+listed* - that is not a display preference.
+
+Nothing lost a label, a tooltip, a keyboard path or an accessible name.
+
+### 8.4 The filter rail closes
+
+Filtering is a phase of work, not a permanent state. The rail header carries a
+close control, the choice persists per viewer and across screens, and the
+records take the freed width - the column is dropped, not just hidden, or
+closing it would achieve nothing. Measured: table 1072px → 1318px. Applied
+filters stay applied and stay visible as chips above the records, and the
+reopen control carries the applied count, so a closed rail can never hide
+active scoping.
+
+### 8.5 Scan scope belongs in the top bar
+
+It was in the context row, on the argument that it describes this screen. That
+was wrong: changing it rescopes every screen in the product at once, which
+makes it global state, and a console keeps global state in its global chrome -
+the slot AWS gives its region selector. It now sits in the top bar beside the
+account, styled against the top-bar tokens so it works on the light and the
+dark bar. The context row keeps location, which is what a context row is for.
+
+### 8.6 Chrome sized to be chrome
+
+The bar was 56px with a 22px wordmark - a favicon in a strip. It is 64px with a
+34px wordmark, and its controls are full 40px targets. The sidebar lost the rule
+under the module name, and lost the "NHI" abbreviation it showed when collapsed:
+collapsed, the rail is icons only, and an abbreviation is one more thing to
+decode when the expand control already says what the rail is. The first group's
+collapsed rule is suppressed too, or it would reinstate the same line.
+
+Pagination's previous/next were 32px boxes around a 14px glyph - under the 40px
+touch target every platform guideline asks for, on the most-clicked control of
+a record screen. They are 40px boxes with a 17px glyph.
+
+### 8.7 Large displays get a bigger console, not a wider void
+
+On a 2560px monitor the console read as zoomed out: the container capped and
+every control stayed at its 1440px size, marooned in whitespace. Widening the
+container alone does not fix that - it just moves the controls further apart.
+
+The root scales instead: `zoom` on `html`, 1.08 from 1800px, 1.18 from 2300px,
+1.32 from 3000px, which enlarges type, controls and spacing together and holds
+every proportion the design was tuned at. `zoom` is the only property that does
+this without breaking fixed positioning; a transform would detach the fixed top
+bar and the drawers from the viewport. The container cap moved 1640px → 1760px.
+
+The factor is kept in `--app-zoom` so the sign-in screen can cancel it exactly
+(`zoom: calc(1 / var(--app-zoom))`). It already scales itself through the
+`clamp()`s in §8.2, and without the cancellation it was scaled twice - measured
+669px against a 620px reference before the fix, 619px after.
+
+### 8.8 My resources: yes, there is a real endpoint
+
+`GET /api/dashboard/my-resources`, `routes.go:57` → `dashboard.go:43` →
+`dashboard_service.go:29`. It takes the email from the JWT claims, paginates
+with `page`/`page_size`, accepts `scan_id`, and returns the standard paginated
+envelope of identities. The repository resolves ownership as:
+
+```sql
+LOWER(owner_name) = LOWER(:1) OR LOWER(primary_owner) LIKE LOWER(:2) OR LOWER(created_by_name) = LOWER(:3)
+```
+
+Two consequences the screen has to be honest about: there is no assignment
+feature - ownership comes from resource tags and CloudTrail, so tagging is what
+makes something appear - and the page can legitimately be empty for a real user
+whose resources carry a team address rather than theirs. The empty state says
+both.

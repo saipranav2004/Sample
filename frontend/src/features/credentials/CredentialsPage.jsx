@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Columns3, Download, KeyRound, Rows3, SearchX } from 'lucide-react';
+import { KeyRound, SearchX } from 'lucide-react';
 import { countCredentials, fetchCredentials, fetchSummary } from '../../lib/api/endpoints';
 import { useDebouncedValue, useQuery } from '../../lib/hooks';
 import { useScanContext } from '../../app/ScanContext';
@@ -19,9 +19,9 @@ import { PageHeader } from '../../shell/PageHeader';
 import { Button } from '../../ui/Button';
 import { DetailList, DetailRow, Panel, PanelHeader, SectionLabel } from '../../ui/Panel';
 import { SearchInput } from '../../ui/Field';
-import { AppliedFilters, FacetRail } from '../../ui/FacetRail';
-import { RecordBar, ResultCount, WorkArea } from '../../ui/WorkArea';
-import { SegmentedControl } from '../../ui/Tabs';
+import { AppliedFilters, FacetRail, useFacetRail } from '../../ui/FacetRail';
+import { RecordBar, ResultCount, ShowFiltersButton, WorkArea } from '../../ui/WorkArea';
+import { OverflowMenu, RefreshButton, TableSettings, TableToolbar } from '../../ui/TableTools';
 import { MetricTile } from '../../ui/Stat';
 import { ProportionBar } from '../../ui/Meter';
 import { StatStripSkeleton } from '../../ui/Skeleton';
@@ -45,6 +45,7 @@ export default function CredentialsPage() {
   const { selectedScanId, activeScan } = useScanContext();
   const { notify } = useToast();
   const [selected, setSelected] = useState(null);
+  const { railOpen, toggleRail } = useFacetRail();
   const [density, setDensity] = useState(() => {
     try {
       return localStorage.getItem(DENSITY_KEY) || 'comfortable';
@@ -311,16 +312,6 @@ export default function CredentialsPage() {
       <PageHeader
         title="Credential register"
         lede="Every access key, password and certificate recorded against an identity in this scan, flattened so rotation candidates surface directly."
-        actions={
-          <>
-            <Button variant="ghost" icon={Download} onClick={onExport} disabled={rows.length === 0}>
-              Export page
-            </Button>
-            <Button variant="secondary" onClick={query.refetch} loading={query.isRefreshing}>
-              Refresh
-            </Button>
-          </>
-        }
       />
 
       {severityCountQuery.isLoading && !severityCountQuery.data ? (
@@ -410,11 +401,13 @@ export default function CredentialsPage() {
       </Panel>
 
       <WorkArea
+        railOpen={railOpen}
         rail={
           <FacetRail
             groups={facetGroups}
             appliedCount={chips.length}
             onClearAll={clearAll}
+            onClose={toggleRail}
             mobileTitle="Filter credentials"
           />
         }
@@ -422,15 +415,25 @@ export default function CredentialsPage() {
       <Panel flush className="animate-rise overflow-hidden">
         <RecordBar
           trailing={
-            <SegmentedControl
-              label="Row density"
-              value={density}
-              onChange={setDensityPref}
-              options={[
-                { value: 'compact', label: 'Compact', icon: Rows3 },
-                { value: 'comfortable', label: 'Comfortable', icon: Columns3 },
-              ]}
-            />
+            <TableToolbar>
+              {!railOpen && (
+                <ShowFiltersButton onClick={toggleRail} appliedCount={chips.length} />
+              )}
+              <RefreshButton onRefresh={query.refetch} refreshing={query.isRefreshing} />
+              <TableSettings density={density} onDensityChange={setDensityPref} />
+              <OverflowMenu
+                items={[
+                  {
+                    key: 'export',
+                    label: 'Export this page',
+                    hint: `CSV of the ${rows.length} rows shown`,
+                    onSelect: onExport,
+                    disabled: rows.length === 0,
+                    disabledHint: 'Nothing to export - no rows match',
+                  },
+                ]}
+              />
+            </TableToolbar>
           }
         >
           <SearchInput

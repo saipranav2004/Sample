@@ -1,15 +1,56 @@
+import { SlidersHorizontal } from 'lucide-react';
 import { cn } from './cn';
 
 /**
- * Two-column work area: persistent facet rail beside the record surface.
- * Below `lg` the rail collapses above the records (it handles that itself).
+ * Two-column work area: facet rail beside the record surface.
+ *
+ * `railOpen === false` drops the rail column entirely so the records get the
+ * full width - a hidden rail that still reserved its track would defeat the
+ * point of hiding it. Below `lg` there is only ever one column; the rail
+ * renders itself as a disclosure above the records.
  */
-export function WorkArea({ rail, children, className }) {
+export function WorkArea({ rail, railOpen = true, children, className }) {
   return (
-    <div className={cn('grid min-w-0 gap-3.5 lg:grid-cols-[232px_minmax(0,1fr)] lg:items-start', className)}>
-      {rail}
+    <div
+      className={cn(
+        'grid min-w-0 gap-3.5 lg:items-start',
+        railOpen && 'lg:grid-cols-[232px_minmax(0,1fr)]',
+        className,
+      )}
+    >
+      {railOpen ? rail : <div className="lg:hidden">{rail}</div>}
       <div className="min-w-0">{children}</div>
     </div>
+  );
+}
+
+/**
+ * Reopens a hidden facet rail. It sits in the record bar, where the rail's
+ * own controls live, and carries the applied-filter count so a closed rail can
+ * never hide active scoping.
+ */
+export function ShowFiltersButton({ onClick, appliedCount = 0, className }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title="Show filters"
+      className={cn(
+        'hidden h-8 shrink-0 items-center gap-2 rounded-[var(--radius-control)] border border-line-strong bg-surface px-2.5 text-[12.5px] font-medium text-ink-2 transition-colors hover:border-ink-3/50 hover:bg-surface-2 hover:text-ink lg:inline-flex',
+        className,
+      )}
+    >
+      <SlidersHorizontal aria-hidden="true" className="size-3.5 shrink-0 text-ink-3" />
+      Filters
+      {appliedCount > 0 && (
+        <span
+          data-numeric=""
+          className="rounded-full bg-info-soft px-1.5 text-[10.5px] font-semibold text-brand"
+        >
+          {appliedCount}
+        </span>
+      )}
+    </button>
   );
 }
 

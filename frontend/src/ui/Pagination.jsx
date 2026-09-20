@@ -52,22 +52,26 @@ export function Pagination({
           </label>
         )}
 
-        <div className="flex items-center gap-1">
+        {/* Full-size targets. These are the most-clicked controls on a record
+            screen, and at `sm` the chevrons were a 14px glyph in a 32px box -
+            below the 40px touch target every platform guideline asks for. */}
+        <div className="flex items-center gap-1.5">
           <IconButton
             icon={ChevronLeft}
             label="Previous page"
-            size="sm"
             variant="secondary"
             disabled={page <= 1}
             onClick={() => onPageChange(page - 1)}
           />
-          <span className="px-2 text-[12.5px] text-ink-2" data-numeric="">
+          <span
+            className="min-w-[4.5rem] px-1 text-center text-[13px] font-medium text-ink-2"
+            data-numeric=""
+          >
             {page} / {totalPages}
           </span>
           <IconButton
             icon={ChevronRight}
             label="Next page"
-            size="sm"
             variant="secondary"
             disabled={page >= totalPages}
             onClick={() => onPageChange(page + 1)}

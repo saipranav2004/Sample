@@ -4,6 +4,7 @@ import { LogOut, Menu, Monitor, Moon, Search, Sun } from 'lucide-react';
 import { useAuth } from '../app/AuthContext';
 import { useThemeMode } from '../app/ThemeContext';
 import { BrandLockup } from './Brand';
+import { ScanSwitcher } from './ScanSwitcher';
 import { initialsOf, titleCaseEnum } from '../lib/format';
 import { cn } from '../ui/cn';
 
@@ -16,11 +17,15 @@ const APPEARANCE = [
 /**
  * Global top bar - full viewport width, follows the theme.
  *
- * It holds exactly three things: the brand in the left corner, and a search
- * control plus the account avatar in the right corner. Scan scope lives in the
- * context row beneath, next to the breadcrumb that says which screen it is
- * scoping. Appearance lives in the account menu, because a permanent slot in
- * the chrome is too expensive for a setting people change twice a year.
+ * The brand sits in the left corner at a size that reads as a product mark
+ * rather than a favicon; everything else sits in the right corner: scan scope,
+ * search, then the account avatar. The bar is 64px so those controls can be
+ * full-height targets instead of squeezed into a strip.
+ *
+ * Scan scope is here, not in the context row, because it is global state - it
+ * rescopes every screen at once, and a console keeps global state in its global
+ * chrome. Appearance lives in the account menu: a permanent slot in the chrome
+ * is too expensive for a setting people change twice a year.
  */
 export function TopBar({ onOpenNav, onOpenCommand }) {
   const { user, logout } = useAuth();
@@ -45,37 +50,45 @@ export function TopBar({ onOpenNav, onOpenCommand }) {
   }, [menuOpen]);
 
   const iconButton =
-    'grid size-9 shrink-0 place-items-center rounded-[var(--radius-control)] text-topbar-muted transition-colors hover:bg-topbar-hover hover:text-topbar-ink';
+    'grid size-10 shrink-0 place-items-center rounded-[var(--radius-control)] text-topbar-muted transition-colors hover:bg-topbar-hover hover:text-topbar-ink';
 
   return (
-    <header className="topbar-surface fixed inset-x-0 top-0 z-40 flex h-14 items-center gap-2 border-b border-topbar-line px-3 sm:px-4">
+    <header className="topbar-surface fixed inset-x-0 top-0 z-40 flex h-16 items-center gap-2 border-b border-topbar-line px-3 sm:px-4 lg:px-5">
       <button
         type="button"
         onClick={onOpenNav}
         aria-label="Open navigation"
         className={cn(iconButton, 'lg:hidden')}
       >
-        <Menu aria-hidden="true" className="size-4.5" />
+        <Menu aria-hidden="true" className="size-5" />
       </button>
 
-      <Link to="/posture" aria-label="Deep Algorithms - go to posture overview" className="shrink-0 rounded px-1">
-        <BrandLockup height={22} className="hidden sm:inline-flex" />
+      <Link
+        to="/posture"
+        aria-label="Deep Algorithms - go to posture overview"
+        className="shrink-0 rounded px-1"
+      >
+        <BrandLockup height={34} className="hidden sm:inline-flex" />
         <img
           src="/brand/mark.png"
           alt="Deep Algorithms"
-          className="block size-6 object-contain sm:hidden"
+          className="block size-8 object-contain sm:hidden"
           draggable="false"
         />
       </Link>
 
       <div aria-hidden="true" className="flex-1" />
 
+      {/* Global scan scope. Marked shrinkable so a long target name yields to
+          the controls beside it instead of widening the bar. */}
+      <ScanSwitcher />
+
       {/* Search - a real control, not an afterthought. The palette behind it
           carries section jumps and identity lookup. */}
       <button
         type="button"
         onClick={onOpenCommand}
-        className="hidden h-9 min-w-0 items-center gap-2.5 rounded-[var(--radius-control)] border border-topbar-line bg-topbar-field px-3 text-left text-[13px] text-topbar-muted transition-[background-color,border-color] duration-150 hover:border-ink-3/45 hover:text-topbar-ink sm:flex sm:w-52 lg:w-64"
+        className="hidden h-9 min-w-0 shrink-0 items-center gap-2.5 rounded-[var(--radius-control)] border border-topbar-line bg-topbar-field px-3 text-left text-[13px] text-topbar-muted transition-[background-color,border-color] duration-150 hover:border-ink-3/45 hover:text-topbar-ink lg:flex lg:w-56 xl:w-64"
       >
         <Search aria-hidden="true" className="size-4 shrink-0" />
         <span className="min-w-0 flex-1 truncate">Search</span>
@@ -84,8 +97,8 @@ export function TopBar({ onOpenNav, onOpenCommand }) {
         </kbd>
       </button>
 
-      <button type="button" onClick={onOpenCommand} aria-label="Search" className={cn(iconButton, 'sm:hidden')}>
-        <Search aria-hidden="true" className="size-4.5" />
+      <button type="button" onClick={onOpenCommand} aria-label="Search" className={cn(iconButton, 'lg:hidden')}>
+        <Search aria-hidden="true" className="size-5" />
       </button>
 
       {/* Account - the avatar only. Identity details belong in the menu. */}
@@ -97,13 +110,13 @@ export function TopBar({ onOpenNav, onOpenCommand }) {
           aria-expanded={menuOpen}
           aria-label={`Account menu for ${user?.full_name || user?.email || 'signed-in user'}`}
           className={cn(
-            'grid size-9 place-items-center rounded-full transition-[box-shadow,transform] duration-150',
+            'grid size-10 shrink-0 place-items-center rounded-full transition-[box-shadow,transform] duration-150',
             menuOpen ? 'ring-2 ring-brand/45' : 'hover:ring-2 hover:ring-line-strong',
           )}
         >
           <span
             aria-hidden="true"
-            className="grid size-8 place-items-center rounded-full bg-[linear-gradient(135deg,var(--t-brand)_0%,var(--t-accent)_100%)] text-[12px] font-bold text-white"
+            className="grid size-9 place-items-center rounded-full bg-[linear-gradient(135deg,var(--t-brand)_0%,var(--t-accent)_100%)] text-[13px] font-bold text-white"
           >
             {initialsOf(user?.full_name || user?.email)}
           </span>

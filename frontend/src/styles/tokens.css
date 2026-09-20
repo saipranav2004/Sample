@@ -5,7 +5,16 @@
    surface / ink / risk system for light and dark canvases.
    ========================================================================== */
 
-:root {
+/* The light palette is declared for `:root` AND for any element carrying
+   `data-theme='light'`, so a subtree can opt back into light inside a dark
+   document - the sign-in card does exactly that. Declaring it only on `:root`
+   made nested `data-theme='light'` inert: the dark values inherited straight
+   through it, which is why the card's inputs rendered dark for anyone whose
+   theme was dark. */
+:root,
+[data-theme='light'] {
+  color-scheme: light;
+
   /* Brand ---------------------------------------------------------------- */
   --t-brand: #0c6eb4;
   --t-brand-strong: #095a95;
@@ -84,9 +93,28 @@
   --t-shadow-md: 0 4px 16px -4px rgba(11, 27, 46, 0.12), 0 1px 3px rgba(11, 27, 46, 0.05);
   --t-shadow-lg: 0 24px 60px -18px rgba(11, 27, 46, 0.28), 0 2px 8px rgba(11, 27, 46, 0.06);
   --t-focus-ring: 0 0 0 3px rgba(18, 176, 240, 0.34);
+
+  /* Sign-in ------------------------------------------------------------- */
+  /* Every value below was sampled from the supplied sign-in design rather
+     than chosen, so the screen matches the artwork it was drawn from. The
+     sign-in screen is the same in both themes, so these live outside the
+     light/dark split. */
+  --t-auth-canvas: #0a192f;
+  --t-auth-ink: #ffffff;
+  --t-auth-ink-2: #94a3b8;
+  --t-auth-accent: #53c9ed;
+  --t-auth-link: #1aa6d9;
+  --t-auth-action: #1492c4;
+  --t-auth-action-hover: #117ea9;
+  --t-auth-badge: #0b243c;
+  --t-auth-badge-ink: #9dd3ea;
+  --t-auth-card: #ffffff;
+  --t-auth-card-line: #e2e8f0;
 }
 
-:root[data-theme='dark'] {
+/* Matches at the root or on any nested element, for the same reason. */
+[data-theme='dark'] {
+  color-scheme: dark;
   --t-canvas: #060d18;
   --t-surface: #0c1626;
   --t-surface-2: #111e31;

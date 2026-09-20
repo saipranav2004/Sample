@@ -1,16 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
-import {
-  AlertTriangle,
-  ArrowRight,
-  BadgeCheck,
-  Clock3,
-  Lock,
-  Mail,
-  ShieldCheck,
-} from 'lucide-react';
+import { AlertTriangle, ArrowRight, BadgeCheck, Clock3, Lock, Mail, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../../app/AuthContext';
-import { BrandLockup } from '../../shell/Brand';
 import { Button } from '../../ui/Button';
 import { Field, Input, PasswordInput } from '../../ui/Field';
 
@@ -21,13 +12,20 @@ const TRUST_MARKS = [
 ];
 
 /**
- * Sign-in, matching the supplied design: the navy canvas runs edge to edge and
- * the credential card floats on top of it at the right - not a split layout.
+ * Sign-in.
  *
- * The field is labelled "Username" per that design and submitted as the
- * `email` property `POST /api/auth/login` defines. There is no password-reset
- * link, no "remember me" and no SSO button, because no endpoint backs any of
- * them; a dead control on a sign-in screen is worse than its absence.
+ * Built to the supplied design rather than approximated from it: the canvas
+ * colour, the action colour, the accent, the card and field fills and the type
+ * scale were all sampled and measured off that artwork (see
+ * `docs/UX-DECISIONS.md` §8), so this screen is the artwork, at any width.
+ *
+ * Two things in the reference are deliberately absent. "Forgot password?" and
+ * the tenant-onboarding and demo links have no endpoint behind them anywhere in
+ * the API, and a control that cannot do anything is worse on a sign-in screen
+ * than a missing one.
+ *
+ * The card is light in both themes, so it locks its own subtree to the light
+ * palette with `data-theme="light"`.
  */
 export default function LoginPage() {
   const { signIn, isAuthenticated, expired, clearExpired } = useAuth();
@@ -72,64 +70,99 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="auth-canvas relative min-h-dvh overflow-hidden">
-      {/* Brand slash, echoing the mark's diagonal. */}
-      <span
-        aria-hidden="true"
-        className="pointer-events-none absolute -top-40 -left-28 h-[560px] w-[560px] rotate-[24deg] bg-[linear-gradient(115deg,transparent_46%,rgba(18,176,240,0.13)_48%,rgba(18,176,240,0.13)_52%,transparent_54%)]"
-      />
-
-      <div className="relative mx-auto grid min-h-dvh w-full max-w-[1500px] items-center gap-10 px-6 py-10 lg:grid-cols-[minmax(0,1fr)_26rem] lg:gap-16 lg:px-14 xl:gap-24">
-        {/* Brand statement */}
-        <section className="order-2 max-w-xl lg:order-1">
-          <p className="inline-flex w-fit items-center gap-2 rounded-full border border-white/14 bg-white/[0.06] px-3.5 py-1.5 text-[10.5px] font-semibold tracking-[0.16em] text-[#9fd8f7] uppercase">
-            <span aria-hidden="true" className="size-1.5 rounded-full bg-accent" />
+    <div className="auth-canvas relative overflow-hidden">
+      {/* Both columns start on the same line. `items-start` rather than
+          `items-center` is what makes that true - centring each column
+          independently is what pushed the statement below the card. */}
+      <div className="relative mx-auto grid min-h-[inherit] w-full max-w-[1900px] grid-cols-1 content-center items-start gap-x-[clamp(2rem,4vw,6rem)] gap-y-12 px-[clamp(1.25rem,5.9vw,7rem)] py-[clamp(2rem,3.6vh,3.5rem)] lg:grid-cols-[minmax(0,1fr)_clamp(23rem,32.7vw,38.75rem)]">
+        {/* Product statement */}
+        <section className="order-2 lg:order-1">
+          <p
+            style={{ '--step': 1 }}
+            className="animate-auth inline-flex w-fit items-center gap-2.5 rounded-full bg-[var(--t-auth-badge)] px-[clamp(0.9rem,1.1vw,1.35rem)] py-[clamp(0.4rem,0.55vw,0.65rem)] text-[clamp(10px,0.79vw,15px)] font-semibold tracking-[0.15em] text-[var(--t-auth-badge-ink)] uppercase"
+          >
+            <span aria-hidden="true" className="size-[0.45em] rounded-full bg-[var(--t-auth-accent)]" />
             Enterprise Security Platform
           </p>
 
-          <h1 className="mt-8 font-display text-[40px] leading-[1.04] font-extrabold tracking-[-0.035em] text-white sm:text-[48px] xl:text-[56px]">
+          <h1
+            style={{ '--step': 2 }}
+            className="animate-auth mt-[clamp(1.5rem,2.6vw,3.25rem)] font-display text-[clamp(38px,4.86vw,92px)] leading-[1.08] font-extrabold tracking-[-0.035em] text-[var(--t-auth-ink)]"
+          >
             Non-Human
             <br />
             Identity
             <br />
-            <span className="text-accent">Discovery</span>
+            <span className="text-[var(--t-auth-accent)]">Discovery</span>
           </h1>
 
-          <p className="mt-6 max-w-lg text-balance text-[14.5px] leading-relaxed text-[#aec6df] sm:text-[15px]">
+          <p
+            style={{ '--step': 3 }}
+            className="animate-auth mt-[clamp(1.25rem,2vw,2.5rem)] max-w-[46ch] text-[clamp(14px,1.21vw,23px)] leading-[1.6] text-[var(--t-auth-ink-2)]"
+          >
             Inventory every role, service principal and key across your AWS accounts, trace what
             they can reach, and catch credentials the moment they leak into source control.
           </p>
 
-          <ul className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-3">
+          <ul
+            style={{ '--step': 4 }}
+            className="animate-auth mt-[clamp(1.75rem,2.8vw,3.5rem)] flex flex-wrap items-center gap-x-[clamp(1.25rem,2vw,2.5rem)] gap-y-3"
+          >
             {TRUST_MARKS.map((mark) => (
-              <li key={mark.label} className="flex items-center gap-2 text-[13px] text-[#cfe0ef]">
-                <mark.icon aria-hidden="true" className="size-4 shrink-0 text-accent" />
+              <li
+                key={mark.label}
+                className="flex items-center gap-2.5 text-[clamp(12.5px,1.06vw,20px)] text-[var(--t-auth-ink-2)]"
+              >
+                <mark.icon aria-hidden="true" className="size-[1.15em] shrink-0 text-[var(--t-auth-accent)]" />
                 {mark.label}
               </li>
             ))}
           </ul>
 
-          <p className="mt-12 text-[12.5px] text-[#7d97b3] lg:absolute lg:bottom-8 lg:left-14 lg:mt-0">
+          <p
+            style={{ '--step': 5 }}
+            className="animate-auth mt-[clamp(2.5rem,4vw,5rem)] text-[clamp(11.5px,0.9vw,17px)] text-[var(--t-auth-ink-2)]"
+          >
             © {new Date().getFullYear()} Deep Algorithms · Fostering AI. Connecting Minds.
           </p>
         </section>
 
-        {/* Credential card - floats on the navy, never on its own panel */}
-        <section className="order-1 w-full justify-self-center lg:order-2 lg:justify-self-end">
-          <div className="animate-rise rounded-[18px] bg-white p-6 shadow-[0_34px_80px_-28px_rgba(2,10,20,0.62)] sm:p-8">
-            <BrandLockup variant="default" height={30} />
+        {/* Credential card - floats on the navy, light in both themes. */}
+        <section data-theme="light" className="order-1 w-full lg:order-2">
+          <div
+            style={{ '--step': 2 }}
+            className="animate-auth-card rounded-[clamp(14px,1.05vw,20px)] border border-[var(--t-auth-card-line)] bg-[var(--t-auth-card)] p-[clamp(1.5rem,2.85vw,3.4rem)] shadow-[0_34px_80px_-28px_rgba(2,10,20,0.55)]"
+          >
+            {/* The supplied design uses the tagline lockup, centred. The asset
+                is delivered on a 16:9 canvas, so the frame crops its symmetric
+                padding rather than the file being edited. */}
+            <div className="flex justify-center">
+              <span
+                className="block h-[clamp(34px,2.96vw,56px)] overflow-hidden"
+                style={{ aspectRatio: '8000 / 2044' }}
+              >
+                <img
+                  src="/brand/logo-lockup-tagline.png"
+                  alt="Deep Algorithms"
+                  className="size-full object-cover"
+                  draggable="false"
+                />
+              </span>
+            </div>
 
-            <h2 className="mt-7 font-display text-[25px] leading-tight font-extrabold tracking-[-0.025em] text-[#0b1b2e]">
+            <h2 className="mt-[clamp(1.5rem,2.6vw,3.1rem)] font-display text-[clamp(24px,2.11vw,40px)] leading-tight font-extrabold tracking-[-0.028em] text-ink">
               Welcome
             </h2>
-            <p className="mt-1.5 text-[13.5px] text-[#7c8da3]">Sign in to access the platform</p>
+            <p className="mt-[clamp(0.25rem,0.5vw,0.6rem)] text-[clamp(13px,1.06vw,20px)] text-ink-3">
+              Sign in to access the platform
+            </p>
 
             {expired && !formError && (
               <p
                 role="status"
-                className="mt-5 flex items-start gap-2 rounded-[var(--radius-control)] border border-[#a06a02]/25 bg-[#fdf6e3] px-3 py-2.5 text-[12.5px] text-[#4a5b70]"
+                className="mt-5 flex items-start gap-2 rounded-[var(--radius-control)] border border-medium/25 bg-medium-soft px-3 py-2.5 text-[clamp(12px,0.85vw,16px)] text-ink-2"
               >
-                <AlertTriangle aria-hidden="true" className="mt-px size-4 shrink-0 text-[#a06a02]" />
+                <AlertTriangle aria-hidden="true" className="mt-px size-4 shrink-0 text-medium" />
                 Your session expired. Sign in again to continue where you left off.
               </p>
             )}
@@ -137,19 +170,22 @@ export default function LoginPage() {
             {formError && (
               <p
                 role="alert"
-                className="mt-5 flex items-start gap-2 rounded-[var(--radius-control)] border border-[#b42318]/25 bg-[#fdeceb] px-3 py-2.5 text-[12.5px] text-[#4a5b70]"
+                className="mt-5 flex items-start gap-2 rounded-[var(--radius-control)] border border-critical/25 bg-critical-soft px-3 py-2.5 text-[clamp(12px,0.85vw,16px)] text-ink-2"
               >
-                <AlertTriangle aria-hidden="true" className="mt-px size-4 shrink-0 text-[#b42318]" />
+                <AlertTriangle aria-hidden="true" className="mt-px size-4 shrink-0 text-critical" />
                 {formError}
               </p>
             )}
 
-            {/* The card is always light, so its controls opt out of theme inversion. */}
-            <form onSubmit={onSubmit} noValidate className="mt-6 flex flex-col gap-5" data-theme="light">
+            <form
+              onSubmit={onSubmit}
+              noValidate
+              className="mt-[clamp(1.25rem,1.9vw,2.4rem)] flex flex-col gap-[clamp(1rem,1.6vw,2rem)]"
+            >
               <Field
                 label={
-                  <span className="inline-flex items-center gap-2">
-                    <Mail aria-hidden="true" className="size-3.5 text-ink-3" />
+                  <span className="inline-flex items-center gap-2 text-[clamp(12px,0.9vw,17px)]">
+                    <Mail aria-hidden="true" className="size-[1.05em] text-ink-3" />
                     Username
                   </span>
                 }
@@ -159,12 +195,12 @@ export default function LoginPage() {
                 <Input
                   id="login-username"
                   ref={usernameRef}
-                  size="lg"
+                  size="auth"
                   type="text"
                   autoComplete="username"
                   autoCapitalize="none"
                   spellCheck="false"
-                  placeholder="das_admin"
+                  placeholder="Enter Username"
                   value={values.email}
                   invalid={Boolean(fieldErrors.email)}
                   onChange={(event) => setValues((v) => ({ ...v, email: event.target.value }))}
@@ -173,8 +209,8 @@ export default function LoginPage() {
 
               <Field
                 label={
-                  <span className="inline-flex items-center gap-2">
-                    <Lock aria-hidden="true" className="size-3.5 text-ink-3" />
+                  <span className="inline-flex items-center gap-2 text-[clamp(12px,0.9vw,17px)]">
+                    <Lock aria-hidden="true" className="size-[1.05em] text-ink-3" />
                     Password
                   </span>
                 }
@@ -183,7 +219,7 @@ export default function LoginPage() {
               >
                 <PasswordInput
                   id="login-password"
-                  size="lg"
+                  size="auth"
                   autoComplete="current-password"
                   placeholder="••••••••"
                   value={values.password}
@@ -192,12 +228,19 @@ export default function LoginPage() {
                 />
               </Field>
 
-              <Button type="submit" variant="accent" size="lg" loading={submitting} iconRight={ArrowRight}>
+              <Button
+                type="submit"
+                variant="auth"
+                size="auth"
+                className="mt-[clamp(0.25rem,0.6vw,0.75rem)]"
+                loading={submitting}
+                iconRight={ArrowRight}
+              >
                 {submitting ? 'Signing in…' : 'Sign in securely'}
               </Button>
             </form>
 
-            <p className="mt-6 text-center text-[11.5px] leading-relaxed text-[#7c8da3]">
+            <p className="mt-[clamp(1.25rem,1.9vw,2.4rem)] text-center text-[clamp(11px,0.82vw,15.5px)] leading-relaxed text-ink-3">
               Authorized use only. Every access attempt is logged and monitored.
             </p>
           </div>

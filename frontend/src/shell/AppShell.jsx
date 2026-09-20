@@ -66,13 +66,13 @@ export function AppShell() {
 
       <div
         className={cn(
-          'flex min-h-dvh flex-col pt-14 transition-[padding] duration-250 ease-[var(--ease-out-quint)]',
+          'flex min-h-dvh flex-col pt-16 transition-[padding] duration-250 ease-[var(--ease-out-quint)]',
           collapsed ? 'lg:pl-[60px]' : 'lg:pl-[232px]',
         )}
       >
         <ContextBar />
         <main id="main" className="flex-1 px-3 pt-4 pb-14 sm:px-5 lg:px-6">
-          <div className="mx-auto w-full max-w-[1640px]">
+          <div className="mx-auto w-full max-w-[1760px]">
             <Outlet />
           </div>
         </main>

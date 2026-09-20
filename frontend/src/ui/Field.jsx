@@ -11,6 +11,10 @@ const CONTROL_SIZES = {
   sm: 'h-8 px-2.5 text-[12.5px]',
   md: 'h-9.5 px-3 text-[13.5px]',
   lg: 'h-12 px-3.5 text-[15px]',
+  /* Sign-in only. Height and type track the measured proportions of the
+     supplied design instead of a fixed step, so the card keeps its shape from
+     a phone up to a 4K display. */
+  auth: 'h-[clamp(44px,3.7vw,70px)] px-[clamp(0.85rem,1.05vw,1.35rem)] text-[clamp(13.5px,1vw,19px)] bg-surface-2',
 };
 
 function stateClasses(invalid) {

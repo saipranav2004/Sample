@@ -55,19 +55,14 @@ export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseMobile
           operator reaches for it - not buried at the bottom of the list. */}
       <div
         className={cn(
-          'flex h-11 shrink-0 items-center border-b border-line',
+          'flex h-12 shrink-0 items-center',
           collapsed ? 'justify-center px-0' : 'gap-2 px-3.5',
         )}
       >
-        {collapsed ? (
-          <span
-            aria-hidden="true"
-            className="font-display text-[11px] font-extrabold tracking-[0.06em] text-brand"
-            title="NHI Discovery"
-          >
-            NHI
-          </span>
-        ) : (
+        {/* Collapsed, the rail shows icons only: an abbreviation of the module
+            name would be one more thing to decode, and the expand control
+            already says what the rail is. */}
+        {!collapsed && (
           <span className="min-w-0">
             <span className="block truncate font-display text-[12px] leading-tight font-extrabold tracking-[0.1em] text-ink uppercase">
               NHI Discovery
@@ -95,15 +90,18 @@ export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseMobile
         </button>
       </div>
 
-      <nav aria-label="Primary" className="min-h-0 flex-1 overflow-y-auto px-2.5 py-3">
-        {NAV_GROUPS.map((group) => (
+      <nav aria-label="Primary" className="min-h-0 flex-1 overflow-y-auto px-2.5 py-2">
+        {NAV_GROUPS.map((group, groupIndex) => (
           <div key={group.key} className="mb-3.5 last:mb-0">
             {group.label && !collapsed && (
               <p className="mb-1.5 px-2.5 text-[10px] font-semibold tracking-[0.14em] text-ink-3 uppercase">
                 {group.label}
               </p>
             )}
-            {group.label && collapsed && (
+            {/* Collapsed, a rule stands in for the group label - but never
+                above the first group, where it would read as a divider under
+                the module name. */}
+            {group.label && collapsed && groupIndex > 0 && (
               <div aria-hidden="true" className="mx-3 mb-2 border-t border-line" />
             )}
             <div className="flex flex-col gap-0.5">
@@ -128,7 +126,7 @@ export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseMobile
     <>
       <aside
         className={cn(
-          'fixed top-14 bottom-0 left-0 z-30 hidden shrink-0 flex-col border-r border-sidebar-line bg-sidebar transition-[width] duration-250 ease-[var(--ease-out-quint)] lg:flex',
+          'fixed top-16 bottom-0 left-0 z-30 hidden shrink-0 flex-col border-r border-sidebar-line bg-sidebar transition-[width] duration-250 ease-[var(--ease-out-quint)] lg:flex',
           collapsed ? 'w-[60px]' : 'w-[232px]',
         )}
       >
@@ -136,7 +134,7 @@ export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseMobile
       </aside>
 
       {mobileOpen && (
-        <div className="fixed inset-0 top-14 z-50 flex lg:hidden">
+        <div className="fixed inset-0 top-16 z-50 flex lg:hidden">
           <button
             type="button"
             aria-label="Close navigation"

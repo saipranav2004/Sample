@@ -14,6 +14,8 @@ import { PageHeader } from '../../shell/PageHeader';
 import { TrendChart } from '../../charts/TrendChart';
 import { Button } from '../../ui/Button';
 import { Panel, PanelHeader } from '../../ui/Panel';
+import { RecordBar, ResultCount } from '../../ui/WorkArea';
+import { RefreshButton, TableToolbar } from '../../ui/TableTools';
 import { CellStack, DataGrid } from '../../ui/DataGrid';
 import { Tag } from '../../ui/Tag';
 import { CopyableValue } from '../../ui/Copyable';
@@ -78,11 +80,6 @@ export default function ScansPage() {
       <PageHeader
         title="Discovery scans"
         lede="Each scan is an immutable snapshot of the account. Select one to scope every screen in the product to it, and read the delta to see what the last run actually changed."
-        actions={
-          <Button variant="secondary" onClick={refetch} loading={loading}>
-            Refresh
-          </Button>
-        }
       />
 
       {loading && scans.length === 0 ? (
@@ -174,6 +171,21 @@ export default function ScansPage() {
       </Panel>
 
       <Panel flush className="animate-rise overflow-hidden">
+        <RecordBar
+          trailing={
+            <TableToolbar>
+              <RefreshButton onRefresh={refetch} refreshing={loading} label="Refresh scan list" />
+            </TableToolbar>
+          }
+        >
+          <ResultCount
+            shown={formatNumber(scans.length)}
+            total={formatNumber(scans.length)}
+            unit="scans recorded"
+            loading={loading && scans.length === 0}
+          />
+        </RecordBar>
+
         {error && scans.length === 0 ? (
           <ErrorState error={error} onRetry={refetch} />
         ) : (

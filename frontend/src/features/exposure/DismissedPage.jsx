@@ -23,9 +23,10 @@ import { PageHeader } from '../../shell/PageHeader';
 import { Button } from '../../ui/Button';
 import { DetailList, DetailRow, Panel } from '../../ui/Panel';
 import { SearchInput } from '../../ui/Field';
-import { AppliedFilters, FacetRail } from '../../ui/FacetRail';
-import { RecordBar, ResultCount, WorkArea } from '../../ui/WorkArea';
+import { AppliedFilters, FacetRail, useFacetRail } from '../../ui/FacetRail';
+import { RecordBar, ResultCount, ShowFiltersButton, WorkArea } from '../../ui/WorkArea';
 import { SegmentedControl } from '../../ui/Tabs';
+import { RefreshButton, TableSettings, TableToolbar } from '../../ui/TableTools';
 import { CellStack, DataGrid } from '../../ui/DataGrid';
 import { Modal } from '../../ui/Overlay';
 import { MetricTile } from '../../ui/Stat';
@@ -62,6 +63,7 @@ export default function DismissedPage() {
   const [reviewer, setReviewer] = useState('');
   const [reasonState, setReasonState] = useState('');
   const [view, setView] = useState('table');
+  const { railOpen, toggleRail } = useFacetRail();
   const [density, setDensity] = useState('comfortable');
   const [pendingRestore, setPendingRestore] = useState(null);
   const [restored, setRestored] = useState(() => new Set());
@@ -337,9 +339,6 @@ export default function DismissedPage() {
             <Button as={Link} to="/exposure" variant="ghost" icon={ArrowLeft}>
               Back to findings
             </Button>
-            <Button variant="secondary" onClick={query.refetch} loading={query.isRefreshing}>
-              Refresh
-            </Button>
           </>
         }
       />
@@ -392,11 +391,13 @@ export default function DismissedPage() {
       )}
 
       <WorkArea
+        railOpen={railOpen}
         rail={
           <FacetRail
             groups={facetGroups}
             appliedCount={chips.length}
             onClearAll={clearAll}
+            onClose={toggleRail}
             mobileTitle="Filter allowlist"
           />
         }
@@ -404,20 +405,17 @@ export default function DismissedPage() {
         <Panel flush className="animate-rise overflow-hidden">
           <RecordBar
             trailing={
-              <>
+              <TableToolbar>
                 <SegmentedControl label="View mode" options={VIEWS} value={view} onChange={setView} />
-                {view === 'table' && (
-                  <SegmentedControl
-                    label="Row density"
-                    value={density}
-                    onChange={setDensity}
-                    options={[
-                      { value: 'compact', label: 'Compact' },
-                      { value: 'comfortable', label: 'Comfortable' },
-                    ]}
-                  />
+                {!railOpen && (
+                  <ShowFiltersButton onClick={toggleRail} appliedCount={chips.length} />
                 )}
-              </>
+                <RefreshButton onRefresh={query.refetch} refreshing={query.isRefreshing} />
+                {/* Density only means something in the table view. */}
+                {view === 'table' && (
+                  <TableSettings density={density} onDensityChange={setDensity} />
+                )}
+              </TableToolbar>
             }
           >
             <SearchInput
