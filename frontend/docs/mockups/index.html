@@ -21,8 +21,7 @@
   --medium:#a06a02; --medium-soft:#fdf6e3;
   --low:#05734b; --low-soft:#e7f6ef;
   --info:#0c6eb4; --info-soft:#e8f2fb;
-  --s1:#1668b0;--s2:#c4520a;--s3:#0f8f7a;--s4:#7a4fd0;--s5:#1f8fb5;--s6:#7d8b1c;--s7:#b03a86;--s8:#64748b;
-  --ramp:#1668b0;
+  --data:#1668b0; --kind-human:#1668b0; --kind-machine:#64748b;
   --shadow-sm:0 1px 2px rgba(11,27,46,.06);
   --shadow-md:0 4px 16px -4px rgba(11,27,46,.12),0 1px 3px rgba(11,27,46,.05);
   --shadow-lg:0 24px 60px -18px rgba(11,27,46,.28);
@@ -154,7 +153,7 @@ td,th,[data-num]{font-variant-numeric:tabular-nums}
 .bl .r{display:flex;justify-content:space-between;font-size:12.5px}
 .bl .r i{font-style:normal;color:var(--ink-3);font-size:11.5px}
 .bl .t{height:6px;border-radius:99px;background:var(--surface-3);margin-top:6px;overflow:hidden}
-.bl .t i{display:block;height:100%;background:var(--ramp);border-radius:99px}
+.bl .t i{display:block;height:100%;background:var(--data);border-radius:99px}
 .bl .n{width:52px;text-align:right;font-family:var(--display);font-weight:700;font-size:15px}
 
 /* ── facet rail + table ─────────────────────────────────────────────────── */
@@ -204,6 +203,9 @@ tbody tr:hover .ract{opacity:1}
 .fp i.w{background:var(--medium)}
 .fp i.p{background:color-mix(in srgb,var(--low) 55%,transparent)}
 .fp i.n{background:var(--line-strong)}
+.pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface-2);
+  border-radius:99px;padding:3px 9px;font-size:11.5px;color:var(--ink-2)}
+.pill b{color:var(--ink);font-weight:600}
 .pager{display:flex;align-items:center;gap:12px;padding:10px 12px;border-top:1px solid var(--line);color:var(--ink-3);font-size:12.5px}
 .pager .r{margin-left:auto;display:flex;align-items:center;gap:8px}
 
@@ -279,7 +281,7 @@ svg.ic.sm{width:13px;height:13px}
     <button data-go="s-drawer">Record drawer</button>
     <button data-go="s-find">Code exposure</button>
   </div>
-  <span class="note">Static mockup · figures illustrative · theme-aware top bar, context row carries scope and back, status as a sentence</span>
+  <span class="note">Static mockup · figures illustrative · six colours total - four status tiers, one data hue, neutral; tiles on the dashboard only</span>
 </div>
 
 <!-- ══════════════════════════════ SIGN IN ══════════════════════════════ -->
@@ -355,9 +357,9 @@ svg.ic.sm{width:13px;height:13px}
         </div>
         <div class="content">
           <div class="grid3">
-            <div class="kpi" style="--bar:var(--s1)"><p class="l">Identities discovered</p><p class="v">137</p><p class="c">18 human · 119 non-human</p>
-              <svg class="spark" viewBox="0 0 120 22" preserveAspectRatio="none"><path d="M0 18L20 16L40 13L60 12L80 8L100 6L120 3" stroke="var(--s1)" fill="none" stroke-width="2"/></svg></div>
-            <div class="kpi" style="--bar:var(--s5)"><p class="l">Non-human identities</p><p class="v">119</p><p class="c">Roles, services, agents and pipelines</p><div class="meter"><i style="width:87%"></i></div></div>
+            <div class="kpi" style="--bar:var(--data)"><p class="l">Identities discovered</p><p class="v">137</p><p class="c">18 human · 119 non-human</p>
+              <svg class="spark" viewBox="0 0 120 22" preserveAspectRatio="none"><path d="M0 18L20 16L40 13L60 12L80 8L100 6L120 3" stroke="var(--data)" fill="none" stroke-width="2"/></svg></div>
+            <div class="kpi" style="--bar:var(--data)"><p class="l">Non-human identities</p><p class="v">119</p><p class="c">Roles, services, agents and pipelines</p><div class="meter"><i style="width:87%"></i></div></div>
             <div class="kpi" style="--bar:var(--medium)"><p class="l">Credentials in use</p><p class="v">136</p><p class="c">Keys, passwords and certificates</p><div class="meter"><i style="width:64%;background:var(--medium)"></i></div></div>
             <div class="kpi" style="--bar:var(--critical)"><p class="l">Secrets in code</p><p class="v">18</p><p class="c">6 high or critical · 5 repositories</p><div class="meter"><i style="width:33%;background:var(--critical)"></i></div></div>
           </div>
@@ -367,41 +369,29 @@ svg.ic.sm{width:13px;height:13px}
               <div class="ph"><div><h2><svg class="ic" viewBox="0 0 24 24" style="color:var(--brand)"><path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"/><path d="M12 9v4"/></svg> Exposure signals</h2>
                 <p>Ranked by share of the population each one is measured against. Select a signal to work the underlying identities.</p></div></div>
               <div style="margin-top:10px">
-                <div class="sig"><div><p class="t" style="color:var(--critical)">Humans without MFA</p><p class="d">Console identities that can authenticate with a password alone.</p><div class="meter" style="--bar:var(--critical)"><i style="width:33%"></i></div></div><div class="n"><b>6</b><s>33.3% of human identities</s></div></div>
-                <div class="sig"><div><p class="t" style="color:var(--critical)">Admin-level access</p><p class="d">Identities carrying an administrator-equivalent policy.</p><div class="meter" style="--bar:var(--critical)"><i style="width:12%"></i></div></div><div class="n"><b>16</b><s>11.7% of all identities</s></div></div>
-                <div class="sig"><div><p class="t" style="color:var(--high)">Orphaned identities</p><p class="d">No owner, team or creator could be resolved from tags or CloudTrail.</p><div class="meter" style="--bar:var(--high)"><i style="width:20%"></i></div></div><div class="n"><b>27</b><s>19.7% of all identities</s></div></div>
-                <div class="sig"><div><p class="t" style="color:var(--high)">Stale for 90+ days</p><p class="d">No recorded activity in over 90 days - candidates for removal.</p><div class="meter" style="--bar:var(--high)"><i style="width:16%"></i></div></div><div class="n"><b>22</b><s>16.1% of all identities</s></div></div>
-                <div class="sig"><div><p class="t" style="color:var(--medium)">Inactive 30-90 days</p><p class="d">Dormant but not yet stale. Worth confirming they are still needed.</p><div class="meter" style="--bar:var(--medium)"><i style="width:23%"></i></div></div><div class="n"><b>31</b><s>22.6% of all identities</s></div></div>
+                <div class="sig"><div><p class="t" style="display:flex;align-items:center;gap:7px"><span class="dot" style="background:var(--critical)"></span>Humans without MFA</p><p class="d">Console identities that can authenticate with a password alone.</p><div class="meter" style="--bar:var(--critical)"><i style="width:33%"></i></div></div><div class="n"><b>6</b><s>33.3% of human identities</s></div></div>
+                <div class="sig"><div><p class="t" style="display:flex;align-items:center;gap:7px"><span class="dot" style="background:var(--critical)"></span>Admin-level access</p><p class="d">Identities carrying an administrator-equivalent policy.</p><div class="meter" style="--bar:var(--critical)"><i style="width:12%"></i></div></div><div class="n"><b>16</b><s>11.7% of all identities</s></div></div>
+                <div class="sig"><div><p class="t" style="display:flex;align-items:center;gap:7px"><span class="dot" style="background:var(--high)"></span>Orphaned identities</p><p class="d">No owner, team or creator could be resolved from tags or CloudTrail.</p><div class="meter" style="--bar:var(--high)"><i style="width:20%"></i></div></div><div class="n"><b>27</b><s>19.7% of all identities</s></div></div>
+                <div class="sig"><div><p class="t" style="display:flex;align-items:center;gap:7px"><span class="dot" style="background:var(--high)"></span>Stale for 90+ days</p><p class="d">No recorded activity in over 90 days - candidates for removal.</p><div class="meter" style="--bar:var(--high)"><i style="width:16%"></i></div></div><div class="n"><b>22</b><s>16.1% of all identities</s></div></div>
+                <div class="sig"><div><p class="t" style="display:flex;align-items:center;gap:7px"><span class="dot" style="background:var(--medium)"></span>Inactive 30-90 days</p><p class="d">Dormant but not yet stale. Worth confirming they are still needed.</p><div class="meter" style="--bar:var(--medium)"><i style="width:23%"></i></div></div><div class="n"><b>31</b><s>22.6% of all identities</s></div></div>
               </div>
             </div>
 
             <div class="panel p">
               <div class="ph"><div><h2><svg class="ic" viewBox="0 0 24 24" style="color:var(--brand)"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20v-3"/></svg> Classification mix</h2><p>How the discovery engine classified each identity.</p></div></div>
-              <div style="display:flex;gap:18px;align-items:center;margin-top:14px">
-                <svg width="150" height="150" viewBox="0 0 42 42" style="flex:none">
-                  <g transform="rotate(-90 21 21)" fill="none" stroke-width="6">
-                    <circle cx="21" cy="21" r="16" stroke="var(--s1)" stroke-dasharray="13.1 86.9" stroke-dashoffset="0" pathLength="100"/>
-                    <circle cx="21" cy="21" r="16" stroke="var(--s2)" stroke-dasharray="12.4 87.6" stroke-dashoffset="-13.1" pathLength="100"/>
-                    <circle cx="21" cy="21" r="16" stroke="var(--s3)" stroke-dasharray="12.4 87.6" stroke-dashoffset="-25.5" pathLength="100"/>
-                    <circle cx="21" cy="21" r="16" stroke="var(--s4)" stroke-dasharray="12.4 87.6" stroke-dashoffset="-37.9" pathLength="100"/>
-                    <circle cx="21" cy="21" r="16" stroke="var(--s5)" stroke-dasharray="12.4 87.6" stroke-dashoffset="-50.3" pathLength="100"/>
-                    <circle cx="21" cy="21" r="16" stroke="var(--s6)" stroke-dasharray="12.4 87.6" stroke-dashoffset="-62.7" pathLength="100"/>
-                    <circle cx="21" cy="21" r="16" stroke="var(--s7)" stroke-dasharray="12.4 87.6" stroke-dashoffset="-75.1" pathLength="100"/>
-                    <circle cx="21" cy="21" r="16" stroke="var(--s8)" stroke-dasharray="12.4 87.6" stroke-dashoffset="-87.5" pathLength="100"/>
-                  </g>
-                  <text x="21" y="20.5" text-anchor="middle" style="font:800 7px var(--display);fill:var(--ink)">137</text>
-                  <text x="21" y="25" text-anchor="middle" style="font:600 2.6px var(--sans);letter-spacing:.14em;fill:var(--ink-3)">IDENTITIES</text>
-                </svg>
-                <div class="legend">
-                  <div><span class="dot" style="background:var(--s1)"></span>Human<b>18</b><s>13.1%</s></div>
-                  <div><span class="dot" style="background:var(--s2)"></span>Service<b>17</b><s>12.4%</s></div>
-                  <div><span class="dot" style="background:var(--s3)"></span>Agent<b>17</b><s>12.4%</s></div>
-                  <div><span class="dot" style="background:var(--s4)"></span>CI/CD<b>17</b><s>12.4%</s></div>
-                  <div><span class="dot" style="background:var(--s5)"></span>SaaS<b>17</b><s>12.4%</s></div>
-                  <div><span class="dot" style="background:var(--s6)"></span>Ephemeral<b>17</b><s>12.4%</s></div>
-                  <div><span class="dot" style="background:var(--s7)"></span>Dual identity<b>17</b><s>12.4%</s></div>
-                  <div><span class="dot" style="background:var(--s8)"></span>Unclassified<b>17</b><s>12.4%</s></div>
-                </div>
+              <div style="margin-top:8px">
+                <div class="bl"><div class="w"><p class="r">Human <i>13.1%</i></p><div class="t"><i style="width:100%"></i></div></div><span class="n">18</span></div>
+                <div class="bl"><div class="w"><p class="r">Service <i>12.4%</i></p><div class="t"><i style="width:94%"></i></div></div><span class="n">17</span></div>
+                <div class="bl"><div class="w"><p class="r">Agent <i>12.4%</i></p><div class="t"><i style="width:94%"></i></div></div><span class="n">17</span></div>
+                <div class="bl"><div class="w"><p class="r">CI/CD <i>12.4%</i></p><div class="t"><i style="width:94%"></i></div></div><span class="n">17</span></div>
+                <div class="bl"><div class="w"><p class="r">SaaS <i>12.4%</i></p><div class="t"><i style="width:94%"></i></div></div><span class="n">17</span></div>
+                <div class="bl"><div class="w"><p class="r">Ephemeral <i>12.4%</i></p><div class="t"><i style="width:94%"></i></div></div><span class="n">17</span></div>
+                <div class="bl"><div class="w"><p class="r">Dual identity <i>12.4%</i></p><div class="t"><i style="width:94%"></i></div></div><span class="n">17</span></div>
+                <div class="bl"><div class="w"><p class="r">Unclassified <i>12.4%</i></p><div class="t"><i style="width:94%"></i></div></div><span class="n">17</span></div>
+                <dl style="display:grid;grid-template-columns:1fr 1fr;gap:14px;border-top:1px solid var(--line);margin-top:14px;padding-top:12px">
+                  <div><dt style="font:600 10.5px var(--sans);letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3)">Human</dt><dd style="margin:3px 0 0;font-family:var(--display);font-size:19px;font-weight:700">18</dd></div>
+                  <div><dt style="font:600 10.5px var(--sans);letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3)">Non-human</dt><dd style="margin:3px 0 0;font-family:var(--display);font-size:19px;font-weight:700">119</dd></div>
+                </dl>
               </div>
             </div>
           </div>
@@ -422,27 +412,27 @@ svg.ic.sm{width:13px;height:13px}
               <div style="margin-top:12px;display:flex;flex-direction:column;gap:12px">
                 <div>
                   <div style="display:flex;justify-content:space-between;font-size:12px"><b style="color:var(--ink-2)">Identities</b><span style="color:var(--ink-3)">latest 138</span></div>
-                  <svg viewBox="0 0 320 54" style="width:100%;height:54px"><defs><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--s1)" stop-opacity=".26"/><stop offset="1" stop-color="var(--s1)" stop-opacity="0"/></linearGradient></defs>
+                  <svg viewBox="0 0 320 54" style="width:100%;height:54px"><defs><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--data)" stop-opacity=".26"/><stop offset="1" stop-color="var(--data)" stop-opacity="0"/></linearGradient></defs>
                     <path d="M0 42L53 38L106 33L160 30L213 22L266 16L320 10L320 54L0 54Z" fill="url(#g1)"/>
-                    <path d="M0 42L53 38L106 33L160 30L213 22L266 16L320 10" stroke="var(--s1)" fill="none" stroke-width="2"/>
+                    <path d="M0 42L53 38L106 33L160 30L213 22L266 16L320 10" stroke="var(--data)" fill="none" stroke-width="2"/>
                     <line x1="213" y1="0" x2="213" y2="54" stroke="var(--ink-3)" stroke-dasharray="3 3" opacity=".55"/>
-                    <circle cx="213" cy="22" r="4" fill="var(--s1)" stroke="#fff" stroke-width="2"/></svg>
+                    <circle cx="213" cy="22" r="4" fill="var(--data)" stroke="#fff" stroke-width="2"/></svg>
                 </div>
                 <div>
                   <div style="display:flex;justify-content:space-between;font-size:12px"><b style="color:var(--ink-2)">CloudTrail events</b><span style="color:var(--ink-3)">latest 4,520</span></div>
-                  <svg viewBox="0 0 320 54" style="width:100%;height:54px"><defs><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--s5)" stop-opacity=".26"/><stop offset="1" stop-color="var(--s5)" stop-opacity="0"/></linearGradient></defs>
+                  <svg viewBox="0 0 320 54" style="width:100%;height:54px"><defs><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--data)" stop-opacity=".26"/><stop offset="1" stop-color="var(--data)" stop-opacity="0"/></linearGradient></defs>
                     <path d="M0 44L53 40L106 36L160 28L213 24L266 17L320 8L320 54L0 54Z" fill="url(#g2)"/>
-                    <path d="M0 44L53 40L106 36L160 28L213 24L266 17L320 8" stroke="var(--s5)" fill="none" stroke-width="2"/>
+                    <path d="M0 44L53 40L106 36L160 28L213 24L266 17L320 8" stroke="var(--data)" fill="none" stroke-width="2"/>
                     <line x1="213" y1="0" x2="213" y2="54" stroke="var(--ink-3)" stroke-dasharray="3 3" opacity=".55"/>
-                    <circle cx="213" cy="24" r="4" fill="var(--s5)" stroke="#fff" stroke-width="2"/></svg>
+                    <circle cx="213" cy="24" r="4" fill="var(--data)" stroke="#fff" stroke-width="2"/></svg>
                 </div>
                 <div>
                   <div style="display:flex;justify-content:space-between;font-size:12px"><b style="color:var(--ink-2)">Secret-backed identities</b><span style="color:var(--ink-3)">latest 11</span></div>
-                  <svg viewBox="0 0 320 54" style="width:100%;height:54px"><defs><linearGradient id="g3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--s2)" stop-opacity=".26"/><stop offset="1" stop-color="var(--s2)" stop-opacity="0"/></linearGradient></defs>
+                  <svg viewBox="0 0 320 54" style="width:100%;height:54px"><defs><linearGradient id="g3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--data)" stop-opacity=".26"/><stop offset="1" stop-color="var(--data)" stop-opacity="0"/></linearGradient></defs>
                     <path d="M0 34L53 30L106 26L160 18L213 30L266 24L320 20L320 54L0 54Z" fill="url(#g3)"/>
-                    <path d="M0 34L53 30L106 26L160 18L213 30L266 24L320 20" stroke="var(--s2)" fill="none" stroke-width="2"/>
+                    <path d="M0 34L53 30L106 26L160 18L213 30L266 24L320 20" stroke="var(--data)" fill="none" stroke-width="2"/>
                     <line x1="213" y1="0" x2="213" y2="54" stroke="var(--ink-3)" stroke-dasharray="3 3" opacity=".55"/>
-                    <circle cx="213" cy="30" r="4" fill="var(--s2)" stroke="#fff" stroke-width="2"/></svg>
+                    <circle cx="213" cy="30" r="4" fill="var(--data)" stroke="#fff" stroke-width="2"/></svg>
                   <div style="display:flex;justify-content:space-between;color:var(--ink-3);font-size:10.5px;margin-top:2px"><span>Jul 25</span><span>Aug 08</span><span>Aug 22</span><span>Sep 05</span><span>Sep 19</span></div>
                 </div>
               </div>
@@ -522,23 +512,23 @@ svg.ic.sm{width:13px;height:13px}
                 <thead><tr><th style="width:30%">Identity</th><th style="width:13%">Classification</th><th style="width:18%">Owner</th><th style="width:14%">Trust</th><th style="width:17%">Status</th><th style="width:10%">Last active</th><th style="width:44px"></th></tr></thead>
                 <tbody>
                   <tr><td><div class="nm"><span class="ico"><svg class="ic sm" viewBox="0 0 24 24"><circle cx="12" cy="9" r="3"/><path d="M5 20a7 7 0 0114 0"/></svg></span><span><b>person.3@example.com</b><s>user/platform/person.3</s></span></div></td>
-                    <td><span class="dot" style="background:var(--s1);display:inline-block;margin-right:7px"></span>Human</td><td>team-3@example.com<br /><span style="color:var(--ink-3);font-size:11px">Human owner</span></td><td>Federated<br /><span style="font-family:var(--mono);font-size:11px;color:var(--ink-3)">sts.amazonaws.com</span></td>
+                    <td><span class="dot" style="background:var(--data);display:inline-block;margin-right:7px"></span>Human</td><td>team-3@example.com<br /><span style="color:var(--ink-3);font-size:11px">Human owner</span></td><td>Federated<br /><span style="font-family:var(--mono);font-size:11px;color:var(--ink-3)">sts.amazonaws.com</span></td>
                     <td><span class="st"><span class="w" style="color:var(--critical)"><span class="dot" style="background:var(--critical)"></span>Critical</span><span class="r">MFA disabled <span style="background:var(--surface-3);border-radius:99px;padding:0 5px;font-size:10.5px;font-weight:600;color:var(--ink-3)">+1</span></span></span></td><td>21 days ago<br /><span style="color:var(--ink-3);font-size:11px">111 events</span></td>
                     <td><div class="ract"><button class="btn gh" style="height:26px;padding:0 6px">⧉</button><button class="btn gh" style="height:26px;padding:0 6px">⋯</button></div></td></tr>
                   <tr><td><div class="nm"><span class="ico"><svg class="ic sm" viewBox="0 0 24 24"><circle cx="12" cy="9" r="3"/><path d="M5 20a7 7 0 0114 0"/></svg></span><span><b>person.9@example.com</b><s>user/platform/person.9</s></span></div></td>
-                    <td><span class="dot" style="background:var(--s1);display:inline-block;margin-right:7px"></span>Human</td><td><span style="color:var(--ink-3)">Unassigned</span><br /><span style="color:var(--high);font-size:11px">Orphaned</span></td><td>Service</td>
+                    <td><span class="dot" style="background:var(--data);display:inline-block;margin-right:7px"></span>Human</td><td><span style="color:var(--ink-3)">Unassigned</span><br /><span style="color:var(--high);font-size:11px">Orphaned</span></td><td>Service</td>
                     <td><span class="st"><span class="w" style="color:var(--critical)"><span class="dot" style="background:var(--critical)"></span>Critical</span><span class="r">MFA disabled <span style="background:var(--surface-3);border-radius:99px;padding:0 5px;font-size:10.5px;font-weight:600;color:var(--ink-3)">+1</span></span></span></td><td>2 months ago<br /><span style="color:var(--ink-3);font-size:11px">333 events</span></td>
                     <td><div class="ract"><button class="btn gh" style="height:26px;padding:0 6px">⧉</button><button class="btn gh" style="height:26px;padding:0 6px">⋯</button></div></td></tr>
                   <tr><td><div class="nm"><span class="ico"><svg class="ic sm" viewBox="0 0 24 24"><circle cx="12" cy="9" r="3"/><path d="M5 20a7 7 0 0114 0"/></svg></span><span><b>person.15@example.com</b><s>user/platform/person.15</s></span></div></td>
-                    <td><span class="dot" style="background:var(--s1);display:inline-block;margin-right:7px"></span>Human</td><td>team-3@example.com<br /><span style="color:var(--ink-3);font-size:11px">Human owner</span></td><td>Service</td>
+                    <td><span class="dot" style="background:var(--data);display:inline-block;margin-right:7px"></span>Human</td><td>team-3@example.com<br /><span style="color:var(--ink-3);font-size:11px">Human owner</span></td><td>Service</td>
                     <td><span class="st"><span class="w" style="color:var(--critical)"><span class="dot" style="background:var(--critical)"></span>Critical</span><span class="r">MFA disabled</span></span></td><td>4 months ago<br /><span style="color:var(--ink-3);font-size:11px">555 events</span></td>
                     <td><div class="ract"><button class="btn gh" style="height:26px;padding:0 6px">⧉</button><button class="btn gh" style="height:26px;padding:0 6px">⋯</button></div></td></tr>
                   <tr><td><div class="nm"><span class="ico"><svg class="ic sm" viewBox="0 0 24 24"><circle cx="12" cy="9" r="3"/><path d="M5 20a7 7 0 0114 0"/></svg></span><span><b>person.21@example.com</b><s>user/platform/person.21</s></span></div></td>
-                    <td><span class="dot" style="background:var(--s1);display:inline-block;margin-right:7px"></span>Human</td><td>team-3@example.com<br /><span style="color:var(--ink-3);font-size:11px">CI/CD managed</span></td><td>Federated</td>
+                    <td><span class="dot" style="background:var(--data);display:inline-block;margin-right:7px"></span>Human</td><td>team-3@example.com<br /><span style="color:var(--ink-3);font-size:11px">CI/CD managed</span></td><td>Federated</td>
                     <td><span class="st"><span class="w" style="color:var(--critical)"><span class="dot" style="background:var(--critical)"></span>Critical</span><span class="r">MFA disabled <span style="background:var(--surface-3);border-radius:99px;padding:0 5px;font-size:10.5px;font-weight:600;color:var(--ink-3)">+1</span></span></span></td><td>5 months ago<br /><span style="color:var(--ink-3);font-size:11px">777 events</span></td>
                     <td><div class="ract"><button class="btn gh" style="height:26px;padding:0 6px">⧉</button><button class="btn gh" style="height:26px;padding:0 6px">⋯</button></div></td></tr>
                   <tr><td><div class="nm"><span class="ico"><svg class="ic sm" viewBox="0 0 24 24"><circle cx="12" cy="9" r="3"/><path d="M5 20a7 7 0 0114 0"/></svg></span><span><b>svc-deploy-24</b><s>role/platform/svc-deploy-24</s></span></div></td>
-                    <td><span class="dot" style="background:var(--s1);display:inline-block;margin-right:7px"></span>Human</td><td><span style="color:var(--ink-3)">Unassigned</span><br /><span style="color:var(--high);font-size:11px">Orphaned</span></td><td>Federated</td>
+                    <td><span class="dot" style="background:var(--data);display:inline-block;margin-right:7px"></span>Human</td><td><span style="color:var(--ink-3)">Unassigned</span><br /><span style="color:var(--high);font-size:11px">Orphaned</span></td><td>Federated</td>
                     <td><span class="st"><span class="w" style="color:var(--critical)"><span class="dot" style="background:var(--critical)"></span>Critical</span><span class="r">MFA disabled <span style="background:var(--surface-3);border-radius:99px;padding:0 5px;font-size:10.5px;font-weight:600;color:var(--ink-3)">+3</span></span></span></td><td>6 months ago<br /><span style="color:var(--ink-3);font-size:11px">888 events</span></td>
                     <td><div class="ract"><button class="btn gh" style="height:26px;padding:0 6px">⧉</button><button class="btn gh" style="height:26px;padding:0 6px">⋯</button></div></td></tr>
                 </tbody>
@@ -620,11 +610,9 @@ svg.ic.sm{width:13px;height:13px}
           <div class="acts"><button class="btn gh">Export page</button><button class="btn">⟳ Refresh</button></div></div>
         <div class="vtabs"><span class="on">All platforms <em>18</em></span><span>GitHub <em>12</em></span><span>CodeCommit <em>6</em></span><span>By push <em>14</em></span></div>
         <div class="content">
-          <div class="grid3">
+          <div class="grid3" style="grid-template-columns:repeat(2,minmax(0,1fr))">
             <div class="kpi" style="--bar:var(--high)"><p class="l">Live findings</p><p class="v">18</p><p class="c">Excludes anything already allowlisted</p></div>
             <div class="kpi" style="--bar:var(--critical)"><p class="l">High or critical</p><p class="v">6</p><p class="c">Actionable risk tier, not detector severity</p><div class="meter"><i style="width:33%;background:var(--critical)"></i></div></div>
-            <div class="kpi" style="--bar:var(--s5)"><p class="l">Repositories affected</p><p class="v">5</p><p class="c">Distinct across both platforms</p></div>
-            <div class="kpi" style="--bar:var(--medium)"><p class="l">Detector types</p><p class="v">5</p><p class="c">Most common: Postgresql connection string</p></div>
           </div>
           <div class="work">
             <aside class="facets">
@@ -649,7 +637,9 @@ svg.ic.sm{width:13px;height:13px}
             </aside>
             <div class="tablewrap">
               <div class="tbar"><div class="sq"><svg class="ic sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg> Search repository, file, branch, detector…</div>
-                <span style="color:var(--ink-3);font-size:12.5px">6 of 18 · 1 filter</span><span style="margin-left:auto"></span><span class="seg"><i class="on">Compact</i><i>Comfortable</i></span></div>
+                <span style="color:var(--ink-3);font-size:12.5px">6 of 18 · 1 filter</span>
+                <span class="pill">Repositories <b>5</b></span><span class="pill">Detectors <b>5</b></span>
+                <span style="margin-left:auto"></span><span class="seg"><i class="on">Compact</i><i>Comfortable</i></span></div>
               <table>
                 <thead><tr><th style="width:28%">Secret ↓</th><th style="width:10%">Risk ↓</th><th style="width:20%">Repository ↓</th><th style="width:16%">Author</th><th style="width:13%">Recommended</th><th style="width:13%">Detected ↓</th><th style="width:44px"></th></tr></thead>
                 <tbody>

@@ -73,28 +73,85 @@ throughout the interface.
 
 ---
 
-## 3. Status, not a fingerprint
+## 3. Colour policy
 
-Revision 2 rendered posture as five fixed colour slots. It optimised for an
-expert scanning a long column and ignored the first-time reader, who has to
-learn a legend before the column means anything. In a product where the
-operator may open one screen a week, that is a failure.
+Revision 3 shipped roughly **fourteen hues on the posture screen**: eight
+categorical for the classification donut, five ramp steps for the credential
+bars, four status tiers, brand blue. The palette passed a colour-vision
+separation validator, which answers *"can people tell these apart"* - not
+*"should there be this many"*. It was the wrong question.
 
-**Replaced by one status and one reason, in words.**
+### What the field actually does
+
+| System | Categorical limit | Notes |
+|---|---|---|
+| IBM Carbon | 14 available, applied "in sequence strictly as described" | Separate 4-colour **alert palette**: red danger, orange serious warning, yellow warning, green normal |
+| Adobe Spectrum | 6 | "no more than 6" categories, plus a legend |
+| Atlassian | 5-6 | Explicitly recommends **grouping** related categories to get there |
+| GitLab | 5 hues | Single hue + lightness for sequential; green/magenta reserved for pass/fail |
+
+Nielsen Norman Group is more pointed about the mechanism: *"Color should not be
+used to communicate information about quantitative values or magnitude"*,
+because *"people do not perceive different colors as being in a particular
+order"* - and *"color properties such as hue or saturation are helpful as a
+secondary grouping cue, rather than as the main way of showing groups or
+categories."* The old donut used hue as the *only* cue for eight categories.
+
+### The rule now
+
+**Colour encodes status and nothing else.** Six colours in the whole product:
+
+| Token | Job |
+|---|---|
+| `--t-critical` | a failing check, a high-risk finding |
+| `--t-high` | serious, not yet failing |
+| `--t-medium` | needs review |
+| `--t-low` | clear, healthy, the good outcome |
+| `--t-data` | every data mark: bars, lines, meters, sparklines |
+| `--t-neutral` | context, grids, axes, inert values |
+
+There is **no categorical palette**. Where categories must be compared, the
+*form* carries the comparison (a ranked bar list) and the *name* carries the
+identity. Every one of the six passes WCAG text contrast against both the light
+and dark surface, so any of them can be used as a label, not just as a mark.
+
+One exception, and it is the exception NN/g endorses: identity **kind** -
+human vs machine - is two hues sitting beside a text label as a secondary cue.
+Two values, never eight.
+
+### Consequences
+
+- **The classification donut is gone.** Eight near-equal shares (13.1%, then
+  12.4% seven times) are the worst case for a pie; Datawrapper's rule is that
+  beyond four or five shares you group them or switch to a bar chart, and that
+  pie is the wrong form when the reader must *compare* shares. It is now a
+  ranked bar list, one hue, click-through to the filtered identities.
+- **Exposure-signal labels are ink again.** Colour survives in the dot and the
+  meter. A column of coloured labels reads as decoration; a column of ink
+  labels with severity marks reads as severity.
+- **The three trend charts share one hue.** They are separate charts with their
+  own titles - there is no cross-chart colour identity to preserve.
+- **One blue, not three.** Brand, data marks and the informational state were
+  three hand-picked blues within a few points of each other - three colours
+  doing the work of one, and impossible to tell apart on a projector. `--t-info`
+  and `--t-data` are now aliases of `--t-brand`.
+- **A population delta carries no severity.** The scan list used to paint
+  `+6 identities` amber and a decrease green. Discovering more identities is a
+  fact about the estate, not a risk grade; spending a status colour on it makes
+  the four tiers mean less everywhere else. The arrow carries direction, the
+  number carries size, and the ink stays neutral. Severity colour is reserved
+  for things that have a severity.
+- **Status is a sentence, not a colour code.** Five checks are evaluated, and
+  the table shows one state plus the leading reason in words:
 
 ```
-● Critical    MFA disabled  +1 more
-● Attention   Dormant 47 days
-● Healthy     All checks clear
+●  Critical    MFA disabled  +1
+●  Attention   Dormant 47 days
+●  Healthy     All checks clear
 ```
 
-- **One dot, three states** - Critical, Attention, Healthy (plus Unknown when
-  nothing was recorded). Three colours total, from the reserved status palette.
-- **The leading reason is written out**, so no legend is required. When more
-  than one check fails, `+N more` follows, and the full list is the tooltip and
-  the accessible label.
-- The underlying five checks are unchanged and still documented below - they
-  now drive a sentence instead of a bar chart.
+  Three states, no legend to learn. The five-check breakdown lives in the
+  record drawer, where there is room for it.
 
 | Check | Critical when | Attention when | Source |
 |---|---|---|---|
@@ -104,9 +161,47 @@ operator may open one screen a week, that is a failure.
 | Activity | last active over 90 days | 30-90 days | `last_active` |
 | Secret store | - | credentials in a secret entry | `is_secret` |
 
-Still no score. No 0-100, no letter grade, no weighting: the API supplies none,
-and a fabricated score is the most dangerous kind of fake analytics because
-people act on it.
+Still no score. No 0-100, no grade, no weighting: the API supplies none, and a
+fabricated score is the most dangerous kind of fake analytics because people
+act on it.
+
+---
+
+## 3a. Metric tiles belong on a dashboard, not on every page
+
+Revision 3 put a four-tile KPI strip on seven screens. Only one of them is a
+dashboard.
+
+**What the reference product does.** Microsoft Defender's device inventory -
+the canonical enterprise security inventory page - is documented as: tabs
+(All devices, Computers & mobile, Network devices, IoT/OT, Uncategorized),
+then **count pills** at the top (total, critical assets, high risk, high
+exposure, not onboarded, newly discovered), then search, customise columns,
+filter flyout, sort, export. Count pills, not tiles. The numbers are present,
+most of them double as filters, and the table gets the screen.
+
+NN/g's complex-application guidance says the same thing from the other side:
+*"Removing superfluous graphics or visual elements that serve no purpose can
+make the data left behind stand out."* And a dashboard is defined as *"a
+single-page view that imparts at-a-glance information"* - a place, not an
+ornament repeated on every screen.
+
+**The rule now.**
+
+| Screen | Treatment |
+|---|---|
+| Posture | Metric tiles. It is the dashboard. |
+| Code exposure | Two tiles - live findings, high-or-critical. Those two numbers *are* the work queue. Repository and detector counts are pills. |
+| Identities | View-preset tabs with counts (already a pill row in effect) |
+| Credentials | Pills - all, plus one per severity, each filtering. The rotation-queue bar stays: it answers the screen's question. |
+| Secret-backed | Pills - the intersections, each one a real filter |
+| Dismissed | Pills - allowlisted, no-stated-reason (filtering), reviewers, detectors |
+| Activity | Pills - scan total, mutating/read-only in view. The breakdown collapses behind a disclosure. |
+| Scans | Pills in the trend panel header. The delta column stays: it is the page's point. |
+| My resources | Pills, all explicitly "in view" |
+
+Two things survive the cut because they answer their screen's question rather
+than decorating it: the **credential rotation queue** and the **scan delta**.
 
 ---
 
@@ -139,7 +234,7 @@ Every screen answered against the same eleven questions.
 | Easiest actions | Whole signal rows are links carrying the API filter. Scope and refresh are one click. |
 | Progressive disclosure | Signal reason always visible; identities one click; a record's credentials two. |
 | Fewer clicks | Every counter is a link. Classification slices and credential bars drill through too. |
-| Complex data | Signals as meters against *their own* denominator. Composition as a donut whose legend is the value table. Trend as three small multiples, never a dual axis. |
+| Complex data | Signals as meters against *their own* denominator. Composition as a ranked bar list, one hue, length carrying the magnitude. Trend as three small multiples, never a dual axis. |
 | No data | Per panel: no completed scan, nothing classified, not enough history, and a *positive* state for zero findings. |
 | Loading | Metric, donut, bar and timeline skeletons with the real geometry. Panels resolve independently. |
 | API failure | Scoped to the failing panel; the scanner diagnoses its own 401 as "not configured". |
@@ -293,7 +388,6 @@ Every animation has a stated job. Anything that could not earn one is absent.
 | Panel stagger on mount | Establishes reading order | 420ms, 55ms step |
 | Metric count-up | The number was just computed; re-runs when scope changes | 620ms |
 | Meter / proportion grow | Reads as a measurement being taken | 900ms |
-| Donut sweep, segment lift on hover | Connects legend row to slice without a click | 720ms / 160ms |
 | **Synchronised trend crosshair** | One hover compares three measures at the same scan | instant |
 | **KPI sparkline reveal** | Adds history to a headline number, where history exists | 240ms |
 | Row hover accent and action reveal | Confirms the hit target without permanent clutter | 100ms |
@@ -314,6 +408,8 @@ All disabled under `prefers-reduced-motion`; none blocks input.
   global order.
 - **Password reset, remember-me, SSO** - no endpoints.
 - **A numeric risk score or grade** - unsupported, and dangerous if invented.
+- **A categorical colour palette** - see section 3. Comparison is carried by
+  form, identity by name.
 - **Bulk export** - no export endpoint, so the control says "Export page" or
   "Export view" and means it.
 - **Mutating-vs-read-only totals for the whole scan** - no filter exists, so

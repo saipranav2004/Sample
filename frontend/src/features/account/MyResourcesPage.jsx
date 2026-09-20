@@ -6,17 +6,15 @@ import { useQuery } from '../../lib/hooks';
 import { useScanContext } from '../../app/ScanContext';
 import { useAuth } from '../../app/AuthContext';
 import { classificationMeta } from '../../lib/domain';
-import { arnResource, formatNumber, percentValue } from '../../lib/format';
+import { arnResource, formatNumber } from '../../lib/format';
 import { exportRowsToCsv, timestampedName } from '../../lib/csv';
 import { PageHeader } from '../../shell/PageHeader';
 import { Button, IconButton } from '../../ui/Button';
-import { Panel, PanelHeader } from '../../ui/Panel';
+import { Panel } from '../../ui/Panel';
 import { RecordBar, ResultCount } from '../../ui/WorkArea';
+import { CountPills } from '../../ui/CountPills';
 import { DataGrid } from '../../ui/DataGrid';
 import { Pagination } from '../../ui/Pagination';
-import { ProportionBar } from '../../ui/Meter';
-import { MetricTile } from '../../ui/Stat';
-import { StatStripSkeleton } from '../../ui/Skeleton';
 import { EmptyState, ErrorState } from '../../ui/States';
 import { useToast } from '../../ui/Toast';
 import { TrustCell } from '../identities/cells';
@@ -133,89 +131,6 @@ export default function MyResourcesPage() {
         }
       />
 
-      {query.isLoading && !query.data ? (
-        <StatStripSkeleton count={4} />
-      ) : (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <MetricTile
-            label="Assigned to me"
-            value={total}
-            tone="brand"
-            icon={UserCircle}
-            caption="Resolved from tags and CloudTrail"
-            className="animate-rise"
-          />
-          <MetricTile
-            label="Critical, in view"
-            value={inView.critical}
-            tone={inView.critical > 0 ? 'critical' : 'low'}
-            caption={`Of ${formatNumber(rows.length)} on this page`}
-            meter={percentValue(inView.critical, rows.length)}
-            meterLabel="Share of the loaded page"
-            className="animate-rise"
-            data-stagger=""
-            style={{ '--stagger': 1 }}
-          />
-          <MetricTile
-            label="Needs review, in view"
-            value={inView.attention}
-            tone={inView.attention > 0 ? 'medium' : 'low'}
-            caption={`Of ${formatNumber(rows.length)} on this page`}
-            className="animate-rise"
-            data-stagger=""
-            style={{ '--stagger': 2 }}
-          />
-          <MetricTile
-            label="Healthy, in view"
-            value={inView.healthy}
-            tone="low"
-            caption="No failing or pending check"
-            className="animate-rise"
-            data-stagger=""
-            style={{ '--stagger': 3 }}
-          />
-        </div>
-      )}
-
-      {rows.length > 0 && (
-        <Panel className="animate-rise">
-          <PanelHeader
-            title="What I own, in view"
-            subtitle={`Composition of the ${formatNumber(rows.length)} records on this page. The endpoint accepts no filters beyond the scan, so this is a page-level summary, not a total.`}
-          />
-          <ProportionBar
-            className="mt-3.5"
-            height={12}
-            total={rows.length}
-            ariaLabel="Classification composition of the loaded page"
-            segments={inView.classes.map(([key, value]) => ({
-              key,
-              label: classificationMeta(key).label,
-              value,
-              color: classificationMeta(key).color,
-            }))}
-          />
-          <dl className="mt-3 flex flex-wrap gap-x-7 gap-y-2">
-            {inView.classes.map(([key, value]) => {
-              const meta = classificationMeta(key);
-              return (
-                <div key={key} className="flex items-center gap-2">
-                  <span
-                    aria-hidden="true"
-                    className="size-2.5 rounded-[3px]"
-                    style={{ background: meta.color }}
-                  />
-                  <dt className="text-[12px] text-ink-3">{meta.label}</dt>
-                  <dd data-numeric="" className="text-[12.5px] font-semibold text-ink">
-                    {formatNumber(value)}
-                  </dd>
-                </div>
-              );
-            })}
-          </dl>
-        </Panel>
-      )}
-
       <Panel flush className="animate-rise overflow-hidden">
         <RecordBar>
           <ResultCount
@@ -224,6 +139,35 @@ export default function MyResourcesPage() {
             unit="identities assigned to me"
             filtered={total !== rows.length}
             loading={query.isLoading && !query.data}
+          />
+          {/* The endpoint takes no filters beyond the scan, so these are
+              page-level figures and say so. */}
+          <CountPills
+            ariaLabel="My resource counts"
+            loading={query.isLoading && !query.data}
+            pills={[
+              {
+                key: 'critical',
+                label: 'Critical in view',
+                value: inView.critical,
+                tone: inView.critical > 0 ? 'critical' : 'low',
+                title: `Of ${formatNumber(rows.length)} records on this page`,
+              },
+              {
+                key: 'attention',
+                label: 'Needs review in view',
+                value: inView.attention,
+                tone: inView.attention > 0 ? 'medium' : 'low',
+                title: `Of ${formatNumber(rows.length)} records on this page`,
+              },
+              {
+                key: 'healthy',
+                label: 'Healthy in view',
+                value: inView.healthy,
+                tone: 'low',
+                title: 'No failing or pending check',
+              },
+            ]}
           />
         </RecordBar>
 
@@ -312,7 +256,6 @@ export default function MyResourcesPage() {
               loading={query.isLoading && !query.data}
               refreshing={query.isRefreshing}
               onRowClick={setSelected}
-              rowAccent={(row) => classificationMeta(row.classification).color}
               skeletonRows={6}
               rowActions={(row) => (
                 <IconButton

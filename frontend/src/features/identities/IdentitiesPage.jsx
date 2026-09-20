@@ -438,7 +438,6 @@ export default function IdentitiesPage() {
                 refreshing={query.isRefreshing}
                 onRowClick={setSelected}
                 density={density}
-                rowAccent={(row) => classificationMeta(row.classification).color}
                 skeletonRows={10}
                 rowActions={(row) => (
                   <IconButton

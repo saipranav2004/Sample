@@ -7,8 +7,10 @@
 
 :root {
   /* Brand ---------------------------------------------------------------- */
-  --t-brand: #0c6eb4;
-  --t-brand-strong: #095a95;
+  /* One blue. Brand, data marks and informational state are the same hue -
+     three near-identical blues were three colours pretending to be one. */
+  --t-brand: #1668b0;
+  --t-brand-strong: #11527f;
   --t-brand-deep: #071b33;
   --t-accent: #12b0f0;
   --t-accent-strong: #0b93cc;
@@ -50,30 +52,25 @@
   --t-medium-soft: #fdf6e3;
   --t-low: #05734b;
   --t-low-soft: #e7f6ef;
-  --t-info: #0c6eb4;
+  --t-info: var(--t-brand);
   --t-info-soft: #e8f2fb;
   --t-neutral: #5d6b7e;
   --t-neutral-soft: #eef1f5;
 
-  /* Categorical series - fixed slot order, validated for CVD separation and
-     contrast against the light surface. Slot 8 is a reserved neutral used for
-     "Unclassified"/"Other" and is never treated as a hue. */
-  --t-series-1: #1668b0;
-  --t-series-2: #c4520a;
-  --t-series-3: #0f8f7a;
-  --t-series-4: #7a4fd0;
-  --t-series-5: #1f8fb5;
-  --t-series-6: #7d8b1c;
-  --t-series-7: #b03a86;
-  --t-series-8: #64748b;
+  /* Data marks.
+     Colour in this product encodes STATUS and nothing else (the four tiers
+     above, plus neutral). Data marks therefore get one hue - the brand - and
+     context gets grey. There is no categorical palette: where several
+     categories must be compared, the chart form carries the comparison
+     (ranked bars) and the category name carries the identity.
+     See docs/UX-DECISIONS.md section 3. */
+  --t-data: var(--t-brand);
+  --t-data-soft: #cfe3f3;
 
-  /* Sequential ramp (single hue) for magnitude-only charts such as the
-     credential-type bar list. */
-  --t-ramp-1: #cfe3f3;
-  --t-ramp-2: #9cc5e6;
-  --t-ramp-3: #5b9fd4;
-  --t-ramp-4: #1668b0;
-  --t-ramp-5: #0d4b83;
+  /* Identity kind - the one place a hue sits beside a text label as a
+     secondary cue. Two values, never eight. */
+  --t-kind-human: var(--t-brand);
+  --t-kind-machine: #64748b;
 
   /* Chart chrome */
   --t-chart-grid: #e8edf4;
@@ -111,8 +108,8 @@
   --t-sidebar: #0a1322;
   --t-sidebar-line: #1e2e46;
 
-  --t-brand: #2f92d8;
-  --t-brand-strong: #1c7cbf;
+  --t-brand: #4aa3e0;
+  --t-brand-strong: #2f8bcb;
 
   --t-critical: #f2837a;
   --t-critical-soft: rgba(180, 35, 24, 0.18);
@@ -122,25 +119,16 @@
   --t-medium-soft: rgba(160, 106, 2, 0.2);
   --t-low: #55c79b;
   --t-low-soft: rgba(5, 115, 75, 0.2);
-  --t-info: #5aa9e2;
-  --t-info-soft: rgba(12, 110, 180, 0.2);
+  --t-info: var(--t-brand);
+  --t-info-soft: rgba(12, 110, 180, 0.24);
   --t-neutral: #93a3b7;
   --t-neutral-soft: rgba(147, 163, 183, 0.14);
 
-  --t-series-1: #3d93d4;
-  --t-series-2: #c96c24;
-  --t-series-3: #1e9c7d;
-  --t-series-4: #7f6ad8;
-  --t-series-5: #1f9db6;
-  --t-series-6: #8b9838;
-  --t-series-7: #c45fa2;
-  --t-series-8: #7c8ea6;
+  --t-data: var(--t-brand);
+  --t-data-soft: #123047;
 
-  --t-ramp-1: #123047;
-  --t-ramp-2: #1a4a6d;
-  --t-ramp-3: #2a6c9e;
-  --t-ramp-4: #3d93d4;
-  --t-ramp-5: #6fb4ec;
+  --t-kind-human: var(--t-brand);
+  --t-kind-machine: #8296ae;
 
   --t-chart-grid: #1b2a40;
   --t-chart-axis: #5d708a;
@@ -196,11 +184,10 @@
   --font-display: 'Manrope', 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
 
-  --color-ramp-1: var(--t-ramp-1);
-  --color-ramp-2: var(--t-ramp-2);
-  --color-ramp-3: var(--t-ramp-3);
-  --color-ramp-4: var(--t-ramp-4);
-  --color-ramp-5: var(--t-ramp-5);
+  --color-data: var(--t-data);
+  --color-data-soft: var(--t-data-soft);
+  --color-kind-human: var(--t-kind-human);
+  --color-kind-machine: var(--t-kind-machine);
   --color-chart-grid: var(--t-chart-grid);
   --color-chart-axis: var(--t-chart-axis);
 

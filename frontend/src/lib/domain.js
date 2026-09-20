@@ -1,42 +1,26 @@
 /**
- * Categorical slots in fixed order. The order is validated (OKLab CVD
- * separation, chroma floor, contrast against both surfaces) and must not be
- * reshuffled or cycled: slot 8 is a reserved neutral for
- * "Unclassified"/"Other" and is never used as an eighth hue.
+ * Colour policy.
+ *
+ * Colour in this product encodes STATUS and nothing else: the four severity
+ * tiers plus neutral. Data marks get one hue - the brand - and context gets
+ * grey.
+ *
+ * There is deliberately no categorical palette. Where several categories must
+ * be compared, the chart form carries the comparison (a ranked bar list) and
+ * the category name carries the identity, because hue is a poor primary cue
+ * for category and cannot express magnitude at all. The one exception is
+ * identity *kind* - two values, sitting beside a text label as a secondary
+ * cue. See docs/UX-DECISIONS.md section 3.
  */
-export const SERIES_TOKENS = [
-  'var(--t-series-1)',
-  'var(--t-series-2)',
-  'var(--t-series-3)',
-  'var(--t-series-4)',
-  'var(--t-series-5)',
-  'var(--t-series-6)',
-  'var(--t-series-7)',
-];
-
-export const NEUTRAL_SERIES = 'var(--t-series-8)';
-
-export const RAMP_TOKENS = [
-  'var(--t-ramp-1)',
-  'var(--t-ramp-2)',
-  'var(--t-ramp-3)',
-  'var(--t-ramp-4)',
-  'var(--t-ramp-5)',
-];
-
-/** Magnitude ramp step for a value within [0, max] - one hue, light to dark. */
-export function rampColor(value, max) {
-  if (!Number.isFinite(value) || !Number.isFinite(max) || max <= 0) return RAMP_TOKENS[0];
-  const index = Math.min(RAMP_TOKENS.length - 1, Math.floor((value / max) * RAMP_TOKENS.length));
-  return RAMP_TOKENS[Math.max(0, index)];
-}
+export const DATA_HUE = 'var(--t-data)';
+export const KIND_HUMAN = 'var(--t-kind-human)';
+export const KIND_MACHINE = 'var(--t-kind-machine)';
 
 /* ── Identity classification ─────────────────────────────────────────────── */
 
 /**
- * Canonical order. Charts render classifications in this order rather than by
- * value so a colour always means the same category and adjacent slices keep
- * the separation the palette was validated for.
+ * Canonical order, used to keep lists and legends stable between renders.
+ * It no longer maps to colours - only to sequence.
  */
 export const CLASSIFICATION_ORDER = [
   'HUMAN',
@@ -50,30 +34,30 @@ export const CLASSIFICATION_ORDER = [
 ];
 
 export const CLASSIFICATIONS = {
-  HUMAN: { label: 'Human', tone: 'info', color: SERIES_TOKENS[0], kind: 'human' },
-  NHI_SERVICE: { label: 'Service', tone: 'brand', color: SERIES_TOKENS[1], kind: 'nhi' },
-  NHI_AGENT: { label: 'Agent', tone: 'brand', color: SERIES_TOKENS[2], kind: 'nhi' },
-  NHI_CICD: { label: 'CI/CD', tone: 'brand', color: SERIES_TOKENS[3], kind: 'nhi' },
-  NHI_SAAS: { label: 'SaaS', tone: 'brand', color: SERIES_TOKENS[4], kind: 'nhi' },
-  NHI_EPHEMERAL: { label: 'Ephemeral', tone: 'brand', color: SERIES_TOKENS[5], kind: 'nhi' },
-  DUAL_IDENTITY: { label: 'Dual identity', tone: 'high', color: SERIES_TOKENS[6], kind: 'nhi' },
-  UNCLASSIFIED: { label: 'Unclassified', tone: 'neutral', color: NEUTRAL_SERIES, kind: 'unknown' },
+  HUMAN: { label: 'Human', kind: 'human' },
+  NHI_SERVICE: { label: 'Service', kind: 'nhi' },
+  NHI_AGENT: { label: 'Agent', kind: 'nhi' },
+  NHI_CICD: { label: 'CI/CD', kind: 'nhi' },
+  NHI_SAAS: { label: 'SaaS', kind: 'nhi' },
+  NHI_EPHEMERAL: { label: 'Ephemeral', kind: 'nhi' },
+  DUAL_IDENTITY: { label: 'Dual identity', kind: 'nhi' },
+  UNCLASSIFIED: { label: 'Unclassified', kind: 'unknown' },
 };
 
 /**
  * A classification the scanner starts emitting that is not in the table above
- * folds into the reserved neutral rather than inventing a hue.
+ * still resolves to a label and a kind, so nothing is dropped from a list.
  */
 export function classificationMeta(value) {
   const key = String(value || '').toUpperCase();
-  return (
-    CLASSIFICATIONS[key] || {
-      label: key ? key.replace(/_/g, ' ') : 'Unclassified',
-      tone: 'neutral',
-      color: NEUTRAL_SERIES,
-      kind: 'unknown',
-    }
-  );
+  const entry = CLASSIFICATIONS[key];
+  const kind = entry?.kind ?? 'unknown';
+  return {
+    label: entry?.label ?? (key ? key.replace(/_/g, ' ') : 'Unclassified'),
+    kind,
+    /* Two hues, never eight - and only ever beside the label, never alone. */
+    color: kind === 'human' ? KIND_HUMAN : KIND_MACHINE,
+  };
 }
 
 /* ── Severity / risk tier (credentials + code findings share this scale) ─── */

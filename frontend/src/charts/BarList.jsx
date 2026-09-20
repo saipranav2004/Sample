@@ -57,7 +57,7 @@ export function BarList({ items, total, onSelect, valueSuffix, max: providedMax,
                     className="block h-full rounded-full transition-[width] duration-[900ms] ease-[var(--ease-out-quint)] group-hover:brightness-110"
                     style={{
                       width: grown ? `${Math.max(width, 1.5)}%` : '0%',
-                      background: 'var(--t-ramp-4)',
+                      background: 'var(--t-data)',
                       transitionDelay: `${Math.min(index * 45, 360)}ms`,
                     }}
                   />

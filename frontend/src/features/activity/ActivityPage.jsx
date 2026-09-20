@@ -14,15 +14,16 @@ import {
 } from '../../lib/format';
 import { PageHeader } from '../../shell/PageHeader';
 import { Button } from '../../ui/Button';
-import { Panel, PanelHeader } from '../../ui/Panel';
+import { Panel } from '../../ui/Panel';
 import { Input } from '../../ui/Field';
 import { AppliedFilters } from '../../ui/FacetRail';
 import { RecordBar, ResultCount } from '../../ui/WorkArea';
+import { CountPills } from '../../ui/CountPills';
+import { Disclosure } from '../../ui/Disclosure';
 import { SegmentedControl } from '../../ui/Tabs';
 import { CellStack, DataGrid } from '../../ui/DataGrid';
 import { Pagination } from '../../ui/Pagination';
 import { ProportionBar } from '../../ui/Meter';
-import { MetricTile } from '../../ui/Stat';
 import { Tag } from '../../ui/Tag';
 import { CopyableValue } from '../../ui/Copyable';
 import { EmptyState, ErrorState } from '../../ui/States';
@@ -129,61 +130,15 @@ export default function ActivityPage() {
         }
       />
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricTile
-          label="Events in this scan"
-          value={activeScan?.total_events}
-          tone="brand"
-          icon={Activity}
-          caption={
-            activeScan
-              ? `Ingested for ${activeScan.target_name || activeScan.account_id}`
-              : 'No scan selected'
-          }
-          className="animate-rise"
-        />
-        <MetricTile
-          label="Mutating in view"
-          value={shape.mutating}
-          tone={shape.mutating > 0 ? 'high' : 'low'}
-          caption={`Of ${formatNumber(shape.window)} events on this page`}
-          meter={percentValue(shape.mutating, shape.window)}
-          meterLabel="Share of the loaded window"
-          className="animate-rise"
-          data-stagger=""
-          style={{ '--stagger': 1 }}
-        />
-        <MetricTile
-          label="Read-only in view"
-          value={shape.readOnly}
-          tone="info"
-          caption={`Of ${formatNumber(shape.window)} events on this page`}
-          className="animate-rise"
-          data-stagger=""
-          style={{ '--stagger': 2 }}
-        />
-        <MetricTile
-          label="Regions in view"
-          value={shape.regions.length}
-          tone="neutral"
-          caption={
-            shape.regions[0] ? `Most active: ${shape.regions[0][0]}` : 'No regions recorded'
-          }
-          className="animate-rise"
-          data-stagger=""
-          style={{ '--stagger': 3 }}
-        />
-      </div>
-
-      <Panel className="animate-rise">
-        <PanelHeader
-          title="Shape of the loaded window"
-          subtitle={`Computed over the ${formatNumber(shape.window)} events currently on screen. The API offers no filter for read-only versus mutating, so this cannot be stated for the whole scan.`}
-        />
+      <Disclosure
+        className="animate-rise"
+        title="Shape of the loaded window"
+        subtitle={`Computed over the ${formatNumber(shape.window)} events currently on screen. The API offers no filter for read-only versus mutating, so this cannot be stated for the whole scan.`}
+      >
         {shape.window === 0 ? (
-          <p className="mt-3 text-[12.5px] text-ink-3">Nothing loaded to summarise.</p>
+          <p className="text-[12.5px] text-ink-3">Nothing loaded to summarise.</p>
         ) : (
-          <div className="mt-3.5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
             <div>
               <ProportionBar
                 height={12}
@@ -224,7 +179,7 @@ export default function ActivityPage() {
                     </span>
                     <span className="h-1.5 w-24 overflow-hidden rounded-full bg-surface-3">
                       <span
-                        className="block h-full rounded-full bg-[var(--t-ramp-4)] transition-[width] duration-700 ease-[var(--ease-out-quint)]"
+                        className="block h-full rounded-full bg-[var(--t-data)] transition-[width] duration-700 ease-[var(--ease-out-quint)]"
                         style={{ width: `${percentValue(count, shape.sources[0][1])}%` }}
                       />
                     </span>
@@ -237,7 +192,7 @@ export default function ActivityPage() {
             </div>
           </div>
         )}
-      </Panel>
+      </Disclosure>
 
       <Panel flush className="animate-rise overflow-hidden">
         <RecordBar
@@ -258,8 +213,35 @@ export default function ActivityPage() {
             filtered={chips.length > 0}
             loading={loading}
           />
-          <span className="hidden text-[11.5px] text-ink-3 lg:inline">
-            Matches the full ARN exactly
+          <CountPills
+            ariaLabel="Activity counts"
+            loading={loading}
+            pills={[
+              {
+                key: 'scan',
+                label: 'In this scan',
+                value: activeScan?.total_events,
+                title: activeScan
+                  ? `CloudTrail events ingested for ${activeScan.target_name || activeScan.account_id}`
+                  : 'No scan selected',
+              },
+              {
+                key: 'mutating',
+                label: 'Mutating in view',
+                value: shape.mutating,
+                tone: shape.mutating > 0 ? 'high' : 'low',
+                title: `Of ${formatNumber(shape.window)} events on this page - the API offers no filter for this split`,
+              },
+              {
+                key: 'read',
+                label: 'Read-only in view',
+                value: shape.readOnly,
+                title: `Of ${formatNumber(shape.window)} events on this page`,
+              },
+            ]}
+          />
+          <span className="hidden text-[11.5px] text-ink-3 xl:inline">
+            ARN filter matches exactly
           </span>
         </RecordBar>
 

@@ -134,7 +134,7 @@ snapshot does not contain.
 table shows one state - Critical, Attention, Healthy - plus the leading reason
 in words ("MFA disabled +1"). No legend to learn. The full five-check breakdown
 lives in the record drawer. No risk score is invented, because nothing in the
-API supports one; see `docs/UX-DECISIONS.md` §3.
+API supports one.
 
 **Totals are asked for, not inferred.** Where the summary endpoint has no
 counter - credentials by severity, secret-backed identities that are also admin
@@ -156,13 +156,21 @@ template; the dashboard has its own metric, donut and chart placeholders. A
 background refresh dims the existing rows instead of replacing them with
 skeletons, so the operator never loses their place.
 
-**Colour is validated, not chosen by eye.** The categorical palette is a fixed
-seven-slot order with a reserved neutral for "unclassified", checked for
-colour-vision separation, chroma and contrast against both surfaces. Charts
-render categories in a canonical order so a colour always means the same thing,
-and status colours (critical/high/medium/low) are never reused as series
-colours. Measures of different magnitude get separate charts - there are no
-dual-axis charts.
+**Colour encodes status and nothing else.** Six colours in the whole product:
+four severity tiers, one data hue for every mark, and neutral for context.
+There is no categorical palette - where categories must be compared, the form
+carries the comparison (a ranked bar list) and the name carries the identity,
+because hue is a poor primary cue for category and cannot express magnitude.
+All six pass WCAG text contrast in both themes. The one exception is identity
+kind, two hues beside a text label. Measures of different magnitude get
+separate charts; there are no dual-axis charts. Reasoning and sources in
+`docs/UX-DECISIONS.md` section 3.
+
+**Metric tiles are for the dashboard.** Posture gets tiles; code exposure gets
+two, because those two numbers are the work queue. Every other screen uses a
+row of count pills in the record bar, most of which double as filters - the
+pattern Microsoft Defender's device inventory uses, and the one that leaves the
+table its screen. See section 3a.
 
 **Timestamps.** The Go API returns RFC3339. The scanner returns
 `YYYY-MM-DD HH:MM:SS` in UTC with no zone marker, which most engines parse as

@@ -4,7 +4,7 @@ import { POSTURE_SIGNALS } from '../../lib/domain';
 import { formatNumber, formatPercent, percentValue } from '../../lib/format';
 import { Meter } from '../../ui/Meter';
 import { Skeleton } from '../../ui/Skeleton';
-import { cn, TONE_FG } from '../../ui/cn';
+import { cn, TONE_BG } from '../../ui/cn';
 
 /**
  * Exposure signals, ranked by share of their own population.
@@ -50,13 +50,18 @@ export function SignalList({ summary, loading }) {
               aria-label={`${count} ${signal.label} - open in identity explorer`}
             >
               <span className="min-w-0 flex-1">
-                <span className="flex items-baseline gap-2">
+                <span className="flex items-center gap-2">
+                  {/* Colour appears in the mark, not the words: hue is a
+                      secondary cue here, and a list of coloured labels reads
+                      as decoration rather than as severity. */}
                   <span
+                    aria-hidden="true"
                     className={cn(
-                      'truncate text-[13px] font-semibold',
-                      inert ? 'text-ink-2' : TONE_FG[signal.tone],
+                      'size-2 shrink-0 rounded-full',
+                      inert ? 'bg-line-strong' : TONE_BG[signal.tone],
                     )}
-                  >
+                  />
+                  <span className="truncate text-[13px] font-semibold text-ink">
                     {signal.label}
                   </span>
                   <ArrowUpRight
@@ -64,12 +69,14 @@ export function SignalList({ summary, loading }) {
                     className="size-3.5 shrink-0 text-ink-3 opacity-0 transition-opacity group-hover:opacity-100"
                   />
                 </span>
-                <span className="mt-1 block truncate text-[11.5px] text-ink-3">{signal.rationale}</span>
+                <span className="mt-1 block truncate pl-4 text-[11.5px] text-ink-3">
+                  {signal.rationale}
+                </span>
                 <Meter
                   value={share}
                   tone={inert ? 'neutral' : signal.tone}
                   height={4}
-                  className="mt-2"
+                  className="mt-2 ml-4"
                   label={`${signal.label} share`}
                 />
               </span>

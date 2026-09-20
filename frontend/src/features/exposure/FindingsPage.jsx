@@ -37,6 +37,7 @@ import { Panel } from '../../ui/Panel';
 import { SearchInput } from '../../ui/Field';
 import { AppliedFilters, FacetRail } from '../../ui/FacetRail';
 import { RecordBar, ResultCount, WorkArea } from '../../ui/WorkArea';
+import { CountPills } from '../../ui/CountPills';
 import { SegmentedControl, Tabs } from '../../ui/Tabs';
 import { CellStack, DataGrid } from '../../ui/DataGrid';
 import { Menu } from '../../ui/Menu';
@@ -390,16 +391,20 @@ export default function FindingsPage() {
         }
       />
 
+      {/* Two tiles only. These two numbers *are* the work queue, which is what
+          earns a tile; repository and detector counts are context and live in
+          the record bar. */}
       {loading ? (
-        <StatStripSkeleton count={4} />
+        <StatStripSkeleton count={2} />
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2">
           <MetricTile
             label="Live findings"
             value={summary.total}
             icon={FileWarning}
             tone={summary.total > 0 ? 'high' : 'low'}
             caption="Excludes anything already allowlisted"
+            className="animate-rise"
           />
           <MetricTile
             label="High or critical"
@@ -408,22 +413,9 @@ export default function FindingsPage() {
             caption="Actionable risk tier, not detector severity"
             meter={percentValue(highish, summary.total)}
             meterLabel="Share of live findings"
-          />
-          <MetricTile
-            label="Repositories affected"
-            value={summary.repositoryCount}
-            tone="info"
-            caption="Distinct repositories across both platforms"
-          />
-          <MetricTile
-            label="Detector types"
-            value={summary.detectors.length}
-            tone="medium"
-            caption={
-              summary.detectors[0]
-                ? `Most common: ${humanizeToken(summary.detectors[0].key)}`
-                : 'No detections'
-            }
+            className="animate-rise"
+            data-stagger=""
+            style={{ '--stagger': 1 }}
           />
         </div>
       )}
@@ -468,6 +460,26 @@ export default function FindingsPage() {
             unit="findings"
             filtered={chips.length > 0 || platform !== 'all'}
             loading={loading}
+          />
+          <CountPills
+            ariaLabel="Finding context"
+            loading={loading}
+            pills={[
+              {
+                key: 'repos',
+                label: 'Repositories',
+                value: summary.repositoryCount,
+                title: 'Distinct repositories across both platforms',
+              },
+              {
+                key: 'detectors',
+                label: 'Detectors',
+                value: summary.detectors.length,
+                title: summary.detectors[0]
+                  ? `Most common: ${humanizeToken(summary.detectors[0].key)}`
+                  : 'No detections',
+              },
+            ]}
           />
         </RecordBar>
 

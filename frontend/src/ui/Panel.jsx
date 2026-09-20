@@ -42,7 +42,12 @@ export function PanelHeader({ title, subtitle, icon: Icon, actions, className, c
         {subtitle && <p className="mt-1 max-w-prose text-[12.5px] text-ink-3">{subtitle}</p>}
         {children}
       </div>
-      {actions && <div className="ml-auto flex shrink-0 items-center gap-2">{actions}</div>}
+      {actions && (
+        /* The slot has to be able to shrink on a phone: a wide action - a count
+           pill row, a long label - would otherwise push the panel past the
+           viewport. It regains its natural width from `sm` up. */
+        <div className="ml-auto flex min-w-0 flex-wrap items-center gap-2 sm:shrink-0">{actions}</div>
+      )}
     </header>
   );
 }

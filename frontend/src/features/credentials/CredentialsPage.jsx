@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { Columns3, Download, KeyRound, Rows3, SearchX } from 'lucide-react';
 import { countCredentials, fetchCredentials, fetchSummary } from '../../lib/api/endpoints';
 import { useDebouncedValue, useQuery } from '../../lib/hooks';
@@ -11,7 +11,6 @@ import {
   formatDateTime,
   formatNumber,
   formatRelative,
-  percentValue,
   titleCaseEnum,
 } from '../../lib/format';
 import { exportRowsToCsv, timestampedName } from '../../lib/csv';
@@ -21,10 +20,9 @@ import { DetailList, DetailRow, Panel, PanelHeader, SectionLabel } from '../../u
 import { SearchInput } from '../../ui/Field';
 import { AppliedFilters, FacetRail } from '../../ui/FacetRail';
 import { RecordBar, ResultCount, WorkArea } from '../../ui/WorkArea';
+import { CountPills } from '../../ui/CountPills';
 import { SegmentedControl } from '../../ui/Tabs';
-import { MetricTile } from '../../ui/Stat';
 import { ProportionBar } from '../../ui/Meter';
-import { StatStripSkeleton } from '../../ui/Skeleton';
 import { useToast } from '../../ui/Toast';
 import { CellStack, DataGrid } from '../../ui/DataGrid';
 import { Pagination } from '../../ui/Pagination';
@@ -323,49 +321,6 @@ export default function CredentialsPage() {
         }
       />
 
-      {severityCountQuery.isLoading && !severityCountQuery.data ? (
-        <StatStripSkeleton count={4} />
-      ) : (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <MetricTile
-            label="Credentials in scope"
-            value={summaryQuery.data?.total_credentials}
-            tone="brand"
-            caption="Keys, passwords and certificates held by identities"
-            className="animate-rise"
-          />
-          <MetricTile
-            as={Link}
-            to="?severity=HIGH"
-            label="High severity"
-            value={severityCounts.HIGH}
-            tone="high"
-            caption="Rotate these first"
-            meter={percentValue(severityCounts.HIGH, summaryQuery.data?.total_credentials)}
-            meterLabel="Share of all credentials"
-            className="animate-rise"
-          />
-          <MetricTile
-            as={Link}
-            to="?severity=CRITICAL"
-            label="Critical severity"
-            value={severityCounts.CRITICAL}
-            tone="critical"
-            caption="Highest-impact credentials on record"
-            className="animate-rise"
-          />
-          <MetricTile
-            label="Credential types"
-            value={Object.keys(summaryQuery.data?.credentials_breakdown || {}).length}
-            tone="info"
-            caption={
-              typeOptions[0] ? `Most common: ${typeOptions[0].label}` : 'No credential types recorded'
-            }
-            className="animate-rise"
-          />
-        </div>
-      )}
-
       <Panel className="animate-rise">
         <PanelHeader
           title="Rotation queue by severity"
@@ -446,6 +401,29 @@ export default function CredentialsPage() {
             unit="credentials"
             filtered={chips.length > 0}
             loading={query.isLoading && !query.data}
+          />
+          <CountPills
+            ariaLabel="Credential counts"
+            loading={severityCountQuery.isLoading && !severityCountQuery.data}
+            pills={[
+              {
+                key: 'all',
+                label: 'All',
+                value: summaryQuery.data?.total_credentials,
+                onSelect: () => setParam('severity', ''),
+                active: !filters.severity,
+                title: 'Every credential in this scan',
+              },
+              ...SEVERITY_ORDER.filter((tier) => (severityCounts[tier] || 0) > 0).map((tier) => ({
+                key: tier,
+                label: severityMeta(tier).label,
+                value: severityCounts[tier],
+                tone: severityMeta(tier).tone,
+                onSelect: () => setParam('severity', filters.severity === tier ? '' : tier),
+                active: filters.severity === tier,
+                title: `Credentials rated ${severityMeta(tier).label}`,
+              })),
+            ]}
           />
         </RecordBar>
 

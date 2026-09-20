@@ -33,23 +33,6 @@ export function ChartSkeleton({ height = 240, bars = 9 }) {
   );
 }
 
-export function DonutSkeleton({ size = 180 }) {
-  return (
-    <div aria-hidden="true" className="flex flex-col items-center gap-4">
-      <Skeleton className="rounded-full" style={{ width: size, height: size }} />
-      <div className="flex w-full flex-col gap-2">
-        {Array.from({ length: 4 }).map((_, index) => (
-          <div key={index} className="flex items-center gap-2">
-            <Skeleton className="size-2.5 rounded-sm" />
-            <Skeleton className="h-3 flex-1 rounded" />
-            <Skeleton className="h-3 w-8 rounded" />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 /** Row skeletons matched to the real grid's column template. */
 export function GridSkeleton({ columns = 5, rows = 8 }) {
   return (
