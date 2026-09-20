@@ -18,7 +18,9 @@ import { CellStack, DataGrid } from '../../ui/DataGrid';
 import { Tag } from '../../ui/Tag';
 import { CopyableValue } from '../../ui/Copyable';
 import { EmptyState, ErrorState } from '../../ui/States';
-import { CountPills } from '../../ui/CountPills';
+import { MetricTile } from '../../ui/Stat';
+import { StatStripSkeleton } from '../../ui/Skeleton';
+import { cn, TONE_FG } from '../../ui/cn';
 
 /**
  * Scan history, and the place to change which snapshot the product reports on.
@@ -83,32 +85,56 @@ export default function ScansPage() {
         }
       />
 
+      {loading && scans.length === 0 ? (
+        <StatStripSkeleton count={4} />
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <MetricTile
+            label="Scans recorded"
+            value={scans.length}
+            icon={History}
+            tone="brand"
+            caption={`${formatNumber(chronological.length)} completed`}
+            className="animate-rise"
+          />
+          <MetricTile
+            label="Identities, latest scan"
+            value={latest?.total_identities}
+            sparkline={trendData.map((point) => point.identities)}
+            tone="info"
+            caption={deltaCaption(latestDelta?.identities, 'since the previous scan')}
+            className="animate-rise"
+            data-stagger=""
+            style={{ '--stagger': 1 }}
+          />
+          <MetricTile
+            label="Events, latest scan"
+            value={latest?.total_events}
+            sparkline={trendData.map((point) => point.events)}
+            tone="medium"
+            caption={deltaCaption(latestDelta?.events, 'since the previous scan')}
+            className="animate-rise"
+            data-stagger=""
+            style={{ '--stagger': 2 }}
+          />
+          <MetricTile
+            label="Secret-backed, latest scan"
+            value={latest?.total_secrets}
+            sparkline={trendData.map((point) => point.secrets)}
+            tone="high"
+            caption={deltaCaption(latestDelta?.secrets, 'since the previous scan')}
+            className="animate-rise"
+            data-stagger=""
+            style={{ '--stagger': 3 }}
+          />
+        </div>
+      )}
+
       <Panel className="animate-rise">
         <PanelHeader
           icon={TrendingUp}
           title="Across completed scans"
-          subtitle="One chart per measure - the three differ by orders of magnitude, so a shared axis would flatten two of them. Hovering any chart moves the cursor on all three."
-          actions={
-            <CountPills
-              ariaLabel="Scan history counts"
-              loading={loading && scans.length === 0}
-              pills={[
-                { key: 'recorded', label: 'Recorded', value: scans.length },
-                { key: 'completed', label: 'Completed', value: chronological.length },
-                {
-                  key: 'change',
-                  label: 'Identities since previous',
-                  value: latestDelta?.identities,
-                  /* Deliberately toneless. A scan finding more identities is a
-                     fact about the estate, not a severity - painting it amber
-                     would spend a status colour on something that has no
-                     status. Severity colour stays on findings. */
-                  tone: 'neutral',
-                  title: 'Change in the latest completed scan against the one before it',
-                },
-              ]}
-            />
-          }
+          subtitle="One chart per measure - the three differ by orders of magnitude, so a shared axis would flatten two of them."
         />
         <div className="mt-4">
           {trendData.length < 2 ? (
@@ -120,9 +146,9 @@ export default function ScansPage() {
           ) : (
             <div className="flex flex-col gap-4">
               {[
-                { key: 'identities', label: 'Identities', color: 'var(--t-data)' },
-                { key: 'events', label: 'CloudTrail events', color: 'var(--t-data)' },
-                { key: 'secrets', label: 'Secret-backed identities', color: 'var(--t-data)' },
+                { key: 'identities', label: 'Identities', color: 'var(--t-series-1)' },
+                { key: 'events', label: 'CloudTrail events', color: 'var(--t-series-5)' },
+                { key: 'secrets', label: 'Secret-backed identities', color: 'var(--t-series-2)' },
               ].map((series, index, list) => (
                 <div key={series.key}>
                   <div className="flex items-baseline justify-between gap-3">
@@ -246,7 +272,7 @@ export default function ScansPage() {
                   const implicit = !selectedScanId && activeScan?.scan_id === row.scan_id;
                   if (active || implicit) {
                     return (
-                      <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-[12px] font-medium text-brand">
+                      <span className="inline-flex items-center gap-1.5 text-[12px] font-medium text-brand">
                         <Check aria-hidden="true" className="size-3.5" />
                         {implicit ? 'Latest (in use)' : 'In use'}
                       </span>
@@ -296,8 +322,7 @@ function DeltaCell({ delta }) {
   }
 
   const value = delta.identities;
-  /* The arrow carries the direction; the number carries the size. No status
-     colour, because a population delta has no severity. */
+  const tone = value > 0 ? 'high' : value < 0 ? 'low' : 'neutral';
   const Icon = value > 0 ? ArrowUpRight : value < 0 ? ArrowDownRight : Minus;
 
   return (
@@ -305,7 +330,7 @@ function DeltaCell({ delta }) {
       className="block min-w-0"
       title={`Against the previous completed scan: identities ${signed(delta.identities)}, events ${signed(delta.events)}, secret-backed ${signed(delta.secrets)}`}
     >
-      <span className="flex items-center gap-1 text-[12.5px] font-semibold text-ink">
+      <span className={cn('flex items-center gap-1 text-[12.5px] font-semibold', TONE_FG[tone])}>
         <Icon aria-hidden="true" className="size-3.5 shrink-0" />
         <span data-numeric="">{signed(value)} identities</span>
       </span>
@@ -320,4 +345,10 @@ function signed(value) {
   if (!Number.isFinite(value)) return '-';
   if (value === 0) return 'no change';
   return `${value > 0 ? '+' : ''}${formatNumber(value)}`;
+}
+
+function deltaCaption(value, suffix) {
+  if (!Number.isFinite(value)) return 'First completed scan on record';
+  if (value === 0) return `No change ${suffix}`;
+  return `${value > 0 ? '+' : ''}${formatNumber(value)} ${suffix}`;
 }

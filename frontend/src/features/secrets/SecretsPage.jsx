@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { Columns3, Copy, Download, Rows3, SearchX, ShieldCheck } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Columns3, Copy, Download, Lock, Rows3, SearchX, ShieldCheck } from 'lucide-react';
 import { countIdentities, fetchIdentities } from '../../lib/api/endpoints';
 import { useDebouncedValue, useQuery } from '../../lib/hooks';
 import { useScanContext } from '../../app/ScanContext';
 import { classificationMeta } from '../../lib/domain';
-import { arnResource, formatNumber } from '../../lib/format';
+import { arnResource, formatNumber, percentValue } from '../../lib/format';
 import { exportRowsToCsv, timestampedName } from '../../lib/csv';
 import { PageHeader } from '../../shell/PageHeader';
 import { Button, IconButton } from '../../ui/Button';
@@ -13,8 +13,9 @@ import { Panel } from '../../ui/Panel';
 import { SearchInput } from '../../ui/Field';
 import { AppliedFilters, FacetRail } from '../../ui/FacetRail';
 import { RecordBar, ResultCount, WorkArea } from '../../ui/WorkArea';
-import { CountPills } from '../../ui/CountPills';
 import { SegmentedControl } from '../../ui/Tabs';
+import { MetricTile } from '../../ui/Stat';
+import { StatStripSkeleton } from '../../ui/Skeleton';
 import { DataGrid } from '../../ui/DataGrid';
 import { Pagination } from '../../ui/Pagination';
 import { ClearState, EmptyState, ErrorState } from '../../ui/States';
@@ -283,6 +284,43 @@ export default function SecretsPage() {
         }
       />
 
+      {crossQuery.isLoading && !crossQuery.data ? (
+        <StatStripSkeleton count={4} />
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <MetricTile
+            label="Secret-backed"
+            value={counts.total}
+            tone="medium"
+            icon={Lock}
+            caption={
+              counts.allIdentities
+                ? `${formatNumber(counts.allIdentities)} identities in this scan`
+                : 'Identities with a secret store entry'
+            }
+            meter={percentValue(counts.total, counts.allIdentities)}
+            meterLabel="Share of all identities"
+            className="animate-rise"
+          />
+          {CROSS_SECTIONS.map((section, index) => (
+            <MetricTile
+              key={section.key}
+              as={Link}
+              to={`?${new URLSearchParams(section.query).toString()}`}
+              label={section.label}
+              value={counts[section.key]}
+              tone={section.tone}
+              caption={section.caption}
+              meter={percentValue(counts[section.key], counts.total)}
+              meterLabel="Share of secret-backed identities"
+              className="animate-rise"
+              data-stagger=""
+              style={{ '--stagger': index + 1 }}
+            />
+          ))}
+        </div>
+      )}
+
       <WorkArea
         rail={
           <FacetRail
@@ -320,34 +358,6 @@ export default function SecretsPage() {
               unit="identities"
               filtered={refined}
               loading={query.isLoading && !query.data}
-            />
-            {/* The intersections are the risk, and each one is a real filter -
-                so they are counts you can click, not tiles you read past. */}
-            <CountPills
-              ariaLabel="Secret-backed intersections"
-              loading={crossQuery.isLoading && !crossQuery.data}
-              pills={[
-                {
-                  key: 'total',
-                  label: 'Secret-backed',
-                  value: counts.total,
-                  onSelect: clearRefinements,
-                  active: !refined,
-                  title: `Of ${formatNumber(counts.allIdentities)} identities in this scan`,
-                },
-                ...CROSS_SECTIONS.map((section) => {
-                  const param = Object.keys(section.query)[0];
-                  return {
-                    key: section.key,
-                    label: section.label,
-                    value: counts[section.key],
-                    tone: section.tone,
-                    onSelect: () => toggleParam(param, 'true'),
-                    active: searchParams.get(param) === 'true',
-                    title: section.caption,
-                  };
-                }),
-              ]}
             />
           </RecordBar>
 
@@ -426,6 +436,7 @@ export default function SecretsPage() {
                 refreshing={query.isRefreshing}
                 onRowClick={setSelected}
                 density={density}
+                rowAccent={(row) => classificationMeta(row.classification).color}
                 skeletonRows={8}
                 rowActions={(row) => (
                   <IconButton

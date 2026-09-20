@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import {
   Activity,
   ArrowRight,
@@ -30,13 +30,16 @@ import {
 } from '../../lib/format';
 import { PageHeader } from '../../shell/PageHeader';
 import { BarList } from '../../charts/BarList';
+import { CompositionDonut } from '../../charts/CompositionDonut';
 import { TrendChart } from '../../charts/TrendChart';
 import { Button } from '../../ui/Button';
 import { Panel, PanelHeader } from '../../ui/Panel';
 import { MetricTile } from '../../ui/Stat';
+import { ProportionBar } from '../../ui/Meter';
 import { Tag } from '../../ui/Tag';
 import {
   ChartSkeleton,
+  DonutSkeleton,
   LoadingAnnouncement,
   Skeleton,
   StatStripSkeleton,
@@ -49,7 +52,6 @@ import { describeScannerError, summariseFindings } from '../exposure/scannerStat
 
 export default function PosturePage() {
   const { selectedScanId, scans, activeScan } = useScanContext();
-  const navigate = useNavigate();
 
   const summaryQuery = useQuery((signal) => fetchSummary({ scanId: selectedScanId }, signal), [
     selectedScanId,
@@ -62,24 +64,21 @@ export default function PosturePage() {
 
   const summary = summaryQuery.data;
 
-  /* Ranked by volume, then by the canonical order as a tie-break so the list
-     does not reshuffle between renders when counts are equal. Anything the
-     backend reports outside that order is still included. */
-  const classificationRows = useMemo(() => {
+  /* Classification slices follow the canonical order so a colour always means
+     the same category; anything the backend reports outside that order is
+     appended rather than dropped. */
+  const classificationSlices = useMemo(() => {
     const breakdown = summary?.classification_breakdown || {};
-    return Object.entries(breakdown)
-      .map(([key, count]) => ({
-        key,
-        label: classificationMeta(key).label,
-        value: Number(count) || 0,
-      }))
-      .filter((row) => row.value > 0)
-      .sort((a, b) => {
-        if (b.value !== a.value) return b.value - a.value;
-        const ai = CLASSIFICATION_ORDER.indexOf(a.key);
-        const bi = CLASSIFICATION_ORDER.indexOf(b.key);
-        return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
-      });
+    const keys = [
+      ...CLASSIFICATION_ORDER.filter((key) => key in breakdown),
+      ...Object.keys(breakdown).filter((key) => !CLASSIFICATION_ORDER.includes(key)),
+    ];
+    return keys
+      .map((key) => {
+        const meta = classificationMeta(key);
+        return { key, label: meta.label, value: Number(breakdown[key]) || 0, color: meta.color };
+      })
+      .filter((slice) => slice.value > 0);
   }, [summary]);
 
   const credentialItems = useMemo(() => {
@@ -182,7 +181,7 @@ export default function PosturePage() {
             label="Non-human identities"
             value={summary?.total_nhis}
             icon={Bot}
-            tone="brand"
+            tone="info"
             caption="Roles, services, agents and pipelines"
             meter={percentValue(summary?.total_nhis, totalIdentities)}
             meterLabel="Share of all identities"
@@ -224,12 +223,12 @@ export default function PosturePage() {
           <PanelHeader
             icon={BarChart3}
             title="Classification mix"
-            subtitle="How the discovery engine classified each identity in this scan, ranked by volume. Select a class to open those identities."
+            subtitle="How the discovery engine classified each identity in this scan."
           />
-          <div className="mt-3">
+          <div className="mt-4">
             {loadingSummary ? (
-              <ChartSkeleton height={200} bars={8} />
-            ) : classificationRows.length === 0 ? (
+              <DonutSkeleton />
+            ) : classificationSlices.length === 0 ? (
               <EmptyState
                 compact
                 title="Nothing classified yet"
@@ -237,40 +236,59 @@ export default function PosturePage() {
               />
             ) : (
               <>
-                {/* A ranked bar list, not a donut: eight near-equal shares are
-                    the worst case for a pie, and length is a far better cue
-                    for magnitude than hue. One hue for every bar. */}
-                <BarList
-                  items={classificationRows}
+                <CompositionDonut
+                  data={classificationSlices}
                   total={totalIdentities}
-                  onSelect={(item) =>
-                    navigate(`/identities?classification=${encodeURIComponent(item.key)}`)
-                  }
+                  centerLabel="Identities"
                 />
-                <dl className="mt-4 grid grid-cols-2 gap-4 border-t border-line pt-3">
-                  <div>
-                    <dt className="text-[10.5px] font-semibold tracking-[0.11em] text-ink-3 uppercase">
-                      Human
-                    </dt>
-                    <dd
-                      data-numeric=""
-                      className="mt-0.5 font-display text-[19px] leading-none font-bold text-ink"
-                    >
-                      {formatNumber(summary?.total_humans)}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-[10.5px] font-semibold tracking-[0.11em] text-ink-3 uppercase">
-                      Non-human
-                    </dt>
-                    <dd
-                      data-numeric=""
-                      className="mt-0.5 font-display text-[19px] leading-none font-bold text-ink"
-                    >
-                      {formatNumber(summary?.total_nhis)}
-                    </dd>
-                  </div>
-                </dl>
+                <div className="mt-4 border-t border-line pt-3">
+                  <p className="text-[11px] font-semibold tracking-[0.1em] text-ink-3 uppercase">
+                    Human vs non-human
+                  </p>
+                  <ProportionBar
+                    className="mt-2"
+                    total={totalIdentities}
+                    ariaLabel={`${formatNumber(summary?.total_humans)} human and ${formatNumber(summary?.total_nhis)} non-human identities`}
+                    segments={[
+                      {
+                        key: 'human',
+                        label: 'Human',
+                        value: Number(summary?.total_humans) || 0,
+                        color: 'var(--t-series-1)',
+                      },
+                      {
+                        key: 'nhi',
+                        label: 'Non-human',
+                        value: Number(summary?.total_nhis) || 0,
+                        color: 'var(--t-series-5)',
+                      },
+                    ]}
+                  />
+                  <dl className="mt-2.5 flex items-center justify-between text-[12px]">
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        aria-hidden="true"
+                        className="size-2 rounded-[2px]"
+                        style={{ background: 'var(--t-series-1)' }}
+                      />
+                      <dt className="text-ink-3">Human</dt>
+                      <dd data-numeric="" className="font-semibold text-ink">
+                        {formatNumber(summary?.total_humans)}
+                      </dd>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        aria-hidden="true"
+                        className="size-2 rounded-[2px]"
+                        style={{ background: 'var(--t-series-5)' }}
+                      />
+                      <dt className="text-ink-3">Non-human</dt>
+                      <dd data-numeric="" className="font-semibold text-ink">
+                        {formatNumber(summary?.total_nhis)}
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
               </>
             )}
           </div>
@@ -361,9 +379,9 @@ export default function PosturePage() {
             ) : (
               <div className="flex flex-col gap-4">
                 {[
-                  { key: 'identities', label: 'Identities', color: 'var(--t-data)' },
-                  { key: 'events', label: 'CloudTrail events', color: 'var(--t-data)' },
-                  { key: 'secrets', label: 'Secret-backed identities', color: 'var(--t-data)' },
+                  { key: 'identities', label: 'Identities', color: 'var(--t-series-1)' },
+                  { key: 'events', label: 'CloudTrail events', color: 'var(--t-series-5)' },
+                  { key: 'secrets', label: 'Secret-backed identities', color: 'var(--t-series-2)' },
                 ].map((series, index, list) => (
                   <div key={series.key}>
                     <div className="flex items-baseline justify-between gap-3">

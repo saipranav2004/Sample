@@ -7,6 +7,7 @@ import {
   RotateCcw,
   SearchX,
   ShieldOff,
+  UserCheck,
 } from 'lucide-react';
 import { fetchAllowlist, restoreFinding } from '../../lib/api/endpoints';
 import { useMutation, useQuery } from '../../lib/hooks';
@@ -24,10 +25,11 @@ import { DetailList, DetailRow, Panel } from '../../ui/Panel';
 import { SearchInput } from '../../ui/Field';
 import { AppliedFilters, FacetRail } from '../../ui/FacetRail';
 import { RecordBar, ResultCount, WorkArea } from '../../ui/WorkArea';
-import { CountPills } from '../../ui/CountPills';
 import { SegmentedControl } from '../../ui/Tabs';
 import { CellStack, DataGrid } from '../../ui/DataGrid';
 import { Modal } from '../../ui/Overlay';
+import { MetricTile } from '../../ui/Stat';
+import { StatStripSkeleton } from '../../ui/Skeleton';
 import { useToast } from '../../ui/Toast';
 import { EmptyState, ErrorState } from '../../ui/States';
 import { describeScannerError } from './scannerState';
@@ -342,6 +344,53 @@ export default function DismissedPage() {
         }
       />
 
+      {loading ? (
+        <StatStripSkeleton count={4} />
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <MetricTile
+            label="Allowlisted"
+            value={stats.total}
+            tone="brand"
+            icon={ShieldOff}
+            caption="Findings suppressed from the live set"
+            className="animate-rise"
+          />
+          <MetricTile
+            label="No stated reason"
+            value={stats.withoutReason}
+            tone={stats.withoutReason > 0 ? 'medium' : 'low'}
+            caption="Accepted without a recorded justification"
+            className="animate-rise"
+            data-stagger=""
+            style={{ '--stagger': 1 }}
+          />
+          <MetricTile
+            label="Reviewers"
+            value={stats.reviewers.length}
+            tone="info"
+            icon={UserCheck}
+            caption={
+              stats.reviewers[0] ? `Most active: ${stats.reviewers[0][0]}` : 'No reviewers recorded'
+            }
+            className="animate-rise"
+            data-stagger=""
+            style={{ '--stagger': 2 }}
+          />
+          <MetricTile
+            label="Detector types"
+            value={stats.detectors.length}
+            tone="neutral"
+            caption={
+              stats.oldest ? `Oldest entry ${formatRelative(stats.oldest)}` : 'Nothing dismissed yet'
+            }
+            className="animate-rise"
+            data-stagger=""
+            style={{ '--stagger': 3 }}
+          />
+        </div>
+      )}
+
       <WorkArea
         rail={
           <FacetRail
@@ -384,45 +433,6 @@ export default function DismissedPage() {
               unit="entries"
               filtered={chips.length > 0}
               loading={loading}
-            />
-            <CountPills
-              ariaLabel="Allowlist counts"
-              loading={loading}
-              pills={[
-                {
-                  key: 'all',
-                  label: 'Allowlisted',
-                  value: stats.total,
-                  onSelect: clearAll,
-                  active: chips.length === 0,
-                  title: 'Findings suppressed from the live set',
-                },
-                {
-                  key: 'no-reason',
-                  label: 'No stated reason',
-                  value: stats.withoutReason,
-                  tone: stats.withoutReason > 0 ? 'medium' : 'low',
-                  onSelect: () => setReasonState((current) => (current === 'without' ? '' : 'without')),
-                  active: reasonState === 'without',
-                  title: 'Accepted without a recorded justification - the audit risk',
-                },
-                {
-                  key: 'reviewers',
-                  label: 'Reviewers',
-                  value: stats.reviewers.length,
-                  title: stats.reviewers[0]
-                    ? `Most active: ${stats.reviewers[0][0]}`
-                    : 'No reviewers recorded',
-                },
-                {
-                  key: 'detectors',
-                  label: 'Detectors',
-                  value: stats.detectors.length,
-                  title: stats.oldest
-                    ? `Oldest entry ${formatRelative(stats.oldest)}`
-                    : 'Nothing dismissed yet',
-                },
-              ]}
             />
           </RecordBar>
 

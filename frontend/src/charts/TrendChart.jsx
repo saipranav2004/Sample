@@ -22,7 +22,7 @@ export function TrendChart({
   data,
   dataKey,
   label,
-  color = 'var(--t-data)',
+  color = 'var(--t-series-1)',
   height = 132,
   showXAxis = true,
   /** Charts sharing a syncId share one cursor, so a single hover reads all

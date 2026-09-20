@@ -31,6 +31,8 @@ export function DataGrid({
   rowActions,
   /** 'compact' | 'comfortable' - client-side only, a table-reading preference. */
   density = 'comfortable',
+  /** Per-row accent colour, e.g. the identity's classification hue. */
+  rowAccent,
   className,
 }) {
   const isWide = useMediaQuery('(min-width: 768px)');
@@ -180,6 +182,7 @@ export function DataGrid({
                   'grid-row border-b border-line/80 transition-colors duration-100 last:border-b-0',
                   interactive && 'cursor-pointer hover:bg-surface-2 focus-visible:bg-surface-2',
                 )}
+                style={rowAccent ? { '--t-brand': rowAccent(row) } : undefined}
               >
                 {visibleColumns.map((column) => (
                   <td
