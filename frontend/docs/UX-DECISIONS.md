@@ -490,3 +490,50 @@ feature - ownership comes from resource tags and CloudTrail, so tagging is what
 makes something appear - and the page can legitimately be empty for a real user
 whose resources carry a team address rather than theirs. The empty state says
 both.
+
+---
+
+## 9. Revision: stacking order, and a stranded tab indicator
+
+### 9.1 Sign-in stacks statement first
+
+Requested. Neither column carries an `order` override any more: source order is
+statement then card, which stacks that way on a phone and reads left to right
+on a wide screen. Measured at 390px: statement top 32px, card top 499px. At
+1894px both tops are 129px, unchanged.
+
+The card's entrance step is now `6` stacked and `2` side by side. Stacked it is
+the last thing on the page, so a fixed step of `2` had the element at the
+bottom of a phone screen animating before the ones above it.
+
+Noted for the record, since it is a real cost: stacked this way, signing in on
+a phone means scrolling past the whole product statement to reach the form.
+
+### 9.2 The tab indicator sat under the wrong tab
+
+Reported on the dashboard's exposure signals: selecting one navigates to the
+filtered identities, and the underline was left between two tabs. Reproduced at
+`/identities?without_mfa=true`, with "No MFA" active and the indicator sitting
+short of it.
+
+The indicator is measured from the active tab's `offsetLeft` and `offsetWidth`.
+It was re-measured on `[measure, value, tabs.length]`, and on a `ResizeObserver`
+watching the tab list. Both missed the thing that actually moves the tabs: the
+counts arrive from the summary query *after* the first paint, and each count
+that lands widens its own tab and shifts every tab after it. `tabs.length` never
+changes, `value` never changes, and the list is stretched by its parent so its
+own box never changes either - so the observer never fired and the indicator
+kept its first-paint geometry.
+
+Three fixes:
+
+- The measurement is keyed on what the tabs render, not how many there are: a
+  signature of each tab's value, label and count.
+- The `ResizeObserver` observes every tab element, not only the list.
+- A `document.fonts.ready` pass re-measures once web fonts land, which changes
+  every text width with them.
+
+Verified by comparing the indicator's box against the active tab's on every
+preset tab of `/identities`, on `/exposure`, on a cold load, on a reload, and
+after arriving from an exposure signal: `left` and `width` both match to 0px in
+every case.

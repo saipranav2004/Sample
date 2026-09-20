@@ -23,14 +23,39 @@ export function Tabs({ tabs, value, onChange, className, size = 'md' }) {
     setIndicator({ left: active.offsetLeft, width: active.offsetWidth });
   }, []);
 
-  useLayoutEffect(measure, [measure, value, tabs.length]);
+  /* What the tabs actually render, not just how many there are. Counts arrive
+     from a separate query after the first paint, and each one that lands widens
+     its tab and shifts every tab after it. Keying the measurement on
+     `tabs.length` alone missed that entirely, which left the indicator sitting
+     under wherever the active tab used to be. */
+  const signature = tabs
+    .map((tab) => `${tab.value}:${tab.label}:${tab.count ?? ''}`)
+    .join('|');
+
+  useLayoutEffect(measure, [measure, value, signature]);
 
   useEffect(() => {
     const list = listRef.current;
     if (!list || typeof ResizeObserver === 'undefined') return undefined;
     const observer = new ResizeObserver(measure);
+    /* Every tab, not only the list. The list is stretched by its parent, so its
+       own box does not change when a child's width does - observing it alone
+       never fired. */
     observer.observe(list);
+    for (const tab of list.querySelectorAll('[role="tab"]')) observer.observe(tab);
     return () => observer.disconnect();
+  }, [measure, signature]);
+
+  /* Web fonts land after the first paint and change every text width with them. */
+  useEffect(() => {
+    if (typeof document === 'undefined' || !document.fonts?.ready) return undefined;
+    let live = true;
+    document.fonts.ready.then(() => {
+      if (live) measure();
+    });
+    return () => {
+      live = false;
+    };
   }, [measure]);
 
   const onKeyDown = (event) => {

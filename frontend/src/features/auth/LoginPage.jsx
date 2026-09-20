@@ -75,8 +75,10 @@ export default function LoginPage() {
           `items-center` is what makes that true - centring each column
           independently is what pushed the statement below the card. */}
       <div className="relative mx-auto grid min-h-[inherit] w-full max-w-[1900px] grid-cols-1 content-center items-start gap-x-[clamp(2rem,4vw,6rem)] gap-y-12 px-[clamp(1.25rem,5.9vw,7rem)] py-[clamp(2rem,3.6vh,3.5rem)] lg:grid-cols-[minmax(0,1fr)_clamp(23rem,32.7vw,38.75rem)]">
-        {/* Product statement */}
-        <section className="order-2 lg:order-1">
+        {/* Product statement. No `order` override on either column: source
+           order is statement then card, which stacks that way on a phone and
+           reads left-to-right on a wide screen. */}
+        <section>
           <p
             style={{ '--step': 1 }}
             className="animate-auth inline-flex w-fit items-center gap-2.5 rounded-full bg-[var(--t-auth-badge)] px-[clamp(0.9rem,1.1vw,1.35rem)] py-[clamp(0.4rem,0.55vw,0.65rem)] text-[clamp(10px,0.79vw,15px)] font-semibold tracking-[0.15em] text-[var(--t-auth-badge-ink)] uppercase"
@@ -128,10 +130,12 @@ export default function LoginPage() {
         </section>
 
         {/* Credential card - floats on the navy, light in both themes. */}
-        <section data-theme="light" className="order-1 w-full lg:order-2">
+        <section data-theme="light" className="w-full">
           <div
-            style={{ '--step': 2 }}
-            className="animate-auth-card rounded-[clamp(14px,1.05vw,20px)] border border-[var(--t-auth-card-line)] bg-[var(--t-auth-card)] p-[clamp(1.5rem,2.85vw,3.4rem)] shadow-[0_34px_80px_-28px_rgba(2,10,20,0.55)]"
+            /* Stacked, the card is last, so it enters last; side by side it
+               enters with the headline. Otherwise the element at the bottom of
+               a phone screen would animate before the ones above it. */
+            className="animate-auth-card [--step:6] rounded-[clamp(14px,1.05vw,20px)] border border-[var(--t-auth-card-line)] bg-[var(--t-auth-card)] p-[clamp(1.5rem,2.85vw,3.4rem)] shadow-[0_34px_80px_-28px_rgba(2,10,20,0.55)] lg:[--step:2]"
           >
             {/* The supplied design uses the tagline lockup, centred. The asset
                 is delivered on a 16:9 canvas, so the frame crops its symmetric

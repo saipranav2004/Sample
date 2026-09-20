@@ -12,7 +12,7 @@ import tailwindcss from '@tailwindcss/vite';
  * guide that key must never reach browser JavaScript, so it is injected here,
  * in the Node-side dev server, from `SCANNER_DASHBOARD_KEY`. The same
  * responsibility has to be taken over by a real backend route or reverse proxy
- * in production — the client only ever knows the public path.
+ * in production - the client only ever knows the public path.
  */
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
