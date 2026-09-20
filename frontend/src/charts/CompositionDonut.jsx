@@ -22,7 +22,7 @@ export function CompositionDonut({
   const active = data.find((item) => item.key === activeKey) || null;
 
   return (
-    <div className={cn('flex flex-col items-center gap-5 sm:flex-row sm:items-center', className)}>
+    <div className={cn('flex flex-col items-center gap-5 @min-[27rem]:flex-row @min-[27rem]:items-center', className)}>
       <div className="relative shrink-0" style={{ width: size, height: size }}>
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>

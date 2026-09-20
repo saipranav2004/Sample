@@ -12,7 +12,10 @@ export function Panel({ as: Tag = 'section', className, flush = false, children,
         /* min-w-0: a panel is usually a grid item, and grid items default to
            min-width:auto - without this a long line inside would widen the
            whole column past the viewport on small screens. */
-        'min-w-0 rounded-[var(--radius-panel)] border border-line bg-surface',
+        /* A query container too: what a panel holds should respond to the
+           panel's width, not the window's. A legend or a two-up split inside a
+           420px panel has no business consulting the viewport. */
+        '@container min-w-0 rounded-[var(--radius-panel)] border border-line bg-surface',
         !flush && 'p-4 sm:p-5',
         className,
       )}

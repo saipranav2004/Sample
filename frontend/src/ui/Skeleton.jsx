@@ -7,7 +7,7 @@ export function Skeleton({ className, style }) {
 /** Mirrors the metric strip so the layout never reflows when data lands. */
 export function StatStripSkeleton({ count = 4 }) {
   return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-hidden="true">
+    <div className="grid gap-3 @min-[30rem]:grid-cols-2 @min-[54rem]:grid-cols-4" aria-hidden="true">
       {Array.from({ length: count }).map((_, index) => (
         <div key={index} className="rounded-[var(--radius-panel)] border border-line bg-surface p-4">
           <Skeleton className="h-3 w-24 rounded" />

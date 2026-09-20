@@ -75,7 +75,7 @@ export function AppShell() {
           {/* A query container. The metric rows below key their column count
               off this width, not the viewport's - see `docs/UX-DECISIONS.md`
               §10. */}
-          <div className="@container mx-auto w-full max-w-[1760px]">
+          <div className="content-scale @container mx-auto w-full max-w-[1760px]">
             <Outlet />
           </div>
         </main>

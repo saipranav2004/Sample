@@ -72,6 +72,30 @@
     }
   }
 
+  /* The other direction. On a narrow desktop the content column runs out of
+     room before the window does - the sidebar takes 232px of it - and the
+     side-by-side composition used to collapse into a stack. Scaling the
+     content column down a little keeps the composition and shrinks what is
+     inside it, which is what "decrease accordingly and fit" means: two columns
+     of slightly smaller panels beat one column of full-size ones.
+     Only between `lg` and `xl`, where the problem exists. Below `lg` the layout
+     is a single column already and shrinking text there would only cost
+     legibility; from `xl` up there is room and the scale returns to 1. */
+  :root {
+    --content-zoom: 1;
+  }
+
+  @media (min-width: 1024px) and (max-width: 1279.98px) {
+    :root {
+      --content-zoom: 0.9;
+    }
+  }
+  @media (min-width: 1024px) and (max-width: 1099.98px) {
+    :root {
+      --content-zoom: 0.85;
+    }
+  }
+
   body {
     margin: 0;
     min-height: 100dvh;
@@ -266,6 +290,15 @@
 
   .topbar-surface {
     background: var(--t-topbar);
+  }
+
+  /* Applied to the content column only. The top bar, the sidebar and every
+     portalled overlay (drawer, modal, toast, command palette) live outside it,
+     so none of them is scaled and no fixed positioning is disturbed. Because
+     `container-type: inline-size` reports the scaled width, the container
+     queries inside see the extra room and keep their columns. */
+  .content-scale {
+    zoom: var(--content-zoom);
   }
 
   /* Sampled from the supplied sign-in design: one flat navy across the whole

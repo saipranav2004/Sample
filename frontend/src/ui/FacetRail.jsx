@@ -137,7 +137,7 @@ export function FacetRail({
       <aside
         aria-label="Filters"
         className={cn(
-          'sticky top-[104px] hidden overflow-hidden rounded-[var(--radius-panel)] border border-line bg-surface lg:block',
+          'sticky top-[calc(104px/var(--content-zoom))] hidden overflow-hidden rounded-[var(--radius-panel)] border border-line bg-surface lg:block',
           className,
         )}
       >

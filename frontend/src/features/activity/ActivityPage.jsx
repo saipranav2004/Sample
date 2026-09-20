@@ -181,7 +181,7 @@ export default function ActivityPage() {
         {shape.window === 0 ? (
           <p className="mt-3 text-[12.5px] text-ink-3">Nothing loaded to summarise.</p>
         ) : (
-          <div className="mt-3.5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <div className="mt-3.5 grid gap-5 @min-[34rem]:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
             <div>
               <ProportionBar
                 height={12}

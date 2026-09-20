@@ -203,7 +203,7 @@ export default function PosturePage() {
       )}
 
       {/* ── Signals + population ────────────────────────────────────────── */}
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+      <div className="grid gap-4 @min-[52rem]:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
         <Panel className="animate-rise" data-stagger="" style={{ '--stagger': 3 }}>
           <PanelHeader
             icon={ShieldAlert}
@@ -296,7 +296,7 @@ export default function PosturePage() {
       </div>
 
       {/* ── Credential surface + trend ──────────────────────────────────── */}
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)]">
+      <div className="grid gap-4 @min-[52rem]:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)]">
         <Panel className="animate-rise" data-stagger="" style={{ '--stagger': 5 }}>
           <PanelHeader
             icon={KeyRound}
@@ -408,7 +408,7 @@ export default function PosturePage() {
       </div>
 
       {/* ── Activity + newest findings ──────────────────────────────────── */}
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+      <div className="grid gap-4 @min-[52rem]:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
         <Panel className="animate-rise" data-stagger="" style={{ '--stagger': 7 }}>
           <PanelHeader
             icon={Activity}

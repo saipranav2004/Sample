@@ -624,3 +624,76 @@ It is the one destructive action in the menu, so it takes the critical tone on
 hover and on keyboard focus. Its resting state stays neutral: a permanently red
 row in a profile menu reads as an error rather than an action. Measured:
 `rgb(74,91,112)` at rest, `rgb(180,35,24)` on `rgb(253,236,235)` on hover.
+
+---
+
+## 11. Revision: the whole content area is container-relative
+
+§10.1 fixed the metric row. The same fault ran through every other
+multi-column layout in the product, and the clarification was right: the
+composition should survive a narrowing window, with what is inside it getting
+smaller, rather than re-flowing into a stack.
+
+### 11.1 Nothing in the content area keys off the window any more
+
+Converted from viewport breakpoints to container queries against the content
+column:
+
+| Layout | Was | Now |
+|---|---|---|
+| Metric row (8 screens) | `sm:` / `xl:` | `@min-[30rem]` / `@min-[54rem]` |
+| Posture: signals + classification | `xl:` (1280px) | `@min-[52rem]` |
+| Posture: credentials + trend | `xl:` (1280px) | `@min-[52rem]` |
+| Posture: activity + exposure | `xl:` (1280px) | `@min-[52rem]` |
+| Activity: window shape split | `lg:` (1024px) | `@min-[34rem]` (its panel) |
+| Metric-row skeleton | `sm:` / `xl:` | matches the row it stands in for |
+
+The skeleton mattered: it was still viewport-keyed, so the loading state showed
+two columns and the loaded state four, and the page re-flowed the moment data
+landed.
+
+`Panel` is now a query container too. What a panel holds should respond to the
+panel's width - a legend inside a 420px panel has no business consulting the
+viewport - and the classification legend proves it: at a 1024px window it was
+side by side with the donut and truncating every label to a single letter
+("H 18", "S 17"). It now stacks the donut above the legend below `27rem` of
+panel width, and the labels read in full at every width.
+
+### 11.2 The content column scales on a narrow desktop
+
+Keeping the composition is only half of it. Between `lg` and `xl` the content
+column runs out of room before the window does, because the sidebar takes 232px
+of it first. So the column scales: `--content-zoom` is 0.85 from 1024px, 0.9
+from 1100px, and 1 from 1280px up, applied to the content wrapper only.
+
+Two columns of slightly smaller panels beat one column of full-size ones, which
+is what "decrease accordingly and fit" asks for. The scale is on the content
+column alone - the top bar, the sidebar and every portalled overlay (drawer,
+modal, toast, command palette) sit outside it, so nothing fixed is disturbed.
+Because `container-type: inline-size` reports the scaled width, the container
+queries inside see the extra room and hold their columns; the two mechanisms
+compound in the same direction by design.
+
+The one offset that has to know about it is the sticky facet rail, which hangs
+below 104px of unscaled chrome: `top-[calc(104px/var(--content-zoom))]`.
+Verified sticking at exactly 104px.
+
+### 11.3 Result
+
+Every multi-column row on every screen renders as one row at 1024px, 1252px and
+1440px, in both sidebar states, with no horizontal overflow:
+
+```
+ 1024 /posture:4/4 /credentials:1/1 /secrets:1/1 /exposure:1/1
+      /dismissed:1/1 /activity:2/2 /scans:1/1 /my-resources:1/1
+```
+
+Checked for regressions from layout containment: every absolutely positioned
+element inside a panel already had a `relative` parent, so no containing block
+moved, and each popover was probed at three points with `elementFromPoint` to
+confirm nothing paints over it.
+
+**Known, not fixed:** on a short viewport the identity picker's list can extend
+below the fold. It scrolls internally and the scan switcher has the same shape,
+so it is a pre-existing pattern rather than a regression - but placing these
+popovers against available space is still open work.
