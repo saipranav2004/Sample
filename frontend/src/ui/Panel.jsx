@@ -10,7 +10,7 @@ export function Panel({ as: Tag = 'section', className, flush = false, children,
     <Tag
       className={cn(
         /* min-w-0: a panel is usually a grid item, and grid items default to
-           min-width:auto — without this a long line inside would widen the
+           min-width:auto - without this a long line inside would widen the
            whole column past the viewport on small screens. */
         'min-w-0 rounded-[var(--radius-panel)] border border-line bg-surface',
         !flush && 'p-4 sm:p-5',

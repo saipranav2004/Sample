@@ -24,7 +24,7 @@ export const RAMP_TOKENS = [
   'var(--t-ramp-5)',
 ];
 
-/** Magnitude ramp step for a value within [0, max] — one hue, light to dark. */
+/** Magnitude ramp step for a value within [0, max] - one hue, light to dark. */
 export function rampColor(value, max) {
   if (!Number.isFinite(value) || !Number.isFinite(max) || max <= 0) return RAMP_TOKENS[0];
   const index = Math.min(RAMP_TOKENS.length - 1, Math.floor((value / max) * RAMP_TOKENS.length));
@@ -151,11 +151,11 @@ export const POSTURE_SIGNALS = [
     denominatorLabel: 'of all identities',
     tone: 'high',
     query: { is_stale: 'true' },
-    rationale: 'No recorded activity in over 90 days — candidates for removal.',
+    rationale: 'No recorded activity in over 90 days - candidates for removal.',
   },
   {
     key: 'inactive',
-    label: 'Inactive 30–90 days',
+    label: 'Inactive 30-90 days',
     field: 'total_inactive_30plus',
     denominator: 'total_identities',
     denominatorLabel: 'of all identities',
@@ -230,7 +230,7 @@ export function findingLink(finding) {
   return null;
 }
 
-/** Identity key for allowlist writes — the four fields the service requires. */
+/** Identity key for allowlist writes - the four fields the service requires. */
 export function allowlistKey(finding) {
   return [finding?.client_id, finding?.file_path, finding?.detector, finding?.redacted].join('␟');
 }

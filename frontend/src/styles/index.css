@@ -75,7 +75,7 @@
 }
 
 /* ==========================================================================
-   Motion — every animation below is disabled under reduced-motion.
+   Motion - every animation below is disabled under reduced-motion.
    ========================================================================== */
 @keyframes dna-fade-rise {
   from {
@@ -177,10 +177,8 @@
     animation: dna-shimmer 1.6s ease-in-out infinite;
   }
 
-  .topbar-gradient {
-    background:
-      radial-gradient(60% 300% at 22% 50%, rgba(18, 176, 240, 0.13) 0%, transparent 70%),
-      linear-gradient(90deg, var(--t-topbar) 0%, var(--t-topbar-2) 52%, var(--t-topbar) 100%);
+  .topbar-surface {
+    background: var(--t-topbar);
   }
 
   .auth-canvas {
@@ -201,7 +199,7 @@
     text-wrap: balance;
   }
 
-  /* Table shell used by the data grid — keeps sticky headers crisp. */
+  /* Table shell used by the data grid - keeps sticky headers crisp. */
   .grid-sticky-head {
     position: sticky;
     top: 0;

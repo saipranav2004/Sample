@@ -5,7 +5,7 @@ import { attachInterceptors } from './http';
  * Secret Scanner API.
  *
  * The browser talks to a same-origin path only. Whatever serves that path is
- * responsible for attaching the `X-Dashboard-Key` header — the Vite dev proxy
+ * responsible for attaching the `X-Dashboard-Key` header - the Vite dev proxy
  * does it locally, a backend route or reverse proxy must do it in production.
  * The key is deliberately absent from this file and from the client bundle.
  */

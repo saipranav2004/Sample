@@ -1,7 +1,7 @@
 /**
  * The Secret Scanner sits behind a proxy that must attach `X-Dashboard-Key`.
  * A 401 therefore almost always means the deployment is not configured rather
- * than that the operator lacks access — say so instead of showing a bare
+ * than that the operator lacks access - say so instead of showing a bare
  * "unauthorized".
  */
 export function describeScannerError(error) {
@@ -9,7 +9,7 @@ export function describeScannerError(error) {
     return {
       title: 'Code exposure service is not configured',
       message:
-        'The scanner rejected the request as unauthorized. The dashboard key is attached by the server-side proxy, not the browser — set SCANNER_DASHBOARD_KEY for the proxy and reload.',
+        'The scanner rejected the request as unauthorized. The dashboard key is attached by the server-side proxy, not the browser - set SCANNER_DASHBOARD_KEY for the proxy and reload.',
       configuration: true,
     };
   }
@@ -28,7 +28,7 @@ export function describeScannerError(error) {
   };
 }
 
-/** Counts by risk tier, platform and repository — the guide's own recipe. */
+/** Counts by risk tier, platform and repository - the guide's own recipe. */
 export function summariseFindings(findings = []) {
   const byTier = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0 };
   const byPlatform = { github: 0, codecommit: 0 };

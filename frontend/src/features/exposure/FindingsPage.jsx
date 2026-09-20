@@ -58,7 +58,7 @@ const VIEWS = [
  * Code exposure triage.
  *
  * `GET /api/findings` returns the whole live set in one response, so search,
- * filtering, sorting and grouping all happen client-side here — that is the
+ * filtering, sorting and grouping all happen client-side here - that is the
  * shape the service defines, not a workaround. The only write is adding a
  * finding to the allowlist.
  */
@@ -156,7 +156,7 @@ export default function FindingsPage() {
           active: tier === value,
         })),
         onToggle: (value) => setTier((current) => (current === value ? '' : value)),
-        note: 'Critical cannot occur on this deployment — liveness verification is unavailable, so the scanner never raises that tier.',
+        note: 'Critical cannot occur on this deployment - liveness verification is unavailable, so the scanner never raises that tier.',
       },
       {
         key: 'detector',
@@ -312,7 +312,7 @@ export default function FindingsPage() {
       cell: (row) => (
         <span className="block min-w-0">
           <span className="block truncate text-[12.5px] text-ink-2" title={row.repository}>
-            {row.repository || '—'}
+            {row.repository || '-'}
           </span>
           <span className="block truncate font-mono text-[11px] text-ink-3">
             {shortBranch(row.branch)} · {shortCommit(row.commit_id)}
@@ -362,7 +362,7 @@ export default function FindingsPage() {
     <div className="flex flex-col gap-4">
       <PageHeader
         title="Secret findings"
-        lede="Credentials committed into connected CodeCommit and GitHub repositories. Values are masked by the scanner — triage by risk, then rotate at the source."
+        lede="Credentials committed into connected CodeCommit and GitHub repositories. Values are masked by the scanner - triage by risk, then rotate at the source."
         tabs={
           <Tabs
             size="sm"
@@ -590,7 +590,7 @@ function PushList({ pushes, onSelect }) {
                 <div className="flex min-w-0 items-center gap-2">
                   <GitCommitHorizontal aria-hidden="true" className="size-4 shrink-0 text-ink-3" />
                   <p className="min-w-0 truncate text-[13px] font-semibold text-ink" title={push.repository}>
-                    {push.repository || '—'}
+                    {push.repository || '-'}
                   </p>
                   <span className="shrink-0 font-mono text-[11.5px] text-ink-3">
                     {shortCommit(push.commitId)}

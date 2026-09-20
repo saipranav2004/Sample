@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Deep Algorithms — NHI Console design tokens
+   Deep Algorithms - NHI Console design tokens
    Derived from the brand mark: deep signal blue (#0C6EB4), cyan slash
    (#12B0F0) and near-black wordmark, extended into a full enterprise
    surface / ink / risk system for light and dark canvases.
@@ -29,15 +29,15 @@
   --t-ink-3: #7c8da3;
   --t-ink-inverse: #f7fafe;
 
-  /* Top bar (always dark — the brand surface, full viewport width) -------- */
-  --t-topbar: #071b33;
-  --t-topbar-2: #0a2745;
-  --t-topbar-line: rgba(255, 255, 255, 0.1);
-  --t-topbar-ink: #e2ecf7;
-  --t-topbar-muted: #8ba3c0;
-  --t-topbar-hover: rgba(255, 255, 255, 0.08);
+  /* Top bar - follows the theme. Application chrome, not a marketing header. */
+  --t-topbar: #ffffff;
+  --t-topbar-line: #dfe6f0;
+  --t-topbar-ink: #0b1b2e;
+  --t-topbar-muted: #6b7d94;
+  --t-topbar-hover: #eef2f7;
+  --t-topbar-field: #f4f7fb;
 
-  /* Sidebar — an application surface that recedes behind the content ----- */
+  /* Sidebar - an application surface that recedes behind the content ----- */
   --t-sidebar: #f8fafc;
   --t-sidebar-line: #e3e9f1;
 
@@ -55,7 +55,7 @@
   --t-neutral: #5d6b7e;
   --t-neutral-soft: #eef1f5;
 
-  /* Categorical series — fixed slot order, validated for CVD separation and
+  /* Categorical series - fixed slot order, validated for CVD separation and
      contrast against the light surface. Slot 8 is a reserved neutral used for
      "Unclassified"/"Other" and is never treated as a hue. */
   --t-series-1: #1668b0;
@@ -101,10 +101,12 @@
   --t-ink-3: #6f8098;
   --t-ink-inverse: #0b1b2e;
 
-  --t-topbar: #040c18;
-  --t-topbar-2: #08192d;
-  --t-topbar-line: rgba(255, 255, 255, 0.08);
+  --t-topbar: #08121f;
+  --t-topbar-line: #1c2a3f;
+  --t-topbar-ink: #eef3fa;
+  --t-topbar-muted: #8ba0b8;
   --t-topbar-hover: rgba(255, 255, 255, 0.07);
+  --t-topbar-field: rgba(255, 255, 255, 0.06);
 
   --t-sidebar: #0a1322;
   --t-sidebar-line: #1e2e46;
@@ -169,7 +171,7 @@
   --color-ink-inverse: var(--t-ink-inverse);
 
   --color-topbar: var(--t-topbar);
-  --color-topbar-2: var(--t-topbar-2);
+  --color-topbar-field: var(--t-topbar-field);
   --color-topbar-line: var(--t-topbar-line);
   --color-topbar-ink: var(--t-topbar-ink);
   --color-topbar-muted: var(--t-topbar-muted);

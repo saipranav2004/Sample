@@ -1,4 +1,4 @@
-# NHI Console — Deep Algorithms
+# NHI Console - Deep Algorithms
 
 Operator console for non-human identity discovery, posture and credential
 exposure across AWS. This directory contains **only the frontend**; it reads
@@ -13,7 +13,7 @@ two backends and modifies neither.
 | NHI Discovery API (Go service, `aws-backend`) | identities, credentials, secrets, scans, CloudTrail events, lineage, role consumers | JWT bearer token held by the browser |
 | Secret Scanner API (`API_Integration_Guide`) | secrets committed into CodeCommit / GitHub, and the review allowlist | `X-Dashboard-Key`, **attached server-side only** |
 
-The scanner integration follows the **updated** guide — the one that merges both
+The scanner integration follows the **updated** guide - the one that merges both
 scanners behind a single `/api/findings` and adds the `platform` and
 `github_uri` fields. The older single-source guide in the repository root
 predates that change; a finding whose `platform` comes back `null` is treated as
@@ -23,7 +23,7 @@ CodeCommit, exactly as the updated guide specifies.
 
 The scanner's integration guide is explicit: the key must stay on a server, or
 anyone who opens devtools gains permanent read access to every finding. So the
-browser only ever calls a same-origin path — `/secret-scanner/...` — and
+browser only ever calls a same-origin path - `/secret-scanner/...` - and
 something upstream attaches the header.
 
 * **Development:** the Vite dev server does it (`vite.config.js`), reading
@@ -33,7 +33,7 @@ something upstream attaches the header.
   path. You must serve `/secret-scanner/*` from your own backend route or a
   reverse proxy that strips the prefix, forwards to the scanner and adds the
   header. Until that exists, the code-exposure screens render a clear
-  "not configured" state rather than failing silently — they do not fall back to
+  "not configured" state rather than failing silently - they do not fall back to
   sample data.
 
 ## Running it
@@ -60,21 +60,29 @@ Environment variables:
 
 Read these before changing layout or adding a control:
 
-* **`docs/UX-DECISIONS.md`** — the product archetype and why, the shell
+* **`docs/UX-DECISIONS.md`** - the product archetype and why, the shell
   specification, every screen validated against the same eleven UX questions,
   the posture-fingerprint and facet-rail patterns, the motion inventory, and
   the list of things deliberately left out with the reason for each.
-* **`docs/mockups/index.html`** — static mockups of sign-in, posture, the
+* **`docs/mockups/index.html`** - static mockups of sign-in, posture, the
   identity explorer, the record drawer and code exposure. Open it directly in
   a browser; it is the visual reference the implementation follows.
 
 ## Shell
 
-A fixed full-width navy top bar carries brand (left corner) and every control
-(right corner): search, scan scope, theme, account. The sidebar starts beneath
-it and is navigation only. Each screen then owns a breadcrumb, a title strip
-with its primary actions, optional view tabs, and a work area that pairs a
-persistent facet rail with the record surface.
+A fixed full-width top bar that **follows the theme** carries the brand in the
+left corner and two controls in the right: a search pill (the command palette's
+handle) and the account avatar. Identity details and the three-way appearance
+control live inside the account menu, not in the chrome.
+
+Beneath it, a **context row** holds a back control, the breadcrumb, and the
+scan-scope switcher - scope is a statement about the records on this screen, so
+it sits beside the words naming the screen rather than in global chrome.
+
+The sidebar starts below the top bar, is titled ("NHI DISCOVERY") with the
+collapse control at its top, and is navigation only. Each screen then owns a
+title strip with its primary actions, optional view tabs, and a work area that
+pairs a persistent facet rail with the record surface.
 
 ## Information architecture
 
@@ -82,7 +90,7 @@ Grouped by the question an operator is answering, not by the API surface.
 
 | Route | Screen | Reads |
 |---|---|---|
-| `/posture` | Posture — exposure signals, classification mix, credential surface, scan trend, activity, code exposure | `dashboard/summary`, `scans`, `events`, `findings` |
+| `/posture` | Posture - exposure signals, classification mix, credential surface, scan trend, activity, code exposure | `dashboard/summary`, `scans`, `events`, `findings` |
 | `/identities` | Identity explorer + record drawer (overview, credentials, service access, consumers, activity) | `identities`, `identities/lineage`, `identities/consumers`, `events` |
 | `/credentials` | Flattened credential register | `credentials` |
 | `/secrets` | Secret-backed identities | `secrets` |
@@ -103,7 +111,7 @@ src/
   app/        providers (auth, theme, scan scope), route table, auth gate
   shell/      navigation rail, top bar, scan switcher, command palette, page header
   features/   one folder per screen; drawers live beside the screen that opens them
-  ui/         design system — controls, panels, grid, overlays, states, skeletons
+  ui/         design system - controls, panels, grid, overlays, states, skeletons
   charts/     chart components (the only place recharts is imported)
   lib/        api clients + endpoint layer, domain vocabulary, formatting, hooks
   styles/     design tokens and base layer
@@ -115,17 +123,25 @@ src/
 **No invented capability.** Each filter maps to a query parameter the API
 accepts. `/api/secrets` takes only a search term, so that screen shows only a
 search box. Sorting appears only on the code-exposure screens, where the whole
-dataset is client-side — sorting one page of a server-paginated result would
+dataset is client-side - sorting one page of a server-paginated result would
 misrepresent the data, so it is absent elsewhere.
 
 **Option lists come from the data.** Classification and credential-type filters
 are built from the scan's own breakdown, so they can never offer a value this
 snapshot does not contain.
 
-**Posture is a fingerprint, not a tag list.** Five checks in a fixed order,
-one slot each, so the column reads vertically — see `docs/UX-DECISIONS.md` §4.
-The badge counts failing checks; no risk score is invented, because nothing in
-the API supports one.
+**Status is a sentence, not a colour code.** Five checks are evaluated, and the
+table shows one state - Critical, Attention, Healthy - plus the leading reason
+in words ("MFA disabled +1"). No legend to learn. The full five-check breakdown
+lives in the record drawer. No risk score is invented, because nothing in the
+API supports one; see `docs/UX-DECISIONS.md` §3.
+
+**Totals are asked for, not inferred.** Where the summary endpoint has no
+counter - credentials by severity, secret-backed identities that are also admin
+- the console asks the list endpoint with the filter applied and `page_size=1`,
+reading `total_count`. Where even that is impossible (mutating vs read-only
+events, which no parameter filters) the figure is labelled "in view" or omitted.
+See §4.
 
 **Filters are a rail with real counts.** Option counts come from the scan
 summary (identities, credentials) or the live finding set (code exposure), so
@@ -145,7 +161,7 @@ seven-slot order with a reserved neutral for "unclassified", checked for
 colour-vision separation, chroma and contrast against both surfaces. Charts
 render categories in a canonical order so a colour always means the same thing,
 and status colours (critical/high/medium/low) are never reused as series
-colours. Measures of different magnitude get separate charts — there are no
+colours. Measures of different magnitude get separate charts - there are no
 dual-axis charts.
 
 **Timestamps.** The Go API returns RFC3339. The scanner returns

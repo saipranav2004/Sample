@@ -184,3 +184,20 @@ export async function restoreFinding({ clientId, filePath, detector, redacted })
   });
   return res?.data ?? {};
 }
+
+/* ── Exact counts ────────────────────────────────────────────────────────────
+   Several screens need a total the summary endpoint does not carry (e.g.
+   credentials at HIGH severity, secret-backed identities that are also admin).
+   Rather than derive it from the loaded page and present it as a global
+   figure, ask the list endpoint for one row and read `total_count` off the
+   envelope. Cheap, exact, and it cannot drift from the list it labels.       */
+
+export async function countIdentities(query = {}, signal) {
+  const { total } = await fetchIdentities({ ...query, page: 1, pageSize: 1 }, signal);
+  return total;
+}
+
+export async function countCredentials(query = {}, signal) {
+  const { total } = await fetchCredentials({ ...query, page: 1, pageSize: 1 }, signal);
+  return total;
+}

@@ -3,7 +3,7 @@ import { cn } from '../ui/cn';
 /**
  * Title strip. Full-bleeds to the content edges so it reads as shell rather
  * than as a card, and hosts the screen's primary actions plus (optionally) its
- * view tabs — the console pattern of breadcrumb → title → views → work area.
+ * view tabs - the console pattern of breadcrumb → title → views → work area.
  */
 export function PageHeader({ title, lede, actions, tabs, meta, className }) {
   return (

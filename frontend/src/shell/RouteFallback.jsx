@@ -2,7 +2,7 @@ import { Skeleton, StatStripSkeleton } from '../ui/Skeleton';
 
 /**
  * Shown while a route's code chunk loads. It mirrors the standard page
- * composition — header, metric strip, primary panel — so the transition into
+ * composition - header, metric strip, primary panel - so the transition into
  * the real screen is a fill rather than a jump.
  */
 export function RouteFallback() {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Cell, Pie, PieChart, ResponsiveContainer } from 'recharts';
+import { Cell, Pie, PieChart, ResponsiveContainer, Sector } from 'recharts';
 import { formatNumber, formatPercent } from '../lib/format';
 import { cn } from '../ui/cn';
 
@@ -17,6 +17,7 @@ export function CompositionDonut({
   className,
 }) {
   const [activeKey, setActiveKey] = useState(null);
+  const activeIndex = data.findIndex((item) => item.key === activeKey);
   const sum = total ?? data.reduce((acc, item) => acc + (Number(item.value) || 0), 0);
   const active = data.find((item) => item.key === activeKey) || null;
 
@@ -37,6 +38,12 @@ export function CompositionDonut({
               isAnimationActive
               animationDuration={720}
               animationEasing="ease-out"
+              activeIndex={activeIndex >= 0 ? activeIndex : undefined}
+              activeShape={(props) => (
+                /* The hovered slice lifts out of the ring, which connects a
+                   legend row to its slice without needing a click. */
+                <Sector {...props} outerRadius={props.outerRadius + 5} />
+              )}
               onMouseEnter={(_, index) => setActiveKey(data[index]?.key ?? null)}
               onMouseLeave={() => setActiveKey(null)}
               onClick={onSelect ? (_, index) => onSelect(data[index]) : undefined}

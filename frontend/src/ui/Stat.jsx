@@ -17,6 +17,9 @@ export function MetricTile({
   tone = 'brand',
   meter,
   meterLabel,
+  /** Numbers for an inline history line, revealed on hover. Supplied only
+      where the backend actually carries history for this measure. */
+  sparkline,
   icon: Icon,
   as: Tag = 'div',
   className,
@@ -25,7 +28,7 @@ export function MetricTile({
 }) {
   const numeric = Number(value);
   const counted = useCountUp(animate && Number.isFinite(numeric) ? numeric : 0);
-  const display = Number.isFinite(numeric) ? formatNumber(animate ? counted : numeric) : '—';
+  const display = Number.isFinite(numeric) ? formatNumber(animate ? counted : numeric) : '-';
   const interactive = Tag !== 'div';
 
   return (
@@ -69,9 +72,56 @@ export function MetricTile({
 
       {caption && <p className="mt-1.5 text-[12px] leading-snug text-ink-3">{caption}</p>}
 
+      {sparkline?.length > 1 && (
+        <Sparkline values={sparkline} tone={tone} className="mt-3" />
+      )}
+
       {meter !== undefined && meter !== null && (
         <Meter value={meter} tone={tone} height={4} className="mt-3" label={meterLabel || label} />
       )}
     </Tag>
+  );
+}
+
+/**
+ * History line for a metric tile. Recedes until the tile is hovered, so the
+ * headline number stays the loudest thing in the tile. Rendered only where the
+ * backend actually carries history for that measure.
+ */
+function Sparkline({ values, tone, className }) {
+  const numbers = values.filter((value) => Number.isFinite(Number(value))).map(Number);
+  if (numbers.length < 2) return null;
+
+  const max = Math.max(...numbers);
+  const min = Math.min(...numbers);
+  const span = max - min || 1;
+  const points = numbers
+    .map((value, index) => {
+      const x = (index / (numbers.length - 1)) * 100;
+      const y = 22 - ((value - min) / span) * 20;
+      return `${x.toFixed(2)},${y.toFixed(2)}`;
+    })
+    .join(' ');
+
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 100 24"
+      preserveAspectRatio="none"
+      className={cn(
+        'h-6 w-full opacity-40 transition-opacity duration-200 group-hover:opacity-100',
+        className,
+      )}
+    >
+      <polyline
+        points={points}
+        fill="none"
+        stroke={TONE_VAR[tone]}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
+      />
+    </svg>
   );
 }

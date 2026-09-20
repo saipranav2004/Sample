@@ -1,259 +1,320 @@
-# NHI Console — UX decisions and screen validation
+# NHI Console - UX decisions and screen validation
 
-This is the plan the implementation follows. It exists so the layout, density
-and interaction choices can be argued with before anyone reads a component.
+The plan the implementation follows. Revision 3: acts on review feedback about
+the shell, the posture column, and the six screens that had not yet had a
+proper design pass.
 
 ---
 
 ## 1. Product archetype
 
-**Security / observability console** — the Wiz, CrowdStrike Falcon, Datadog
-family. Chosen over the alternatives because the user's job here is *triage*,
-not authoring:
+**Security / observability console** - the Wiz, CrowdStrike Falcon, Datadog
+family. Chosen because the user's job here is *triage*, not authoring.
 
 | Archetype | Why not |
 |---|---|
-| Cloud provider console (AWS/Azure) | Resource-detail-as-full-page loses the operator's place in a 137-row list. Triage is list-centric. |
-| Enterprise suite (Salesforce/ServiceNow) | Built around record creation, bulk edit and approval chains. This API is read-only apart from one allowlist write — the chrome would be empty. |
-| Modern B2B SaaS (Linear/Stripe) | Too airy for the data volume, and brand lives in the sidebar, which is the wrong place for a console. |
-
-Consequences that follow from the archetype, not from taste:
-
-- **Global top bar carries identity and scope.** Brand, global search, scan
-  scope, account context, user. Full width, always visible.
-- **Sidebar sits beneath the top bar**, not beside it. It is navigation only —
-  no brand, no user chrome.
-- **Facet rail on every list screen.** Filters are a persistent left panel with
-  live counts, not a row of chips. This is the single biggest behavioural
-  difference from the previous build.
-- **Breadcrumbs everywhere.** A console is a place you get lost in.
-- **Drawer for record detail**, so the list, the filters and the scroll
-  position survive inspection.
-- **Tables are instruments**: density control, column-level truncation, export
-  of what is on screen, sticky header, row-level actions on hover.
-- **Posture as a fingerprint, not a tag list** (see §4).
+| Cloud provider console (AWS/Azure) | Resource-detail-as-full-page loses the operator's place in a 137-row list. |
+| Enterprise suite (Salesforce/ServiceNow) | Built for record creation, bulk edit, approval chains. This API has one write. |
+| Modern B2B SaaS (Linear/Stripe) | Too airy for the data volume, and brand in the sidebar is wrong for a console. |
 
 ---
 
-## 2. Shell specification
+## 2. Shell specification (revised)
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│ [DEEP ALGORITHMS]  ⌘K search…     scan: prod-platform ▾   ☾  DA▾ │  56px, navy, full width
+│ [DEEP ALGORITHMS]                        [ Search  ⌘K ]   (DA)  │  56px, follows theme
 ├────────────┬─────────────────────────────────────────────────────┤
-│ POSTURE    │ Home › Inventory › Identities                       │  breadcrumb 36px
-│  Overview  │ Identity explorer                    [Export] [⟳]   │  title row
-│            │ ┌ All ─ Needs attention ─ Admin ─ Stale ─┐          │  view tabs
-│ INVENTORY  │ ├──────────┬──────────────────────────────┴───────┐ │
-│  Identities│ │ FACETS   │ ▓▓ dense table, sticky head          │ │
-│  Credentials│ │ ▸ Class  │ ▸ svc-deploy-0   Human  High   ⋯    │ │
-│  Secrets   │ │ ▸ Owner  │ ▸ person.1@…     Service Med    ⋯    │ │
-│            │ │ ▸ Posture│                                      │ │
-│ EXPOSURE   │ └──────────┴──────────────────────────────────────┘ │
-│  Findings  │                                                     │
-│  Dismissed │                                                     │
+│ NHI        │ ‹  Home › Code exposure › Findings   [prod ▾ scan]  │  40px context row
+│ DISCOVERY ⟨│─────────────────────────────────────────────────────│
+│            │ Secret findings                  [Export] [Refresh] │  title strip
+│ POSTURE    │ ┌ All ─ GitHub ─ CodeCommit ┐                       │  view tabs
+│  Overview  │ ├──────────┬────────────────┴────────────────────┐   │
+│ INVENTORY  │ │ FILTERS  │ records                             │   │
+│  ...       │ └──────────┴─────────────────────────────────────┘   │
 └────────────┴─────────────────────────────────────────────────────┘
-   240 → 56px collapsible
 ```
 
-**Top bar** is navy in both themes and spans the full viewport. Three reasons,
-in order of weight: it is the one element that never changes, so it is where
-brand belongs; keeping it fixed lets the canvas below flip light/dark without
-the product losing its identity; and it separates chrome from data so the data
-is the brightest thing on screen. The logo owns the left corner and *every*
-control sits in the right corner — search, scan scope, theme, account — so the
-bar reads as "identity … tools" rather than as four evenly spaced widgets.
+Three changes from revision 2, each one a correction:
 
-**Sidebar** is a light (or dark-theme) application surface with a hairline
-right edge, starting beneath the top bar. Navigation only: no brand, no user
-chrome, no search. It should recede, not compete.
+**The top bar follows the theme.** It was permanently navy. In light mode it is
+now a white surface with a hairline base and the dark wordmark; in dark mode
+navy with the light wordmark. A permanently dark bar in a light product reads
+as a marketing header, not as application chrome.
 
-Nothing in the top bar is decorative. There is no notification bell, no
-activity feed icon, no "what's new" — the API exposes no such data, and a
-control that cannot be populated is a lie about the product's capability.
+**The top bar holds exactly three things.** Logo in the left corner; a search
+pill and the account avatar in the right corner. Nothing else. Specifically:
+
+- *Search* is a proper pill - icon, the word "Search", a ⌘K chip - sized so it
+  reads as a control rather than a cramped afterthought. The command palette
+  behind it is the real surface.
+- *The account* is the avatar alone. No name, no role, no job title strung out
+  across the chrome. That is how Google, Atlassian and GitHub do it, and for a
+  good reason: the name is not information the operator needs while working, it
+  is information they need when they wonder *who am I signed in as*. So it
+  lives inside the menu, with email, role and team.
+- *Appearance* (Light / Dark / System) moved into that menu as a three-way
+  control. A bare theme toggle in the chrome spends a permanent slot on a
+  setting people change twice a year.
+
+**Scan scope moved out of the top bar into a context row**, beside the
+breadcrumb. Scope is not global chrome - it is a statement about the data on
+*this* screen, so it belongs next to the words that say which screen that is.
+The same row carries a **back control**, because a console is a place people
+navigate into and the browser button is not a UI.
+
+**The sidebar is titled.** A module header - "NHI DISCOVERY" - sits at the top
+with the collapse control beside it, which is where an operator reaches for it.
+The old footer ("138 identities in scope") is gone: it restated a number the
+page already showed, and filler dressed as telemetry is not enterprise.
+
+**Typography note.** Em and en dashes are replaced with plain hyphens
+throughout the interface.
 
 ---
 
-## 3. Screen-by-screen validation
+## 3. Status, not a fingerprint
 
-Sections 4 and 5 then document the two patterns these screens lean on hardest.
+Revision 2 rendered posture as five fixed colour slots. It optimised for an
+expert scanning a long column and ignored the first-time reader, who has to
+learn a legend before the column means anything. In a product where the
+operator may open one screen a week, that is a failure.
 
-Every screen is answered against the same eleven questions.
+**Replaced by one status and one reason, in words.**
 
-### 3.1 Posture (`/posture`)
+```
+● Critical    MFA disabled  +1 more
+● Attention   Dormant 47 days
+● Healthy     All checks clear
+```
+
+- **One dot, three states** - Critical, Attention, Healthy (plus Unknown when
+  nothing was recorded). Three colours total, from the reserved status palette.
+- **The leading reason is written out**, so no legend is required. When more
+  than one check fails, `+N more` follows, and the full list is the tooltip and
+  the accessible label.
+- The underlying five checks are unchanged and still documented below - they
+  now drive a sentence instead of a bar chart.
+
+| Check | Critical when | Attention when | Source |
+|---|---|---|---|
+| MFA | human identity with MFA off | - | `mfa_enabled`, `classification` |
+| Privilege | admin-equivalent policy attached | - | `is_admin` |
+| Ownership | owner type is `ORPHANED` | no owner resolves | `owner_type`, `owner_name`, `primary_owner`, `created_by_name` |
+| Activity | last active over 90 days | 30-90 days | `last_active` |
+| Secret store | - | credentials in a secret entry | `is_secret` |
+
+Still no score. No 0-100, no letter grade, no weighting: the API supplies none,
+and a fabricated score is the most dangerous kind of fake analytics because
+people act on it.
+
+---
+
+## 4. Counting without lying
+
+Several screens want totals the summary endpoint does not carry - credentials
+by severity, secret-backed identities that are also admin. Rather than compute
+them from the loaded page and present them as global figures, the console asks
+the API: the same list endpoint with the filter applied and `page_size=1`,
+reading `total_count` off the envelope. Cheap, exact, and it cannot drift from
+the list it labels.
+
+Where even that is impossible - "mutating vs read-only events", which no
+parameter filters - the figure is **either omitted or explicitly scoped**
+("in view", "on this page"). A number whose scope is ambiguous is worse than no
+number.
+
+---
+
+## 5. Screen-by-screen validation
+
+Every screen answered against the same eleven questions.
+
+### 5.1 Posture (`/posture`)
 
 | Question | Answer |
 |---|---|
 | Primary goal | "What should I act on before I leave today?" |
-| Most visual attention | The exposure-signal list. It is the only element ranked by severity of consequence, so it is the largest panel and sits top-left in reading order. |
-| Easiest actions | Drilling into a signal — the whole row is the hit target, and it carries the API filter with it. Refresh and scan scope are one click from anywhere. |
-| Progressive disclosure | Signal rationale is always visible (one line); the identities behind it are one click away; a single identity's credentials are two. Nothing is three deep. |
-| Reducing clicks | Every counter is a link. There is no "view report" intermediate. Classification slices and credential bars are click-through too. |
-| Complex data | Signals as proportional meters against *their own* denominator (MFA against humans, not against everything). Composition as a donut whose legend doubles as the value table. Trend as three small multiples, never a dual axis. |
-| No data | Per panel, not per page: "no completed scan yet" on the scope strip; "nothing classified yet" on the donut; "not enough scan history" on the trend; a *positive* state on code exposure, because zero findings is the good outcome. |
-| Loading | Metric-strip skeleton with the real tile geometry, donut skeleton with legend rows, bar skeleton, timeline skeleton. Panels resolve independently — a slow scanner never blocks the posture numbers. |
-| API failure | Scoped to the failing panel. The scanner has its own diagnosis: a 401 says "not configured" and names the env var, because that is what a 401 actually means here. |
-| Validation errors | None — no inputs on this screen. |
-| Success states | Refresh dims and restores in place rather than flashing skeletons. No toast for a read. |
+| Most attention | The exposure-signal list - the only element ranked by consequence. |
+| Easiest actions | Whole signal rows are links carrying the API filter. Scope and refresh are one click. |
+| Progressive disclosure | Signal reason always visible; identities one click; a record's credentials two. |
+| Fewer clicks | Every counter is a link. Classification slices and credential bars drill through too. |
+| Complex data | Signals as meters against *their own* denominator. Composition as a donut whose legend is the value table. Trend as three small multiples, never a dual axis. |
+| No data | Per panel: no completed scan, nothing classified, not enough history, and a *positive* state for zero findings. |
+| Loading | Metric, donut, bar and timeline skeletons with the real geometry. Panels resolve independently. |
+| API failure | Scoped to the failing panel; the scanner diagnoses its own 401 as "not configured". |
+| Validation | No inputs. |
+| Success | Refresh dims and restores in place. No toast for a read. |
 
-### 3.2 Identity explorer (`/identities`)
+**Analytics motion**: one hover moves a **synchronised crosshair across all
+three trend charts**, so identities, events and secrets are compared at the
+same scan without three separate hovers. KPI tiles reveal a **sparkline of
+that measure across scan history** on hover - only for the three measures scan
+history actually carries. Donut segments lift on hover and the centre swaps to
+the hovered category.
 
-| Question | Answer |
-|---|---|
-| Primary goal | "Narrow 137 principals to the handful that are my problem." |
-| Most visual attention | The identity name and its risk markers. Classification, owner and trust are supporting columns. |
-| Easiest actions | Facet toggles (single click, live counts), then row → drawer. Copy-ARN and open-record surface on row hover. |
-| Progressive disclosure | Row → drawer overview → drawer tabs (credentials, service access, consumers, activity), each fetched only when opened. |
-| Reducing clicks | Preset view tabs ("Needs attention" = no-MFA ∪ admin ∪ orphaned is *not* expressible in one API call, so presets only combine what the API supports in a single request). Facet counts come from the scan summary, so the operator knows the size of a filter before applying it. |
-| Complex data | ARNs truncated at the resource segment with the full value on hover and a copy affordance; posture flags as markers rather than six boolean columns. |
-| No data | Two distinct states — "no identities in this scan" (pick another scan) vs. "no identities match these filters" (with a clear-filters action). Conflating them is the common failure. |
-| Loading | Row skeletons using the real column template. A filter change dims existing rows instead of collapsing the table, so the operator keeps their place. |
-| API failure | Full-panel error with retry, because a failed list has nothing partial worth showing. |
-| Validation errors | Search is free-text and cannot fail. The ARN filter on Activity states that it matches exactly, because a partial ARN silently returns nothing. |
-| Success states | Not applicable — read-only screen. |
-
-### 3.3 Credential register (`/credentials`)
+### 5.2 Identity explorer (`/identities`)
 
 | Question | Answer |
 |---|---|
-| Primary goal | "Which credentials need rotating?" |
-| Most visual attention | Credential type + severity, then age/last-used. |
-| Easiest actions | Severity and type facets; row → drawer for the full record. |
-| Progressive disclosure | Flat row → drawer with credential, holder and description. |
-| Reducing clicks | Flattened one-row-per-credential, so no identity expansion step. Type facet options are generated from the scan's own breakdown. |
-| Complex data | Last-used shown as relative time with the service beneath it — "4 months ago · s3.amazonaws.com" answers the rotation question in one line. |
-| No data | "No credentials in this scan" vs. filtered-empty, as above. |
-| Loading | Column-matched row skeletons. |
-| API failure | Panel error with retry. |
-| Validation errors | n/a |
-| Success states | n/a |
+| Primary goal | Narrow 137 principals to the handful that are mine to fix. |
+| Most attention | Identity name, then its status sentence. |
+| Easiest actions | Facet toggles with live counts; row opens a drawer; copy-ARN on hover. |
+| Progressive disclosure | Row - drawer overview - drawer tabs, each fetched on first open. |
+| Fewer clicks | Single-parameter view presets; facet counts sized before applying. |
+| Complex data | ARNs truncated at the resource segment with full value on hover; posture as a sentence. |
+| No data | "None in this scan" and "none match these filters" are different states with different actions. |
+| Loading | Column-matched row skeletons; a filter change dims rows instead of collapsing the table. |
+| API failure | Full-panel error with retry. |
+| Validation | Search cannot fail. |
+| Success | Read-only screen. |
 
-### 3.4 Code exposure (`/exposure`)
+### 5.3 Credential register (`/credentials`)
+
+Goal: **decide what to rotate.** The redesign is built around credential age,
+which the previous version buried.
+
+- **KPI strip**: total credentials and distinct types from the summary; counts
+  per severity from four exact count queries (§4).
+- **Severity distribution** as a proportional bar with drill-through, so the
+  rotation queue is visible before any filtering.
+- **Age column** - days since `created_at`, with a bar scaled against the
+  oldest credential in view, because "how overdue is this" is the question.
+- **Last used** as relative time over the consuming service, answering "is
+  anything still calling it".
+- Facet rail: credential type (summary counts), severity (exact counts).
+- Row action: copy credential id. Drawer: full record plus its holder.
+- Empty states distinguish "no credentials in this scan" from "none match".
+
+### 5.4 Secret-backed identities (`/secrets`)
+
+Goal: **the identities where a leaked secret grants working access.** The
+`/api/secrets` endpoint accepts only a search term, so this screen reads
+`/api/identities` with `is_secret=true` **locked on** - the same records, with
+the full facet vocabulary available for refinement. The lock is shown as a
+non-removable chip so the scoping is never invisible.
+
+- **Cross-section KPIs from exact count queries**: secret-backed *and* admin,
+  *and* without MFA, *and* stale. Those intersections are the actual risk, and
+  the API supports every combination in one request.
+- Table: the identity row design, with status.
+
+### 5.5 Code exposure (`/exposure`)
 
 | Question | Answer |
 |---|---|
-| Primary goal | "Triage leaked secrets, and clear the noise." |
-| Most visual attention | Risk tier and detector; then repository and author, because those determine who fixes it. |
-| Easiest actions | Platform tabs, risk facet, and the row-level menu with "Open in AWS/GitHub" — the actual next step is always in the source system. |
-| Progressive disclosure | Row → drawer with the masked value, location, attribution, assessment; the dismiss form only appears after intent is signalled, and requires a second confirm. |
-| Reducing clicks | Grouped "by push" view, because one commit routinely introduces several secrets and triaging them as N unrelated rows wastes the reviewer's time. |
-| Complex data | The whole live set arrives in one response, so search, sort, filter and grouping are client-side — sorting is offered *here and nowhere else*, because elsewhere it would sort one server page and misrepresent the order. |
-| No data | Positive state: "no secrets exposed in code", with a link to the dismissed view so zero is never ambiguous. |
-| Loading | Metric strip + table skeletons. |
-| API failure | 401 → "not configured", with the reason the key is server-side. Network → proxy diagnosis. Neither pretends to be a permissions problem. |
-| Validation errors | Dismiss reason is optional and length-capped; the four identifying fields are copied verbatim from the finding, never re-typed. |
-| Success states | Optimistic removal from the list, one toast naming the file, and a pointer to where it can be restored. The undo path is a real endpoint, not a promise. |
+| Primary goal | Triage leaked secrets, clear the noise. |
+| Most attention | Risk tier and detector, then repository and author - who fixes it. |
+| Easiest actions | Platform tabs, risk facet, row menu with "Open in AWS/GitHub" - the fix is always in the source system. |
+| Progressive disclosure | Row - drawer; the dismiss form appears only after intent and needs a second confirm. |
+| Fewer clicks | Grouped "by push" view, because one commit routinely leaks several secrets. |
+| Complex data | Whole live set arrives in one response, so sort/filter/group are client-side - the only place sorting is honest. |
+| No data | Positive state, with a link to the dismissed view so zero is never ambiguous. |
+| Loading | Metric strip and table skeletons. |
+| API failure | 401 - "not configured", naming the env var. Network - proxy diagnosis. |
+| Validation | Reason optional, length-capped; the four identifying fields are copied verbatim. |
+| Success | Optimistic removal, one toast naming the file, and where to restore it. |
 
-### 3.5 Sign-in (`/login`)
+### 5.6 Dismissed findings (`/exposure/dismissed`)
 
-Layout follows the supplied design exactly: the navy canvas runs edge to edge
-and the credential card floats on top of it at the right. It is not a split
-layout, and the card is not a panel on a light half.
+Goal: **audit what was accepted, and undo mistakes.** Previously a bare table.
+
+- **KPI strip** computed from the full allowlist the service returns: entries,
+  distinct detectors, distinct reviewers, oldest entry. All exact - the whole
+  set is client-side.
+- **Facet rail**: detector, reviewer, and whether a reason was recorded -
+  because an entry dismissed with no reason is the audit risk.
+- **Two views**: a table, and a **review timeline** grouped by dismissal day,
+  which is how an auditor reads this.
+- Restore stays a confirmed action, and states the service's own caveat: the
+  finding returns only if the scanner still holds the record.
+
+### 5.7 API activity (`/activity`)
+
+Goal: **what did these identities actually do.** 
+
+- **Scan-level totals** from the scan record (exact), never derived from a page.
+- **"Shape of recent activity"** panel over the loaded window, labelled with
+  the window size, splitting mutating from read-only and naming the top event
+  sources. Page-scoped and *said to be* page-scoped.
+- **Two views**: a dense table, and the event **timeline**, which is the better
+  read for a single identity's history.
+- Exact-ARN filter, labelled as exact, because a partial value silently
+  matches nothing. Arriving from an identity's Activity tab fills it in.
+
+### 5.8 Discovery scans (`/scans`)
+
+Goal: **pick the snapshot, and see what changed.**
+
+- **Change since the previous scan** - identities, events, secrets - computed
+  from the ordered scan list. Real arithmetic on real records, and the most
+  useful thing this endpoint can say.
+- **Trend** across completed scans, as small multiples.
+- Table: status, totals, duration, delta, and the scope action.
+- Selecting a scan here is the same action as the context-row switcher: one
+  source of truth for scope.
+
+### 5.9 My resources (`/my-resources`)
+
+Goal: **what is mine, and what is wrong with it.**
+
+- Count from the endpoint's own `total_count`; composition **in view** by
+  classification, explicitly labelled.
+- Status column, so the screen answers "what is wrong with mine" rather than
+  only listing them.
+- Empty state explains that ownership is resolved from tags and CloudTrail, so
+  the fix is tagging - not a setting in this product.
+
+### 5.10 Sign-in (`/login`)
+
+Navy canvas edge to edge, credential card floating on it at the right. Not a
+split layout.
 
 | Question | Answer |
 |---|---|
-| Primary goal | Get in, on the first attempt. |
-| Most visual attention | The two fields and the submit button. |
-| Easiest actions | Username is auto-focused; Enter submits. |
-| Progressive disclosure | Nothing to disclose — the form is two fields. |
-| Reducing clicks | No "remember me", no SSO button, and **no password-reset link**: no endpoint backs any of them, and a dead control on a sign-in screen is worse than its absence. |
-| Complex data | n/a |
-| No data | n/a |
-| Loading | Button enters a pending state; the form stays interactive-disabled rather than being replaced. |
-| API failure | The service's own message is surfaced, and the password field is cleared while the username is kept. |
-| Validation errors | Inline, per field, on submit — not on blur, which punishes people who tab through. `aria-invalid` plus a described error, never colour alone. |
-| Success states | Navigation is the confirmation. No success toast on sign-in. |
-
----
-
-## 4. The posture fingerprint
-
-The first build showed posture as a variable-length row of coloured tags —
-"No MFA", "Admin", "Orphaned". It is the weakest pattern in a dense table:
-the tags move horizontally from row to row, so nothing lines up, long rows
-wrap, and the column cannot be read vertically at all.
-
-It is replaced by five checks in a **fixed order**, one slot each:
-
-| # | Check | Fails when | Source fields |
-|---|---|---|---|
-| 1 | MFA | a human identity has MFA off (not applicable to non-human) | `mfa_enabled`, `classification` |
-| 2 | Privilege | an administrator-equivalent policy is attached | `is_admin` |
-| 3 | Ownership | the owner is `ORPHANED`, or no owner resolves (amber) | `owner_type`, `owner_name`, `primary_owner`, `created_by_name` |
-| 4 | Activity | last active > 90 days (amber at 30–90, grey if never) | `last_active` |
-| 5 | Secret store | credentials sit in a secret store entry (amber) | `is_secret` |
-
-Because the slots never move, a column of fingerprints reads **down** the
-page: an operator sees that slot two is red for twelve consecutive rows and
-knows privilege is the systemic problem. That is impossible with tags.
-
-Red = failing · amber = needs review · green = clear · grey = not applicable.
-The badge beside the strip counts failing checks — `2 issues` is a count, not
-a score. **No risk number is invented**; there is no weighting, no 0–100, and
-no letter grade, because the backend supplies none and a fabricated score is
-the most dangerous kind of fake analytics.
-
-The column header carries the legend, so the pattern is self-explanatory
-without documentation, and each row exposes the full per-check reasoning as
-its accessible label and tooltip.
-
-## 5. The facet rail
-
-Filters are a persistent left panel, not a row of chips, because the operator
-is refining continuously rather than setting a filter once. Every option
-carries a **count drawn from a real aggregate** — the scan summary for
-identities and credentials, the live finding set for code exposure — so the
-size of a filter is known before it is applied. `has_credentials` is the one
-facet with no counterpart counter on the summary endpoint, and it simply shows
-no number rather than an estimate.
-
-**View tabs** above the rail are single-parameter presets that *replace* the
-current filters; the rail then refines additively. Each preset maps to exactly
-one API parameter, so "Needs attention" as a union of no-MFA ∪ admin ∪
-orphaned is deliberately absent — it would need three requests merged
-client-side, and the pagination and counts would then be wrong.
+| Primary goal | Get in, first attempt. |
+| Most attention | Two fields and the submit button. |
+| Easiest actions | Username auto-focused; Enter submits. |
+| Progressive disclosure | Nothing to disclose - two fields. |
+| Fewer clicks | No "remember me", no SSO, **no password reset**: no endpoint backs any of them. |
+| Loading | Button pending; form interactive-disabled, not replaced. |
+| API failure | The service's message surfaced; password cleared, username kept. |
+| Validation | Inline per field on submit, `aria-invalid` plus described error, never colour alone. |
+| Success | Navigation is the confirmation. |
 
 ---
 
 ## 6. Motion inventory
 
-Every animation below has a stated job. Anything that failed to earn one is
-not in the product.
+Every animation has a stated job. Anything that could not earn one is absent.
 
 | Motion | Job | Duration |
 |---|---|---|
-| Panel stagger on mount | Establishes reading order top-left → bottom-right | 420ms, 55ms step |
-| Metric count-up | Signals the number is freshly computed; re-runs when the scan scope changes | 620ms |
-| Meter / proportion grow | Reads as a measurement being taken rather than a static bar | 900ms |
-| Donut progressive sweep + hover segment lift | Connects legend row to slice without a click | 720ms / 160ms |
-| Synchronised crosshair across the three trend charts | Lets one hover compare identities, events and secrets at the same scan | instant |
-| Sparkline reveal on KPI hover | Adds history to a headline number, only for the three measures scan history actually carries | 240ms |
-| Row hover accent + action reveal | Confirms the hit target and surfaces row actions without permanent clutter | 100ms |
-| Sliding tab indicator | Shows which of several sibling views you moved to | 260ms |
-| Drawer slide + backdrop blur | Preserves the sense that the list is still there behind it | 340ms |
-| Refresh dim | Distinguishes a background refresh from a first load | 200ms |
+| Panel stagger on mount | Establishes reading order | 420ms, 55ms step |
+| Metric count-up | The number was just computed; re-runs when scope changes | 620ms |
+| Meter / proportion grow | Reads as a measurement being taken | 900ms |
+| Donut sweep, segment lift on hover | Connects legend row to slice without a click | 720ms / 160ms |
+| **Synchronised trend crosshair** | One hover compares three measures at the same scan | instant |
+| **KPI sparkline reveal** | Adds history to a headline number, where history exists | 240ms |
+| Row hover accent and action reveal | Confirms the hit target without permanent clutter | 100ms |
+| Sliding tab indicator | Shows which sibling view you moved to | 260ms |
+| Drawer slide, backdrop blur | The list is still there behind it | 340ms |
+| Refresh dim | Distinguishes background refresh from first load | 200ms |
 
-All of it is disabled under `prefers-reduced-motion`, and no animation blocks
-input.
+All disabled under `prefers-reduced-motion`; none blocks input.
 
 ---
 
 ## 7. Deliberately absent
 
-Listed so their absence reads as a decision rather than an omission.
-
-- **Notifications, alerts, assignment, comments, tickets** — no endpoints.
-- **Bulk actions** — the API has one write, scoped to a single allowlist entry.
-- **Saved views with server persistence** — nowhere to persist them. Preset
-  view tabs cover the same need honestly.
-- **Password reset, "remember me", SSO** — no endpoints.
-- **A numeric risk score or letter grade** — nothing in the API supports one,
-  and inventing a weighting would be fabricated analytics dressed as fact.
-- **Bulk export of a whole table** — no export endpoint and no unbounded page
-  size, so the control says "Export page"/"Export view" and means it.
-- **Sorting on server-paginated tables** — would sort one page and imply a
+- **Notifications, alerts, assignment, comments, tickets** - no endpoints.
+- **Bulk actions** - the API has one write, on a single allowlist entry.
+- **Server-persisted saved views** - nowhere to persist them.
+- **Sorting on server-paginated tables** - would sort one page and imply a
   global order.
-- **"Critical" risk tier in code exposure** — the guide states it cannot
-  currently occur; tiles are generated from the tiers actually present.
-- **Any claim about whether a secret is live** — `verification_status` is
-  always `UNSUPPORTED`, and the UI says "not checked", not "safe".
+- **Password reset, remember-me, SSO** - no endpoints.
+- **A numeric risk score or grade** - unsupported, and dangerous if invented.
+- **Bulk export** - no export endpoint, so the control says "Export page" or
+  "Export view" and means it.
+- **Mutating-vs-read-only totals for the whole scan** - no filter exists, so
+  the split is shown only over the loaded window and labelled as such.

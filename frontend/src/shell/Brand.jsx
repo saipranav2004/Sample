@@ -5,7 +5,32 @@ import { cn } from '../ui/cn';
  * the navigation rail) and the standalone mark for tight spaces. Clear space
  * is enforced with padding rather than baked into the image.
  */
-export function BrandLockup({ variant = 'inverse', className, height = 26 }) {
+export function BrandLockup({ variant = 'auto', className, height = 26 }) {
+  /* `auto` renders both supplied assets and lets CSS pick, so the wordmark
+     always has contrast against whichever theme the chrome is in. Neither
+     asset is recoloured. */
+  if (variant === 'auto') {
+    return (
+      <span className={cn('inline-flex select-none', className)} style={{ height }}>
+        <img
+          src="/brand/logo-lockup.png"
+          alt="Deep Algorithms"
+          style={{ height }}
+          className="w-auto dark:hidden"
+          draggable="false"
+        />
+        <img
+          src="/brand/logo-lockup-inverse.png"
+          alt=""
+          aria-hidden="true"
+          style={{ height }}
+          className="hidden w-auto dark:block"
+          draggable="false"
+        />
+      </span>
+    );
+  }
+
   const src = variant === 'inverse' ? '/brand/logo-lockup-inverse.png' : '/brand/logo-lockup.png';
   return (
     <img

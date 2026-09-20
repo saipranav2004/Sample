@@ -39,8 +39,8 @@ export function ScanContextStrip() {
   const status = scanStatusMeta(activeScan.status);
 
   const facts = [
-    { label: 'Target', value: activeScan.target_name || '—' },
-    { label: 'AWS account', value: activeScan.account_id || '—', mono: true },
+    { label: 'Target', value: activeScan.target_name || '-' },
+    { label: 'AWS account', value: activeScan.account_id || '-', mono: true },
     { label: 'Started', value: formatDateTime(activeScan.scan_start) },
     {
       label: 'Duration',

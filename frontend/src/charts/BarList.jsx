@@ -5,7 +5,7 @@ import { cn } from '../ui/cn';
 /**
  * Ranked magnitude list. A bar list beats a bar chart here: the category names
  * are long, arbitrary strings from the backend and a rotated axis would be
- * unreadable. One hue only — length carries the value, colour carries nothing.
+ * unreadable. One hue only - length carries the value, colour carries nothing.
  */
 export function BarList({ items, total, onSelect, valueSuffix, max: providedMax, className }) {
   const [grown, setGrown] = useState(false);

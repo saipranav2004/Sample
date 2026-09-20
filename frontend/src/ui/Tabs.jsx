@@ -10,7 +10,7 @@ export function Tabs({ tabs, value, onChange, className, size = 'md' }) {
   const listRef = useRef(null);
   const [indicator, setIndicator] = useState(null);
 
-  /* One indicator that slides between tabs, rather than a border per tab —
+  /* One indicator that slides between tabs, rather than a border per tab -
      the movement is what tells you which sibling view you landed on. */
   const measure = useCallback(() => {
     const list = listRef.current;

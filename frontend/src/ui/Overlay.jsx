@@ -18,7 +18,7 @@ function useEscape(active, onClose) {
 
 /**
  * Right-hand drawer. Used for record detail so the operator keeps their place
- * in the list behind it — on small screens it becomes a full-height sheet.
+ * in the list behind it - on small screens it becomes a full-height sheet.
  */
 export function Drawer({ open, onClose, title, subtitle, eyebrow, width = 'lg', header, children, footer }) {
   const panelRef = useRef(null);

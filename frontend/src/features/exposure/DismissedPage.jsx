@@ -1,50 +1,203 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, RotateCcw, RotateCw, SearchX, ShieldOff } from 'lucide-react';
+import {
+  ArrowLeft,
+  CalendarClock,
+  List,
+  RotateCcw,
+  SearchX,
+  ShieldOff,
+  UserCheck,
+} from 'lucide-react';
 import { fetchAllowlist, restoreFinding } from '../../lib/api/endpoints';
 import { useMutation, useQuery } from '../../lib/hooks';
-import { formatDateTime, formatNumber, formatRelative, humanizeToken } from '../../lib/format';
+import {
+  formatDate,
+  formatDateTime,
+  formatNumber,
+  formatRelative,
+  humanizeToken,
+  parseDate,
+} from '../../lib/format';
 import { PageHeader } from '../../shell/PageHeader';
 import { Button } from '../../ui/Button';
-import { Panel } from '../../ui/Panel';
+import { DetailList, DetailRow, Panel } from '../../ui/Panel';
 import { SearchInput } from '../../ui/Field';
-import { RecordBar, ResultCount } from '../../ui/WorkArea';
+import { AppliedFilters, FacetRail } from '../../ui/FacetRail';
+import { RecordBar, ResultCount, WorkArea } from '../../ui/WorkArea';
+import { SegmentedControl } from '../../ui/Tabs';
 import { CellStack, DataGrid } from '../../ui/DataGrid';
 import { Modal } from '../../ui/Overlay';
-import { DetailList, DetailRow } from '../../ui/Panel';
+import { MetricTile } from '../../ui/Stat';
+import { StatStripSkeleton } from '../../ui/Skeleton';
 import { useToast } from '../../ui/Toast';
 import { EmptyState, ErrorState } from '../../ui/States';
 import { describeScannerError } from './scannerState';
 
 /**
- * The scanner's allowlist: findings a human reviewed and accepted.
+ * The scanner's allowlist - findings a reviewer accepted.
  *
- * Restoring an entry deletes it from the allowlist, at which point the finding
- * reappears in the live set — provided the scanner still holds the record.
- * That caveat is the service's, so the confirmation states it.
+ * This is an audit surface, so it is organised the way an auditor reads it:
+ * who accepted what, when, and on what stated grounds. Entries dismissed with
+ * no recorded reason are the audit risk, so that is a first-class facet.
+ *
+ * The whole allowlist arrives in one response, so every figure here is exact
+ * and every filter is client-side.
  */
+const VIEWS = [
+  { value: 'table', label: 'Table', icon: List },
+  { value: 'timeline', label: 'Review timeline', icon: CalendarClock },
+];
+
+const entryKey = (entry) =>
+  [entry.client_id, entry.file_path, entry.detector, entry.redacted].join('|');
+
 export default function DismissedPage() {
   const { notify } = useToast();
   const query = useQuery((signal) => fetchAllowlist(signal), []);
   const restoration = useMutation((input) => restoreFinding(input));
 
   const [search, setSearch] = useState('');
+  const [detector, setDetector] = useState('');
+  const [reviewer, setReviewer] = useState('');
+  const [reasonState, setReasonState] = useState('');
+  const [view, setView] = useState('table');
+  const [density, setDensity] = useState('comfortable');
   const [pendingRestore, setPendingRestore] = useState(null);
   const [restored, setRestored] = useState(() => new Set());
 
-  const entryKey = (entry) =>
-    [entry.client_id, entry.file_path, entry.detector, entry.redacted].join('|');
+  const all = useMemo(
+    () => (query.data ?? []).filter((entry) => !restored.has(entryKey(entry))),
+    [query.data, restored],
+  );
+
+  const stats = useMemo(() => {
+    const detectors = new Map();
+    const reviewers = new Map();
+    let withoutReason = 0;
+    let oldest = null;
+
+    for (const entry of all) {
+      if (entry.detector) detectors.set(entry.detector, (detectors.get(entry.detector) || 0) + 1);
+      const who = entry.dismissed_by || 'Unattributed';
+      reviewers.set(who, (reviewers.get(who) || 0) + 1);
+      if (!entry.reason || !String(entry.reason).trim()) withoutReason += 1;
+      const when = parseDate(entry.dismissed_at);
+      if (when && (!oldest || when < oldest)) oldest = when;
+    }
+
+    return {
+      total: all.length,
+      detectors: [...detectors.entries()].sort((a, b) => b[1] - a[1]),
+      reviewers: [...reviewers.entries()].sort((a, b) => b[1] - a[1]),
+      withoutReason,
+      oldest,
+    };
+  }, [all]);
 
   const entries = useMemo(() => {
-    const rows = (query.data ?? []).filter((entry) => !restored.has(entryKey(entry)));
     const needle = search.trim().toLowerCase();
-    if (!needle) return rows;
-    return rows.filter((entry) =>
-      [entry.file_path, entry.detector, entry.reason, entry.dismissed_by, entry.client_id]
+    return all.filter((entry) => {
+      if (detector && entry.detector !== detector) return false;
+      if (reviewer && (entry.dismissed_by || 'Unattributed') !== reviewer) return false;
+      const hasReason = Boolean(entry.reason && String(entry.reason).trim());
+      if (reasonState === 'with' && !hasReason) return false;
+      if (reasonState === 'without' && hasReason) return false;
+      if (!needle) return true;
+      return [entry.file_path, entry.detector, entry.reason, entry.dismissed_by, entry.client_id]
         .filter(Boolean)
-        .some((field) => String(field).toLowerCase().includes(needle)),
-    );
-  }, [query.data, search, restored]);
+        .some((field) => String(field).toLowerCase().includes(needle));
+    });
+  }, [all, search, detector, reviewer, reasonState]);
+
+  /* Grouped by the day it was accepted - the order an auditor walks it in. */
+  const timeline = useMemo(() => {
+    const groups = new Map();
+    for (const entry of entries) {
+      const when = parseDate(entry.dismissed_at);
+      const key = when ? when.toISOString().slice(0, 10) : 'unknown';
+      if (!groups.has(key)) groups.set(key, { key, when, entries: [] });
+      groups.get(key).entries.push(entry);
+    }
+    return [...groups.values()].sort((a, b) => (b.when?.getTime() || 0) - (a.when?.getTime() || 0));
+  }, [entries]);
+
+  const chips = useMemo(() => {
+    const list = [];
+    if (search.trim()) list.push({ key: 'search', label: 'Search', value: search.trim() });
+    if (detector) list.push({ key: 'detector', label: 'Detector', value: humanizeToken(detector) });
+    if (reviewer) list.push({ key: 'reviewer', label: 'Reviewer', value: reviewer });
+    if (reasonState) {
+      list.push({
+        key: 'reason',
+        label: 'Reason',
+        value: reasonState === 'with' ? 'Recorded' : 'Not recorded',
+      });
+    }
+    return list;
+  }, [search, detector, reviewer, reasonState]);
+
+  const clearAll = () => {
+    setSearch('');
+    setDetector('');
+    setReviewer('');
+    setReasonState('');
+  };
+
+  const removeChip = (key) => {
+    if (key === 'search') setSearch('');
+    if (key === 'detector') setDetector('');
+    if (key === 'reviewer') setReviewer('');
+    if (key === 'reason') setReasonState('');
+  };
+
+  const facetGroups = useMemo(
+    () => [
+      {
+        key: 'detector',
+        label: 'Detector',
+        options: stats.detectors.map(([key, count]) => ({
+          value: key,
+          label: humanizeToken(key),
+          count,
+          active: detector === key,
+        })),
+        onToggle: (value) => setDetector((current) => (current === value ? '' : value)),
+      },
+      {
+        key: 'reviewer',
+        label: 'Reviewed by',
+        options: stats.reviewers.map(([key, count]) => ({
+          value: key,
+          label: key,
+          count,
+          active: reviewer === key,
+        })),
+        onToggle: (value) => setReviewer((current) => (current === value ? '' : value)),
+      },
+      {
+        key: 'reason',
+        label: 'Stated reason',
+        options: [
+          {
+            value: 'with',
+            label: 'Reason recorded',
+            count: stats.total - stats.withoutReason,
+            active: reasonState === 'with',
+          },
+          {
+            value: 'without',
+            label: 'No reason recorded',
+            count: stats.withoutReason,
+            active: reasonState === 'without',
+          },
+        ],
+        onToggle: (value) => setReasonState((current) => (current === value ? '' : value)),
+        note: 'An entry accepted with no stated reason is the one an auditor will ask about.',
+      },
+    ],
+    [stats, detector, reviewer, reasonState],
+  );
 
   const onRestore = useCallback(
     async (entry) => {
@@ -66,8 +219,8 @@ export default function DismissedPage() {
         return;
       }
 
-      /* The service answers `{ ok: false }` when nothing matched — that is not
-         an error, it means the entry was already gone. */
+      /* `{ ok: false }` is not an error - it means nothing matched, so the
+         entry was already gone. */
       if (result.result?.ok === false) {
         notify({
           variant: 'info',
@@ -99,146 +252,267 @@ export default function DismissedPage() {
     );
   }
 
+  const loading = query.isLoading && !query.data;
+
+  const columns = [
+    {
+      key: 'entry',
+      header: 'Secret',
+      primary: true,
+      width: '30%',
+      cell: (row) => (
+        <CellStack icon={ShieldOff} title={humanizeToken(row.detector)} meta={row.file_path} mono />
+      ),
+    },
+    {
+      key: 'redacted',
+      header: 'Masked value',
+      width: '18%',
+      cell: (row) => (
+        <span className="block truncate font-mono text-[12px] text-ink-2" title={row.redacted}>
+          {row.redacted || '-'}
+        </span>
+      ),
+    },
+    {
+      key: 'reason',
+      header: 'Stated reason',
+      width: '22%',
+      cell: (row) =>
+        row.reason && String(row.reason).trim() ? (
+          <span className="block truncate text-[12.5px] text-ink-2" title={row.reason}>
+            {row.reason}
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 text-[12px] font-medium text-medium">
+            <span aria-hidden="true" className="size-1.5 rounded-full bg-medium" />
+            Not recorded
+          </span>
+        ),
+    },
+    {
+      key: 'by',
+      header: 'Reviewed',
+      width: '18%',
+      cell: (row) => (
+        <span className="block min-w-0">
+          <span className="block truncate text-[12.5px] text-ink-2">{row.dismissed_by || '-'}</span>
+          <span
+            className="block truncate text-[11px] text-ink-3"
+            title={formatDateTime(row.dismissed_at)}
+          >
+            {formatRelative(row.dismissed_at)}
+          </span>
+        </span>
+      ),
+    },
+    {
+      key: 'restore',
+      header: '',
+      width: '12%',
+      align: 'right',
+      cell: (row) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={RotateCcw}
+          onClick={(event) => {
+            event.stopPropagation();
+            setPendingRestore(row);
+          }}
+        >
+          Restore
+        </Button>
+      ),
+    },
+  ];
+
   return (
     <div className="flex flex-col gap-4">
       <PageHeader
         title="Dismissed findings"
-        lede="Secrets a reviewer accepted as safe — rotated credentials, test fixtures, known placeholders. Anything listed here is filtered out of the live findings automatically."
+        lede="Secrets a reviewer accepted as safe - rotated credentials, test fixtures, known placeholders. Everything listed here is filtered out of live findings automatically."
         actions={
           <>
             <Button as={Link} to="/exposure" variant="ghost" icon={ArrowLeft}>
               Back to findings
             </Button>
-            <Button variant="secondary" icon={RotateCw} onClick={query.refetch} loading={query.isRefreshing}>
+            <Button variant="secondary" onClick={query.refetch} loading={query.isRefreshing}>
               Refresh
             </Button>
           </>
         }
       />
 
-      <Panel flush className="animate-rise overflow-hidden">
-        <RecordBar>
-          <SearchInput
-            value={search}
-            onChange={setSearch}
-            size="sm"
-            placeholder="Search file, detector, reason or reviewer…"
-            className="w-full min-w-0 sm:max-w-sm"
+      {loading ? (
+        <StatStripSkeleton count={4} />
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <MetricTile
+            label="Allowlisted"
+            value={stats.total}
+            tone="brand"
+            icon={ShieldOff}
+            caption="Findings suppressed from the live set"
+            className="animate-rise"
           />
-          <ResultCount
-            shown={formatNumber(entries.length)}
-            total={formatNumber((query.data ?? []).length)}
-            unit="entries"
-            filtered={Boolean(search.trim())}
-            loading={query.isLoading && !query.data}
+          <MetricTile
+            label="No stated reason"
+            value={stats.withoutReason}
+            tone={stats.withoutReason > 0 ? 'medium' : 'low'}
+            caption="Accepted without a recorded justification"
+            className="animate-rise"
+            data-stagger=""
+            style={{ '--stagger': 1 }}
           />
-        </RecordBar>
+          <MetricTile
+            label="Reviewers"
+            value={stats.reviewers.length}
+            tone="info"
+            icon={UserCheck}
+            caption={
+              stats.reviewers[0] ? `Most active: ${stats.reviewers[0][0]}` : 'No reviewers recorded'
+            }
+            className="animate-rise"
+            data-stagger=""
+            style={{ '--stagger': 2 }}
+          />
+          <MetricTile
+            label="Detector types"
+            value={stats.detectors.length}
+            tone="neutral"
+            caption={
+              stats.oldest ? `Oldest entry ${formatRelative(stats.oldest)}` : 'Nothing dismissed yet'
+            }
+            className="animate-rise"
+            data-stagger=""
+            style={{ '--stagger': 3 }}
+          />
+        </div>
+      )}
 
-        <DataGrid
-          caption="Allowlisted findings"
-          columns={[
-            {
-              key: 'entry',
-              header: 'Secret',
-              primary: true,
-              width: '30%',
-              cell: (row) => (
-                <CellStack
-                  icon={ShieldOff}
-                  title={humanizeToken(row.detector)}
-                  meta={row.file_path}
-                  mono
-                />
-              ),
-            },
-            {
-              key: 'redacted',
-              header: 'Masked value',
-              width: '20%',
-              cell: (row) => (
-                <span className="block truncate font-mono text-[12px] text-ink-2" title={row.redacted}>
-                  {row.redacted || '—'}
-                </span>
-              ),
-            },
-            {
-              key: 'reason',
-              header: 'Reason',
-              width: '20%',
-              cell: (row) => (
-                <span className="block truncate text-[12.5px] text-ink-2" title={row.reason}>
-                  {row.reason || <span className="text-ink-3">No reason recorded</span>}
-                </span>
-              ),
-            },
-            {
-              key: 'by',
-              header: 'Dismissed by',
-              width: '16%',
-              priority: 'wide',
-              cell: (row) => (
-                <span className="block min-w-0">
-                  <span className="block truncate text-[12.5px] text-ink-2">
-                    {row.dismissed_by || '—'}
-                  </span>
-                  <span className="block truncate text-[11px] text-ink-3">
-                    {formatRelative(row.dismissed_at)}
-                  </span>
-                </span>
-              ),
-            },
-            {
-              key: 'restore',
-              header: '',
-              width: '14%',
-              align: 'right',
-              cell: (row) => (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  icon={RotateCcw}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setPendingRestore(row);
-                  }}
-                >
-                  Restore
-                </Button>
-              ),
-            },
-          ]}
-          rows={entries}
-          rowKey={(row, index) => `${entryKey(row)}-${index}`}
-          loading={query.isLoading && !query.data}
-          refreshing={query.isRefreshing}
-          skeletonRows={6}
-          emptyState={
-            search.trim() ? (
-              <EmptyState
-                icon={SearchX}
-                title="No dismissed entry matches that search"
-                description={`Nothing in the allowlist matches “${search.trim()}”.`}
-                action={
-                  <Button variant="secondary" size="sm" onClick={() => setSearch('')}>
-                    Clear search
-                  </Button>
-                }
-              />
-            ) : (
-              <EmptyState
-                icon={ShieldOff}
-                title="Nothing has been dismissed"
-                description="Findings you accept as safe from the triage view appear here, and can be restored at any time."
-                action={
-                  <Button as={Link} to="/exposure" variant="secondary" size="sm">
-                    Go to findings
-                  </Button>
-                }
-              />
-            )
-          }
-        />
-      </Panel>
+      <WorkArea
+        rail={
+          <FacetRail
+            groups={facetGroups}
+            appliedCount={chips.length}
+            onClearAll={clearAll}
+            mobileTitle="Filter allowlist"
+          />
+        }
+      >
+        <Panel flush className="animate-rise overflow-hidden">
+          <RecordBar
+            trailing={
+              <>
+                <SegmentedControl label="View mode" options={VIEWS} value={view} onChange={setView} />
+                {view === 'table' && (
+                  <SegmentedControl
+                    label="Row density"
+                    value={density}
+                    onChange={setDensity}
+                    options={[
+                      { value: 'compact', label: 'Compact' },
+                      { value: 'comfortable', label: 'Comfortable' },
+                    ]}
+                  />
+                )}
+              </>
+            }
+          >
+            <SearchInput
+              size="sm"
+              value={search}
+              onChange={setSearch}
+              placeholder="Search file, detector, reason or reviewer…"
+              className="w-full min-w-0 sm:max-w-sm"
+            />
+            <ResultCount
+              shown={formatNumber(entries.length)}
+              total={formatNumber(stats.total)}
+              unit="entries"
+              filtered={chips.length > 0}
+              loading={loading}
+            />
+          </RecordBar>
+
+          <AppliedFilters filters={chips} onRemove={removeChip} onClearAll={clearAll} />
+
+          {view === 'table' ? (
+            <DataGrid
+              caption="Allowlisted findings"
+              columns={columns}
+              rows={entries}
+              rowKey={(row, index) => `${entryKey(row)}-${index}`}
+              loading={loading}
+              refreshing={query.isRefreshing}
+              density={density}
+              skeletonRows={6}
+              emptyState={emptyState({ chips, clearAll, search })}
+            />
+          ) : entries.length === 0 ? (
+            emptyState({ chips, clearAll, search })
+          ) : (
+            <ol className="divide-y divide-line">
+              {timeline.map((group) => (
+                <li key={group.key} className="px-3.5 py-3.5">
+                  <div className="flex items-baseline gap-2.5">
+                    <CalendarClock aria-hidden="true" className="size-4 shrink-0 text-ink-3" />
+                    <p className="text-[13px] font-semibold text-ink">
+                      {group.when ? formatDate(group.when) : 'Date not recorded'}
+                    </p>
+                    <span
+                      data-numeric=""
+                      className="rounded-full bg-surface-3 px-1.5 py-0.5 text-[10.5px] font-semibold text-ink-3"
+                    >
+                      {formatNumber(group.entries.length)}
+                    </span>
+                  </div>
+
+                  <ul className="mt-2.5 flex flex-col gap-1.5">
+                    {group.entries.map((entry, index) => {
+                      const hasReason = Boolean(entry.reason && String(entry.reason).trim());
+                      return (
+                        <li
+                          key={`${entryKey(entry)}-${index}`}
+                          className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md px-2 py-1.5 transition-colors hover:bg-surface-2"
+                        >
+                          <span
+                            aria-hidden="true"
+                            className={`size-1.5 shrink-0 rounded-full ${hasReason ? 'bg-low' : 'bg-medium'}`}
+                          />
+                          <span className="min-w-0 flex-1 truncate font-mono text-[12px] text-ink-2">
+                            {entry.file_path}
+                          </span>
+                          <span className="shrink-0 text-[11.5px] text-ink-3">
+                            {humanizeToken(entry.detector)}
+                          </span>
+                          <span
+                            className={`shrink-0 text-[11.5px] ${hasReason ? 'text-ink-2' : 'font-medium text-medium'}`}
+                          >
+                            {hasReason ? entry.reason : 'No reason recorded'}
+                          </span>
+                          <span className="shrink-0 text-[11.5px] text-ink-3">
+                            {entry.dismissed_by || 'Unattributed'}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            icon={RotateCcw}
+                            onClick={() => setPendingRestore(entry)}
+                          >
+                            Restore
+                          </Button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </li>
+              ))}
+            </ol>
+          )}
+        </Panel>
+      </WorkArea>
 
       <Modal
         open={Boolean(pendingRestore)}
@@ -252,11 +526,7 @@ export default function DismissedPage() {
             <Button variant="ghost" onClick={() => setPendingRestore(null)}>
               Cancel
             </Button>
-            <Button
-              variant="primary"
-              loading={restoration.pending}
-              onClick={() => onRestore(pendingRestore)}
-            >
+            <Button variant="primary" loading={restoration.pending} onClick={() => onRestore(pendingRestore)}>
               Restore finding
             </Button>
           </>
@@ -271,6 +541,11 @@ export default function DismissedPage() {
             <DetailRow label="Masked value" mono>
               {pendingRestore.redacted}
             </DetailRow>
+            <DetailRow label="Stated reason">
+              {pendingRestore.reason && String(pendingRestore.reason).trim()
+                ? pendingRestore.reason
+                : 'None recorded'}
+            </DetailRow>
             <DetailRow label="Dismissed">
               {formatDateTime(pendingRestore.dismissed_at)}
               {pendingRestore.dismissed_by ? ` by ${pendingRestore.dismissed_by}` : ''}
@@ -279,5 +554,38 @@ export default function DismissedPage() {
         )}
       </Modal>
     </div>
+  );
+}
+
+function emptyState({ chips, clearAll, search }) {
+  if (chips.length > 0) {
+    return (
+      <EmptyState
+        icon={SearchX}
+        title="No dismissed entry matches these filters"
+        description={
+          search.trim()
+            ? `Nothing in the allowlist matches "${search.trim()}" with the current filters.`
+            : 'Nothing in the allowlist satisfies every filter applied.'
+        }
+        action={
+          <Button variant="secondary" size="sm" onClick={clearAll}>
+            Clear filters
+          </Button>
+        }
+      />
+    );
+  }
+  return (
+    <EmptyState
+      icon={ShieldOff}
+      title="Nothing has been dismissed"
+      description="Findings you accept as safe from the triage view appear here, and can be restored at any time."
+      action={
+        <Button as={Link} to="/exposure" variant="secondary" size="sm">
+          Go to findings
+        </Button>
+      }
+    />
   );
 }

@@ -7,7 +7,7 @@ import { cn } from '../../ui/cn';
 
 /**
  * CloudTrail events as a timeline. `read_only` is the one field that separates
- * a look from a change, so it drives the icon and the accent — everything else
+ * a look from a change, so it drives the icon and the accent - everything else
  * is supporting detail.
  */
 export function ActivityFeed({ events, loading, error, onRetry, limit, emptyHint }) {

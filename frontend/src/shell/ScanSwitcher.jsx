@@ -9,7 +9,7 @@ import { cn } from '../ui/cn';
 
 /**
  * Global scan scope. Every figure in the product is "as of" one scan, so the
- * switcher sits in the top bar rather than being repeated per page — and it
+ * switcher sits in the top bar rather than being repeated per page - and it
  * shows which snapshot is in effect even when the default (latest) is used.
  */
 export function ScanSwitcher() {
@@ -36,9 +36,9 @@ export function ScanSwitcher() {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 rounded-[var(--radius-control)] border border-topbar-line bg-white/[0.07] px-2.5 py-1.5">
-        <Skeleton className="size-4 rounded bg-white/15" />
-        <Skeleton className="hidden h-3 w-28 rounded bg-white/15 sm:block" />
+      <div className="flex items-center gap-2 rounded-[var(--radius-control)] border border-line bg-surface-2 px-2.5 py-1">
+        <Skeleton className="size-3.5 rounded" />
+        <Skeleton className="hidden h-2.5 w-28 rounded sm:block" />
       </div>
     );
   }
@@ -48,10 +48,10 @@ export function ScanSwitcher() {
       <button
         type="button"
         onClick={refetch}
-        className="flex items-center gap-2 rounded-[var(--radius-control)] border border-critical/40 bg-critical/15 px-2.5 py-1.5 text-[12px] font-medium text-[#f2837a]"
+        className="flex items-center gap-2 rounded-[var(--radius-control)] border border-critical/30 bg-critical-soft px-2.5 py-1 text-[12px] font-medium text-critical"
       >
         <RotateCw aria-hidden="true" className="size-3.5" />
-        <span className="hidden sm:inline">Scan list unavailable — retry</span>
+        <span className="hidden sm:inline">Scan list unavailable - retry</span>
         <span className="sm:hidden">Retry</span>
       </button>
     );
@@ -70,26 +70,24 @@ export function ScanSwitcher() {
         aria-haspopup="listbox"
         aria-expanded={open}
         className={cn(
-          'flex min-w-0 items-center gap-2.5 rounded-[var(--radius-control)] border px-2.5 py-1.5 text-left transition-colors duration-150 sm:max-w-[15rem]',
+          'flex h-7 min-w-0 items-center gap-2 rounded-[var(--radius-control)] border px-2 text-left text-[12px] transition-colors duration-150 sm:max-w-[19rem]',
           open
-            ? 'border-white/25 bg-white/[0.13]'
-            : 'border-topbar-line bg-white/[0.07] hover:border-white/20 hover:bg-white/[0.11]',
+            ? 'border-brand/45 bg-info-soft'
+            : 'border-line bg-surface-2 hover:border-line-strong hover:bg-surface-3',
         )}
       >
-        <Database aria-hidden="true" className="size-4 shrink-0 text-accent" />
-        <span className="hidden min-w-0 sm:block">
-          <span className="block text-[9.5px] leading-tight font-semibold tracking-[0.12em] text-topbar-muted uppercase">
-            Scan scope
-          </span>
-          <span className="block truncate text-[12.5px] leading-tight font-semibold text-topbar-ink">
-            {label}
-            <span className="font-normal text-topbar-muted"> · {isLatest ? 'latest' : meta}</span>
-          </span>
+        <Database aria-hidden="true" className="size-3.5 shrink-0 text-brand" />
+        <span className="hidden text-[10.5px] font-semibold tracking-[0.1em] text-ink-3 uppercase sm:inline">
+          Scan
+        </span>
+        <span className="min-w-0 truncate font-semibold text-ink">{label}</span>
+        <span className="hidden shrink-0 text-ink-3 sm:inline">
+          {isLatest ? 'latest' : meta}
         </span>
         <ChevronDown
           aria-hidden="true"
           className={cn(
-            'size-3.5 shrink-0 text-topbar-muted transition-transform duration-200',
+            'size-3.5 shrink-0 text-ink-3 transition-transform duration-200',
             open && 'rotate-180',
           )}
         />

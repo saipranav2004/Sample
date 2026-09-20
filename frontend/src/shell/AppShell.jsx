@@ -2,10 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
-import { Breadcrumbs } from './Breadcrumbs';
+import { ContextBar } from './ContextBar';
 import { CommandPalette } from './CommandPalette';
-import { useScanContext } from '../app/ScanContext';
-import { formatNumber, formatRelative } from '../lib/format';
 import { cn } from '../ui/cn';
 
 const COLLAPSE_KEY = 'dna.sidebar.collapsed';
@@ -24,7 +22,6 @@ export function AppShell() {
   });
   const [mobileOpen, setMobileOpen] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
-  const { activeScan } = useScanContext();
 
   const toggleCollapse = useCallback(() => {
     setCollapsed((value) => {
@@ -32,7 +29,7 @@ export function AppShell() {
       try {
         localStorage.setItem(COLLAPSE_KEY, next ? '1' : '0');
       } catch {
-        /* per-viewer convenience only — safe to lose */
+        /* per-viewer convenience only - safe to lose */
       }
       return next;
     });
@@ -65,18 +62,6 @@ export function AppShell() {
         onToggleCollapse={toggleCollapse}
         mobileOpen={mobileOpen}
         onCloseMobile={() => setMobileOpen(false)}
-        footer={
-          activeScan ? (
-            <>
-              <span className="block font-medium text-ink-2">
-                {formatNumber(activeScan.total_identities)} identities in scope
-              </span>
-              <span className="block">
-                {activeScan.account_id} · scanned {formatRelative(activeScan.scan_start)}
-              </span>
-            </>
-          ) : null
-        }
       />
 
       <div
@@ -85,7 +70,7 @@ export function AppShell() {
           collapsed ? 'lg:pl-[60px]' : 'lg:pl-[232px]',
         )}
       >
-        <Breadcrumbs />
+        <ContextBar />
         <main id="main" className="flex-1 px-3 pt-4 pb-14 sm:px-5 lg:px-6">
           <div className="mx-auto w-full max-w-[1640px]">
             <Outlet />

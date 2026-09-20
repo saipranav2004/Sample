@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { ChevronDown, SlidersHorizontal, X } from 'lucide-react';
+import { ChevronDown, Lock, SlidersHorizontal, X } from 'lucide-react';
 import { formatNumber } from '../lib/format';
 import { Button } from './Button';
 import { cn } from './cn';
 
 /**
- * Persistent filter rail — the defining control of a triage console.
+ * Persistent filter rail - the defining control of a triage console.
  *
  * Counts come from the backend's own aggregates (the scan summary, or the
  * full client-side finding set), so an operator knows the size of a filter
@@ -175,20 +175,34 @@ export function AppliedFilters({ filters, onRemove, onClearAll }) {
   if (!filters || filters.length === 0) return null;
   return (
     <div className="flex flex-wrap items-center gap-1.5 border-b border-line bg-surface px-3 py-2">
-      {filters.map((filter) => (
-        <button
-          key={filter.key}
-          type="button"
-          onClick={() => onRemove(filter.key)}
-          className="group inline-flex max-w-full items-center gap-1.5 rounded-full border border-brand/25 bg-info-soft px-2.5 py-1 text-[11.5px] font-medium text-brand transition-colors hover:border-brand/50"
-        >
-          <span className="text-brand/70">{filter.label}</span>
-          <span className="truncate">{filter.value}</span>
-          <X aria-hidden="true" className="size-3 shrink-0 opacity-60 group-hover:opacity-100" />
-          <span className="sr-only">Remove filter</span>
-        </button>
-      ))}
-      {filters.length > 1 && (
+      {filters.map((filter) =>
+        /* A locked chip states a scope the screen is defined by - it is shown
+           so the scoping is never invisible, but it cannot be removed. */
+        filter.locked ? (
+          <span
+            key={filter.key}
+            title="This screen is scoped to these records"
+            className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-line-strong bg-surface-3 px-2.5 py-1 text-[11.5px] font-medium text-ink-2"
+          >
+            <Lock aria-hidden="true" className="size-3 shrink-0 text-ink-3" />
+            <span className="text-ink-3">{filter.label}</span>
+            <span className="truncate">{filter.value}</span>
+          </span>
+        ) : (
+          <button
+            key={filter.key}
+            type="button"
+            onClick={() => onRemove(filter.key)}
+            className="group inline-flex max-w-full items-center gap-1.5 rounded-full border border-brand/25 bg-info-soft px-2.5 py-1 text-[11.5px] font-medium text-brand transition-colors hover:border-brand/50"
+          >
+            <span className="text-brand/70">{filter.label}</span>
+            <span className="truncate">{filter.value}</span>
+            <X aria-hidden="true" className="size-3 shrink-0 opacity-60 group-hover:opacity-100" />
+            <span className="sr-only">Remove filter</span>
+          </button>
+        ),
+      )}
+      {filters.filter((filter) => !filter.locked).length > 1 && (
         <Button variant="link" size="sm" onClick={onClearAll} className="text-[11.5px]">
           Clear all
         </Button>

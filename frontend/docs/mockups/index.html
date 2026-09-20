@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>NHI Console — UI mockups</title>
+<title>NHI Console - UI mockups</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -50,23 +50,33 @@ td,th,[data-num]{font-variant-numeric:tabular-nums}
 
 /* ── app shell ──────────────────────────────────────────────────────────── */
 .topbar{display:flex;align-items:center;gap:12px;height:56px;padding:0 16px;
-  background:linear-gradient(90deg,var(--topbar) 0%,var(--topbar-2) 55%,var(--topbar) 100%);
-  border-bottom:1px solid var(--topbar-line)}
+  background:#fff;border-bottom:1px solid #dfe6f0}
 .topbar .logo{height:24px;width:auto}
 .topbar .divider{width:1px;height:24px;background:var(--topbar-line)}
-.gsearch{display:flex;align-items:center;gap:8px;width:280px;
-  background:rgba(255,255,255,.08);border:1px solid var(--topbar-line);border-radius:8px;
-  padding:7px 10px;color:var(--topbar-muted);font-size:12.5px}
-.gsearch kbd{margin-left:auto;background:rgba(255,255,255,.1);border:1px solid var(--topbar-line);
+.gsearch{display:flex;align-items:center;gap:8px;width:250px;height:36px;
+  background:#f4f7fb;border:1px solid #dfe6f0;border-radius:8px;
+  padding:0 11px;color:#6b7d94;font-size:13px}
+.gsearch kbd{margin-left:auto;background:#fff;border:1px solid #dfe6f0;
   border-radius:4px;padding:1px 5px;font:500 10.5px var(--mono)}
-.scope{display:flex;align-items:center;gap:9px;background:rgba(255,255,255,.07);
-  border:1px solid var(--topbar-line);border-radius:8px;padding:5px 10px;color:var(--topbar-ink)}
-.scope .k{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--topbar-muted)}
-.scope .v{font:600 12.5px var(--sans)}
-.tbicon{width:32px;height:32px;display:grid;place-items:center;border-radius:7px;color:var(--topbar-muted)}
-.who{display:flex;align-items:center;gap:8px;color:var(--topbar-ink)}
-.av{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font:700 11.5px var(--sans);
+.scope{display:flex;align-items:center;gap:7px;height:28px;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:8px;padding:0 8px;color:var(--ink);font-size:12px}
+.scope .k{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+.scope .v{font:600 12px var(--sans)}
+.scope .m{color:var(--ink-3)}
+.av{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font:700 12px var(--sans);
   color:#fff;background:linear-gradient(135deg,var(--brand),var(--accent))}
+.ctx{display:flex;align-items:center;gap:8px;height:40px;padding:0 14px;
+  border-bottom:1px solid var(--line);background:var(--surface);color:var(--ink-3);font-size:12px}
+.ctx .back{width:26px;height:26px;display:grid;place-items:center;border-radius:6px;color:var(--ink-3)}
+.ctx b{color:var(--ink);font-weight:600}
+.ctx .sep{width:1px;height:16px;background:var(--line)}
+.sidehead{display:flex;align-items:center;gap:8px;height:44px;padding:0 14px;border-bottom:1px solid var(--line)}
+.sidehead .t{font:800 12px var(--display);letter-spacing:.1em;text-transform:uppercase;color:var(--ink)}
+.sidehead .s{font-size:10px;color:var(--ink-3)}
+.sidehead .c{margin-left:auto;width:26px;height:26px;display:grid;place-items:center;border-radius:6px;color:var(--ink-3)}
+.st{display:block}
+.st .w{display:flex;align-items:center;gap:6px;font:600 12.5px var(--sans)}
+.st .r{margin-top:2px;font-size:11.5px;color:var(--ink-3)}
 .body{display:flex;min-height:640px}
 .side{width:236px;flex:0 0 236px;background:var(--surface-2);border-right:1px solid var(--line);padding:12px 10px;display:flex;flex-direction:column;gap:4px}
 .side .grp{margin:12px 0 4px;padding:0 10px;font:600 10px var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
@@ -261,7 +271,7 @@ svg.ic.sm{width:13px;height:13px}
 <body>
 
 <div class="mockbar">
-  <strong>NHI Console — UI mockups</strong>
+  <strong>NHI Console - UI mockups</strong>
   <div class="tabs">
     <button data-go="s-login" aria-pressed="true">Sign in</button>
     <button data-go="s-posture">Posture</button>
@@ -269,12 +279,12 @@ svg.ic.sm{width:13px;height:13px}
     <button data-go="s-drawer">Record drawer</button>
     <button data-go="s-find">Code exposure</button>
   </div>
-  <span class="note">Static mockup · figures illustrative · logo left, controls right · posture fingerprint replaces tag soup</span>
+  <span class="note">Static mockup · figures illustrative · theme-aware top bar, context row carries scope and back, status as a sentence</span>
 </div>
 
 <!-- ══════════════════════════════ SIGN IN ══════════════════════════════ -->
 <section id="s-login" class="screen on">
-  <p class="caption">Screen 1 — Sign in</p>
+  <p class="caption">Screen 1 - Sign in</p>
   <p class="annot">Full-bleed navy canvas; the credential card floats on top of it at the right. Copy describes the actual product; structure, proportions, badge, trust marks and footer follow the supplied design.</p>
   <div class="frame">
     <div class="auth">
@@ -309,23 +319,18 @@ svg.ic.sm{width:13px;height:13px}
 
 <!-- ══════════════════════════════ POSTURE ══════════════════════════════ -->
 <section id="s-posture" class="screen">
-  <p class="caption">Screen 2 — Posture</p>
+  <p class="caption">Screen 2 - Posture</p>
   <p class="annot">Brand and scope live in the full-width top bar. Sidebar begins beneath it and is navigation only. Exposure signals get the largest panel because they are the only ranked-by-consequence element on the page.</p>
   <div class="frame">
     <div class="topbar">
-      <img class="logo" src="../../public/brand/logo-lockup-inverse.png" alt="Deep Algorithms" />
-      <span class="spacer" style="flex:1"></span>
-      <div class="gsearch"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg> Search… <kbd>⌘K</kbd></div>
-      <div class="scope">
-        <svg class="ic" viewBox="0 0 24 24" style="color:var(--accent)"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/></svg>
-        <span><span class="k">Scan scope</span><br /><span class="v">prod-platform · latest</span></span>
-        <svg class="ic sm" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
-      </div>
-      <span class="tbicon"><svg class="ic" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z"/></svg></span>
-      <div class="who"><span class="av">DA</span><span style="font-size:12.5px"><b style="font-weight:600">Devika Ananth</b><br /><span style="color:var(--topbar-muted);font-size:10.5px">Admin · Platform Security</span></span></div>
+      <img class="logo" src="../../public/brand/logo-lockup.png" alt="Deep Algorithms" />
+      <span style="flex:1"></span>
+      <div class="gsearch"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg> Search <kbd>⌘K</kbd></div>
+      <span class="av">DA</span>
     </div>
     <div class="body">
       <nav class="side">
+        <div class="sidehead"><span><span class="t">NHI Discovery</span><br /><span class="s">Identity &amp; credential posture</span></span><span class="c"><svg class="ic sm" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg></span></div>
         <p class="grp">Posture</p>
         <a class="on" href="#"><svg class="ic" viewBox="0 0 24 24"><path d="M12 14l4-4"/><path d="M3 18a9 9 0 1118 0"/></svg> Overview</a>
         <p class="grp">Inventory</p>
@@ -343,9 +348,9 @@ svg.ic.sm{width:13px;height:13px}
         <div class="foot">Scan completed 14m 0s ago<br />428913377211 · ap-south-1</div>
       </nav>
       <div class="main">
-        <div class="crumb">Home <svg class="ic sm" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg> <b>Posture</b></div>
+        <div class="ctx"><span class="back"><svg class="ic sm" viewBox="0 0 24 24"><path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/></svg></span><span class="sep"></span><b>Posture</b><span style="margin-left:auto"></span><span class="scope"><svg class="ic sm" viewBox="0 0 24 24" style="color:var(--brand)"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/></svg><span class="k">Scan</span><span class="v">prod-platform</span><span class="m">latest</span><svg class="ic sm" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span></div>
         <div class="titlerow">
-          <div><h1>Identity posture</h1><p>Where standing privilege, dormant accounts and exposed credentials sit right now — every figure drills through to the identities behind it.</p></div>
+          <div><h1>Identity posture</h1><p>Where standing privilege, dormant accounts and exposed credentials sit right now - every figure drills through to the identities behind it.</p></div>
           <div class="acts"><button class="btn gh">Export</button><button class="btn">⟳ Refresh</button></div>
         </div>
         <div class="content">
@@ -365,8 +370,8 @@ svg.ic.sm{width:13px;height:13px}
                 <div class="sig"><div><p class="t" style="color:var(--critical)">Humans without MFA</p><p class="d">Console identities that can authenticate with a password alone.</p><div class="meter" style="--bar:var(--critical)"><i style="width:33%"></i></div></div><div class="n"><b>6</b><s>33.3% of human identities</s></div></div>
                 <div class="sig"><div><p class="t" style="color:var(--critical)">Admin-level access</p><p class="d">Identities carrying an administrator-equivalent policy.</p><div class="meter" style="--bar:var(--critical)"><i style="width:12%"></i></div></div><div class="n"><b>16</b><s>11.7% of all identities</s></div></div>
                 <div class="sig"><div><p class="t" style="color:var(--high)">Orphaned identities</p><p class="d">No owner, team or creator could be resolved from tags or CloudTrail.</p><div class="meter" style="--bar:var(--high)"><i style="width:20%"></i></div></div><div class="n"><b>27</b><s>19.7% of all identities</s></div></div>
-                <div class="sig"><div><p class="t" style="color:var(--high)">Stale for 90+ days</p><p class="d">No recorded activity in over 90 days — candidates for removal.</p><div class="meter" style="--bar:var(--high)"><i style="width:16%"></i></div></div><div class="n"><b>22</b><s>16.1% of all identities</s></div></div>
-                <div class="sig"><div><p class="t" style="color:var(--medium)">Inactive 30–90 days</p><p class="d">Dormant but not yet stale. Worth confirming they are still needed.</p><div class="meter" style="--bar:var(--medium)"><i style="width:23%"></i></div></div><div class="n"><b>31</b><s>22.6% of all identities</s></div></div>
+                <div class="sig"><div><p class="t" style="color:var(--high)">Stale for 90+ days</p><p class="d">No recorded activity in over 90 days - candidates for removal.</p><div class="meter" style="--bar:var(--high)"><i style="width:16%"></i></div></div><div class="n"><b>22</b><s>16.1% of all identities</s></div></div>
+                <div class="sig"><div><p class="t" style="color:var(--medium)">Inactive 30-90 days</p><p class="d">Dormant but not yet stale. Worth confirming they are still needed.</p><div class="meter" style="--bar:var(--medium)"><i style="width:23%"></i></div></div><div class="n"><b>31</b><s>22.6% of all identities</s></div></div>
               </div>
             </div>
 
@@ -413,7 +418,7 @@ svg.ic.sm{width:13px;height:13px}
               </div>
             </div>
             <div class="panel p">
-              <div class="ph"><div><h2>Discovery trend</h2><p>One chart per measure — a shared axis would flatten two of three. Hovering any chart moves the crosshair on all three.</p></div></div>
+              <div class="ph"><div><h2>Discovery trend</h2><p>One chart per measure - a shared axis would flatten two of three. Hovering any chart moves the crosshair on all three.</p></div></div>
               <div style="margin-top:12px;display:flex;flex-direction:column;gap:12px">
                 <div>
                   <div style="display:flex;justify-content:space-between;font-size:12px"><b style="color:var(--ink-2)">Identities</b><span style="color:var(--ink-3)">latest 138</span></div>
@@ -451,19 +456,18 @@ svg.ic.sm{width:13px;height:13px}
 
 <!-- ══════════════════════ IDENTITY EXPLORER ══════════════════════ -->
 <section id="s-ident" class="screen">
-  <p class="caption">Screen 3 — Identity explorer</p>
+  <p class="caption">Screen 3 - Identity explorer</p>
   <p class="annot">Persistent facet rail with live counts from the scan summary, preset view tabs, density control, export of what is on screen, and row actions that appear on hover. This is the biggest behavioural change from the previous build.</p>
   <div class="frame">
     <div class="topbar">
-      <img class="logo" src="../../public/brand/logo-lockup-inverse.png" alt="Deep Algorithms" />
-      <span class="spacer" style="flex:1"></span>
-      <div class="gsearch"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg> Search… <kbd>⌘K</kbd></div>
-      <div class="scope"><svg class="ic" viewBox="0 0 24 24" style="color:var(--accent)"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/></svg><span><span class="k">Scan scope</span><br /><span class="v">prod-platform · latest</span></span><svg class="ic sm" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></div>
-      <span class="tbicon"><svg class="ic" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z"/></svg></span>
-      <div class="who"><span class="av">DA</span><span style="font-size:12.5px"><b style="font-weight:600">Devika Ananth</b><br /><span style="color:var(--topbar-muted);font-size:10.5px">Admin · Platform Security</span></span></div>
+      <img class="logo" src="../../public/brand/logo-lockup.png" alt="Deep Algorithms" />
+      <span style="flex:1"></span>
+      <div class="gsearch"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg> Search <kbd>⌘K</kbd></div>
+      <span class="av">DA</span>
     </div>
     <div class="body">
       <nav class="side">
+        <div class="sidehead"><span><span class="t">NHI Discovery</span><br /><span class="s">Identity &amp; credential posture</span></span><span class="c"><svg class="ic sm" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg></span></div>
         <p class="grp">Posture</p><a href="#"><svg class="ic" viewBox="0 0 24 24"><path d="M12 14l4-4"/><path d="M3 18a9 9 0 1118 0"/></svg> Overview</a>
         <p class="grp">Inventory</p>
         <a class="on" href="#"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M6 7v10"/><path d="M18 7v10"/></svg> Identities</a>
@@ -477,7 +481,7 @@ svg.ic.sm{width:13px;height:13px}
         <a href="#"><svg class="ic" viewBox="0 0 24 24"><path d="M3 12a9 9 0 109-9"/><path d="M12 7v5l4 2"/></svg> Scans</a>
       </nav>
       <div class="main">
-        <div class="crumb">Home <svg class="ic sm" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg> Inventory <svg class="ic sm" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg> <b>Identities</b></div>
+        <div class="ctx"><span class="back"><svg class="ic sm" viewBox="0 0 24 24"><path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/></svg></span><span class="sep"></span>Inventory <svg class="ic sm" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg> <b>Identities</b><span style="margin-left:auto"></span><span class="scope"><svg class="ic sm" viewBox="0 0 24 24" style="color:var(--brand)"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/></svg><span class="k">Scan</span><span class="v">prod-platform</span><span class="m">latest</span><svg class="ic sm" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span></div>
         <div class="titlerow"><div><h1>Identity explorer</h1><p>Every principal discovered in this scan. Narrow with facets, then open a record to see its credentials, reach and callers.</p></div>
           <div class="acts"><button class="btn gh"><svg class="ic sm" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 21h16"/></svg> Export page</button><button class="btn">⟳ Refresh</button></div></div>
         <div class="vtabs"><span class="on">All identities <em>137</em></span><span>Non-human <em>119</em></span><span>Admin access <em>16</em></span><span>Stale 90+ <em>22</em></span><span>Secret-backed <em>23</em></span></div>
@@ -496,7 +500,7 @@ svg.ic.sm{width:13px;height:13px}
                 <label class="fopt sel"><input type="checkbox" checked /> No MFA <b>6</b></label>
                 <label class="fopt"><input type="checkbox" /> Admin access <b>16</b></label>
                 <label class="fopt"><input type="checkbox" /> Stale 90+ days <b>22</b></label>
-                <label class="fopt"><input type="checkbox" /> Inactive 30–90 <b>31</b></label>
+                <label class="fopt"><input type="checkbox" /> Inactive 30-90 <b>31</b></label>
                 <label class="fopt"><input type="checkbox" /> Secret-backed <b>23</b></label>
                 <label class="fopt"><input type="checkbox" /> Federated trust <b>35</b></label>
               </div>
@@ -515,31 +519,31 @@ svg.ic.sm{width:13px;height:13px}
                 <span class="seg"><i class="on">Compact</i><i>Comfortable</i></span>
               </div>
               <table>
-                <thead><tr><th style="width:30%">Identity</th><th style="width:13%">Classification</th><th style="width:18%">Owner</th><th style="width:14%">Trust</th><th style="width:15%">Posture &#9432;</th><th style="width:10%">Last active</th><th style="width:44px"></th></tr></thead>
+                <thead><tr><th style="width:30%">Identity</th><th style="width:13%">Classification</th><th style="width:18%">Owner</th><th style="width:14%">Trust</th><th style="width:17%">Status</th><th style="width:10%">Last active</th><th style="width:44px"></th></tr></thead>
                 <tbody>
                   <tr><td><div class="nm"><span class="ico"><svg class="ic sm" viewBox="0 0 24 24"><circle cx="12" cy="9" r="3"/><path d="M5 20a7 7 0 0114 0"/></svg></span><span><b>person.3@example.com</b><s>user/platform/person.3</s></span></div></td>
                     <td><span class="dot" style="background:var(--s1);display:inline-block;margin-right:7px"></span>Human</td><td>team-3@example.com<br /><span style="color:var(--ink-3);font-size:11px">Human owner</span></td><td>Federated<br /><span style="font-family:var(--mono);font-size:11px;color:var(--ink-3)">sts.amazonaws.com</span></td>
-                    <td><span class="fp"><i class="f"></i><i class="f"></i><i class="p"></i><i class="w"></i><i class="p"></i></span> <span class="tag t-cr">2 issues</span></td><td>21 days ago<br /><span style="color:var(--ink-3);font-size:11px">111 events</span></td>
+                    <td><span class="st"><span class="w" style="color:var(--critical)"><span class="dot" style="background:var(--critical)"></span>Critical</span><span class="r">MFA disabled <span style="background:var(--surface-3);border-radius:99px;padding:0 5px;font-size:10.5px;font-weight:600;color:var(--ink-3)">+1</span></span></span></td><td>21 days ago<br /><span style="color:var(--ink-3);font-size:11px">111 events</span></td>
                     <td><div class="ract"><button class="btn gh" style="height:26px;padding:0 6px">⧉</button><button class="btn gh" style="height:26px;padding:0 6px">⋯</button></div></td></tr>
                   <tr><td><div class="nm"><span class="ico"><svg class="ic sm" viewBox="0 0 24 24"><circle cx="12" cy="9" r="3"/><path d="M5 20a7 7 0 0114 0"/></svg></span><span><b>person.9@example.com</b><s>user/platform/person.9</s></span></div></td>
                     <td><span class="dot" style="background:var(--s1);display:inline-block;margin-right:7px"></span>Human</td><td><span style="color:var(--ink-3)">Unassigned</span><br /><span style="color:var(--high);font-size:11px">Orphaned</span></td><td>Service</td>
-                    <td><span class="fp"><i class="f"></i><i class="p"></i><i class="f"></i><i class="w"></i><i class="p"></i></span> <span class="tag t-cr">2 issues</span></td><td>2 months ago<br /><span style="color:var(--ink-3);font-size:11px">333 events</span></td>
+                    <td><span class="st"><span class="w" style="color:var(--critical)"><span class="dot" style="background:var(--critical)"></span>Critical</span><span class="r">MFA disabled <span style="background:var(--surface-3);border-radius:99px;padding:0 5px;font-size:10.5px;font-weight:600;color:var(--ink-3)">+1</span></span></span></td><td>2 months ago<br /><span style="color:var(--ink-3);font-size:11px">333 events</span></td>
                     <td><div class="ract"><button class="btn gh" style="height:26px;padding:0 6px">⧉</button><button class="btn gh" style="height:26px;padding:0 6px">⋯</button></div></td></tr>
                   <tr><td><div class="nm"><span class="ico"><svg class="ic sm" viewBox="0 0 24 24"><circle cx="12" cy="9" r="3"/><path d="M5 20a7 7 0 0114 0"/></svg></span><span><b>person.15@example.com</b><s>user/platform/person.15</s></span></div></td>
                     <td><span class="dot" style="background:var(--s1);display:inline-block;margin-right:7px"></span>Human</td><td>team-3@example.com<br /><span style="color:var(--ink-3);font-size:11px">Human owner</span></td><td>Service</td>
-                    <td><span class="fp"><i class="f"></i><i class="p"></i><i class="p"></i><i class="w"></i><i class="p"></i></span> <span class="tag t-cr">1 issue</span></td><td>4 months ago<br /><span style="color:var(--ink-3);font-size:11px">555 events</span></td>
+                    <td><span class="st"><span class="w" style="color:var(--critical)"><span class="dot" style="background:var(--critical)"></span>Critical</span><span class="r">MFA disabled</span></span></td><td>4 months ago<br /><span style="color:var(--ink-3);font-size:11px">555 events</span></td>
                     <td><div class="ract"><button class="btn gh" style="height:26px;padding:0 6px">⧉</button><button class="btn gh" style="height:26px;padding:0 6px">⋯</button></div></td></tr>
                   <tr><td><div class="nm"><span class="ico"><svg class="ic sm" viewBox="0 0 24 24"><circle cx="12" cy="9" r="3"/><path d="M5 20a7 7 0 0114 0"/></svg></span><span><b>person.21@example.com</b><s>user/platform/person.21</s></span></div></td>
                     <td><span class="dot" style="background:var(--s1);display:inline-block;margin-right:7px"></span>Human</td><td>team-3@example.com<br /><span style="color:var(--ink-3);font-size:11px">CI/CD managed</span></td><td>Federated</td>
-                    <td><span class="fp"><i class="f"></i><i class="p"></i><i class="p"></i><i class="w"></i><i class="w"></i></span> <span class="tag t-cr">1 issue</span></td><td>5 months ago<br /><span style="color:var(--ink-3);font-size:11px">777 events</span></td>
+                    <td><span class="st"><span class="w" style="color:var(--critical)"><span class="dot" style="background:var(--critical)"></span>Critical</span><span class="r">MFA disabled <span style="background:var(--surface-3);border-radius:99px;padding:0 5px;font-size:10.5px;font-weight:600;color:var(--ink-3)">+1</span></span></span></td><td>5 months ago<br /><span style="color:var(--ink-3);font-size:11px">777 events</span></td>
                     <td><div class="ract"><button class="btn gh" style="height:26px;padding:0 6px">⧉</button><button class="btn gh" style="height:26px;padding:0 6px">⋯</button></div></td></tr>
                   <tr><td><div class="nm"><span class="ico"><svg class="ic sm" viewBox="0 0 24 24"><circle cx="12" cy="9" r="3"/><path d="M5 20a7 7 0 0114 0"/></svg></span><span><b>svc-deploy-24</b><s>role/platform/svc-deploy-24</s></span></div></td>
                     <td><span class="dot" style="background:var(--s1);display:inline-block;margin-right:7px"></span>Human</td><td><span style="color:var(--ink-3)">Unassigned</span><br /><span style="color:var(--high);font-size:11px">Orphaned</span></td><td>Federated</td>
-                    <td><span class="fp"><i class="f"></i><i class="p"></i><i class="f"></i><i class="f"></i><i class="w"></i></span> <span class="tag t-cr">3 issues</span></td><td>6 months ago<br /><span style="color:var(--ink-3);font-size:11px">888 events</span></td>
+                    <td><span class="st"><span class="w" style="color:var(--critical)"><span class="dot" style="background:var(--critical)"></span>Critical</span><span class="r">MFA disabled <span style="background:var(--surface-3);border-radius:99px;padding:0 5px;font-size:10.5px;font-weight:600;color:var(--ink-3)">+3</span></span></span></td><td>6 months ago<br /><span style="color:var(--ink-3);font-size:11px">888 events</span></td>
                     <td><div class="ract"><button class="btn gh" style="height:26px;padding:0 6px">⧉</button><button class="btn gh" style="height:26px;padding:0 6px">⋯</button></div></td></tr>
                 </tbody>
               </table>
-              <div class="pager">1–6 of 6 identities<span class="r">Rows <span class="btn" style="height:26px">25 ▾</span> <span class="btn" style="height:26px;padding:0 8px">‹</span> 1 / 1 <span class="btn" style="height:26px;padding:0 8px">›</span></span></div>
+              <div class="pager">1-6 of 6 identities<span class="r">Rows <span class="btn" style="height:26px">25 ▾</span> <span class="btn" style="height:26px;padding:0 8px">‹</span> 1 / 1 <span class="btn" style="height:26px;padding:0 8px">›</span></span></div>
             </div>
           </div>
         </div>
@@ -550,22 +554,21 @@ svg.ic.sm{width:13px;height:13px}
 
 <!-- ══════════════════════════ RECORD DRAWER ══════════════════════════ -->
 <section id="s-drawer" class="screen">
-  <p class="caption">Screen 4 — Record drawer</p>
+  <p class="caption">Screen 4 - Record drawer</p>
   <p class="annot">Detail opens over the list so filters and scroll position survive. Tabs fetch on first open; nothing loads that the operator has not asked for.</p>
   <div class="frame drawerdemo">
     <div class="topbar">
-      <img class="logo" src="../../public/brand/logo-lockup-inverse.png" alt="Deep Algorithms" />
-      <span class="spacer" style="flex:1"></span>
-      <div class="gsearch"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg> Search… <kbd>⌘K</kbd></div>
-      <div class="scope"><span><span class="k">Scan scope</span><br /><span class="v">prod-platform · latest</span></span></div>
-      <div class="who"><span class="av">DA</span></div>
+      <img class="logo" src="../../public/brand/logo-lockup.png" alt="Deep Algorithms" />
+      <span style="flex:1"></span>
+      <div class="gsearch"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg> Search <kbd>⌘K</kbd></div>
+      <span class="av">DA</span>
     </div>
     <div class="body" style="min-height:560px">
-      <nav class="side"><p class="grp">Inventory</p><a class="on" href="#"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M6 7v10"/><path d="M18 7v10"/></svg> Identities</a><a href="#"><svg class="ic" viewBox="0 0 24 24"><circle cx="8" cy="12" r="4"/><path d="M12 12h9l-2 2"/></svg> Credentials</a></nav>
-      <div class="main"><div class="crumb">Home <svg class="ic sm" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg> Inventory <svg class="ic sm" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg> <b>Identities</b></div>
+      <nav class="side"><div class="sidehead"><span><span class="t">NHI Discovery</span></span></div><p class="grp">Inventory</p><a class="on" href="#"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M6 7v10"/><path d="M18 7v10"/></svg> Identities</a><a href="#"><svg class="ic" viewBox="0 0 24 24"><circle cx="8" cy="12" r="4"/><path d="M12 12h9l-2 2"/></svg> Credentials</a></nav>
+      <div class="main"><div class="ctx"><span class="back"><svg class="ic sm" viewBox="0 0 24 24"><path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/></svg></span><span class="sep"></span>Inventory <svg class="ic sm" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg> <b>Identities</b><span style="margin-left:auto"></span><span class="scope"><svg class="ic sm" viewBox="0 0 24 24" style="color:var(--brand)"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/></svg><span class="k">Scan</span><span class="v">prod-platform</span><span class="m">latest</span><svg class="ic sm" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span></div>
         <div class="content"><div class="tablewrap"><table><thead><tr><th>Identity</th><th>Classification</th><th>Markers</th></tr></thead><tbody>
           <tr><td><div class="nm"><span class="ico">◈</span><span><b>svc-deploy-0</b><s>role/platform/svc-deploy-0</s></span></div></td><td>Human</td><td><span class="tag t-cr">Admin</span></td></tr>
-          <tr><td><div class="nm"><span class="ico">◈</span><span><b>person.1@example.com</b><s>user/platform/person.1</s></span></div></td><td>Service</td><td>—</td></tr>
+          <tr><td><div class="nm"><span class="ico">◈</span><span><b>person.1@example.com</b><s>user/platform/person.1</s></span></div></td><td>Service</td><td>-</td></tr>
           <tr><td><div class="nm"><span class="ico">◈</span><span><b>svc-deploy-2</b><s>role/platform/svc-deploy-2</s></span></div></td><td>Agent</td><td><span class="tag t-me">Secret</span></td></tr>
         </tbody></table></div></div></div>
     </div>
@@ -597,25 +600,23 @@ svg.ic.sm{width:13px;height:13px}
 
 <!-- ══════════════════════════ CODE EXPOSURE ══════════════════════════ -->
 <section id="s-find" class="screen">
-  <p class="caption">Screen 5 — Code exposure</p>
+  <p class="caption">Screen 5 - Code exposure</p>
   <p class="annot">Both scanners arrive merged through one endpoint, so platform is a facet, not a separate screen. The whole live set is client-side, which is the one place sorting is offered honestly.</p>
   <div class="frame">
     <div class="topbar">
-      <img class="logo" src="../../public/brand/logo-lockup-inverse.png" alt="Deep Algorithms" />
-      <span class="spacer" style="flex:1"></span>
-      <div class="gsearch"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg> Search… <kbd>⌘K</kbd></div>
-      <div class="scope"><span><span class="k">Scan scope</span><br /><span class="v">prod-platform · latest</span></span></div>
-      <span class="tbicon"><svg class="ic" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z"/></svg></span>
-      <div class="who"><span class="av">DA</span></div>
+      <img class="logo" src="../../public/brand/logo-lockup.png" alt="Deep Algorithms" />
+      <span style="flex:1"></span>
+      <div class="gsearch"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg> Search <kbd>⌘K</kbd></div>
+      <span class="av">DA</span>
     </div>
     <div class="body">
-      <nav class="side"><p class="grp">Code exposure</p>
+      <nav class="side"><div class="sidehead"><span><span class="t">NHI Discovery</span><br /><span class="s">Identity &amp; credential posture</span></span></div><p class="grp">Code exposure</p>
         <a class="on" href="#"><svg class="ic" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/></svg> Findings <span style="margin-left:auto"><span class="tag t-hi">6</span></span></a>
         <a href="#"><svg class="ic" viewBox="0 0 24 24"><path d="M4 4l16 16"/><path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"/></svg> Dismissed <span style="margin-left:auto;color:var(--ink-3);font-size:11.5px">4</span></a>
       </nav>
       <div class="main">
-        <div class="crumb">Home <svg class="ic sm" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg> Code exposure <svg class="ic sm" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg> <b>Findings</b></div>
-        <div class="titlerow"><div><h1>Secret findings</h1><p>Credentials committed into connected CodeCommit and GitHub repositories. Values are masked by the scanner — triage by risk, then rotate at the source.</p></div>
+        <div class="ctx"><span class="back"><svg class="ic sm" viewBox="0 0 24 24"><path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/></svg></span><span class="sep"></span>Code exposure <svg class="ic sm" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg> <b>Findings</b><span style="margin-left:auto"></span><span class="scope"><svg class="ic sm" viewBox="0 0 24 24" style="color:var(--brand)"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/></svg><span class="k">Scan</span><span class="v">prod-platform</span><span class="m">latest</span><svg class="ic sm" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span></div>
+        <div class="titlerow"><div><h1>Secret findings</h1><p>Credentials committed into connected CodeCommit and GitHub repositories. Values are masked by the scanner - triage by risk, then rotate at the source.</p></div>
           <div class="acts"><button class="btn gh">Export page</button><button class="btn">⟳ Refresh</button></div></div>
         <div class="vtabs"><span class="on">All platforms <em>18</em></span><span>GitHub <em>12</em></span><span>CodeCommit <em>6</em></span><span>By push <em>14</em></span></div>
         <div class="content">
@@ -632,7 +633,7 @@ svg.ic.sm{width:13px;height:13px}
                 <label class="fopt sel"><input type="checkbox" checked /> High <b>6</b></label>
                 <label class="fopt"><input type="checkbox" /> Medium <b>6</b></label>
                 <label class="fopt"><input type="checkbox" /> Low <b>6</b></label>
-                <p style="margin:8px 0 0;color:var(--ink-3);font-size:11px;line-height:1.5">Critical cannot occur on this deployment — liveness verification is unavailable.</p>
+                <p style="margin:8px 0 0;color:var(--ink-3);font-size:11px;line-height:1.5">Critical cannot occur on this deployment - liveness verification is unavailable.</p>
               </div>
               <div class="fgrp"><p class="gt">Detector</p>
                 <label class="fopt"><input type="checkbox" /> Postgresql connection string <b>4</b></label>

@@ -46,7 +46,7 @@ export function CopyButton({ value, label = 'Copy', className, size = 'md' }) {
 
 /** Monospace value plus copy control, aligned for use inside detail lists. */
 export function CopyableValue({ value, mono = true, className, children }) {
-  if (!value) return <span className="text-ink-3">—</span>;
+  if (!value) return <span className="text-ink-3">-</span>;
   return (
     <span className={cn('inline-flex min-w-0 max-w-full items-center gap-1.5', className)}>
       <span className={cn('min-w-0 truncate', mono && 'font-mono text-[12.5px]')} title={value}>

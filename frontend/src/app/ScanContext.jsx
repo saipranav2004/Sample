@@ -6,7 +6,7 @@ const ScanContext = createContext(null);
 
 /**
  * Every data screen is scoped to one discovery scan. An empty selection means
- * "latest completed scan", which is what the API falls back to on its own —
+ * "latest completed scan", which is what the API falls back to on its own -
  * so the default costs no extra request and stays correct as new scans land.
  */
 export function ScanProvider({ children }) {

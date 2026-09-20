@@ -137,7 +137,7 @@ export default function PosturePage() {
     <div className="flex flex-col gap-4">
       <PageHeader
         title="Identity posture"
-        lede="Where standing privilege, dormant accounts and exposed credentials sit right now — every figure drills through to the identities behind it."
+        lede="Where standing privilege, dormant accounts and exposed credentials sit right now - every figure drills through to the identities behind it."
         actions={
           <Button
             variant="secondary"
@@ -167,6 +167,7 @@ export default function PosturePage() {
             className="animate-rise"
             label="Identities discovered"
             value={totalIdentities}
+            sparkline={trendData.map((point) => point.identities)}
             icon={Fingerprint}
             tone="brand"
             caption={`${formatNumber(summary?.total_humans)} human · ${formatNumber(summary?.total_nhis)} non-human`}
@@ -364,7 +365,7 @@ export default function PosturePage() {
               />
             ) : trendData.length === 1 ? (
               <div className="rounded-[var(--radius-control)] border border-line bg-surface-2 px-3.5 py-3 text-[12.5px] text-ink-2">
-                Only one completed scan exists, so there is no trend to plot yet — the current
+                Only one completed scan exists, so there is no trend to plot yet - the current
                 snapshot recorded{' '}
                 <strong className="font-semibold text-ink" data-numeric="">
                   {formatNumber(trendData[0].identities)}
@@ -396,6 +397,7 @@ export default function PosturePage() {
                       color={series.color}
                       height={index === list.length - 1 ? 124 : 104}
                       showXAxis={index === list.length - 1}
+                      syncId="posture-trend"
                     />
                   </div>
                 ))}

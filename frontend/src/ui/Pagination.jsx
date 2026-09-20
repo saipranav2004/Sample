@@ -32,7 +32,7 @@ export function Pagination({
     >
       <p className="text-[12.5px] text-ink-3" data-numeric="" aria-live="polite">
         <span className="font-medium text-ink-2">
-          {formatNumber(from)}–{formatNumber(to)}
+          {formatNumber(from)}-{formatNumber(to)}
         </span>{' '}
         of {formatNumber(total)} {unit}
       </p>

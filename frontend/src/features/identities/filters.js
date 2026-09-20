@@ -8,7 +8,7 @@
 /**
  * `summaryField` names the counter on `GET /api/dashboard/summary` that sizes
  * the facet. Facets with no counterpart counter simply show no number rather
- * than an estimate — `has_credentials` is the only one in that position.
+ * than an estimate - `has_credentials` is the only one in that position.
  */
 export const FACETS = [
   {
@@ -34,7 +34,7 @@ export const FACETS = [
   },
   {
     param: 'is_inactive',
-    label: 'Inactive 30–90 days',
+    label: 'Inactive 30-90 days',
     tone: 'medium',
     summaryField: 'total_inactive_30plus',
     hint: 'Dormant but not yet stale',

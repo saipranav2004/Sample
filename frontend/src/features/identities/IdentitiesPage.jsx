@@ -19,11 +19,11 @@ import { Pagination } from '../../ui/Pagination';
 import { EmptyState, ErrorState } from '../../ui/States';
 import { useToast } from '../../ui/Toast';
 import { IdentityDrawer } from './IdentityDrawer';
-import { ActivityCell, PostureLegend, PostureStrip } from './PostureStrip';
+import { ActivityCell, StatusCell } from './status';
 import { FACETS, FILTER_PARAMS, OWNER_TYPE_OPTIONS, describeFilters, readFilters } from './filters';
 
 /**
- * Identity explorer — the workbench every posture signal leads into.
+ * Identity explorer - the workbench every posture signal leads into.
  *
  * Filter state lives in the URL, so a dashboard drill-through, a bookmark and
  * a shared link all resolve to the same list. View tabs are single-parameter
@@ -31,7 +31,7 @@ import { FACETS, FILTER_PARAMS, OWNER_TYPE_OPTIONS, describeFilters, readFilters
  * additively. Both only ever emit parameters `GET /api/identities` accepts.
  */
 
-/** Each preset must be expressible in one request — no client-side unions. */
+/** Each preset must be expressible in one request - no client-side unions. */
 const VIEW_PRESETS = [
   { key: 'all', label: 'All identities', params: {}, countField: 'total_identities' },
   { key: 'mfa', label: 'No MFA', params: { without_mfa: 'true' }, countField: 'total_humans_without_mfa' },
@@ -201,7 +201,7 @@ export default function IdentitiesPage() {
   const total = query.data?.total ?? 0;
   const filtered = chips.length > 0;
 
-  /* Event bars are relative to the busiest row on screen — a page-local scale,
+  /* Event bars are relative to the busiest row on screen - a page-local scale,
      which is the comparison a reviewer is actually making. */
   const maxEvents = useMemo(
     () => rows.reduce((max, row) => Math.max(max, Number(row.total_events) || 0), 0),
@@ -239,7 +239,7 @@ export default function IdentitiesPage() {
       key: 'identity',
       header: 'Identity',
       primary: true,
-      width: '26%',
+      width: '24%',
       cell: (row) => {
         const meta = classificationMeta(row.classification);
         const isHuman = meta.kind === 'human';
@@ -274,15 +274,15 @@ export default function IdentitiesPage() {
       },
     },
     {
-      key: 'posture',
-      header: <PostureLegend />,
-      width: '16%',
-      cell: (row) => <PostureStrip identity={row} />,
+      key: 'status',
+      header: 'Status',
+      width: '19%',
+      cell: (row) => <StatusCell identity={row} />,
     },
     {
       key: 'classification',
       header: 'Class',
-      width: '12%',
+      width: '11%',
       cell: (row) => {
         const meta = classificationMeta(row.classification);
         return (
@@ -300,7 +300,7 @@ export default function IdentitiesPage() {
     {
       key: 'owner',
       header: 'Owner',
-      width: '16%',
+      width: '19%',
       cell: (row) => {
         const meta = ownerTypeMeta(row.owner_type);
         const owner = row.owner_name || row.primary_owner || row.created_by_name;
@@ -323,15 +323,15 @@ export default function IdentitiesPage() {
     {
       key: 'trust',
       header: 'Trust',
-      width: '12%',
+      width: '11%',
       priority: 'wide',
       cell: (row) => (
         <span className="block min-w-0">
           <span className="block truncate text-[12.5px] text-ink-2">
-            {row.trust_type ? titleCaseEnum(row.trust_type) : '—'}
+            {row.trust_type ? titleCaseEnum(row.trust_type) : '-'}
           </span>
           <span className="block truncate text-[11px] text-ink-3" title={row.identity_type}>
-            {row.identity_type ? titleCaseEnum(row.identity_type) : '—'}
+            {row.identity_type ? titleCaseEnum(row.identity_type) : '-'}
           </span>
         </span>
       ),
@@ -339,7 +339,7 @@ export default function IdentitiesPage() {
     {
       key: 'activity',
       header: 'Activity',
-      width: '18%',
+      width: '16%',
       cell: (row) => <ActivityCell identity={row} maxEvents={maxEvents} />,
     },
   ];

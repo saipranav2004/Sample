@@ -48,7 +48,7 @@ export function OwnerCell({ identity }) {
 }
 
 export function TrustCell({ identity }) {
-  if (!identity.trust_type) return <span className="text-[12.5px] text-ink-3">—</span>;
+  if (!identity.trust_type) return <span className="text-[12.5px] text-ink-3">-</span>;
   return (
     <span className="block min-w-0">
       <span className="block truncate text-[12.5px] text-ink-2">

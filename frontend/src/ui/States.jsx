@@ -49,7 +49,7 @@ export function EmptyState({
   );
 }
 
-/** Positive empty state — nothing found is the good outcome here. */
+/** Positive empty state - nothing found is the good outcome here. */
 export function ClearState({ title, description, action, compact }) {
   return (
     <EmptyState
@@ -105,7 +105,7 @@ export function InlineError({ error, onRetry, label }) {
       <AlertTriangle aria-hidden="true" className="size-4 shrink-0 text-critical" />
       <p className="min-w-0 flex-1 text-[12.5px] text-ink-2">
         <span className="font-medium text-critical">{label || 'Failed to load'}</span>
-        {' — '}
+        {' - '}
         {error?.message || 'Unexpected error.'}
       </p>
       {onRetry && (

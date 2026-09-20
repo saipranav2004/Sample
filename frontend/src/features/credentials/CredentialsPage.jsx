@@ -1,25 +1,30 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Columns3, Download, KeyRound, Rows3, SearchX } from 'lucide-react';
-import { fetchCredentials, fetchSummary } from '../../lib/api/endpoints';
+import { countCredentials, fetchCredentials, fetchSummary } from '../../lib/api/endpoints';
 import { useDebouncedValue, useQuery } from '../../lib/hooks';
 import { useScanContext } from '../../app/ScanContext';
 import { SEVERITY_ORDER, severityMeta } from '../../lib/domain';
 import {
   arnResource,
+  daysSince,
   formatDateTime,
   formatNumber,
   formatRelative,
+  percentValue,
   titleCaseEnum,
 } from '../../lib/format';
 import { exportRowsToCsv, timestampedName } from '../../lib/csv';
 import { PageHeader } from '../../shell/PageHeader';
 import { Button } from '../../ui/Button';
-import { DetailList, DetailRow, Panel, SectionLabel } from '../../ui/Panel';
+import { DetailList, DetailRow, Panel, PanelHeader, SectionLabel } from '../../ui/Panel';
 import { SearchInput } from '../../ui/Field';
 import { AppliedFilters, FacetRail } from '../../ui/FacetRail';
 import { RecordBar, ResultCount, WorkArea } from '../../ui/WorkArea';
 import { SegmentedControl } from '../../ui/Tabs';
+import { MetricTile } from '../../ui/Stat';
+import { ProportionBar } from '../../ui/Meter';
+import { StatStripSkeleton } from '../../ui/Skeleton';
 import { useToast } from '../../ui/Toast';
 import { CellStack, DataGrid } from '../../ui/DataGrid';
 import { Pagination } from '../../ui/Pagination';
@@ -91,6 +96,23 @@ export default function CredentialsPage() {
     selectedScanId,
   ]);
 
+  /* Severity totals are not on the summary endpoint, so they are counted
+     exactly - one filtered request per tier, one row each (see
+     docs/UX-DECISIONS.md §4). Never derived from the loaded page. */
+  const severityCountQuery = useQuery(
+    async (signal) => {
+      const pairs = await Promise.all(
+        SEVERITY_ORDER.map(async (severity) => [
+          severity,
+          await countCredentials({ severity, scanId: selectedScanId }, signal),
+        ]),
+      );
+      return Object.fromEntries(pairs);
+    },
+    [selectedScanId],
+  );
+  const severityCounts = severityCountQuery.data ?? {};
+
   const typeOptions = useMemo(() => {
     const breakdown = summaryQuery.data?.credentials_breakdown || {};
     return Object.entries(breakdown)
@@ -138,8 +160,8 @@ export default function CredentialsPage() {
     setSearchParams(next, { replace: true });
   };
 
-  /* Severity has no counter on the summary endpoint, so those options carry
-     no number rather than a guess. */
+  /* Type counts come from the scan summary; severity counts from the exact
+     count queries above. Both are backend figures, never page-derived. */
   const facetGroups = [
     {
       key: 'type',
@@ -153,6 +175,7 @@ export default function CredentialsPage() {
       options: SEVERITY_ORDER.map((value) => ({
         value,
         label: severityMeta(value).label,
+        count: Number.isFinite(severityCounts[value]) ? severityCounts[value] : undefined,
         active: searchParams.get('severity') === value,
       })),
       onToggle: (value) => toggleParam('severity', value),
@@ -161,6 +184,13 @@ export default function CredentialsPage() {
 
   const rows = query.data?.rows ?? [];
   const total = query.data?.total ?? 0;
+
+  /* Age bars are scaled to the oldest credential in view - "how overdue is
+     this one relative to its peers" is the rotation question. */
+  const maxAge = useMemo(
+    () => rows.reduce((max, row) => Math.max(max, daysSince(row.created_at) ?? 0), 0),
+    [rows],
+  );
 
   const onExport = () => {
     exportRowsToCsv({
@@ -191,12 +221,12 @@ export default function CredentialsPage() {
       key: 'credential',
       header: 'Credential',
       primary: true,
-      width: '26%',
+      width: '24%',
       cell: (row) => (
         <CellStack
           icon={KeyRound}
           title={row.type ? titleCaseEnum(row.type) : 'Credential'}
-          meta={row.cred_id || '—'}
+          meta={row.cred_id || '-'}
           mono
         />
       ),
@@ -204,7 +234,7 @@ export default function CredentialsPage() {
     {
       key: 'identity',
       header: 'Held by',
-      width: '24%',
+      width: '22%',
       cell: (row) => (
         <span className="block min-w-0">
           <span className="block truncate text-[12.5px] font-medium text-ink" title={row.identity_name}>
@@ -219,7 +249,7 @@ export default function CredentialsPage() {
     {
       key: 'severity',
       header: 'Severity',
-      width: '11%',
+      width: '10%',
       cell: (row) => {
         const meta = severityMeta(row.severity);
         return (
@@ -232,30 +262,47 @@ export default function CredentialsPage() {
     {
       key: 'status',
       header: 'Status',
-      width: '11%',
+      width: '10%',
       cell: (row) => (
-        <span className="text-[12.5px] text-ink-2">{row.status ? titleCaseEnum(row.status) : '—'}</span>
+        <span className="text-[12.5px] text-ink-2">{row.status ? titleCaseEnum(row.status) : '-'}</span>
       ),
+    },
+    {
+      key: 'age',
+      header: 'Age',
+      width: '13%',
+      cell: (row) => {
+        const age = daysSince(row.created_at);
+        if (age === null) return <span className="text-[12.5px] text-ink-3">-</span>;
+        const share = maxAge > 0 ? Math.max(2, (age / maxAge) * 100) : 0;
+        const tone = age > 365 ? 'bg-critical' : age > 180 ? 'bg-high' : age > 90 ? 'bg-medium' : 'bg-brand';
+        return (
+          <span className="block min-w-0" title={`Created ${formatDateTime(row.created_at)}`}>
+            <span data-numeric="" className="block text-[12.5px] whitespace-nowrap text-ink-2">
+              {formatNumber(age)} days
+            </span>
+            <span className="mt-1.5 block h-[3px] w-full overflow-hidden rounded-full bg-surface-3">
+              <span
+                className={`block h-full rounded-full transition-[width] duration-700 ease-[var(--ease-out-quint)] ${tone}`}
+                style={{ width: `${share}%` }}
+              />
+            </span>
+          </span>
+        );
+      },
     },
     {
       key: 'lastUsed',
       header: 'Last used',
-      width: '15%',
+      width: '13%',
       cell: (row) => (
         <span className="block min-w-0">
           <span className="block text-[12.5px] text-ink-2">{formatRelative(row.last_used_date)}</span>
           <span className="block truncate text-[11px] text-ink-3" title={row.last_used_service}>
-            {row.last_used_service || '—'}
+            {row.last_used_service || '-'}
           </span>
         </span>
       ),
-    },
-    {
-      key: 'created',
-      header: 'Created',
-      width: '13%',
-      priority: 'wide',
-      cell: (row) => <span className="text-[12.5px] text-ink-2">{formatDateTime(row.created_at)}</span>,
     },
   ];
 
@@ -275,6 +322,92 @@ export default function CredentialsPage() {
           </>
         }
       />
+
+      {severityCountQuery.isLoading && !severityCountQuery.data ? (
+        <StatStripSkeleton count={4} />
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <MetricTile
+            label="Credentials in scope"
+            value={summaryQuery.data?.total_credentials}
+            tone="brand"
+            caption="Keys, passwords and certificates held by identities"
+            className="animate-rise"
+          />
+          <MetricTile
+            as={Link}
+            to="?severity=HIGH"
+            label="High severity"
+            value={severityCounts.HIGH}
+            tone="high"
+            caption="Rotate these first"
+            meter={percentValue(severityCounts.HIGH, summaryQuery.data?.total_credentials)}
+            meterLabel="Share of all credentials"
+            className="animate-rise"
+          />
+          <MetricTile
+            as={Link}
+            to="?severity=CRITICAL"
+            label="Critical severity"
+            value={severityCounts.CRITICAL}
+            tone="critical"
+            caption="Highest-impact credentials on record"
+            className="animate-rise"
+          />
+          <MetricTile
+            label="Credential types"
+            value={Object.keys(summaryQuery.data?.credentials_breakdown || {}).length}
+            tone="info"
+            caption={
+              typeOptions[0] ? `Most common: ${typeOptions[0].label}` : 'No credential types recorded'
+            }
+            className="animate-rise"
+          />
+        </div>
+      )}
+
+      <Panel className="animate-rise">
+        <PanelHeader
+          title="Rotation queue by severity"
+          subtitle="Exact totals for the selected scan, counted per tier. Select a band to filter the register."
+        />
+        <ProportionBar
+          className="mt-3.5"
+          height={12}
+          total={SEVERITY_ORDER.reduce((sum, tier) => sum + (severityCounts[tier] || 0), 0)}
+          onSelect={(segment) => setParam('severity', segment.key)}
+          segments={SEVERITY_ORDER.filter((tier) => (severityCounts[tier] || 0) > 0).map((tier) => ({
+            key: tier,
+            label: severityMeta(tier).label,
+            value: severityCounts[tier] || 0,
+            color: `var(--t-${severityMeta(tier).tone})`,
+          }))}
+          ariaLabel="Credential count by severity"
+        />
+        <dl className="mt-3 flex flex-wrap gap-x-7 gap-y-2">
+          {SEVERITY_ORDER.filter((tier) => (severityCounts[tier] || 0) > 0).map((tier) => {
+            const meta = severityMeta(tier);
+            return (
+              <div key={tier} className="flex items-center gap-2">
+                <span
+                  aria-hidden="true"
+                  className="size-2.5 rounded-[3px]"
+                  style={{ background: `var(--t-${meta.tone})` }}
+                />
+                <dt className="text-[12px] text-ink-3">{meta.label}</dt>
+                <dd data-numeric="" className="text-[12.5px] font-semibold text-ink">
+                  {formatNumber(severityCounts[tier])}
+                </dd>
+              </div>
+            );
+          })}
+          {SEVERITY_ORDER.every((tier) => !severityCounts[tier]) && (
+            <p className="text-[12.5px] text-ink-3">
+              No credential in this scan carries a severity rating.
+            </p>
+          )}
+        </dl>
+      </Panel>
 
       <WorkArea
         rail={
@@ -407,12 +540,12 @@ function CredentialDrawer({ credential, onClose }) {
         <div>
           <SectionLabel>Credential</SectionLabel>
           <DetailList className="mt-1">
-            <DetailRow label="Type">{credential.type ? titleCaseEnum(credential.type) : '—'}</DetailRow>
+            <DetailRow label="Type">{credential.type ? titleCaseEnum(credential.type) : '-'}</DetailRow>
             <DetailRow label="Identifier" mono>
               <CopyableValue value={credential.cred_id} />
             </DetailRow>
             <DetailRow label="Status">
-              {credential.status ? titleCaseEnum(credential.status) : '—'}
+              {credential.status ? titleCaseEnum(credential.status) : '-'}
             </DetailRow>
             <DetailRow label="Severity">{meta.label}</DetailRow>
             <DetailRow label="Created">{formatDateTime(credential.created_at)}</DetailRow>
@@ -429,12 +562,12 @@ function CredentialDrawer({ credential, onClose }) {
         <div>
           <SectionLabel>Held by</SectionLabel>
           <DetailList className="mt-1">
-            <DetailRow label="Identity">{credential.identity_name || '—'}</DetailRow>
+            <DetailRow label="Identity">{credential.identity_name || '-'}</DetailRow>
             <DetailRow label="ARN" mono>
               <CopyableValue value={credential.identity_arn} />
             </DetailRow>
             <DetailRow label="Resource type">
-              {credential.identity_type ? titleCaseEnum(credential.identity_type) : '—'}
+              {credential.identity_type ? titleCaseEnum(credential.identity_type) : '-'}
             </DetailRow>
           </DetailList>
         </div>

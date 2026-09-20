@@ -84,7 +84,7 @@ export function FindingDrawer({ finding, onClose, onDismiss, dismissing }) {
               onDismiss(finding, reason.trim());
             }}
           >
-            {confirming ? 'Confirm — mark as safe' : 'Mark as safe'}
+            {confirming ? 'Confirm - mark as safe' : 'Mark as safe'}
           </Button>
         </>
       }
@@ -92,9 +92,9 @@ export function FindingDrawer({ finding, onClose, onDismiss, dismissing }) {
       <div className="flex flex-col gap-5 px-4 py-4 sm:px-5">
         <div className="rounded-[var(--radius-control)] border border-line bg-surface-2 p-3.5">
           <SectionLabel>Redacted value</SectionLabel>
-          <p className="mt-1.5 font-mono text-[13px] break-all text-ink">{finding.redacted || '—'}</p>
+          <p className="mt-1.5 font-mono text-[13px] break-all text-ink">{finding.redacted || '-'}</p>
           <p className="mt-2 text-[11.5px] leading-relaxed text-ink-3">
-            The scanner never returns the real secret — this masked form is the only version
+            The scanner never returns the real secret - this masked form is the only version
             available through the API.
           </p>
         </div>
@@ -109,7 +109,7 @@ export function FindingDrawer({ finding, onClose, onDismiss, dismissing }) {
               <CopyableValue value={finding.file_path} />
             </DetailRow>
             <DetailRow label="Line">
-              <span data-numeric="">{finding.line_number ?? '—'}</span>
+              <span data-numeric="">{finding.line_number ?? '-'}</span>
             </DetailRow>
             <DetailRow label="Branch" mono>
               {shortBranch(finding.branch)}
@@ -126,14 +126,14 @@ export function FindingDrawer({ finding, onClose, onDismiss, dismissing }) {
           <DetailList className="mt-1">
             <DetailRow label="Author">{author.name}</DetailRow>
             <DetailRow label="Email" mono>
-              {author.email || '—'}
+              {author.email || '-'}
             </DetailRow>
             <DetailRow label="Detected">
               {formatRelative(finding.created_at)}
               <span className="ml-1.5 text-ink-3">({formatDateTime(finding.created_at)})</span>
             </DetailRow>
             <DetailRow label="Tenant" mono>
-              {finding.client_id || '—'}
+              {finding.client_id || '-'}
             </DetailRow>
           </DetailList>
         </div>
@@ -143,13 +143,13 @@ export function FindingDrawer({ finding, onClose, onDismiss, dismissing }) {
           <DetailList className="mt-1">
             <DetailRow label="Detector">{humanizeToken(finding.detector)}</DetailRow>
             <DetailRow label="Detector severity">
-              {finding.severity ? humanizeToken(finding.severity) : '—'}
+              {finding.severity ? humanizeToken(finding.severity) : '-'}
             </DetailRow>
             <DetailRow label="Actionable risk">{risk.label}</DetailRow>
             <DetailRow label="Recommended action">{action.label}</DetailRow>
             <DetailRow label="Verification">
               {finding.verification_status === 'UNSUPPORTED'
-                ? 'Not checked — liveness verification is unavailable on this deployment'
+                ? 'Not checked - liveness verification is unavailable on this deployment'
                 : humanizeToken(finding.verification_status)}
             </DetailRow>
           </DetailList>
@@ -188,7 +188,7 @@ export function FindingDrawer({ finding, onClose, onDismiss, dismissing }) {
         {!link && (
           <p className="flex items-start gap-2 text-[12px] text-ink-3">
             <FileWarning aria-hidden="true" className="mt-px size-3.5 shrink-0" />
-            No console link is available for this finding — the scanner had no region on file for the
+            No console link is available for this finding - the scanner had no region on file for the
             tenant when it was recorded.
           </p>
         )}

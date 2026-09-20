@@ -1,4 +1,4 @@
-const DASH = '—';
+const DASH = '-';
 
 const numberFmt = new Intl.NumberFormat(undefined);
 const compactFmt = new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 });
@@ -30,7 +30,7 @@ export function percentValue(part, whole) {
 
 /**
  * The Go API returns RFC3339. The Secret Scanner returns
- * "YYYY-MM-DD HH:MM:SS" in UTC with no zone marker — parsing that string
+ * "YYYY-MM-DD HH:MM:SS" in UTC with no zone marker - parsing that string
  * directly is treated as local time by most engines, which silently shifts
  * every timestamp. Normalise it explicitly.
  */
@@ -213,7 +213,7 @@ export function titleCaseEnum(value) {
 }
 
 export function initialsOf(value) {
-  if (typeof value !== 'string' || !value.trim()) return '–';
+  if (typeof value !== 'string' || !value.trim()) return '-';
   return value
     .trim()
     .split(/[\s._-]+/)

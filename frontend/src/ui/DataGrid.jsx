@@ -9,7 +9,7 @@ import { GridSkeleton, LoadingAnnouncement } from './Skeleton';
  * Columns: { key, header, width, align, sortable, cell(row), primary,
  *            priority: 'always' | 'wide' }
  *
- * `sortable` is only wired up where the full dataset is held client-side —
+ * `sortable` is only wired up where the full dataset is held client-side -
  * the Go API does not accept a sort parameter, so sorting a single server page
  * would misrepresent the data.
  *
@@ -29,7 +29,7 @@ export function DataGrid({
   caption,
   skeletonRows = 8,
   rowActions,
-  /** 'compact' | 'comfortable' — client-side only, a table-reading preference. */
+  /** 'compact' | 'comfortable' - client-side only, a table-reading preference. */
   density = 'comfortable',
   /** Per-row accent colour, e.g. the identity's classification hue. */
   rowAccent,

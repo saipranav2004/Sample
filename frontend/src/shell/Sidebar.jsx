@@ -5,7 +5,7 @@ import { IconButton } from '../ui/Button';
 import { cn } from '../ui/cn';
 
 /**
- * Navigation only — no brand, no user chrome, no search. Those belong to the
+ * Navigation only - no brand, no user chrome, no search. Those belong to the
  * top bar, which spans the viewport above this. The sidebar is an application
  * surface that recedes behind the content it navigates to.
  */
@@ -48,9 +48,53 @@ function SidebarLink({ item, collapsed, onNavigate, badge }) {
   );
 }
 
-export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseMobile, footer, badges }) {
+export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseMobile, badges }) {
   const content = (
     <>
+      {/* Module header. The collapse control belongs at the top, where an
+          operator reaches for it - not buried at the bottom of the list. */}
+      <div
+        className={cn(
+          'flex h-11 shrink-0 items-center border-b border-line',
+          collapsed ? 'justify-center px-0' : 'gap-2 px-3.5',
+        )}
+      >
+        {collapsed ? (
+          <span
+            aria-hidden="true"
+            className="font-display text-[11px] font-extrabold tracking-[0.06em] text-brand"
+            title="NHI Discovery"
+          >
+            NHI
+          </span>
+        ) : (
+          <span className="min-w-0">
+            <span className="block truncate font-display text-[12px] leading-tight font-extrabold tracking-[0.1em] text-ink uppercase">
+              NHI Discovery
+            </span>
+            <span className="block truncate text-[10px] leading-tight text-ink-3">
+              Identity &amp; credential posture
+            </span>
+          </span>
+        )}
+        <button
+          type="button"
+          onClick={onToggleCollapse}
+          aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
+          title={collapsed ? 'Expand navigation' : 'Collapse navigation'}
+          className={cn(
+            'hidden size-7 shrink-0 place-items-center rounded-md text-ink-3 transition-colors hover:bg-surface-3 hover:text-ink lg:grid',
+            !collapsed && 'ml-auto',
+          )}
+        >
+          {collapsed ? (
+            <PanelLeftOpen aria-hidden="true" className="size-4" />
+          ) : (
+            <PanelLeftClose aria-hidden="true" className="size-4" />
+          )}
+        </button>
+      </div>
+
       <nav aria-label="Primary" className="min-h-0 flex-1 overflow-y-auto px-2.5 py-3">
         {NAV_GROUPS.map((group) => (
           <div key={group.key} className="mb-3.5 last:mb-0">
@@ -77,30 +121,6 @@ export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseMobile
         ))}
       </nav>
 
-      {footer && !collapsed && (
-        <div className="shrink-0 border-t border-line px-3.5 py-3 text-[11.5px] leading-relaxed text-ink-3">
-          {footer}
-        </div>
-      )}
-
-      <button
-        type="button"
-        onClick={onToggleCollapse}
-        aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
-        className={cn(
-          'hidden shrink-0 items-center gap-2 border-t border-line px-3.5 py-2.5 text-[12px] font-medium text-ink-3 transition-colors hover:bg-surface-3 hover:text-ink-2 lg:flex',
-          collapsed && 'justify-center px-0',
-        )}
-      >
-        {collapsed ? (
-          <PanelLeftOpen aria-hidden="true" className="size-4" />
-        ) : (
-          <>
-            <PanelLeftClose aria-hidden="true" className="size-4" />
-            Collapse
-          </>
-        )}
-      </button>
     </>
   );
 

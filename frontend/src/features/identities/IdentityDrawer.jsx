@@ -35,6 +35,7 @@ import { DataGrid } from '../../ui/DataGrid';
 import { DetailSkeleton, ListSkeleton } from '../../ui/Skeleton';
 import { EmptyState, InlineError } from '../../ui/States';
 import { ActivityFeed } from '../activity/ActivityFeed';
+import { StatusBreakdown } from './status';
 
 const TABS = [
   { value: 'overview', label: 'Overview', icon: Info },
@@ -127,7 +128,7 @@ export function IdentityDrawer({ identity, open, onClose }) {
           <div>
             <SectionLabel>Identity</SectionLabel>
             <DetailList className="mt-1">
-              <DetailRow label="Name">{identity.name || '—'}</DetailRow>
+              <DetailRow label="Name">{identity.name || '-'}</DetailRow>
               <DetailRow label="ARN" mono>
                 <CopyableValue value={identity.arn} />
               </DetailRow>
@@ -135,7 +136,7 @@ export function IdentityDrawer({ identity, open, onClose }) {
                 {arnAccount(identity.arn)}
               </DetailRow>
               <DetailRow label="Resource type">
-                {identity.identity_type ? titleCaseEnum(identity.identity_type) : '—'}
+                {identity.identity_type ? titleCaseEnum(identity.identity_type) : '-'}
               </DetailRow>
               <DetailRow label="Classification">{meta.label}</DetailRow>
               <DetailRow label="Created">{formatDateTime(identity.created_at)}</DetailRow>
@@ -146,30 +147,40 @@ export function IdentityDrawer({ identity, open, onClose }) {
           <div>
             <SectionLabel>Ownership</SectionLabel>
             <DetailList className="mt-1">
-              <DetailRow label="Owner">{identity.owner_name || '—'}</DetailRow>
+              <DetailRow label="Owner">{identity.owner_name || '-'}</DetailRow>
               <DetailRow label="Owner type">{ownerTypeMeta(identity.owner_type).label}</DetailRow>
-              <DetailRow label="Primary owner">{identity.primary_owner || '—'}</DetailRow>
-              <DetailRow label="Created by">{identity.created_by_name || '—'}</DetailRow>
-              <DetailRow label="Groups">{identity.groups || '—'}</DetailRow>
+              <DetailRow label="Primary owner">{identity.primary_owner || '-'}</DetailRow>
+              <DetailRow label="Created by">{identity.created_by_name || '-'}</DetailRow>
+              <DetailRow label="Groups">{identity.groups || '-'}</DetailRow>
             </DetailList>
           </div>
 
           <div>
-            <SectionLabel>Access & posture</SectionLabel>
+            <SectionLabel>Posture checks</SectionLabel>
+            <div className="mt-1">
+              <StatusBreakdown identity={identity} />
+            </div>
+            <p className="mt-2 text-[11.5px] leading-relaxed text-ink-3">
+              The five checks behind this record's status. No score is derived from them.
+            </p>
+          </div>
+
+          <div>
+            <SectionLabel>Access detail</SectionLabel>
             <DetailList className="mt-1">
               <DetailRow label="Trust type">
-                {identity.trust_type ? titleCaseEnum(identity.trust_type) : '—'}
+                {identity.trust_type ? titleCaseEnum(identity.trust_type) : '-'}
               </DetailRow>
               <DetailRow label="Trust service" mono>
-                {identity.trust_service || '—'}
+                {identity.trust_service || '-'}
               </DetailRow>
-              <DetailRow label="Console access">{identity.console_access || '—'}</DetailRow>
+              <DetailRow label="Console access">{identity.console_access || '-'}</DetailRow>
               <DetailRow label="Last console sign-in">
                 {formatDateTime(identity.console_last_signin)}
               </DetailRow>
               <DetailRow label="Password age">
                 {identity.password_age_days === null || identity.password_age_days === undefined
-                  ? '—'
+                  ? '-'
                   : `${formatNumber(identity.password_age_days)} days`}
               </DetailRow>
               <DetailRow label="Access key">
@@ -186,7 +197,7 @@ export function IdentityDrawer({ identity, open, onClose }) {
                     </span>
                   </span>
                 ) : (
-                  '—'
+                  '-'
                 )}
               </DetailRow>
               <DetailRow label="Last active">
@@ -296,7 +307,7 @@ export function IdentityDrawer({ identity, open, onClose }) {
                           Last service
                         </dt>
                         <dd className="mt-0.5 truncate text-[12px] text-ink-2">
-                          {credential.last_used_service || '—'}
+                          {credential.last_used_service || '-'}
                         </dd>
                       </div>
                     </dl>
@@ -342,10 +353,10 @@ export function IdentityDrawer({ identity, open, onClose }) {
                   cell: (row) => (
                     <span className="block min-w-0">
                       <span className="block truncate text-[13px] font-medium text-ink" title={row.target_name}>
-                        {row.target_name || '—'}
+                        {row.target_name || '-'}
                       </span>
                       <span className="block truncate text-[11px] text-ink-3">
-                        {row.target_type ? titleCaseEnum(row.target_type) : '—'}
+                        {row.target_type ? titleCaseEnum(row.target_type) : '-'}
                       </span>
                     </span>
                   ),
@@ -367,7 +378,7 @@ export function IdentityDrawer({ identity, open, onClose }) {
                   header: 'Relationship',
                   cell: (row) => (
                     <span className="text-[12.5px] text-ink-2">
-                      {row.rel_type ? titleCaseEnum(row.rel_type) : '—'}
+                      {row.rel_type ? titleCaseEnum(row.rel_type) : '-'}
                     </span>
                   ),
                 },
@@ -376,7 +387,7 @@ export function IdentityDrawer({ identity, open, onClose }) {
                   header: 'Via',
                   priority: 'wide',
                   cell: (row) =>
-                    row.via ? <Code title={row.via}>{row.via}</Code> : <span className="text-ink-3">—</span>,
+                    row.via ? <Code title={row.via}>{row.via}</Code> : <span className="text-ink-3">-</span>,
                 },
                 {
                   key: 'scope',
@@ -430,10 +441,10 @@ export function IdentityDrawer({ identity, open, onClose }) {
                           className="block truncate font-mono text-[12px] text-ink"
                           title={row.caller_arn}
                         >
-                          {row.caller_arn || '—'}
+                          {row.caller_arn || '-'}
                         </span>
                         <span className="block truncate text-[11px] text-ink-3">
-                          {row.caller_type ? titleCaseEnum(row.caller_type) : '—'}
+                          {row.caller_type ? titleCaseEnum(row.caller_type) : '-'}
                         </span>
                       </span>
                     ),
@@ -455,9 +466,9 @@ export function IdentityDrawer({ identity, open, onClose }) {
                     cell: (row) => (
                       <span className="block min-w-0">
                         <span className="block truncate font-mono text-[12px] text-ink-2">
-                          {row.source_ip || '—'}
+                          {row.source_ip || '-'}
                         </span>
-                        <span className="block truncate text-[11px] text-ink-3">{row.region || '—'}</span>
+                        <span className="block truncate text-[11px] text-ink-3">{row.region || '-'}</span>
                       </span>
                     ),
                   },

@@ -15,7 +15,7 @@ export function WorkArea({ rail, children, className }) {
 
 /**
  * Header strip that sits on top of a record surface: result count on the left,
- * search and view controls on the right. Distinct from the page title strip —
+ * search and view controls on the right. Distinct from the page title strip -
  * this one describes the *result set*, not the screen.
  */
 export function RecordBar({ children, trailing, className }) {
@@ -32,7 +32,7 @@ export function RecordBar({ children, trailing, className }) {
   );
 }
 
-/** Live "N of M" result readout — the count is the operator's feedback loop. */
+/** Live "N of M" result readout - the count is the operator's feedback loop. */
 export function ResultCount({ shown, total, unit, filtered, loading }) {
   if (loading) {
     return <span className="text-[12.5px] text-ink-3">Counting…</span>;

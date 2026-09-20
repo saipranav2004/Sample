@@ -22,7 +22,7 @@ const TRUST_MARKS = [
 
 /**
  * Sign-in, matching the supplied design: the navy canvas runs edge to edge and
- * the credential card floats on top of it at the right — not a split layout.
+ * the credential card floats on top of it at the right - not a split layout.
  *
  * The field is labelled "Username" per that design and submitted as the
  * `email` property `POST /api/auth/login` defines. There is no password-reset
@@ -114,7 +114,7 @@ export default function LoginPage() {
           </p>
         </section>
 
-        {/* Credential card — floats on the navy, never on its own panel */}
+        {/* Credential card - floats on the navy, never on its own panel */}
         <section className="order-1 w-full justify-self-center lg:order-2 lg:justify-self-end">
           <div className="animate-rise rounded-[18px] bg-white p-6 shadow-[0_34px_80px_-28px_rgba(2,10,20,0.62)] sm:p-8">
             <BrandLockup variant="default" height={30} />

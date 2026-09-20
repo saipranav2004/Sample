@@ -10,7 +10,7 @@ import { cn, TONE_FG } from '../../ui/cn';
  * Exposure signals, ranked by share of their own population.
  *
  * Each row is a link into the identity explorer carrying the exact filter the
- * API supports for that signal — so the number on the dashboard and the list
+ * API supports for that signal - so the number on the dashboard and the list
  * behind it can never disagree.
  */
 export function SignalList({ summary, loading }) {
@@ -47,7 +47,7 @@ export function SignalList({ summary, loading }) {
             <Link
               to={`/identities?${params}`}
               className="group flex items-center gap-4 py-3 transition-opacity duration-150"
-              aria-label={`${count} ${signal.label} — open in identity explorer`}
+              aria-label={`${count} ${signal.label} - open in identity explorer`}
             >
               <span className="min-w-0 flex-1">
                 <span className="flex items-baseline gap-2">
@@ -85,7 +85,7 @@ export function SignalList({ summary, loading }) {
                   {formatNumber(count)}
                 </span>
                 <span className="mt-1 block text-[11px] text-ink-3" data-numeric="">
-                  {denominator > 0 ? `${formatPercent(count, denominator, 1)} ${signal.denominatorLabel}` : '—'}
+                  {denominator > 0 ? `${formatPercent(count, denominator, 1)} ${signal.denominatorLabel}` : '-'}
                 </span>
               </span>
             </Link>

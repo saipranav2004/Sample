@@ -3,20 +3,57 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 const ThemeContext = createContext(null);
 const STORAGE_KEY = 'dna.theme';
 
+function systemTheme() {
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+/**
+ * Appearance is a three-way preference - light, dark, or follow the system -
+ * exposed from the account menu. `theme` is the resolved value the tokens use;
+ * `preference` is what the operator chose.
+ */
 export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState(() => document.documentElement.dataset.theme || 'light');
+  const [preference, setPreference] = useState(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      return stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'system';
+    } catch {
+      return 'system';
+    }
+  });
+  const [resolved, setResolved] = useState(() =>
+    preference === 'system' ? systemTheme() : preference,
+  );
 
   useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-    try {
-      localStorage.setItem(STORAGE_KEY, theme);
-    } catch {
-      /* storage unavailable — the in-memory theme still applies */
+    if (preference !== 'system') {
+      setResolved(preference);
+      return undefined;
     }
-  }, [theme]);
+    const list = window.matchMedia('(prefers-color-scheme: dark)');
+    const apply = () => setResolved(list.matches ? 'dark' : 'light');
+    apply();
+    list.addEventListener('change', apply);
+    return () => list.removeEventListener('change', apply);
+  }, [preference]);
 
-  const toggle = useCallback(() => setTheme((current) => (current === 'dark' ? 'light' : 'dark')), []);
-  const value = useMemo(() => ({ theme, setTheme, toggle }), [theme, toggle]);
+  useEffect(() => {
+    document.documentElement.dataset.theme = resolved;
+  }, [resolved]);
+
+  const choose = useCallback((next) => {
+    setPreference(next);
+    try {
+      localStorage.setItem(STORAGE_KEY, next);
+    } catch {
+      /* the in-memory preference still applies */
+    }
+  }, []);
+
+  const value = useMemo(
+    () => ({ theme: resolved, preference, setPreference: choose }),
+    [resolved, preference, choose],
+  );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
