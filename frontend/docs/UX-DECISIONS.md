@@ -921,7 +921,13 @@ axis, `subtitle` for the tooltip). Verified: area and line paths present, no
 `NaN` in either path, ticks reading `Sep 8` through `Sep 21`, and the tooltip
 showing the date in full.
 
-The same pass fixed dead space under `Baseline coverage`, which is shorter than
-its grid sibling and was stretching: the panel is a flex column and its closing
-note sits on the floor. Measured at 1440px and 1024px - panel and sibling equal
-height, 1px of slack under the text.
+The same pass fixed a cavern in `Baseline coverage`. The first attempt pushed
+its closing note to the panel floor, which equalised the heights and left the
+hole in the middle instead - the measurement said the panel matched its sibling,
+and the screenshot said it was mostly air. Four figures are not half a row.
+
+The row is now two panels stacked against one: coverage above the daily trend
+on the left, departures by type on the right. The trend was previously buried
+under that ranked list, which put two questions in one panel and gave the chart
+104px; it now has its own title and 132px, and the column comes out level with
+the list. Verified at 1440px, 1024px and 390px.

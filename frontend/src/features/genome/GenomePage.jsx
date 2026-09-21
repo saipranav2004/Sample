@@ -315,34 +315,50 @@ export default function GenomePage() {
           </div>
 
           <div className="grid gap-4 @min-[52rem]:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)]">
-            {/* A flex column, so the closing note sits on the panel's floor
-                rather than leaving a band of dead space under it: this panel is
-                shorter than its grid sibling and would otherwise stretch. */}
-            <Panel prominence="quiet" className="animate-rise flex flex-col">
-              <PanelHeader prominence="quiet" title="Baseline coverage" />
-              <ProportionBar
-                className="mt-3"
-                height={10}
-                total={totals.fleet}
-                ariaLabel={`${totals.established} established and ${totals.learning} learning of ${totals.fleet}`}
-                segments={[
-                  { key: 'established', label: 'Established', value: totals.established, color: 'var(--t-low)' },
-                  { key: 'learning', label: 'Learning', value: totals.learning, color: 'var(--t-medium)' },
-                ]}
-              />
-              <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3">
-                <Fact label="Mean confidence" value={totals.meanConfidence ? `${totals.meanConfidence}%` : '-'} />
-                <Fact label="Fleet risk" value={`${overview.data.fleetRisk}/100`} />
-                <Fact label="Drifting baselines" value={formatNumber(totals.drifting)} />
-                <Fact label="Window" value={WINDOWS.find((entry) => entry.value === window)?.label ?? window} />
-              </dl>
-              <p className="mt-auto pt-4 text-[11.5px] leading-relaxed text-ink-3">
-                A drifting baseline is not an anomaly. It means the model needs retraining before
-                its verdicts are worth much.
-              </p>
-            </Panel>
+            {/* Two panels stacked against one, because the coverage figures
+                alone are a quarter of the height of the type list and a panel
+                stretched to fill a row is mostly hole. The trend also reads
+                better with a title of its own than buried under a ranked
+                list - they answer different questions. */}
+            <div className="flex flex-col gap-4">
+              <Panel prominence="quiet" className="animate-rise">
+                <PanelHeader prominence="quiet" title="Baseline coverage" />
+                <ProportionBar
+                  className="mt-3"
+                  height={10}
+                  total={totals.fleet}
+                  ariaLabel={`${totals.established} established and ${totals.learning} learning of ${totals.fleet}`}
+                  segments={[
+                    { key: 'established', label: 'Established', value: totals.established, color: 'var(--t-low)' },
+                    { key: 'learning', label: 'Learning', value: totals.learning, color: 'var(--t-medium)' },
+                  ]}
+                />
+                <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3">
+                  <Fact label="Mean confidence" value={totals.meanConfidence ? `${totals.meanConfidence}%` : '-'} />
+                  <Fact label="Fleet risk" value={`${overview.data.fleetRisk}/100`} />
+                  <Fact label="Drifting baselines" value={formatNumber(totals.drifting)} />
+                  <Fact label="Window" value={WINDOWS.find((entry) => entry.value === window)?.label ?? window} />
+                </dl>
+                <p className="mt-4 text-[11.5px] leading-relaxed text-ink-3">
+                  A drifting baseline is not an anomaly. It means the model needs retraining before
+                  its verdicts are worth much.
+                </p>
+              </Panel>
 
-            <Panel prominence="quiet" className="animate-rise" data-stagger="" style={{ '--stagger': 1 }}>
+              <Panel prominence="quiet" className="animate-rise" data-stagger="" style={{ '--stagger': 1 }}>
+                <PanelHeader prominence="quiet" title="Anomalies per day" />
+                <TrendChart
+                  className="mt-3"
+                  data={overview.data.trend}
+                  dataKey="anomalies"
+                  label="Anomalies per day"
+                  height={132}
+                />
+                <p className="mt-1 text-[11.5px] text-ink-3">Last 14 days, all severities.</p>
+              </Panel>
+            </div>
+
+            <Panel prominence="quiet" className="animate-rise" data-stagger="" style={{ '--stagger': 2 }}>
               <PanelHeader prominence="quiet" title="Departures by type" />
               <ul className="mt-3 flex flex-col">
                 {overview.data.byType.map((entry) => (
@@ -371,14 +387,6 @@ export default function GenomePage() {
                   </li>
                 ))}
               </ul>
-              <TrendChart
-                className="mt-4"
-                data={overview.data.trend}
-                dataKey="anomalies"
-                label="Anomalies per day"
-                height={104}
-              />
-              <p className="mt-1 text-[11.5px] text-ink-3">Anomalies detected per day, last 14 days.</p>
             </Panel>
           </div>
 
