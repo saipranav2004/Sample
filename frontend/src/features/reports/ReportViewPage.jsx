@@ -7,7 +7,6 @@ import { exportRowsToCsv, timestampedName } from '../../lib/csv';
 import { formatDateTime, formatNumber, formatRelative } from '../../lib/format';
 import { PageHeader } from '../../shell/PageHeader';
 import { Button } from '../../ui/Button';
-import { DemoBadge } from '../../ui/DemoBadge';
 import { Panel, PanelHeader, SectionLabel } from '../../ui/Panel';
 import { DetailSkeleton } from '../../ui/Skeleton';
 import { ErrorState } from '../../ui/States';
@@ -99,7 +98,6 @@ export default function ReportViewPage() {
         lede={run.template?.purpose}
         actions={
           <>
-            <DemoBadge detail="The section structure is the real report definition. Every figure inside it is generated, and the CSV is built from exactly what is on screen." />
             <Button variant="secondary" as={Link} to="/reports?tab=history" icon={ArrowLeft}>
               History
             </Button>

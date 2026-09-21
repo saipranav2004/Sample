@@ -1,4 +1,4 @@
-import { ArrowRight, Check, EyeOff, ShieldCheck } from 'lucide-react';
+import { ArrowRight, Check, EyeOff, ShieldCheck, Undo2 } from 'lucide-react';
 import { ANOMALY_STATUSES, ANOMALY_TYPES } from '../../lib/demo/genome';
 import { severityMeta } from '../../lib/domain';
 import { formatDateTime, formatRelative } from '../../lib/format';
@@ -51,15 +51,28 @@ export function AnomalyDrawer({ anomaly, onClose, onDecide, onInvestigate }) {
       }
       footer={
         <>
-          <Button variant="ghost" onClick={() => onDecide(anomaly, 'suppressed')} icon={EyeOff}>
-            Suppress
-          </Button>
-          <Button variant="secondary" onClick={() => onDecide(anomaly, 'expected')} icon={ShieldCheck}>
-            Expected
-          </Button>
-          <Button variant="primary" onClick={() => onDecide(anomaly, 'acknowledged')} icon={Check}>
-            Acknowledge
-          </Button>
+          {/* A disposition is a judgement, and judgements are made with partial
+              information. Without a way back, one wrong click removes a
+              departure from the queue permanently - so a decided anomaly can
+              be returned to the queue, and the other three actions step aside
+              for it rather than inviting the same decision twice. */}
+          {decided ? (
+            <Button variant="secondary" onClick={() => onDecide(anomaly, 'open')} icon={Undo2}>
+              Reopen
+            </Button>
+          ) : (
+            <>
+              <Button variant="ghost" onClick={() => onDecide(anomaly, 'suppressed')} icon={EyeOff}>
+                Suppress
+              </Button>
+              <Button variant="secondary" onClick={() => onDecide(anomaly, 'expected')} icon={ShieldCheck}>
+                Expected
+              </Button>
+              <Button variant="primary" onClick={() => onDecide(anomaly, 'acknowledged')} icon={Check}>
+                Acknowledge
+              </Button>
+            </>
+          )}
           <Button variant="secondary" onClick={() => onInvestigate(anomaly)} iconRight={ArrowRight}>
             Open genome
           </Button>

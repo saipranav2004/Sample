@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Dna, RotateCcw, SearchX, SlidersHorizontal } from 'lucide-react';
+import { Dna, Download, SearchX, SlidersHorizontal } from 'lucide-react';
 import {
   ANOMALY_STATUSES,
   ANOMALY_TYPES,
@@ -8,16 +8,16 @@ import {
   BASELINE_STATES,
   fetchAnomalyFeed,
   fetchGenomeOverview,
-  resetGenomeDecisions,
   setAnomalyStatus,
 } from '../../lib/demo/genome';
 import { useDemoQuery } from '../../lib/demo/useDemoQuery';
+import { exportRowsToCsv, timestampedName } from '../../lib/csv';
 import { SEVERITIES, SEVERITY_ORDER, severityMeta } from '../../lib/domain';
 import { formatNumber, formatRelative, percentValue } from '../../lib/format';
 import { PageHeader } from '../../shell/PageHeader';
 import { Button } from '../../ui/Button';
 import { DataGrid } from '../../ui/DataGrid';
-import { DemoBadge } from '../../ui/DemoBadge';
+import { SearchInput } from '../../ui/Field';
 import { AppliedFilters, FacetRail, useFacetRail } from '../../ui/FacetRail';
 import { Meter, ProportionBar } from '../../ui/Meter';
 import { Panel, PanelHeader } from '../../ui/Panel';
@@ -48,7 +48,7 @@ const WINDOWS = [
  * reference: they tell you whether to trust the feed, which is a different job
  * from acting on it.
  *
- * Nothing here is a scan result - see `DemoBadge` and `lib/demo/runtime.js`.
+ * Nothing here is a scan result - see `lib/demo/runtime.js`.
  */
 export default function GenomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -61,6 +61,7 @@ export default function GenomePage() {
   const severity = searchParams.get('severity') || '';
   const type = searchParams.get('type') || '';
   const status = searchParams.get('status') || '';
+  const search = searchParams.get('q') || '';
 
   const setParam = useCallback(
     (key, value) => {
@@ -85,8 +86,23 @@ export default function GenomePage() {
   );
 
   const totals = overview.data?.totals;
-  const rows = feed.data?.rows ?? [];
+  /* Memoised so the `?? []` fallback does not hand every dependent memo a new
+     array on each render while the first request is still in flight. */
+  const allRows = useMemo(() => feed.data?.rows ?? [], [feed.data]);
   const loading = feed.isLoading && !feed.data;
+
+  /* Searched here rather than in the selector, so the facet counts keep
+     describing the window while the grid describes the search. A rail whose
+     numbers move as you type cannot be used to navigate. */
+  const rows = useMemo(() => {
+    const needle = search.trim().toLowerCase();
+    if (!needle) return allRows;
+    return allRows.filter((row) =>
+      [row.identityName, row.account, row.api, row.resource, row.title, row.region]
+        .filter(Boolean)
+        .some((field) => String(field).toLowerCase().includes(needle)),
+    );
+  }, [allRows, search]);
 
   const chips = useMemo(
     () =>
@@ -94,8 +110,9 @@ export default function GenomePage() {
         severity && { key: 'severity', label: 'Severity', value: severityMeta(severity).label },
         type && { key: 'type', label: 'Type', value: ANOMALY_TYPES[type]?.label ?? type },
         status && { key: 'status', label: 'State', value: ANOMALY_STATUSES[status]?.label ?? status },
+        search.trim() && { key: 'q', label: 'Search', value: search.trim() },
       ].filter(Boolean),
-    [severity, type, status],
+    [severity, type, status, search],
   );
 
   const facetGroups = useMemo(
@@ -107,7 +124,7 @@ export default function GenomePage() {
           value: key,
           label: SEVERITIES[key].label,
           active: severity === key,
-          count: rows.filter((row) => row.severity === key).length,
+          count: allRows.filter((row) => row.severity === key).length,
         })),
         onToggle: (value) => setParam('severity', severity === value ? '' : value),
         note: 'Severity follows detection confidence, so a low-confidence departure never outranks a certain one.',
@@ -119,7 +136,7 @@ export default function GenomePage() {
           value: key,
           label: ANOMALY_TYPES[key].label,
           active: type === key,
-          count: rows.filter((row) => row.type === key).length,
+          count: allRows.filter((row) => row.type === key).length,
         })),
         onToggle: (value) => setParam('type', type === value ? '' : value),
       },
@@ -130,13 +147,43 @@ export default function GenomePage() {
           value: key,
           label: meta.label,
           active: status === key,
-          count: rows.filter((row) => row.status === key).length,
+          count: allRows.filter((row) => row.status === key).length,
         })),
         onToggle: (value) => setParam('status', status === value ? '' : value),
       },
     ],
-    [rows, severity, type, status, setParam],
+    [allRows, severity, type, status, setParam],
   );
+
+  /* The rows on screen, in the order they are on screen - an export that
+     silently returns the unfiltered set is a different answer to the one the
+     operator was looking at. */
+  const onExport = useCallback(() => {
+    exportRowsToCsv({
+      filename: timestampedName('nhi-genome-anomalies'),
+      columns: [
+        { header: 'Identity', value: (row) => row.identityName },
+        { header: 'Kind', value: (row) => row.identityKind },
+        { header: 'Account', value: (row) => row.account },
+        { header: 'Departure type', value: (row) => ANOMALY_TYPES[row.type]?.label ?? row.type },
+        { header: 'Severity', value: (row) => severityMeta(row.severity).label },
+        { header: 'Confidence', value: (row) => `${row.confidence}%` },
+        { header: 'Baseline', value: (row) => row.baseline?.headline ?? '' },
+        { header: 'Observed', value: (row) => row.observed?.headline ?? '' },
+        { header: 'API', value: (row) => row.api ?? '' },
+        { header: 'Resource', value: (row) => row.resource ?? '' },
+        { header: 'Region', value: (row) => row.region ?? '' },
+        { header: 'Disposition', value: (row) => ANOMALY_STATUSES[row.status]?.label ?? row.status },
+        { header: 'Detected (UTC)', value: (row) => row.detectedAt },
+      ],
+      rows,
+    });
+    notify({
+      title: 'Exported current view',
+      description: `${formatNumber(rows.length)} anomalies written, in the order shown.`,
+      variant: 'success',
+    });
+  }, [rows, notify]);
 
   const decide = useCallback(
     (anomaly, nextStatus) => {
@@ -248,22 +295,14 @@ export default function GenomePage() {
         lede="An anomaly is a measured departure from an identity's own baseline, never from a fleet average."
         actions={
           <>
-            <DemoBadge detail="The fleet, its baselines and every anomaly below are generated from a fixed seed. Dispositions you record are stored in this browser." />
             <SegmentedControl
               label="Detection window"
               options={WINDOWS}
               value={window}
               onChange={(value) => setParam('window', value === '24h' ? '' : value)}
             />
-            <Button
-              variant="secondary"
-              icon={RotateCcw}
-              onClick={() => {
-                resetGenomeDecisions();
-                notify({ title: 'Demo dispositions cleared', description: 'Every anomaly is open again.', variant: 'info' });
-              }}
-            >
-              Reset demo
+            <Button variant="secondary" icon={Download} onClick={onExport} disabled={rows.length === 0}>
+              Export
             </Button>
           </>
         }
@@ -505,6 +544,13 @@ export default function GenomePage() {
           <RecordBar
             trailing={
               <TableToolbar>
+                <SearchInput
+                  value={search}
+                  onChange={(value) => setParam('q', value)}
+                  placeholder="Search identity or API..."
+                  size="sm"
+                  className="w-full sm:w-64"
+                />
                 {!railOpen && <ShowFiltersButton onClick={toggleRail} appliedCount={chips.length} />}
                 <RefreshButton onRefresh={feed.refetch} refreshing={feed.isRefreshing} label="Refresh anomalies" />
               </TableToolbar>

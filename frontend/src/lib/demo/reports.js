@@ -150,59 +150,27 @@ export function templateById(id) {
 
 /* ── Persisted state ──────────────────────────────────────────────────────── */
 
+/**
+ * Schedules are the user's, from the first one they create.
+ *
+ * Unlike History, an empty Scheduled tab is not a dead end - it is the
+ * accurate answer to "what is being produced without anyone asking", and the
+ * tab's empty state points straight at the control that fills it. Seeding it
+ * would also claim someone had configured recipients who never agreed to
+ * receive anything.
+ */
 function readSchedules() {
-  return readOverlay(OVERLAY_KEYS.schedules, null) ?? seedSchedules();
+  return readOverlay(OVERLAY_KEYS.schedules, null) ?? [];
 }
 
 function readRuns() {
   return readOverlay(OVERLAY_KEYS.runs, null) ?? seedRuns();
 }
 
-/* Seeded once so the screens do not open empty on a first visit - an empty
-   History teaches nothing about what a report looks like. Both seeds are
-   written through the same overlay the user's own actions write to, so there is
-   no second code path. */
-function seedSchedules() {
-  const next = rng(hashSeed('schedules'));
-  const seeded = [
-    {
-      id: 'sch-seed-1',
-      templateId: 'credential-exposure',
-      cadence: 'daily',
-      hour: 7,
-      format: 'pdf',
-      recipients: ['secops@example.com'],
-      enabled: true,
-      createdAt: daysAgoIso(intBetween(next, 20, 60)),
-      lastRunAt: hoursAgoIso(intBetween(next, 2, 20)),
-    },
-    {
-      id: 'sch-seed-2',
-      templateId: 'executive-summary',
-      cadence: 'monthly',
-      hour: 9,
-      format: 'pdf',
-      recipients: ['ciso@example.com', 'platform-leads@example.com'],
-      enabled: true,
-      createdAt: daysAgoIso(intBetween(next, 60, 140)),
-      lastRunAt: daysAgoIso(intBetween(next, 4, 25)),
-    },
-    {
-      id: 'sch-seed-3',
-      templateId: 'credential-hygiene',
-      cadence: 'weekly',
-      hour: 6,
-      format: 'csv',
-      recipients: ['secops@example.com'],
-      enabled: false,
-      createdAt: daysAgoIso(intBetween(next, 30, 90)),
-      lastRunAt: daysAgoIso(intBetween(next, 10, 40)),
-    },
-  ];
-  writeOverlay(OVERLAY_KEYS.schedules, seeded);
-  return seeded;
-}
-
+/* History is seeded so the screen can show what a produced report looks like,
+   including one failure - an empty History teaches nothing. Schedules are not
+   seeded (see `readSchedules`). The seed is written through the same overlay
+   the user's own actions write to, so there is no second code path. */
 function seedRuns() {
   const next = rng(hashSeed('runs'));
   const picks = ['credential-exposure', 'executive-summary', 'identity-inventory', 'credential-hygiene', 'compliance-audit', 'over-permissioned', 'credential-exposure', 'behavioural-anomalies'];
@@ -216,8 +184,10 @@ function seedRuns() {
       templateName: template.name,
       format: template.formats[0],
       status: failed ? 'failed' : 'ready',
-      trigger: index % 3 === 0 ? 'schedule' : 'manual',
-      requestedBy: index % 3 === 0 ? 'Scheduled' : 'das_admin',
+      /* All manual: the Scheduled tab starts empty, so a seeded run claiming a
+         schedule produced it would contradict the screen next to it. */
+      trigger: 'manual',
+      requestedBy: 'das_admin',
       startedAt: hoursAgoIso(index * intBetween(next, 5, 30) + 3),
       durationMs: intBetween(next, 1400, 9200),
       rows: rowCount,
@@ -375,11 +345,6 @@ export function deleteRun(id) {
   writeOverlay(OVERLAY_KEYS.runs, readRuns().filter((entry) => entry.id !== id));
 }
 
-export function resetReportState() {
-  writeOverlay(OVERLAY_KEYS.schedules, seedSchedules());
-  writeOverlay(OVERLAY_KEYS.runs, seedRuns());
-}
-
 /* ── Preview ──────────────────────────────────────────────────────────────── */
 
 /**
@@ -505,7 +470,4 @@ function minutesAgoIso(minutes) {
 }
 function hoursAgoIso(hours) {
   return minutesAgoIso(hours * 60);
-}
-function daysAgoIso(days) {
-  return minutesAgoIso(days * 1440);
 }

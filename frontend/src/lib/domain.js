@@ -230,6 +230,138 @@ export function findingLink(finding) {
   return null;
 }
 
+/* ── Finding enrichment (added by the scanner, additive to the original shape) ─
+   The service now returns thirteen extra fields per finding. Nothing existing
+   changed, so everything below is read defensively: any of them can be null on
+   a finding recorded before the enrichment existed, and six of them are
+   permanently null on CodeCommit because CodeCommit has no equivalent concept.
+   The distinction matters in the UI - "not recorded" and "does not apply" are
+   different statements - so it is made once, here, rather than guessed at by
+   each screen.                                                              */
+
+/** Fields that never populate for CodeCommit, per the integration guide. */
+const GITHUB_ONLY_FIELDS = [
+  'additions',
+  'deletions',
+  'repo_visibility',
+  'repo_stars',
+  'repo_forks',
+  'repo_pushed_at',
+];
+
+export function isGithubOnlyField(field) {
+  return GITHUB_ONLY_FIELDS.includes(field);
+}
+
+/**
+ * Why a field is empty: because this platform cannot supply it, or because the
+ * finding predates the field. Screens render a different note for each.
+ */
+export function missingFieldReason(finding, field) {
+  if (finding?.[field] !== null && finding?.[field] !== undefined && finding[field] !== '') {
+    return null;
+  }
+  if (isGithubOnlyField(field) && normalisePlatform(finding?.platform) !== 'github') {
+    return 'not-applicable';
+  }
+  return 'not-recorded';
+}
+
+/**
+ * Detector certainty, which is not severity.
+ *
+ * `confidence` is how sure the pattern match is; `risk_tier` is how bad the
+ * secret would be if real. Deliberately outside the severity palette so a
+ * "high confidence" label can never be misread as "high risk".
+ */
+export const CONFIDENCE_LEVELS = {
+  high: { label: 'High confidence', short: 'High', tone: 'info' },
+  medium: { label: 'Medium confidence', short: 'Medium', tone: 'neutral' },
+};
+
+export function confidenceMeta(value) {
+  const key = String(value || '').toLowerCase();
+  return CONFIDENCE_LEVELS[key] ?? null;
+}
+
+/**
+ * Repository exposure. A committed secret in a public repository has been
+ * readable by anyone since the push, which is a material fact about this
+ * finding rather than a guess - so it carries a tone. Private is stated
+ * neutrally, because private is the baseline expectation, not good news.
+ */
+export function repoVisibilityMeta(value) {
+  const key = String(value || '').toLowerCase();
+  if (key === 'public') {
+    return { label: 'Public', tone: 'high', note: 'Readable by anyone for as long as the commit has existed.' };
+  }
+  if (key === 'private') {
+    return { label: 'Private', tone: 'neutral', note: 'Limited to accounts with repository access.' };
+  }
+  return null;
+}
+
+/**
+ * `commit_authored_at` arrives in two raw shapes, passed through by the service
+ * exactly as each platform gave it:
+ *   github     ISO 8601, e.g. "2026-09-21T12:46:25Z"
+ *   codecommit git's own raw format, e.g. "1758454920 +0530"
+ * Parsing the second as a date string yields Invalid Date, so branch on the
+ * shape rather than on the platform - a finding can carry either.
+ */
+export function parseCommitAuthoredAt(value) {
+  if (!value) return null;
+  const raw = String(value).trim();
+
+  const gitRaw = /^(\d{9,11})\s*([+-]\d{4})?$/.exec(raw);
+  if (gitRaw) {
+    const date = new Date(Number(gitRaw[1]) * 1000);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  const date = new Date(raw);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+/**
+ * How large the commit was. `files_changed` counts different things on each
+ * platform (GitHub's diff stats versus what the scanner actually read), so the
+ * two are never presented as comparable.
+ */
+export function commitSize(finding) {
+  const platform = normalisePlatform(finding?.platform);
+  const files = Number.isFinite(finding?.files_changed) ? finding.files_changed : null;
+  const additions = Number.isFinite(finding?.additions) ? finding.additions : null;
+  const deletions = Number.isFinite(finding?.deletions) ? finding.deletions : null;
+  return {
+    files,
+    additions,
+    deletions,
+    /* On CodeCommit this is "files we scanned", which can undercount. */
+    filesAreExact: platform === 'github',
+    hasLineStats: additions !== null || deletions !== null,
+  };
+}
+
+/** Whether a finding carries any of the enrichment at all. */
+export function hasCommitContext(finding) {
+  return Boolean(
+    finding?.commit_message ||
+      finding?.committer ||
+      finding?.commit_authored_at ||
+      Number.isFinite(finding?.files_changed),
+  );
+}
+
+export function hasRepoContext(finding) {
+  return Boolean(
+    finding?.repo_visibility ||
+      Number.isFinite(finding?.repo_stars) ||
+      Number.isFinite(finding?.repo_forks) ||
+      finding?.repo_pushed_at,
+  );
+}
+
 /** Identity key for allowlist writes - the four fields the service requires. */
 export function allowlistKey(finding) {
   return [finding?.client_id, finding?.file_path, finding?.detector, finding?.redacted].join('␟');

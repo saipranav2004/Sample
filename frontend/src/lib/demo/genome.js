@@ -424,6 +424,14 @@ function withOverlay(anomaly, overlay) {
 /** Records a decision on an anomaly. Survives a reload. */
 export function setAnomalyStatus(anomalyId, status, note) {
   const overlay = anomalyOverlay();
+  /* Reopening removes the decision instead of recording "open" as one: the
+     anomaly returns to exactly the state the detector left it in, with no
+     `decidedAt` implying somebody decided it was open. */
+  if (status === 'open') {
+    const { [anomalyId]: _removed, ...rest } = overlay;
+    writeOverlay(OVERLAY_KEYS.anomalies, rest);
+    return;
+  }
   writeOverlay(OVERLAY_KEYS.anomalies, {
     ...overlay,
     [anomalyId]: { status, note: note ?? null, decidedAt: new Date().toISOString() },
@@ -436,11 +444,6 @@ export function setPolicyApplied(policyId, applied) {
     ...overlay,
     [policyId]: { applied, at: new Date().toISOString() },
   });
-}
-
-export function resetGenomeDecisions() {
-  writeOverlay(OVERLAY_KEYS.anomalies, {});
-  writeOverlay(OVERLAY_KEYS.policies, {});
 }
 
 /* ── Selectors ────────────────────────────────────────────────────────────── */

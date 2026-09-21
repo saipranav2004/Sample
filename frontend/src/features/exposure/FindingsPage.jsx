@@ -11,9 +11,11 @@ import {
 import { dismissFinding, fetchFindings } from '../../lib/api/endpoints';
 import { useMutation, useQuery } from '../../lib/hooks';
 import {
+  confidenceMeta,
   findingLink,
   platformMeta,
   recommendedActionMeta,
+  repoVisibilityMeta,
   severityMeta,
   SEVERITY_ORDER,
   toAllowlistPayload,
@@ -73,6 +75,9 @@ export default function FindingsPage() {
   const { railOpen, toggleRail } = useFacetRail();
   const [density, setDensity] = useState('comfortable');
   const [view, setView] = useState('findings');
+  const [category, setCategory] = useState('');
+  const [confidence, setConfidence] = useState('');
+  const [visibility, setVisibility] = useState('');
   const [sort, setSort] = useState({ key: 'detected', direction: 'desc' });
   const [selected, setSelected] = useState(null);
   /* Locally dismissed ids, so a row leaves the list the moment the write
@@ -101,12 +106,27 @@ export default function FindingsPage() {
       if (tier && String(finding.risk_tier).toUpperCase() !== tier) return false;
       if (detector && finding.detector !== detector) return false;
       if (repository && finding.repository !== repository) return false;
+      if (category && String(finding.category || '') !== category) return false;
+      if (confidence && String(finding.confidence || '').toLowerCase() !== confidence) return false;
+      if (visibility && String(finding.repo_visibility || '').toLowerCase() !== visibility) return false;
       if (!needle) return true;
-      return [finding.repository, finding.file_path, finding.author, finding.detector, finding.branch]
+      /* The enrichment is searchable too: a commit message is often the fastest
+         way back to a finding somebody described in a ticket. */
+      return [
+        finding.repository,
+        finding.file_path,
+        finding.author,
+        finding.detector,
+        finding.branch,
+        finding.commit_message,
+        finding.committer,
+        finding.line_preview,
+        finding.category,
+      ]
         .filter(Boolean)
         .some((field) => String(field).toLowerCase().includes(needle));
     });
-  }, [platformFiltered, tier, detector, repository, search]);
+  }, [platformFiltered, tier, detector, repository, category, confidence, visibility, search]);
 
   const sorted = useMemo(() => {
     const rows = [...filtered];
@@ -143,6 +163,39 @@ export default function FindingsPage() {
       .map(([key, count]) => ({ value: key, label: key, count, active: repository === key }));
   }, [platformFiltered, repository]);
 
+  const categoryOptions = useMemo(
+    () =>
+      countBy(platformFiltered, (finding) => finding.category).map(([key, count]) => ({
+        value: key,
+        label: humanizeToken(key),
+        count,
+        active: category === key,
+      })),
+    [platformFiltered, category],
+  );
+
+  const confidenceOptions = useMemo(
+    () =>
+      countBy(platformFiltered, (finding) => String(finding.confidence || '').toLowerCase()).map(([key, count]) => ({
+        value: key,
+        label: confidenceMeta(key)?.short ?? humanizeToken(key),
+        count,
+        active: confidence === key,
+      })),
+    [platformFiltered, confidence],
+  );
+
+  const visibilityOptions = useMemo(
+    () =>
+      countBy(platformFiltered, (finding) => String(finding.repo_visibility || '').toLowerCase()).map(([key, count]) => ({
+        value: key,
+        label: repoVisibilityMeta(key)?.label ?? humanizeToken(key),
+        count,
+        active: visibility === key,
+      })),
+    [platformFiltered, visibility],
+  );
+
   const facetGroups = useMemo(
     () => [
       {
@@ -174,8 +227,28 @@ export default function FindingsPage() {
         options: repositoryOptions,
         onToggle: (value) => setRepository((current) => (current === value ? '' : value)),
       },
+      {
+        key: 'visibility',
+        label: 'Repository visibility',
+        options: visibilityOptions,
+        onToggle: (value) => setVisibility((current) => (current === value ? '' : value)),
+        note: 'Reported by GitHub only. A CodeCommit repository is private to its AWS account by definition, so the scanner has nothing to report.',
+      },
+      {
+        key: 'category',
+        label: 'Secret category',
+        options: categoryOptions,
+        onToggle: (value) => setCategory((current) => (current === value ? '' : value)),
+      },
+      {
+        key: 'confidence',
+        label: 'Match confidence',
+        options: confidenceOptions,
+        onToggle: (value) => setConfidence((current) => (current === value ? '' : value)),
+        note: 'How certain the pattern match is. Separate from risk tier, which is how bad the secret would be if real.',
+      },
     ],
-    [summary, tier, detector, repositoryOptions],
+    [summary, tier, detector, repositoryOptions, visibilityOptions, categoryOptions, confidenceOptions],
   );
 
   const chips = useMemo(() => {
@@ -184,14 +257,24 @@ export default function FindingsPage() {
     if (tier) list.push({ key: 'tier', label: 'Risk', value: severityMeta(tier).label });
     if (detector) list.push({ key: 'detector', label: 'Detector', value: humanizeToken(detector) });
     if (repository) list.push({ key: 'repository', label: 'Repo', value: repository });
+    if (visibility) {
+      list.push({ key: 'visibility', label: 'Visibility', value: repoVisibilityMeta(visibility)?.label ?? visibility });
+    }
+    if (category) list.push({ key: 'category', label: 'Category', value: humanizeToken(category) });
+    if (confidence) {
+      list.push({ key: 'confidence', label: 'Confidence', value: confidenceMeta(confidence)?.short ?? confidence });
+    }
     return list;
-  }, [search, tier, detector, repository]);
+  }, [search, tier, detector, repository, visibility, category, confidence]);
 
   const removeChip = (key) => {
     if (key === 'search') setSearch('');
     if (key === 'tier') setTier('');
     if (key === 'detector') setDetector('');
     if (key === 'repository') setRepository('');
+    if (key === 'visibility') setVisibility('');
+    if (key === 'category') setCategory('');
+    if (key === 'confidence') setConfidence('');
   };
 
   const clearAll = () => {
@@ -199,6 +282,9 @@ export default function FindingsPage() {
     setTier('');
     setDetector('');
     setRepository('');
+    setVisibility('');
+    setCategory('');
+    setConfidence('');
   };
 
   const onExport = () => {
@@ -217,6 +303,22 @@ export default function FindingsPage() {
         { header: 'Masked value', value: (row) => row.redacted },
         { header: 'Author', value: (row) => row.author },
         { header: 'Detected (UTC)', value: (row) => row.created_at },
+        /* The enrichment, written verbatim rather than formatted: a CSV is read
+           by a script as often as by a person, and an empty cell is the honest
+           rendering of a field this finding does not carry. */
+        { header: 'Category', value: (row) => row.category || '' },
+        { header: 'Match confidence', value: (row) => row.confidence || '' },
+        { header: 'Line preview (masked)', value: (row) => row.line_preview || '' },
+        { header: 'Committer', value: (row) => row.committer || '' },
+        { header: 'Commit message', value: (row) => row.commit_message || '' },
+        { header: 'Commit authored at (raw)', value: (row) => row.commit_authored_at || '' },
+        { header: 'Files changed', value: (row) => row.files_changed ?? '' },
+        { header: 'Additions', value: (row) => row.additions ?? '' },
+        { header: 'Deletions', value: (row) => row.deletions ?? '' },
+        { header: 'Repo visibility', value: (row) => row.repo_visibility || '' },
+        { header: 'Repo stars', value: (row) => row.repo_stars ?? '' },
+        { header: 'Repo forks', value: (row) => row.repo_forks ?? '' },
+        { header: 'Repo last pushed', value: (row) => row.repo_pushed_at || '' },
         { header: 'Link', value: (row) => row.codecommit_uri || row.github_uri || '' },
       ],
       rows: sorted,
@@ -653,4 +755,21 @@ function PushList({ pushes, onSelect }) {
       })}
     </ul>
   );
+}
+
+/**
+ * Facet counts read off the live set, the same way the repository facet does.
+ *
+ * The enrichment is optional per finding, so a hard-coded list of categories
+ * or confidence levels would offer options that match nothing. Module level
+ * rather than inline, so the memos that use it have stable dependencies.
+ */
+function countBy(findings, read) {
+  const counts = new Map();
+  for (const finding of findings) {
+    const value = read(finding);
+    if (!value) continue;
+    counts.set(value, (counts.get(value) || 0) + 1);
+  }
+  return [...counts.entries()].sort((a, b) => b[1] - a[1]);
 }

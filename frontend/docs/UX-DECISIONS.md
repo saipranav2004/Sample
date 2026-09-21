@@ -985,3 +985,212 @@ Verified at 1600px, 1024px and 390px, in both themes, across all four drawers:
 cards side by side above 26rem and stacked below it, labels and values on one
 line, nothing outside the panel, no page overflow.
 
+## 14. Revision: scanner enrichment, unlabelled demo screens, and a deployable image
+
+Three changes: the Secret Scanner's additive response fields, the removal of
+every demo marker from the two generated-data screens, and the container files
+the app needs to be served anywhere but a dev machine.
+
+### 14.1 Thirteen new fields, and the difference between two kinds of empty
+
+The scanner's contract did not change shape. Same base URL, same five
+endpoints, same authentication, no renamed or removed fields - `GET
+/api/findings` simply returns thirteen more per finding. So nothing in the
+transport needed touching; the work was deciding what each field is evidence
+of, and what to say when it is absent.
+
+Six of them are permanently null on CodeCommit, because CodeCommit has no
+equivalent concept: `additions`, `deletions`, `repo_visibility`, `repo_stars`,
+`repo_forks`, `repo_pushed_at`. The other seven are null only on findings
+recorded before the enrichment existed. Those are different statements, and a
+dash cannot tell them apart, so `missingFieldReason` makes the distinction once
+in `lib/domain` and the drawer renders either "Not reported by CodeCommit" or
+"Not recorded for this finding". An operator reading the first knows not to
+wait for it; reading the second, they know a newer finding will have it.
+
+What the fields earned in the interface:
+
+| Field | Where, and why |
+|---|---|
+| `line_preview` | Its own block beside the masked value. "What does this code actually look like" is the first question a reviewer asks, and the answer decides fixture versus live credential. |
+| `confidence` | The Assessment list, outside the severity palette. It is pattern-match certainty, not how bad the secret is; sharing a colour scale with `risk_tier` would conflate the two. Also a facet. |
+| `category` | Assessment, and a facet - the most useful grouping the scanner has ever returned. |
+| `commit_message`, `committer` | A "commit that introduced it" section. The committer gets a row only when it differs from the author, which is the case that tells you something (a rebase, a squash, a bot). |
+| `commit_authored_at` | Same section, stated as when the commit was written rather than when it was found. |
+| `files_changed` | Same section, with the caveat that on CodeCommit it counts what the scanner read and can undercount. The two platforms' numbers are never presented as comparable. |
+| `additions` / `deletions` | Same section, as a single `+n / -n` figure. |
+| `repo_visibility` | A "repository it sits in" section, and the only enrichment field carrying a tone: a secret in a public repository has been readable by anyone since the push, which is a fact about this finding rather than a guess. Private is stated neutrally, because private is the baseline expectation, not good news. |
+| `repo_forks` | Same section, with a note when non-zero: a fork keeps its own copy of the history, so rotating beats deleting the commit. |
+| `repo_stars`, `repo_pushed_at` | Same section, as plain context. |
+
+`commit_authored_at` needed a parser rather than a formatter. It arrives in two
+raw shapes, passed through exactly as each platform gave it: ISO 8601 from
+GitHub, and git's own `1758454920 +0530` from CodeCommit. `new Date()` on the
+second yields Invalid Date, so `parseCommitAuthoredAt` branches on the shape
+rather than the platform - a finding can carry either. Verified against both,
+plus a bare Unix timestamp, the `created_at` format, and a bogus string.
+
+The whole of this was verified against the two findings the integration guide
+captures verbatim, plus a third representing a new CodeCommit finding - a shape
+the guide describes but does not show. Twenty-eight checks: every field
+rendered where it should be, every platform-only field saying so, the git raw
+timestamp parsed, the search reaching commit messages, and the three new facets
+counting and filtering.
+
+### 14.2 The demo markers came off
+
+The two generated-data screens carried a `DemoBadge` in their header and a
+"Reset demo" button. Both are gone, along with the component, at the product
+owner's instruction: the product does not announce its own scaffolding to the
+people being shown it.
+
+That removes the visible half of the honesty argument in §13.1, so the code
+half was strengthened to carry it alone. `lib/demo/runtime.js` now states that
+the containment is structural: everything generated lives under `lib/demo/` and
+is imported by exactly two feature folders, every generator is deterministic
+and side-effect free, and every write goes to `localStorage` under a
+`dna.demo.*` key. There is no path by which a generated figure reaches a live
+screen, and none by which anything here touches a real endpoint.
+
+Removing "Reset demo" left a real trap, which is worth stating plainly because
+it was created by the removal rather than found: a mis-dispositioned anomaly
+had no way back, so one wrong click removed a departure from the queue
+permanently. The drawer now offers **Reopen** on a decided anomaly, and hides
+the three dispositions while it does - re-offering the same decision beside its
+own undo invites making it twice. Reopening deletes the overlay entry rather
+than recording "open" as a decision, so the anomaly returns to exactly the
+state the detector left it in, with no `decidedAt` implying somebody decided it
+was open. That is ordinary product behaviour, not demo scaffolding: an operator
+who mis-triages needs an undo whatever the data source is.
+
+Both `resetGenomeDecisions` and `resetReportState` were deleted with their
+buttons rather than left as unreferenced exports.
+
+### 14.3 Search and export
+
+Both features now carry the same pair the record screens do.
+
+On the genome feed the search term lives in the URL alongside the facets, and
+filters the rows **without** touching the facet counts. That asymmetry is
+deliberate: a rail whose numbers move as you type cannot be used to navigate,
+so the counts keep describing the window while the grid describes the search.
+
+Reports takes one search box rather than three, because a schedule and a run
+are searched by the same words - the report's name - and three boxes would be
+three states to keep straight for one question. The placeholder names the tab
+it will narrow, since "Search" alone leaves the operator guessing. Each tab
+distinguishes "nothing matched" from "nothing here yet", which are different
+answers needing different next steps.
+
+Export follows the rule already established on the record screens: it writes
+the view in front of you, filtered the way it is filtered and in the order it
+is shown. An Export that quietly returned the unfiltered set would be a
+different answer to the one the operator was looking at. On Reports it exports
+the open tab - catalogue, schedules or history - and the history export keeps
+the failure reason column, because a run that failed is the row most worth
+having in a spreadsheet.
+
+### 14.4 The Scheduled tab starts empty
+
+It was seeded with three schedules. It now starts empty and fills only from
+what the user creates.
+
+An empty Scheduled tab is not a dead end, unlike an empty History: it is the
+accurate answer to "what is produced without anyone asking", and the empty
+state points straight at the control that changes it. Seeding it also claimed
+that someone had configured delivery to recipients who never agreed to receive
+anything.
+
+One consequence had to be followed through: the seeded history included runs
+marked "Produced on a schedule", which contradicts an empty Scheduled tab on
+the screen next to it. Every seeded run is now a manual one. The Library's "On
+a schedule" pill was already derived from live schedules rather than stored on
+the template, so it correctly shows nothing until the first schedule exists,
+and appears on exactly the right card afterwards - verified both ways, and
+verified that deleting the last schedule returns the tab to its empty state and
+the Library to unmarked.
+
+### 14.5 Dockerfile, nginx, and the key that must not travel
+
+The app had no way to be served outside a dev machine, and the production half
+of the `X-Dashboard-Key` story had been a comment in `vite.config.js` since it
+was written: *"the same responsibility has to be taken over by a real backend
+route or reverse proxy in production"*. This is that reverse proxy.
+
+Two stages. Node builds the bundle; nginx serves 24 static files. Nothing
+crosses from the first stage but `dist`, so `node_modules`, the lockfile and
+any local `.env` never reach a running container - `.dockerignore` keeps the
+last of those out of the build context entirely.
+
+The key is supplied at **run** time and never at build time. There is
+deliberately no `ARG` for it: a build argument is recorded in the image history
+and readable with `docker history`, so a key passed that way is a published
+key. nginx's own template mechanism substitutes it into the config at container
+start, with `NGINX_ENVSUBST_FILTER` restricting substitution to four names so
+nginx's own `$uri`, `$host` and `$proxy_host` survive untouched. The build
+additionally **fails** if `X-Dashboard-Key` appears anywhere in `dist/`, since
+that could only mean client code was trying to send it itself.
+
+Three bugs were found by running the thing rather than reasoning about it, and
+they are the reason this section exists:
+
+1. **`set` after `rewrite ... break` never executes.** `set` runs in the
+   rewrite phase and `break` ends that phase, so `$scanner_upstream` arrived at
+   `proxy_pass` empty and every scanner call returned 500. The order is now
+   `set`, then `rewrite`, then `proxy_pass`, with a comment saying why.
+2. **`listen [::]:8080` makes nginx refuse to start** on a host without IPv6,
+   which includes many container runtimes. Dropped: a container bound to
+   0.0.0.0 is reachable in a dual-stack network anyway, because the runtime
+   maps the published port.
+3. **`add_header` does not inherit into a location that declares its own.**
+   Every location setting a cache header would have silently served no security
+   headers at all. The headers live in `nginx/security-headers.conf` and are
+   included in the server block and in each such location.
+
+Two more things that would have broken on first run: `/etc/nginx/conf.d` is
+chowned to the `nginx` user, because the image's entrypoint writes the
+substituted template there and cannot do so as a non-root user; and `expires`
+was removed where an explicit `add_header Cache-Control` already existed, since
+`expires` emits its own and the header was being sent twice.
+
+Beyond that, what the config does and why:
+
+- **`/secret-scanner/*`** strips the prefix and attaches the key. The header is
+  *set*, not forwarded, so a client-supplied `X-Dashboard-Key` is overwritten -
+  nobody reaches the scanner through this service with a key of their own
+  choosing. The app's bearer token and cookies are stripped, because forwarding
+  credentials to a third party with no use for them is how they end up in
+  somebody else's logs.
+- **`/api/*`** forwards path, query string and the browser's own bearer token
+  unchanged.
+- **Everything else** is the SPA, with `index.html` as the fallback so a deep
+  link survives a hard refresh, `assets/` cached for a year as immutable
+  (fingerprinted filenames make that safe), `brand/` cached for an hour with
+  revalidation, and `index.html` never cached, since it is the document naming
+  which bundle to load.
+- **`connect-src 'self'`** in the CSP is load-bearing rather than decorative:
+  both APIs are reached through this server on same-origin paths, so a bundle
+  that tried to call an external API directly - including the scanner, with a
+  key someone had embedded in the client - would be blocked by the browser
+  before the request left.
+- **`/healthz`** is answered by nginx alone. It reports whether the web tier is
+  serving, which is what a liveness probe asks; whether the APIs are reachable
+  is a different question the app already answers on screen rather than by
+  failing to start.
+
+Both upstreams are addressed through variables so nginx resolves them per
+request instead of at startup - otherwise a compose stack whose API container
+had not come up yet would stop the web tier from booting at all.
+
+Verified by running nginx 1.24 against the substituted config with a stub
+upstream that echoes back what it was given: 26 checks covering the prefix
+strip, the injected key, an overwritten client-supplied key, stripped
+credentials, POST and DELETE reaching the scanner, path and query preserved on
+the API, five deep links falling back to the shell, a missing asset returning
+404 rather than the shell, gzip, exactly one `Cache-Control` header per
+response, security headers surviving in every location, and dotfiles refused.
+
+There is no Docker daemon in the environment this was built in, so the image
+itself has not been built. The nginx configuration it copies in has been run;
+the Dockerfile has not.
+

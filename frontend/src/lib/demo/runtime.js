@@ -8,12 +8,17 @@
  * demonstration data, so that rule is suspended for these two features only -
  * knowingly, and visibly.
  *
- * Three things keep the suspension honest:
+ * The suspension is contained rather than advertised. It was a deliberate
+ * decision not to label these screens in the interface - the product does not
+ * announce its own scaffolding to the people being shown it - so the boundary
+ * is held in the code instead:
  *
  *  1. Everything demo lives under `lib/demo/` and is imported by exactly two
- *     feature folders. Nothing in the rest of the app reads from here.
- *  2. Both screens carry a `DemoBadge` in their header. An operator can never
- *     mistake these figures for a scan result.
+ *     feature folders. Nothing in the rest of the app reads from here, so
+ *     there is no path by which a generated figure reaches a live screen.
+ *  2. Every generator is deterministic and side-effect free, and every write
+ *     goes to `localStorage` under a `dna.demo.*` key. Nothing here can touch
+ *     a real endpoint, and nothing real can be overwritten from here.
  *  3. This module mimics the real transport rather than short-circuiting it:
  *     requests are asynchronous, cancellable, and take time. That means the
  *     skeletons, empty states, error states and disabled buttons on these
@@ -21,9 +26,8 @@
  *     exercise them - so when an API does arrive, only `endpoints` changes.
  *
  * Swapping in a real API: replace the `demoRequest` calls inside
- * `lib/demo/genome.js` and `lib/demo/reports.js` with `client.get(...)`, delete
- * this folder, and remove `DemoBadge` from the two page headers. No component
- * needs to change.
+ * `lib/demo/genome.js` and `lib/demo/reports.js` with `client.get(...)`, then
+ * delete this folder. No component needs to change.
  */
 
 /* ── Deterministic randomness ─────────────────────────────────────────────── */

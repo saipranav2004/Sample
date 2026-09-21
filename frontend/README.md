@@ -56,6 +56,48 @@ Environment variables:
 | `SCANNER_UPSTREAM` | dev server | Scanner origin. Default `https://js-dev.adapid.link`. |
 | `SCANNER_DASHBOARD_KEY` | dev server | The scanner key. Never exposed to the client. |
 
+## Deploying it
+
+```bash
+docker build -t nhi-console:latest .
+
+docker run --rm -p 8080:8080 \
+  -e SCANNER_UPSTREAM=https://js-dev.adapid.link \
+  -e SCANNER_DASHBOARD_KEY=the-key-the-scanner-issued \
+  -e API_UPSTREAM=http://nhi-api:8080 \
+  nhi-console:latest
+```
+
+Two stages: Node builds the bundle, nginx serves it. Nothing from the build
+stage survives except `dist`, so `node_modules` and any local `.env` never
+reach a running container.
+
+The container takes over the one job the Vite dev proxy does in development:
+attaching `X-Dashboard-Key` to scanner requests, server side. The key is read
+from the environment **at container start**, not at build time - there is
+deliberately no `ARG` for it, because a build argument is recorded in the image
+history and readable with `docker history`. The build also fails outright if
+`X-Dashboard-Key` ever appears in `dist/`, since that would mean client code
+was trying to send it itself.
+
+| Variable | When | Meaning |
+|---|---|---|
+| `SCANNER_UPSTREAM` | run | Scanner origin. Default `https://js-dev.adapid.link`. |
+| `SCANNER_DASHBOARD_KEY` | run | The scanner key. Never enters the image or the bundle. |
+| `API_UPSTREAM` | run | Where `/api/*` is proxied. Default `http://nhi-api:8080`. |
+| `DNS_RESOLVER` | run | `127.0.0.11` under Docker; the cluster DNS service on Kubernetes. |
+| `VITE_API_URL` | build | Leave empty so the browser calls same-origin `/api`. |
+| `VITE_SCANNER_BASE_PATH` | build | Must match the nginx location. Default `/secret-scanner`. |
+
+The image listens on 8080 as an unprivileged user, so it needs no root and no
+added capability, and `/healthz` is answered by nginx itself - it reports
+whether the web tier is serving, not whether the APIs are reachable, which is a
+different question the app already answers on screen.
+
+`nginx/nginx.conf.template` carries the full reasoning, including why `set`
+must precede `rewrite ... break` in the scanner location and why the security
+headers live in an included snippet.
+
 ## Design documents
 
 Read these before changing layout or adding a control:

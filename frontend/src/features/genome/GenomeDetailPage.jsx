@@ -26,7 +26,6 @@ import { PageHeader } from '../../shell/PageHeader';
 import { Button } from '../../ui/Button';
 import { CopyableValue } from '../../ui/Copyable';
 import { DataGrid } from '../../ui/DataGrid';
-import { DemoBadge } from '../../ui/DemoBadge';
 import { Meter } from '../../ui/Meter';
 import { Modal } from '../../ui/Overlay';
 import { Panel, PanelHeader, SectionLabel } from '../../ui/Panel';
@@ -136,7 +135,6 @@ export default function GenomeDetailPage() {
         lede={`${identity.kind} · ${identity.account} · ${identity.region}`}
         actions={
           <>
-            <DemoBadge detail="This identity, its baseline and its anomalies are generated. Dispositions and applied policies are stored in this browser." />
             <Button variant="secondary" as={Link} to="/genome" icon={ArrowLeft}>
               Fleet
             </Button>

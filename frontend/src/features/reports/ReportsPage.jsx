@@ -3,12 +3,14 @@ import { Link, useSearchParams } from 'react-router-dom';
 import {
   CalendarClock,
   CalendarPlus,
+  Download,
   FileText,
   Inbox,
   Pause,
   Pencil,
   Play,
   RotateCcw,
+  SearchX,
   Trash2,
 } from 'lucide-react';
 import {
@@ -21,7 +23,6 @@ import {
   fetchRuns,
   fetchSchedules,
   generateReport,
-  resetReportState,
   saveSchedule,
   setScheduleEnabled,
 } from '../../lib/demo/reports';
@@ -30,17 +31,18 @@ import { formatDateTime, formatNumber, formatRelative } from '../../lib/format';
 import { PageHeader } from '../../shell/PageHeader';
 import { Button, IconButton } from '../../ui/Button';
 import { DataGrid } from '../../ui/DataGrid';
-import { DemoBadge } from '../../ui/DemoBadge';
 import { Modal } from '../../ui/Overlay';
 import { Panel, PanelHeader } from '../../ui/Panel';
 import { StatStripSkeleton } from '../../ui/Skeleton';
 import { MetricTile } from '../../ui/Stat';
 import { EmptyState, ErrorState } from '../../ui/States';
+import { SearchInput } from '../../ui/Field';
 import { Tabs } from '../../ui/Tabs';
 import { Tag } from '../../ui/Tag';
 import { OverflowMenu, RefreshButton, TableToolbar } from '../../ui/TableTools';
 import { useToast } from '../../ui/Toast';
 import { RecordBar, ResultCount } from '../../ui/WorkArea';
+import { exportRowsToCsv, timestampedName } from '../../lib/csv';
 import { ScheduleDialog } from './ScheduleDialog';
 
 /**
@@ -64,6 +66,18 @@ const TABS = [
   { value: 'history', label: 'History' },
 ];
 
+/* Named per tab, because "Search" alone leaves the operator guessing which of
+   the three lists they are about to narrow. */
+/* Named per tab, because "Search" alone leaves the operator guessing which of
+   the three lists they are about to narrow. Kept short enough to render inside
+   a 16rem field - a placeholder clipped mid-word tells them less than a vague
+   one would. */
+const SEARCH_PLACEHOLDERS = {
+  library: 'Search report types...',
+  scheduled: 'Search schedules...',
+  history: 'Search produced reports...',
+};
+
 export default function ReportsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { notify } = useToast();
@@ -71,6 +85,17 @@ export default function ReportsPage() {
   const tab = TABS.some((entry) => entry.value === searchParams.get('tab'))
     ? searchParams.get('tab')
     : 'library';
+
+  const search = searchParams.get('q') || '';
+  const setSearch = useCallback(
+    (value) => {
+      const next = new URLSearchParams(searchParams);
+      if (value) next.set('q', value);
+      else next.delete('q');
+      setSearchParams(next, { replace: true });
+    },
+    [searchParams, setSearchParams],
+  );
 
   const [scheduleFor, setScheduleFor] = useState(null);
   const [editing, setEditing] = useState(null);
@@ -120,8 +145,124 @@ export default function ReportsPage() {
       });
       if (!existing) setTab('scheduled');
     },
-    [notify, setTab],
+    /* The state setters are listed even though React guarantees they are
+       stable: the compiler infers them as dependencies, and a dependency list
+       that disagrees with the inferred one makes it skip optimising the whole
+       component. */
+    [notify, setTab, setScheduleOpen, setEditing, setScheduleFor],
   );
+
+  /* One search box filters the tab you are looking at. Three separate boxes
+     would be three states to keep straight for one question, and a schedule
+     and a run are searched by the same words anyway: the report's name. */
+  const needle = search.trim().toLowerCase();
+  const matches = useCallback(
+    (fields) =>
+      !needle ||
+      fields.filter(Boolean).some((field) => String(field).toLowerCase().includes(needle)),
+    [needle],
+  );
+
+  const templates = useMemo(
+    () =>
+      (library.data?.templates ?? []).filter((template) =>
+        matches([template.name, template.purpose, template.audience, ...template.sections.map((section) => section.title)]),
+      ),
+    [library.data, matches],
+  );
+
+  const scheduleRows = useMemo(
+    () =>
+      (schedules.data?.rows ?? []).filter((row) =>
+        matches([row.templateName, row.format, row.cadence, ...(row.recipients ?? [])]),
+      ),
+    [schedules.data, matches],
+  );
+
+  const runRows = useMemo(
+    () =>
+      (runs.data?.rows ?? []).filter((row) =>
+        matches([row.templateName, row.format, row.status, row.requestedBy, row.error]),
+      ),
+    [runs.data, matches],
+  );
+
+  const exportable =
+    (tab === 'library' && templates.length > 0) ||
+    (tab === 'scheduled' && scheduleRows.length > 0) ||
+    (tab === 'history' && runRows.length > 0);
+
+  /* Exports the tab in front of you, filtered the way it is filtered. A single
+     Export that always wrote the catalogue would be a different answer to the
+     one the operator is looking at. */
+  const onExport = useCallback(() => {
+    if (tab === 'scheduled') {
+      exportRowsToCsv({
+        filename: timestampedName('report-schedules'),
+        columns: [
+          { header: 'Report', value: (row) => row.templateName },
+          { header: 'Cadence', value: (row) => CADENCES[row.cadence]?.label ?? row.cadence },
+          { header: 'Hour (UTC)', value: (row) => String(row.hour).padStart(2, '0') },
+          { header: 'Format', value: (row) => REPORT_FORMATS[row.format]?.label ?? row.format },
+          { header: 'Recipients', value: (row) => (row.recipients ?? []).join('; ') },
+          { header: 'State', value: (row) => (row.enabled ? 'Active' : 'Paused') },
+          { header: 'Next run (UTC)', value: (row) => row.nextRunAt ?? '' },
+          { header: 'Last run (UTC)', value: (row) => row.lastRunAt ?? '' },
+        ],
+        rows: scheduleRows,
+      });
+      notify({
+        title: 'Schedules exported',
+        description: `${formatNumber(scheduleRows.length)} schedule${scheduleRows.length === 1 ? '' : 's'} written.`,
+        variant: 'success',
+      });
+      return;
+    }
+
+    if (tab === 'history') {
+      exportRowsToCsv({
+        filename: timestampedName('report-history'),
+        columns: [
+          { header: 'Report', value: (row) => row.templateName },
+          { header: 'Outcome', value: (row) => RUN_STATUSES[row.status]?.label ?? row.status },
+          { header: 'Format', value: (row) => REPORT_FORMATS[row.format]?.label ?? row.format },
+          { header: 'Requested by', value: (row) => row.requestedBy },
+          { header: 'Trigger', value: (row) => row.trigger },
+          { header: 'Rows', value: (row) => row.rows ?? '' },
+          { header: 'Size (KB)', value: (row) => row.sizeKb ?? '' },
+          { header: 'Duration (ms)', value: (row) => row.durationMs ?? '' },
+          { header: 'Started (UTC)', value: (row) => row.startedAt },
+          { header: 'Failure reason', value: (row) => row.error ?? '' },
+        ],
+        rows: runRows,
+      });
+      notify({
+        title: 'History exported',
+        description: `${formatNumber(runRows.length)} run${runRows.length === 1 ? '' : 's'} written, including failures.`,
+        variant: 'success',
+      });
+      return;
+    }
+
+    exportRowsToCsv({
+      filename: timestampedName('report-catalogue'),
+      columns: [
+        { header: 'Report', value: (row) => row.name },
+        { header: 'Purpose', value: (row) => row.purpose },
+        { header: 'Audience', value: (row) => row.audience },
+        { header: 'Formats', value: (row) => row.formats.map((key) => REPORT_FORMATS[key]?.label ?? key).join('; ') },
+        { header: 'Sections', value: (row) => row.sections.map((section) => section.title).join('; ') },
+        { header: 'On a schedule', value: (row) => (row.scheduled ? 'Yes' : 'No') },
+        { header: 'Last produced (UTC)', value: (row) => row.lastGeneratedAt ?? '' },
+      ],
+      rows: templates,
+    });
+    notify({
+      title: 'Catalogue exported',
+      description: `${formatNumber(templates.length)} report type${templates.length === 1 ? '' : 's'} written.`,
+      variant: 'success',
+    });
+  }, [tab, templates, scheduleRows, runRows, notify]);
 
   const tabsWithCounts = useMemo(
     () => [
@@ -139,16 +280,15 @@ export default function ReportsPage() {
         lede="A scheduled report is produced whether or not anyone is watching, so every run is recorded with its outcome."
         actions={
           <>
-            <DemoBadge detail="The catalogue is real; the runs and schedules are generated. What you create here is stored in this browser and survives a reload." />
-            <Button
-              variant="secondary"
-              icon={RotateCcw}
-              onClick={() => {
-                resetReportState();
-                notify({ title: 'Demo reports reset', description: 'Schedules and history are back to their seeded state.', variant: 'info' });
-              }}
-            >
-              Reset demo
+            <SearchInput
+              value={search}
+              onChange={setSearch}
+              placeholder={SEARCH_PLACEHOLDERS[tab]}
+              size="sm"
+              className="w-full sm:w-64"
+            />
+            <Button variant="secondary" icon={Download} onClick={onExport} disabled={!exportable}>
+              Export
             </Button>
             <Button
               variant="primary"
@@ -206,6 +346,9 @@ export default function ReportsPage() {
       {tab === 'library' && (
         <LibraryTab
           query={library}
+          templates={templates}
+          search={search}
+          onClearSearch={() => setSearch('')}
           onGenerate={onGenerate}
           onSchedule={(template) => {
             setEditing(null);
@@ -218,6 +361,8 @@ export default function ReportsPage() {
       {tab === 'scheduled' && (
         <ScheduledTab
           query={schedules}
+          rows={scheduleRows}
+          search={search}
           onCreate={() => {
             setEditing(null);
             setScheduleFor(null);
@@ -254,6 +399,8 @@ export default function ReportsPage() {
       {tab === 'history' && (
         <HistoryTab
           query={runs}
+          rows={runRows}
+          search={search}
           onRegenerate={(run) => {
             generateReport({ templateId: run.templateId, format: run.format });
             notify({ title: `${run.templateName} queued again`, description: 'The new run appears at the top of History.', variant: 'info' });
@@ -316,14 +463,31 @@ export default function ReportsPage() {
 
 /* ── Library ──────────────────────────────────────────────────────────────── */
 
-function LibraryTab({ query, onGenerate, onSchedule }) {
+function LibraryTab({ query, templates, search, onClearSearch, onGenerate, onSchedule }) {
   if (query.isError && !query.data) {
     return <ErrorState error={query.error} onRetry={query.refetch} />;
   }
 
+  if (search.trim() && templates.length === 0) {
+    return (
+      <Panel prominence="lead" className="animate-rise">
+        <EmptyState
+          icon={SearchX}
+          title="No report type matches that search"
+          description={`Nothing in the catalogue mentions "${search.trim()}". The search covers a report's name, purpose, audience and section titles.`}
+          action={
+            <Button variant="secondary" size="sm" onClick={onClearSearch}>
+              Clear search
+            </Button>
+          }
+        />
+      </Panel>
+    );
+  }
+
   return (
     <div className="grid gap-4 @min-[34rem]:grid-cols-2 @min-[64rem]:grid-cols-3">
-      {(query.data?.templates ?? []).map((template, index) => (
+      {templates.map((template, index) => (
         <Panel
           key={template.id}
           prominence="default"
@@ -426,8 +590,7 @@ function LibraryTab({ query, onGenerate, onSchedule }) {
 
 /* ── Scheduled ────────────────────────────────────────────────────────────── */
 
-function ScheduledTab({ query, onCreate, onEdit, onToggle, onDelete }) {
-  const rows = query.data?.rows ?? [];
+function ScheduledTab({ query, rows, search, onCreate, onEdit, onToggle, onDelete }) {
 
   return (
     <Panel prominence="lead" flush className="animate-rise overflow-hidden">
@@ -442,6 +605,7 @@ function ScheduledTab({ query, onCreate, onEdit, onToggle, onDelete }) {
           shown={formatNumber(rows.length)}
           total={formatNumber(query.data?.total ?? 0)}
           unit="schedules"
+          filtered={Boolean(search.trim())}
           loading={query.isLoading && !query.data}
         />
       </RecordBar>
@@ -532,16 +696,27 @@ function ScheduledTab({ query, onCreate, onEdit, onToggle, onDelete }) {
             </>
           )}
           emptyState={
-            <EmptyState
-              icon={CalendarClock}
-              title="Nothing is scheduled"
-              description="A scheduled report keeps producing without anyone asking, which is the point. Nothing is scheduled yet."
-              action={
-                <Button variant="primary" size="sm" icon={CalendarPlus} onClick={onCreate}>
-                  Schedule a report
-                </Button>
-              }
-            />
+            /* Two different nothings: nothing matched the search, or nothing
+               has been scheduled at all. The second is the first thing an
+               operator sees on this tab, so it points at the control. */
+            search.trim() ? (
+              <EmptyState
+                icon={SearchX}
+                title="No schedule matches that search"
+                description={`Nothing scheduled mentions "${search.trim()}". Clear the search to see every schedule.`}
+              />
+            ) : (
+              <EmptyState
+                icon={CalendarClock}
+                title="Nothing is scheduled yet"
+                description="A scheduled report keeps producing without anyone asking, which is the point of scheduling one. Create a schedule and it appears here, with its cadence, recipients and next run."
+                action={
+                  <Button variant="primary" size="sm" icon={CalendarPlus} onClick={onCreate}>
+                    Schedule a report
+                  </Button>
+                }
+              />
+            )
           }
         />
       )}
@@ -551,8 +726,7 @@ function ScheduledTab({ query, onCreate, onEdit, onToggle, onDelete }) {
 
 /* ── History ──────────────────────────────────────────────────────────────── */
 
-function HistoryTab({ query, onRegenerate, onDelete }) {
-  const rows = query.data?.rows ?? [];
+function HistoryTab({ query, rows, search, onRegenerate, onDelete }) {
   const running = rows.filter((row) => row.status === 'queued' || row.status === 'running').length;
 
   return (
@@ -568,6 +742,7 @@ function HistoryTab({ query, onRegenerate, onDelete }) {
           shown={formatNumber(rows.length)}
           total={formatNumber(query.data?.total ?? 0)}
           unit="runs"
+          filtered={Boolean(search.trim())}
           loading={query.isLoading && !query.data}
         />
         {running > 0 && (
@@ -689,11 +864,19 @@ function HistoryTab({ query, onRegenerate, onDelete }) {
             </>
           )}
           emptyState={
-            <EmptyState
-              icon={Inbox}
-              title="No report has been produced yet"
-              description="Generate one from the Library. Every run lands here with its outcome, including the ones that fail."
-            />
+            search.trim() ? (
+              <EmptyState
+                icon={SearchX}
+                title="No produced report matches that search"
+                description={`No run mentions "${search.trim()}". Clear the search to see the full history.`}
+              />
+            ) : (
+              <EmptyState
+                icon={Inbox}
+                title="No report has been produced yet"
+                description="Generate one from the Library. Every run lands here with its outcome, including the ones that fail."
+              />
+            )
           }
         />
       )}
