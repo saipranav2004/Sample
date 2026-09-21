@@ -97,7 +97,7 @@ export const REPORT_TEMPLATES = [
       { key: 'by-source', title: 'Exposure by source' },
       { key: 'validity', title: 'Still-valid versus revoked' },
       { key: 'sla', title: 'Remediation against SLA' },
-      { key: 'detail', title: 'Finding-level detail' },
+      { key: 'detail', title: 'Credential-level detail' },
     ],
   },
   {
@@ -209,6 +209,7 @@ function seedRuns() {
   const seeded = picks.map((templateId, index) => {
     const template = templateById(templateId);
     const failed = index === 5;
+    const rowCount = intBetween(next, 60, 1400);
     return {
       id: `run-seed-${index + 1}`,
       templateId,
@@ -219,8 +220,8 @@ function seedRuns() {
       requestedBy: index % 3 === 0 ? 'Scheduled' : 'das_admin',
       startedAt: hoursAgoIso(index * intBetween(next, 5, 30) + 3),
       durationMs: intBetween(next, 1400, 9200),
-      rows: intBetween(next, 120, 4200),
-      sizeKb: intBetween(next, 40, 2600),
+      rows: rowCount,
+      sizeKb: fileSize(rowCount, template.formats[0]),
       error: failed ? 'The compliance mapping service did not respond in time.' : null,
     };
   });
@@ -305,6 +306,7 @@ export function generateReport({ templateId, format, trigger = 'manual', request
 
   const id = `run-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
   const next = rng(hashSeed(id));
+  const readyRows = intBetween(next, 60, 1400);
   const run = {
     id,
     templateId,
@@ -332,8 +334,8 @@ export function generateReport({ templateId, format, trigger = 'manual', request
     () =>
       advance('ready', {
         durationMs: intBetween(next, 1600, 6400),
-        rows: intBetween(next, 90, 3800),
-        sizeKb: intBetween(next, 38, 1900),
+        rows: readyRows,
+        sizeKb: fileSize(readyRows, format ?? template.formats[0]),
       }),
     3200,
   );
@@ -391,55 +393,72 @@ function buildPreview(run, template) {
     title: template.name,
     audience: template.audience,
     generatedAt: run.startedAt,
-    coverage: { accounts: intBetween(next, 2, 4), identities: intBetween(next, 900, 3200), window: '30 days' },
+    /* Kept in the same order of magnitude as the per-account and per-category
+       measures below, so a reader adding up the sections does not land a
+       thousand identities away from the coverage line. */
+    coverage: { accounts: intBetween(next, 2, 4), identities: intBetween(next, 980, 1520), window: '30 days' },
     sections: template.sections.map((section) => ({
       ...section,
-      metrics: Array.from({ length: intBetween(next, 2, 4) }, (_, index) => ({
-        key: `${section.key}-m${index}`,
-        label: metricLabel(next, section.key, index),
-        value: intBetween(next, 3, 2400),
-        delta: intBetween(next, -22, 34),
-      })),
+      metrics: sectionMeasures(section.key).map(([label, min, max], index) => {
+        const value = intBetween(next, min, max);
+        /* The change is a share of the measure, not a fixed span: +34 against a
+           posture score of 62 would be a different report. */
+        const swing = Math.max(1, Math.round(value * 0.12));
+        return {
+          key: `${section.key}-m${index}`,
+          label,
+          value,
+          delta: intBetween(next, -swing, swing),
+        };
+      }),
       note: sectionNote(section.key),
     })),
   };
 }
 
-const METRIC_WORDS = {
-  posture: ['Posture score', 'Controls passing', 'Controls failing', 'Score change'],
-  'top-risks': ['Critical risks', 'High risks', 'Identities affected', 'Accounts affected'],
-  movement: ['New identities', 'Retired identities', 'New findings', 'Findings closed'],
-  asks: ['Decisions open', 'Overdue decisions', 'Owners to notify'],
-  'by-category': ['Compute', 'Serverless', 'CI/CD', 'AI agents'],
-  'by-account': ['prod-main', 'prod-eu', 'staging', 'data-platform'],
-  ownerless: ['No owner', 'No team tag', 'Creator unresolved'],
-  full: ['Records', 'Columns', 'Accounts'],
-  age: ['Under 30 days', '30 to 90 days', 'Over 90 days', 'Over 365 days'],
-  'never-rotated': ['Never rotated', 'Still valid', 'Admin-equivalent'],
-  dormant: ['Dormant 90 days', 'Dormant 180 days', 'Dormant with admin'],
-  plan: ['Rotate first', 'Rotate this week', 'Needs owner'],
-  'by-source': ['Repository', 'Build logs', 'Object storage', 'Container images'],
-  validity: ['Still valid', 'Revoked', 'Unverifiable'],
-  sla: ['Within SLA', 'Breached', 'Median days'],
-  detail: ['Findings', 'Repositories', 'Identities'],
-  'by-type': ['New API', 'New resource', 'Volume spike', 'Off-hours'],
-  disposition: ['Acknowledged', 'Expected', 'Suppressed', 'Resolved'],
-  baselines: ['Established', 'Learning', 'Drifting'],
-  outliers: ['Peer groups', 'Outliers', 'Single-member groups'],
-  gap: ['Granted actions', 'Used actions', 'Unused actions'],
-  admin: ['Admin-equivalent', 'With static keys', 'Without MFA'],
-  unused: ['Never used', 'Unused 90 days', 'Services untouched'],
-  recommend: ['Policies to reduce', 'Actions to remove', 'Identities affected'],
-  summary: ['Controls passing', 'Controls failing', 'Not applicable'],
-  failing: ['Failing controls', 'With evidence', 'Awaiting evidence'],
-  exceptions: ['Accepted', 'Expiring 30 days', 'Expired'],
-  attestation: ['Signatories', 'Frameworks'],
+/**
+ * Every measure a section reports, with the range its value is drawn from.
+ *
+ * The range is declared per measure rather than shared, because a median in
+ * days and a count of repositories are not the same kind of number: one generic
+ * `intBetween` produced reports claiming a median remediation time of 1,647
+ * days, which is the fastest way to teach a reader that the figures are
+ * decoration. A section emits exactly the measures listed here - there is no
+ * fallback label, so a report can never show "Measure 4".
+ */
+const SECTION_MEASURES = {
+  posture: [['Posture score', 58, 82], ['Controls passing', 96, 128], ['Controls failing', 6, 28], ['Accounts assessed', 2, 4]],
+  'top-risks': [['Critical risks', 2, 9], ['High risks', 8, 24], ['Identities affected', 14, 90], ['Accounts affected', 1, 4]],
+  movement: [['New identities', 12, 74], ['Retired identities', 4, 38], ['New exposures', 3, 22], ['Exposures closed', 2, 19]],
+  asks: [['Decisions open', 2, 7], ['Overdue decisions', 0, 3], ['Owners to notify', 3, 14]],
+  'by-category': [['Compute', 180, 460], ['Serverless', 120, 380], ['CI/CD', 40, 130], ['AI agents', 6, 34]],
+  'by-account': [['prod-main', 320, 620], ['prod-eu', 140, 300], ['staging', 90, 240], ['data-platform', 60, 190]],
+  ownerless: [['No owner', 18, 120], ['No team tag', 30, 180], ['Creator unresolved', 8, 60]],
+  full: [['Records', 900, 3200], ['Columns', 14, 26], ['Accounts', 2, 4]],
+  age: [['Under 30 days', 120, 420], ['30 to 90 days', 80, 260], ['Over 90 days', 40, 190], ['Over 365 days', 6, 70]],
+  'never-rotated': [['Never rotated', 24, 140], ['Still valid', 18, 120], ['Admin-equivalent', 1, 12]],
+  dormant: [['Dormant 90 days', 30, 160], ['Dormant 180 days', 12, 90], ['Dormant with admin', 0, 9]],
+  plan: [['Rotate first', 3, 18], ['Rotate this week', 8, 40], ['Needs owner', 4, 26]],
+  'by-source': [['Repository', 14, 68], ['Build logs', 4, 26], ['Object storage', 1, 12], ['Container images', 2, 18]],
+  validity: [['Still valid', 12, 58], ['Revoked', 8, 44], ['Unverifiable', 1, 11]],
+  sla: [['Within SLA', 14, 62], ['Breached', 2, 17], ['Median days', 2, 21]],
+  detail: [['Exposed credentials', 18, 96], ['Repositories', 6, 34], ['Identities', 9, 52]],
+  'by-type': [['New API', 2, 14], ['New resource', 2, 12], ['Volume spike', 0, 8], ['Off-hours', 1, 11]],
+  disposition: [['Acknowledged', 4, 26], ['Expected', 6, 38], ['Suppressed', 1, 14], ['Resolved', 8, 44]],
+  baselines: [['Established', 96, 148], ['Learning', 8, 40], ['Drifting', 12, 60]],
+  outliers: [['Peer groups', 9, 22], ['Outliers', 3, 15], ['Single-member groups', 1, 7]],
+  gap: [['Granted actions', 420, 1900], ['Used actions', 90, 460], ['Unused actions', 280, 1500]],
+  admin: [['Admin-equivalent', 2, 16], ['With static keys', 1, 11], ['Without MFA', 0, 8]],
+  unused: [['Never used', 40, 260], ['Unused 90 days', 20, 140], ['Services untouched', 5, 28]],
+  recommend: [['Policies to reduce', 6, 34], ['Actions to remove', 60, 420], ['Identities affected', 12, 78]],
+  summary: [['Controls passing', 96, 128], ['Controls failing', 6, 28], ['Not applicable', 2, 14]],
+  failing: [['Failing controls', 6, 28], ['With evidence', 3, 20], ['Awaiting evidence', 1, 12]],
+  exceptions: [['Accepted', 4, 24], ['Expiring 30 days', 0, 6], ['Expired', 0, 4]],
+  attestation: [['Signatories', 2, 6], ['Frameworks', 2, 5]],
 };
 
-function metricLabel(next, sectionKey, index) {
-  const words = METRIC_WORDS[sectionKey];
-  if (words && words[index]) return words[index];
-  return `Measure ${index + 1}`;
+function sectionMeasures(sectionKey) {
+  return SECTION_MEASURES[sectionKey] ?? [['Records', 90, 1200]];
 }
 
 function sectionNote(key) {
@@ -450,6 +469,13 @@ function sectionNote(key) {
     case 'baselines': return 'A drifting baseline is not an anomaly; it is a signal that the model needs retraining.';
     default: return null;
   }
+}
+
+/* File size follows from the row count rather than being rolled separately, so
+   a 60-row report cannot come out larger than a 1,400-row one. */
+function fileSize(rows, format) {
+  const perRow = format === 'pdf' ? 1.1 : format === 'json' ? 0.9 : 0.42;
+  return Math.max(12, Math.round(rows * perRow + (format === 'pdf' ? 180 : 8)));
 }
 
 /* ── Helpers ──────────────────────────────────────────────────────────────── */

@@ -17,7 +17,10 @@ import { cn } from '../../ui/cn';
  *
  * All four draw marks in the data hue (`--t-series-1`, the same blue
  * `TrendChart` defaults to) and reserve the severity tiers for severity, so a
- * red mark on any of them always means the same thing.
+ * red mark on any of them always means the same thing: this specific cell,
+ * bar or call is the departure. A comparison needs a second hue, and it is
+ * categorical (`--t-series-4`) rather than critical, because a whole observed
+ * shape is not a verdict - the departures inside it are named one by one.
  */
 
 /* ── Behavioural fingerprint ──────────────────────────────────────────────── */

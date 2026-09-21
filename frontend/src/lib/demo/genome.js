@@ -264,6 +264,17 @@ function dayPoint(daysAgo) {
   };
 }
 
+/**
+ * A region that is not the one given.
+ *
+ * Picking from the whole list and hoping it differs produces an anomaly whose
+ * two sides are identical roughly one time in five.
+ */
+function otherRegion(next, baseline) {
+  const options = REGIONS.filter((entry) => entry !== baseline);
+  return pick(next, options.length > 0 ? options : REGIONS);
+}
+
 function buildAnomalies(next, identity) {
   /* Most identities behave. A fleet where everything is anomalous teaches an
      operator to ignore the screen. */
@@ -280,6 +291,12 @@ function buildAnomalies(next, identity) {
       confidence >= 95 ? 'CRITICAL' : confidence >= 88 ? 'HIGH' : confidence >= 79 ? 'MEDIUM' : 'LOW';
     const api = type === 'PRIV_ESCALATION' || type === 'NEW_API' ? pick(next, SENSITIVE_APIS) : pick(next, APIS);
     const minutesAgo = intBetween(next, 4, 2600);
+    /* Drawn once, and never the identity's own region: a new-region anomaly
+       reading `us-east-1 -> us-east-1` says the detector cannot tell the two
+       sides apart, which is the one thing this screen exists to do. The same
+       value feeds the observed statement and the Region field, so the summary
+       and the detail cannot disagree either. */
+    const region = type === 'NEW_REGION' ? otherRegion(next, identity.region) : identity.region;
 
     out.push({
       id: `${identity.id}-an-${index + 1}`,
@@ -294,12 +311,12 @@ function buildAnomalies(next, identity) {
       minutesAgo,
       api,
       resource: identity.typicalResources[0]?.resource ?? 's3://unknown',
-      region: type === 'NEW_REGION' ? pick(next, REGIONS) : identity.region,
+      region,
       sourceIp: type === 'NEW_IP' ? `203.0.113.${intBetween(next, 2, 250)}` : null,
       /* Every anomaly states both sides. A number with no baseline beside it
          is an assertion, not evidence. */
       baseline: baselineStatement(type, identity),
-      observed: observedStatement(next, type, identity, api),
+      observed: observedStatement(next, type, identity, api, region),
       status: 'open',
       title: anomalyTitle(type, api, identity),
       rationale: anomalyRationale(type, api, identity),
@@ -330,14 +347,14 @@ function baselineStatement(type, identity) {
   }
 }
 
-function observedStatement(next, type, identity, api) {
+function observedStatement(next, type, identity, api, region) {
   switch (type) {
     case 'NEW_API':
       return { headline: 'First occurrence', detail: `${intBetween(next, 1, 6)} calls to ${api}` };
     case 'NEW_RESOURCE':
       return { headline: 'First access', detail: `1 access to ${identity.typicalResources[0]?.resource}` };
     case 'NEW_REGION':
-      return { headline: pick(next, REGIONS), detail: `${intBetween(next, 2, 40)} calls outside the baseline region` };
+      return { headline: region, detail: `${intBetween(next, 2, 40)} calls outside the baseline region` };
     case 'VOLUME_SPIKE': {
       const peak = identity.volumeBaseline[12].max;
       const observed = Math.round(peak * (2 + next() * 2));

@@ -66,7 +66,9 @@ export function AnomalyDrawer({ anomaly, onClose, onDecide, onInvestigate }) {
         </>
       }
     >
-      <div className="flex flex-col gap-5">
+      {/* The drawer body carries no padding of its own, the same as the record
+          drawers, so the content supplies it. */}
+      <div className="flex flex-col gap-5 px-4 py-4 sm:px-5">
         {/* The comparison, first and largest. Everything else is context. */}
         <div>
           <SectionLabel>What changed</SectionLabel>

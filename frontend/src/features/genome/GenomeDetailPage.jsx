@@ -5,7 +5,7 @@ import {
   Check,
   Dna,
   EyeOff,
-  FlaskConical,
+  FileCode,
   Play,
   ShieldCheck,
   Snowflake,
@@ -226,7 +226,10 @@ export default function GenomeDetailPage() {
         onClose={() => setPolicyPreview(null)}
         title={policyPreview?.name}
         description="The document below is exactly what would be attached. Read it before applying."
-        icon={FlaskConical}
+        /* Not the flask: that icon means demonstration data everywhere else in
+           this build, and this dialog is about a document, not about the data
+           being generated. */
+        icon={FileCode}
         tone="medium"
         footer={
           <>
@@ -315,8 +318,14 @@ function GenomeTab({ identity }) {
           <Fingerprint
             className="mt-4"
             series={[
+              /* Two categorical hues, not a severity pair. The observed shape
+                 sits inside the baseline on some axes and outside it on
+                 others; painting the whole polygon critical would claim the
+                 last 24 hours are wrong in six ways when the departures are
+                 named individually above. The dashes carry the distinction
+                 without colour. */
               { key: 'baseline', label: 'Baseline', values: identity.fingerprint.baseline, tone: 'var(--t-series-1)' },
-              { key: 'observed', label: 'Last 24h', values: identity.fingerprint.observed, tone: 'var(--t-critical)', dashed: true, fillOpacity: 0.1 },
+              { key: 'observed', label: 'Last 24h', values: identity.fingerprint.observed, tone: 'var(--t-series-4)', dashed: true, fillOpacity: 0.1 },
             ]}
           />
         </Panel>
@@ -687,7 +696,9 @@ function PeersTab({ identity }) {
         <div className="mt-4 grid gap-5 @min-[46rem]:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <Fingerprint
             series={[
-              { key: 'self', label: identity.name, values: selfAxes, tone: 'var(--t-critical)' },
+              /* Being different from the group is evidence, not a verdict, so
+                 the same two categorical hues as the genome tab. */
+              { key: 'self', label: identity.name, values: selfAxes, tone: 'var(--t-series-4)' },
               { key: 'peer', label: 'Group average', values: peers.average, tone: 'var(--t-series-1)', dashed: true, fillOpacity: 0.08 },
             ]}
           />
@@ -698,9 +709,13 @@ function PeersTab({ identity }) {
                 <li key={axis.key} className="border-b border-line py-2 last:border-0">
                   <div className="flex items-baseline justify-between gap-3">
                     <span className="min-w-0 truncate text-[12.5px] text-ink-2">{axis.label}</span>
+                    {/* A gap from the group average is neutral ink with a sign,
+                        not a severity tier: sitting 31 points above the group is
+                        the evidence, and calling it critical here would rate it
+                        against the same scale as the named departures above. */}
                     <span
                       data-numeric=""
-                      className={`shrink-0 text-[12.5px] font-semibold ${axis.gap > 0 ? 'text-critical' : 'text-ink-3'}`}
+                      className={`shrink-0 text-[12.5px] font-semibold ${axis.gap > 0 ? 'text-ink' : 'text-ink-3'}`}
                     >
                       {axis.gap > 0 ? '+' : ''}
                       {axis.gap}

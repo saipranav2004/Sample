@@ -931,3 +931,57 @@ on the left, departures by type on the right. The trend was previously buried
 under that ranked list, which put two questions in one panel and gave the chart
 104px; it now has its own title and 132px, and the column comes out level with
 the list. Verified at 1440px, 1024px and 390px.
+
+### 13.6 What a screenshot found that the tests did not
+
+The interaction checks passed on figures that were nonsense. Reading the
+rendered screens caught five defects no assertion was looking for:
+
+- A new-region anomaly read `us-east-1 -> us-east-1`. The baseline region and
+  the observed region were drawn from the same list by independent picks, so
+  about one in five collided - and the drawer's whole purpose is to put two
+  different things side by side. The region is now drawn once, excluding the
+  identity's own, and feeds both the observed statement and the detail field.
+  Audited across all 53 anomalies in the 30-day window: no identical pair.
+- A report section could claim `Measure 4: 2,141`. Sections emitted two to four
+  metrics but named only as many as their label list held, so the rest fell
+  back to a placeholder. Sections now emit exactly the measures declared for
+  them and the fallback is gone.
+- Every figure came from one `intBetween(3, 2400)`, which produced a median
+  remediation time of 1,647 days. Each measure now declares its own range, and
+  the change is a share of the value rather than a fixed span, so `+34` cannot
+  appear against a posture score of 62. File size follows from the row count
+  instead of being rolled separately.
+- The radar drew the observed shape in the critical tone. Being outside the
+  baseline on two axes of six is not a six-way verdict, and the departures are
+  named individually above it. Both radars now use two categorical hues
+  (`--t-series-1` and `--t-series-4`) with dashes carrying the distinction
+  without colour, and the same argument retired the critical tone from the
+  peer-group divergence figures.
+- The policy preview used the flask icon, which means demonstration data
+  everywhere else in this build.
+
+Two layout defects came from the same pass: template cards whose `Generate`
+buttons sat on three different lines in one row, because a status pill wrapped
+in the action row (the pill moved up into the facts, the action row pins to the
+card floor); and a failed run whose reason was ellipsised in the table with no
+link to the page that states it in full.
+
+### 13.7 The drawer was not a query container
+
+The anomaly drawer rendered with its baseline and observed cards stacked, its
+detail labels sitting above their values, and its content flush to the panel
+edges - the opposite of what the code asked for.
+
+`Drawer`'s body was not a query container. Every `@min-*` rule inside a drawer
+therefore matched nothing, so a 672px panel laid itself out as though it were
+narrow, and the comparison this feature exists to show was not a comparison at
+all. The body now declares `@container`, which is the honest reading anyway: a
+drawer is a fixed slab that has nothing to do with the window, so what is
+inside it must size against the panel. The anomaly drawer also supplies its own
+`px-4 sm:px-5`, the same as the record drawers, since the body carries none.
+
+Verified at 1600px, 1024px and 390px, in both themes, across all four drawers:
+cards side by side above 26rem and stacked below it, labels and values on one
+line, nothing outside the panel, no page overflow.
+

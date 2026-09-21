@@ -369,9 +369,18 @@ function LibraryTab({ query, onGenerate, onSchedule }) {
                 {template.formats.map((format) => REPORT_FORMATS[format].label).join(', ')}
               </dd>
             </div>
+            {/* Status belongs with the other facts, not in the action row: a
+                pill down there wraps to a second line on the cards that have
+                one, which knocks their Generate button out of line with the
+                rest of the row. */}
+            {template.scheduled && (
+              <Tag tone="low" size="sm" dot>
+                On a schedule
+              </Tag>
+            )}
           </dl>
 
-          <ul className="mt-3 flex flex-col gap-1">
+          <ul className="mt-3 mb-4 flex flex-col gap-1">
             {template.sections.map((section) => (
               <li key={section.key} className="flex items-baseline gap-2 text-[11.5px] text-ink-3">
                 <span aria-hidden="true" className="mt-1.5 size-1 shrink-0 rounded-full bg-ink-3/60" />
@@ -380,7 +389,12 @@ function LibraryTab({ query, onGenerate, onSchedule }) {
             ))}
           </ul>
 
-          <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-3">
+          {/* mt-auto: the action row sits on the card floor, so Generate lands
+              on one line across a row of cards whose descriptions and section
+              lists are different lengths. The schedule pill rides in the same
+              row rather than below it, for the same reason - and because it is
+              status, not an action. */}
+          <div className="mt-auto flex flex-wrap items-center gap-2 border-t border-line pt-3">
             <Button variant="primary" size="sm" icon={Play} onClick={() => onGenerate(template)}>
               Generate
             </Button>
@@ -391,14 +405,6 @@ function LibraryTab({ query, onGenerate, onSchedule }) {
               {template.lastGeneratedAt ? `Last ${formatRelative(template.lastGeneratedAt)}` : 'Never generated'}
             </span>
           </div>
-
-          {template.scheduled && (
-            <p className="mt-2">
-              <Tag tone="low" size="sm" dot>
-                On a schedule
-              </Tag>
-            </p>
-          )}
         </Panel>
       ))}
 
@@ -656,13 +662,17 @@ function HistoryTab({ query, onRegenerate, onDelete }) {
               key: 'open',
               header: '',
               width: '10%',
+              /* A failed run opens too. Its reason is truncated in the table
+                 and the run page states it in full, so withholding the link
+                 would leave the one row that needs explaining as the only one
+                 that cannot be read. */
               cell: (row) =>
-                row.status === 'ready' ? (
+                row.status === 'ready' || row.status === 'failed' ? (
                   <Link
                     to={`/reports/${row.id}`}
                     className="text-[12px] font-medium text-brand hover:underline"
                   >
-                    Open
+                    {row.status === 'failed' ? 'Why' : 'Open'}
                   </Link>
                 ) : null,
             },

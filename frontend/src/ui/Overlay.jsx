@@ -68,7 +68,11 @@ export function Drawer({ open, onClose, title, subtitle, eyebrow, width = 'lg', 
           </div>
           <IconButton icon={X} label="Close panel" onClick={onClose} />
         </header>
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">{children}</div>
+        {/* A query container: a drawer is a fixed slab roughly 640px wide that
+            has nothing to do with the window, so content inside it must size
+            against the panel. Without this the `@min-*` rules in drawer bodies
+            match nothing and every two-up layout silently stacks. */}
+        <div className="@container min-h-0 flex-1 overflow-y-auto overscroll-contain">{children}</div>
         {footer && (
           <footer className="flex flex-wrap items-center justify-end gap-2 border-t border-line bg-surface-2 px-4 py-3 sm:px-5">
             {footer}
