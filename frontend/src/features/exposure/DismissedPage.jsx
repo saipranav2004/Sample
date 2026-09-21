@@ -246,7 +246,7 @@ export default function DismissedPage() {
     const detail = describeScannerError(query.error);
     return (
       <div className="flex flex-col gap-6">
-        <PageHeader title="Dismissed findings" />
+        <PageHeader title="Accepted exposures" />
         <Panel>
           <ErrorState error={{ message: detail.message }} title={detail.title} onRetry={query.refetch} />
         </Panel>
@@ -332,8 +332,8 @@ export default function DismissedPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Dismissed findings"
-        lede="Everything listed here is filtered out of live findings automatically."
+        title="Accepted exposures"
+        lede="Everything listed here is filtered out of live exposures automatically."
         actions={
           <>
             <Button as={Link} to="/exposure" variant="ghost" icon={ArrowLeft}>
@@ -352,7 +352,7 @@ export default function DismissedPage() {
             value={stats.total}
             tone="brand"
             icon={ShieldOff}
-            caption="Findings suppressed from the live set"
+            caption="Exposures suppressed from the live set"
             className="animate-rise"
           />
           <MetricTile
@@ -438,7 +438,7 @@ export default function DismissedPage() {
 
           {view === 'table' ? (
             <DataGrid
-              caption="Allowlisted findings"
+              caption="Accepted exposures"
               columns={columns}
               rows={entries}
               rowKey={(row, index) => `${entryKey(row)}-${index}`}

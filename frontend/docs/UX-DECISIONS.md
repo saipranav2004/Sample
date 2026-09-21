@@ -806,3 +806,122 @@ flat menus were previously relying on their content happening to be short.
 Verified at 620px, 760px and 900px viewport heights, at the top of a page and
 scrolled to the bottom: every popover sits inside the viewport, and at 760px
 the identity picker correctly flips above its trigger.
+
+## 13. Revision: two features on generated data, and a rename
+
+Two features were added - NHI Genome and Reports - plus a rename in the code
+exposure group. The information architecture was taken from the reference
+console; none of its design was.
+
+### 13.1 The honesty problem, and where the boundary sits
+
+Every previous phase held one rule: invent nothing the backend does not serve.
+These two features have no backend. That rule was suspended for them, on
+request, and the suspension is contained rather than quiet:
+
+- All generated data lives under `src/lib/demo/`. No other module produces a
+  figure the API did not send, so the boundary is a directory, not a habit.
+- Both screens carry a `DemoBadge` in the page header - a labelled control, not
+  a tooltip - which states plainly that the figures are generated in the
+  browser, that they are seeded, and that actions persist locally.
+- The demo layer mimics the real transport instead of short-circuiting it.
+
+That last point is the load-bearing one. `demoRequest` is async, cancellable
+through an `AbortSignal`, sets `error.code = 'CANCELLED'` on abort exactly as
+the axios client does, and honours `dna.demo.latency` and `dna.demo.fail`
+switches in `localStorage`. So the skeletons, empty states, error states and
+disabled buttons on these two screens are the real ones, exercised under real
+latency and real failure - not decoration that would collapse the day an
+endpoint appears. When one does, only the module's fetchers change.
+
+Data is deterministic: a mulberry32 PRNG seeded by `hashSeed(name)`, so the
+fleet is identical on every reload and a screenshot taken today matches one
+taken next week. A reporting screen whose numbers reshuffle on refresh teaches
+an operator that the numbers do not mean anything.
+
+Actions are real. Every mutation writes through a `localStorage` overlay and
+publishes on an event bus; `useDemoQuery` subscribes, so acknowledging an
+anomaly in the drawer updates the feed, the counters and the identity's own
+timeline at once, and survives a reload. There is one `Reset demo` control per
+feature, because state a user cannot clear is a trap.
+
+### 13.2 NHI Genome: a baseline is only useful next to what broke it
+
+A behavioural anomaly is a claim about a difference, and a screen that shows
+only the anomaly is asking to be taken on faith. So the drawer puts the
+baseline and the observed behaviour side by side, at equal weight, and names
+both in words (`baselineStatement` / `observedStatement`) before showing either
+as a chart.
+
+Four visuals, all in `--t-series-1` rather than the severity palette, so a
+colour never implies a verdict the data has not made:
+
+| Visual | Answers |
+|---|---|
+| Fingerprint (radar, 6 axes) | how this identity behaves in shape, and where the peer group differs |
+| Schedule grid (7x24) | when it works, with anomalous hours marked in the critical tone |
+| Volume band | whether today's call volume sits inside the learned band |
+| Ranked API share | what it calls, and what it has never called before |
+
+Dispositions are three, not two: `Suppress`, `Expected` and `Acknowledge`.
+A binary of dismiss-or-keep forces an operator to lie about a true-but-intended
+departure, and `Expected` is the state that actually describes most of them.
+
+The detail screen is six tabs - Genome, Anomalies, Activity, Timeline, Peer
+group, Containment - with open departures banner-ed above the tabs, because a
+tab is a place you have to think to visit. Containment shows the generated IAM
+policy as its exact JSON in a preview modal before anything is applied: a
+remediation screen that hides what it is about to do is worse than none.
+
+### 13.3 Reports: a report you cannot read is a file, not a feature
+
+A reporting feature whose only output is a download is a black box - you cannot
+tell whether the figures are right without opening something else. So a run
+renders in the product, section by section, and the CSV export is built from
+exactly the rows on screen, through the same `lib/csv` helper the record
+screens use. The file and the page cannot disagree.
+
+Three tabs, in the order the work happens: Library (what can be produced),
+Scheduled (what is produced without asking), History (what was produced). The
+tab is in the URL, so a link points at a tab.
+
+A run has real states - `queued`, `running`, `ready`, `failed` - and advances
+through them on timers rather than appearing finished instantly. The seeded
+history deliberately includes one failed run, and the failure reason is kept
+with the run instead of discarded, because a report that failed silently is
+worse than one that was never scheduled.
+
+`ScheduleDialog` validates rather than merely collects: a schedule with no
+recipients is a report nobody reads, and an hour outside 0-23 is not a time.
+Errors appear per field on submit and clear as the field is corrected.
+
+### 13.4 Findings became Exposed credentials
+
+`Findings` names the tool's internal object, not the user's problem. Every
+scanner in the category calls its output findings, which is precisely why it
+carries no information. The group is now `Credential exposure`, with
+`Exposed credentials` and `Accepted` beneath it, and the unit of count reads
+`exposed credentials` throughout - titles, captions, empty states and the
+dismissal screen.
+
+`Accepted` rather than `Dismissed` for the second screen: dismissing describes
+what the operator clicked, accepting describes the decision they made and now
+own.
+
+### 13.5 A chart that rendered nothing
+
+The fleet trend painted a 104px recharts surface with no area and no line.
+`TrendChart` reads `label` for its x axis; the generator emitted `day`. With
+every category resolving to `undefined`, all fourteen points mapped to one
+x coordinate and the monotone curve degenerated to an empty path - a silent
+failure, since the chart still occupied its box.
+
+Both daily generators now emit the shape the chart documents (`label` for the
+axis, `subtitle` for the tooltip). Verified: area and line paths present, no
+`NaN` in either path, ticks reading `Sep 8` through `Sep 21`, and the tooltip
+showing the date in full.
+
+The same pass fixed dead space under `Baseline coverage`, which is shorter than
+its grid sibling and was stretching: the panel is a flex column and its closing
+note sits on the floor. Measured at 1440px and 1024px - panel and sibling equal
+height, 1px of slack under the text.

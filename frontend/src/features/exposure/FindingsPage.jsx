@@ -48,12 +48,12 @@ import { FindingDrawer } from './FindingDrawer';
 import { describeScannerError, groupByPush, summariseFindings } from './scannerState';
 
 const VIEWS = [
-  { value: 'findings', label: 'Findings', icon: List },
+  { value: 'findings', label: 'Credentials', icon: List },
   { value: 'pushes', label: 'By push', icon: GitCommitHorizontal },
 ];
 
 /**
- * Code exposure triage.
+ * Credential exposure triage.
  *
  * `GET /api/findings` returns the whole live set in one response, so search,
  * filtering, sorting and grouping all happen client-side here - that is the
@@ -255,7 +255,7 @@ export default function FindingsPage() {
     return (
       <div className="flex flex-col gap-6">
         <PageHeader
-          title="Secret findings"
+          title="Exposed credentials"
           lede="Credentials committed to connected repositories."
         />
         <Panel>
@@ -360,7 +360,7 @@ export default function FindingsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Secret findings"
+        title="Exposed credentials"
         lede="Values are masked by the scanner, so rotate at the source."
         tabs={
           <Tabs
@@ -388,7 +388,7 @@ export default function FindingsPage() {
       ) : (
         <div className="grid gap-3 @min-[30rem]:grid-cols-2 @min-[54rem]:grid-cols-4">
           <MetricTile
-            label="Live findings"
+            label="Live exposures"
             value={summary.total}
             icon={FileWarning}
             tone={summary.total > 0 ? 'high' : 'low'}
@@ -400,7 +400,7 @@ export default function FindingsPage() {
             tone={highish > 0 ? 'critical' : 'low'}
             caption="Actionable risk tier, not detector severity"
             meter={percentValue(highish, summary.total)}
-            meterLabel="Share of live findings"
+            meterLabel="Share of live exposures"
           />
           <MetricTile
             label="Repositories affected"
@@ -429,7 +429,7 @@ export default function FindingsPage() {
             appliedCount={chips.length}
             onClearAll={clearAll}
             onClose={toggleRail}
-            mobileTitle="Filter findings"
+            mobileTitle="Filter exposures"
           />
         }
       >
@@ -470,7 +470,7 @@ export default function FindingsPage() {
           <ResultCount
             shown={formatNumber(sorted.length)}
             total={formatNumber(summary.total)}
-            unit="findings"
+            unit="exposed credentials"
             filtered={chips.length > 0 || platform !== 'all'}
             loading={loading}
           />
@@ -482,7 +482,7 @@ export default function FindingsPage() {
           <GridSkeleton columns={5} rows={10} />
         ) : view === 'findings' ? (
           <DataGrid
-            caption="Secret findings"
+            caption="Exposed credentials"
             columns={columns}
             rows={sorted}
             rowKey={(row) => row.finding_id}
@@ -517,7 +517,7 @@ export default function FindingsPage() {
               chips.length > 0 || platform !== 'all' ? (
                 <EmptyState
                   icon={SearchX}
-                  title="No findings match this view"
+                  title="No exposures match this view"
                   description="Nothing in the live set matches the current platform, risk tier and search combination."
                   action={
                     <Button

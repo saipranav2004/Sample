@@ -7,7 +7,7 @@
 export function describeScannerError(error) {
   if (error?.status === 401) {
     return {
-      title: 'Code exposure service is not configured',
+      title: 'Credential exposure service is not configured',
       message:
         'The scanner rejected the request as unauthorized. The dashboard key is attached by the server-side proxy, not the browser - set SCANNER_DASHBOARD_KEY for the proxy and reload.',
       configuration: true,
@@ -22,7 +22,7 @@ export function describeScannerError(error) {
     };
   }
   return {
-    title: 'Code exposure data failed to load',
+    title: 'Credential exposure data failed to load',
     message: error?.message || 'The scanner returned an unexpected error.',
     configuration: false,
   };

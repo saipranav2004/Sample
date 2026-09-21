@@ -411,7 +411,7 @@ export default function PosturePage() {
 
         <Panel prominence="default" className="animate-rise" data-stagger="" style={{ '--stagger': 8 }}>
           <PanelHeader
-            title="Code exposure"
+            title="Credential exposure"
             actions={
               <Button as={Link} to="/exposure" variant="secondary" size="sm" iconRight={ArrowRight}>
                 Triage
@@ -492,7 +492,7 @@ function FindingsMiniPanel({ query, summary }) {
     return (
       <ClearState
         compact
-        title="No live findings"
+        title="No live exposures"
         description="Nothing is currently flagged across the connected repositories, or everything found has been reviewed and dismissed."
       />
     );

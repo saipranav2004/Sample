@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ChevronRight } from 'lucide-react';
-import { BREADCRUMBS } from './navigation';
+import { BREADCRUMBS, BREADCRUMB_PREFIXES } from './navigation';
 import { cn } from '../ui/cn';
 
 /**
@@ -15,7 +15,9 @@ import { cn } from '../ui/cn';
 export function ContextBar() {
   const { pathname, key } = useLocation();
   const navigate = useNavigate();
-  const trail = BREADCRUMBS[pathname];
+  const trail =
+    BREADCRUMBS[pathname] ??
+    BREADCRUMB_PREFIXES.find((entry) => pathname.startsWith(entry.prefix))?.trail;
 
   /* `key === 'default'` means this is the first entry in the history stack, so
      there is nowhere to go back to and the control would be a dead end. */

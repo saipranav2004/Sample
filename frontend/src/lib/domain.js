@@ -185,7 +185,7 @@ export const POSTURE_SIGNALS = [
   },
 ];
 
-/* ── Code exposure (Secret Scanner) ──────────────────────────────────────── */
+/* ── Credential exposure (Secret Scanner) ────────────────────────────────── */
 
 export const RECOMMENDED_ACTIONS = {
   TRIGGER_REMEDIATION: { label: 'Trigger remediation', tone: 'critical', rank: 4 },

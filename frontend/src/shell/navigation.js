@@ -1,5 +1,7 @@
 import {
   Activity,
+  Dna,
+  FileText,
   FileWarning,
   Fingerprint,
   Gauge,
@@ -15,7 +17,8 @@ import {
  *
  * Grouped by the question an operator is answering, not by the API surface:
  * "how exposed am I" (Posture), "what exists" (Inventory), "what leaked"
- * (Code exposure), "what happened" (Operations).
+ * (Credential exposure), how it behaves (Behaviour), "what happened"
+ * (Operations).
  */
 export const NAV_GROUPS = [
   {
@@ -34,11 +37,16 @@ export const NAV_GROUPS = [
   },
   {
     key: 'exposure',
-    label: 'Code exposure',
+    label: 'Credential exposure',
     items: [
-      { to: '/exposure', label: 'Findings', icon: FileWarning, end: true },
-      { to: '/exposure/dismissed', label: 'Dismissed', icon: ShieldOff },
+      { to: '/exposure', label: 'Exposed credentials', icon: FileWarning, end: true },
+      { to: '/exposure/dismissed', label: 'Accepted', icon: ShieldOff },
     ],
+  },
+  {
+    key: 'behaviour',
+    label: 'Behaviour',
+    items: [{ to: '/genome', label: 'NHI Genome', icon: Dna }],
   },
   {
     key: 'operations',
@@ -46,6 +54,7 @@ export const NAV_GROUPS = [
     items: [
       { to: '/activity', label: 'Activity', icon: Activity },
       { to: '/scans', label: 'Scans', icon: History },
+      { to: '/reports', label: 'Reports', icon: FileText },
     ],
   },
   {
@@ -69,9 +78,20 @@ export const BREADCRUMBS = {
   '/identities': ['Inventory', 'Identities'],
   '/credentials': ['Inventory', 'Credentials'],
   '/secrets': ['Inventory', 'Secret-backed'],
-  '/exposure': ['Code exposure', 'Findings'],
-  '/exposure/dismissed': ['Code exposure', 'Dismissed'],
+  '/exposure': ['Credential exposure', 'Exposed credentials'],
+  '/exposure/dismissed': ['Credential exposure', 'Accepted'],
+  '/genome': ['Behaviour', 'NHI Genome'],
   '/activity': ['Operations', 'Activity'],
   '/scans': ['Operations', 'Scans'],
+  '/reports': ['Operations', 'Reports'],
   '/my-resources': ['Assigned to me', 'My resources'],
 };
+
+/**
+ * Breadcrumbs for routes with a parameter. Matched by prefix after the exact
+ * table misses, so a record screen still says where it sits.
+ */
+export const BREADCRUMB_PREFIXES = [
+  { prefix: '/genome/', trail: ['Behaviour', 'NHI Genome', 'Identity'] },
+  { prefix: '/reports/', trail: ['Operations', 'Reports', 'Run'] },
+];

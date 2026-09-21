@@ -20,6 +20,10 @@ const DismissedPage = lazy(() => import('../features/exposure/DismissedPage'));
 const ActivityPage = lazy(() => import('../features/activity/ActivityPage'));
 const ScansPage = lazy(() => import('../features/scans/ScansPage'));
 const MyResourcesPage = lazy(() => import('../features/account/MyResourcesPage'));
+const GenomePage = lazy(() => import('../features/genome/GenomePage'));
+const GenomeDetailPage = lazy(() => import('../features/genome/GenomeDetailPage'));
+const ReportsPage = lazy(() => import('../features/reports/ReportsPage'));
+const ReportViewPage = lazy(() => import('../features/reports/ReportViewPage'));
 const NotFoundPage = lazy(() => import('../features/NotFoundPage'));
 
 export default function App() {
@@ -101,6 +105,38 @@ export default function App() {
                   element={
                     <Suspense fallback={<RouteFallback />}>
                       <ScansPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/genome"
+                  element={
+                    <Suspense fallback={<RouteFallback />}>
+                      <GenomePage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/genome/:id"
+                  element={
+                    <Suspense fallback={<RouteFallback />}>
+                      <GenomeDetailPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/reports"
+                  element={
+                    <Suspense fallback={<RouteFallback />}>
+                      <ReportsPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/reports/:id"
+                  element={
+                    <Suspense fallback={<RouteFallback />}>
+                      <ReportViewPage />
                     </Suspense>
                   }
                 />
