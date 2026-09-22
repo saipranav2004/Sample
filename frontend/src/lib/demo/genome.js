@@ -9,6 +9,7 @@ import {
   sample,
   writeOverlay,
 } from './runtime';
+import { estate as sharedEstate } from './estate';
 import { formatDate } from '../format';
 
 /**
@@ -61,41 +62,7 @@ export const FINGERPRINT_AXES = [
   { key: 'privilegeLevel', label: 'Privilege level' },
 ];
 
-const KINDS = [
-  { kind: 'Lambda function', category: 'Serverless' },
-  { kind: 'EKS pod (IRSA)', category: 'Compute' },
-  { kind: 'IAM role', category: 'Compute' },
-  { kind: 'IAM access key', category: 'Static credential' },
-  { kind: 'GitHub Actions', category: 'CI/CD' },
-  { kind: 'Glue job', category: 'Data' },
-  { kind: 'Bedrock agent', category: 'AI agent' },
-  { kind: 'ECS task role', category: 'Compute' },
-  { kind: 'Step Functions', category: 'Serverless' },
-];
-
-const ACCOUNTS = ['prod-main', 'prod-eu', 'staging', 'data-platform'];
 const REGIONS = ['us-east-1', 'us-east-2', 'eu-west-1', 'ap-south-1', 'eu-central-1'];
-const PEER_GROUPS = [
-  'EKS payments pods',
-  'Lambda invoice workers',
-  'Glue ETL jobs',
-  'CI/CD deploy identities',
-  'Bedrock support agents',
-  'Replication roles',
-];
-
-const NAMES = [
-  'payments-api-sa', 'invoice-processor', 'nightly-etl', 'ci-build-main', 'support-bot',
-  'svc-backup-key', 'gh-deploy', 'audit-lambda-prod', 's3-replicator-us', 'kms-rotate-svc',
-  'orders-consumer', 'payments-api-v2', 'payments-worker-1', 'payments-worker-2',
-  'checkout-api-sa', 'invoice-sa-prod', 'fraud-scorer', 'ledger-sync', 'refund-worker',
-  'report-builder', 'data-lake-crawler', 'metrics-shipper', 'log-forwarder', 'dns-updater',
-  'cert-renewer', 'backup-verifier', 'cost-collector', 'image-builder', 'release-tagger',
-  'schema-migrator', 'queue-drainer', 'cache-warmer', 'search-indexer', 'email-dispatcher',
-  'webhook-relay', 'pdf-renderer', 'thumbnailer', 'geo-enricher', 'risk-model-runner',
-  'settlement-poster', 'reconciler', 'archive-mover', 'gdpr-eraser', 'sandbox-seeder',
-];
-
 const APIS = [
   's3:GetObject', 's3:PutObject', 'dynamodb:Query', 'dynamodb:PutItem',
   'secretsmanager:GetSecretValue', 'sts:AssumeRole', 'cloudwatch:PutMetricData',
@@ -109,33 +76,98 @@ const SENSITIVE_APIS = [
 
 const RESOURCE_KINDS = ['S3 bucket', 'DynamoDB table', 'Secrets Manager', 'KMS key', 'SQS queue'];
 
-const FLEET_SIZE = 148;
-
 /* ── Generation ───────────────────────────────────────────────────────────── */
 
 let cache = null;
 
+/**
+ * What a principal is, from what the estate says it is.
+ *
+ * The genome screen talks about runtimes - a Lambda function, an EKS pod, a
+ * CI/CD runner - because a baseline is a statement about how a *workload*
+ * behaves. The estate classifies by purpose. The name carries the runtime for
+ * the ephemeral and CI/CD ones, which is exactly where the distinction
+ * matters, so it is read off the name rather than guessed.
+ */
+const RUNTIME_BY_PREFIX = {
+  'eks-pod': { kind: 'EKS pod (IRSA)', category: 'Compute' },
+  'lambda-exec': { kind: 'Lambda function', category: 'Serverless' },
+  'batch-job': { kind: 'Batch job', category: 'Compute' },
+  'fargate-task': { kind: 'ECS task role', category: 'Compute' },
+  'glue-job': { kind: 'Glue job', category: 'Data' },
+  'emr-step': { kind: 'EMR step', category: 'Data' },
+  gha: { kind: 'GitHub Actions', category: 'CI/CD' },
+  codebuild: { kind: 'CodeBuild project', category: 'CI/CD' },
+  codepipeline: { kind: 'CodePipeline stage', category: 'CI/CD' },
+  jenkins: { kind: 'Jenkins agent', category: 'CI/CD' },
+  argocd: { kind: 'Argo CD', category: 'CI/CD' },
+  terraform: { kind: 'Terraform runner', category: 'CI/CD' },
+};
+
+const RUNTIME_BY_CLASSIFICATION = {
+  NHI_SERVICE: { kind: 'IAM role', category: 'Compute' },
+  NHI_AGENT: { kind: 'Bedrock agent', category: 'AI agent' },
+  NHI_SAAS: { kind: 'External integration', category: 'Third party' },
+  NHI_CICD: { kind: 'GitHub Actions', category: 'CI/CD' },
+  NHI_EPHEMERAL: { kind: 'Step Functions', category: 'Serverless' },
+  DUAL_IDENTITY: { kind: 'IAM access key', category: 'Static credential' },
+  UNCLASSIFIED: { kind: 'IAM role', category: 'Compute' },
+};
+
+function runtimeFor(row) {
+  for (const [prefix, runtime] of Object.entries(RUNTIME_BY_PREFIX)) {
+    if (row.name.startsWith(`${prefix}-`)) return runtime;
+  }
+  return RUNTIME_BY_CLASSIFICATION[row.classification] ?? RUNTIME_BY_CLASSIFICATION.UNCLASSIFIED;
+}
+
+const PEER_GROUP_BY_CATEGORY = {
+  Compute: 'Compute workload roles',
+  Serverless: 'Serverless execution roles',
+  'CI/CD': 'CI/CD deploy identities',
+  Data: 'Data pipeline jobs',
+  'AI agent': 'Agent identities',
+  'Third party': 'Third-party integrations',
+  'Static credential': 'Key-holding identities',
+};
+
 function buildFleet() {
   if (cache) return cache;
 
+  /* The fleet is the estate's non-human identities, not a fleet of its own.
+     This screen used to generate 148 principals with their own names and
+     accounts, so an anomaly named a workload that existed nowhere else in the
+     product. Baselines are about machine behaviour, so humans are out - which
+     is a statement about the screen rather than a shortcut. */
+  const fleet = sharedEstate().identities.filter((row) => row.classification !== 'HUMAN');
+
   const identities = [];
-  for (let index = 0; index < FLEET_SIZE; index += 1) {
-    const name = index < NAMES.length ? NAMES[index] : `${NAMES[index % NAMES.length]}-${index}`;
-    const next = rng(hashSeed(name));
-    const kindEntry = pick(next, KINDS);
-    /* The first 12% are still learning: a fleet where everything is baselined
-       hides the state an operator most needs to understand. */
-    const learning = next() < 0.12;
+  for (const row of fleet) {
+    const name = row.name;
+    const next = rng(hashSeed(`genome:${row.arn}`));
+    const kindEntry = runtimeFor(row);
+    /* Roughly an eighth are still learning: a fleet where everything is
+       baselined hides the state an operator most needs to understand.
+       An identity the estate says is young cannot have a settled baseline, so
+       that is decided by its age rather than by a coin toss. */
     const learningDays = pick(next, [14, 30, 45]);
+    const ageDays = Math.max(0, Math.round((Date.now() - Date.parse(row.created_at)) / 86_400_000));
+    const learning = ageDays < learningDays || next() < 0.06;
 
     const identity = {
-      id: `nhi-${index + 1}`,
+      /* The estate's id, so a row here and a node in the access graph and a
+         row in the identity explorer are the same principal. */
+      id: row.id,
+      arn: row.arn,
       name,
+      classification: row.classification,
       kind: kindEntry.kind,
       category: kindEntry.category,
-      account: pick(next, ACCOUNTS),
-      region: pick(next, REGIONS),
-      peerGroup: pick(next, PEER_GROUPS),
+      account: row.account_name,
+      region: row.region,
+      owner: row.owner_name,
+      isAdmin: row.is_admin,
+      peerGroup: PEER_GROUP_BY_CATEGORY[kindEntry.category] ?? 'Other identities',
       baselineState: learning ? 'learning' : 'established',
       learningDays,
       learningProgress: learning ? intBetween(next, 20, 90) : 100,
@@ -144,13 +176,16 @@ function buildFleet() {
       modelConfidence: intBetween(next, 88, 99),
       lastModelUpdate: hoursAgoIso(intBetween(next, 1, 30)),
       drift: Number((next() * 0.42).toFixed(2)),
-      lastSeen: minutesAgoIso(intBetween(next, 2, 5000)),
+      /* The estate's own last-active, so the genome and the explorer do not
+         disagree about when a principal last did anything. */
+      lastSeen: row.last_active,
       riskScore: intBetween(next, 8, 94),
       vpc: `vpc-0${Math.floor(next() * 1e7).toString(16).padStart(7, '0')}`,
       asn: 'AS16509 - Amazon AWS',
       fingerprint: buildFingerprint(next),
       typicalActions: buildActions(next),
       typicalResources: buildResources(next, name),
+      totalEvents: row.total_events,
       schedule: buildSchedule(next),
       volumeBaseline: buildVolume(next),
       callsPerDay: buildCallsPerDay(next),

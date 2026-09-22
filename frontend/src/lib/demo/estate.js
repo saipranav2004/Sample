@@ -31,6 +31,9 @@ import { hashSeed, intBetween, pick, rng, sample } from './runtime';
 const TOTAL_IDENTITIES = 228;
 const HUMAN_SHARE = 0.17;
 
+/** How many identities are on the operator's own plate. */
+const ASSIGNED_TO_OPERATOR = 24;
+
 const DAY = 86_400_000;
 
 /**
@@ -90,10 +93,10 @@ const PEOPLE = [
 
 /** The signed-in operator. Their own resources are a screen of their own. */
 export const OPERATOR = {
-  user: 'das.admin',
-  name: 'D. Ashwin Sharma',
+  user: 'cirm@admin',
+  name: 'Admin',
   email: 'das.admin@deepalgorithms.io',
-  team: 'Security Engineering',
+  // team: 'Security Engineering',
   role: 'Security administrator',
 };
 
@@ -592,7 +595,18 @@ function buildRelationships(identities) {
         caller_name: identity.trust_service,
         caller_type: 'EXTERNAL_PRINCIPAL',
         rel_type: identity.trust_type === 'OIDC' ? 'ASSUME_ROLE_WITH_WEB_IDENTITY' : 'ASSUME_ROLE_SAML',
+        /* What the trust was exercised through. The drawer has a "Via" column
+           for exactly this, and it was empty on every row. */
+        via:
+          identity.trust_type === 'OIDC'
+            ? `${identity.trust_service}:sub`
+            : `${identity.trust_service} SAML assertion`,
         is_external: true,
+        /* An external caller comes from a public address; an internal one from
+           the VPC. The consumers table prints this, and a machine identity
+           assumed from a routable address is a different fact from one
+           assumed inside the network. */
+        source_ip: `${intBetween(own, 13, 209)}.${intBetween(own, 1, 254)}.${intBetween(own, 1, 254)}.${intBetween(own, 1, 254)}`,
         first_assumed: daysAgo(intBetween(own, 60, 700)),
         last_assumed: daysAgo(Math.max(0, identity.last_active_days - intBetween(own, 0, 3))),
         assume_count: intBetween(own, 40, 9000),
@@ -606,7 +620,9 @@ function buildRelationships(identities) {
         caller_name: caller.name,
         caller_type: caller.classification === 'HUMAN' ? 'IAM_USER' : 'IAM_ROLE',
         rel_type: 'ASSUME_ROLE',
+        via: `sts:AssumeRole from ${caller.name}`,
         is_external: false,
+        source_ip: `10.${intBetween(own, 0, 60)}.${intBetween(own, 0, 254)}.${intBetween(own, 1, 254)}`,
         first_assumed: daysAgo(intBetween(own, 30, 600)),
         last_assumed: daysAgo(Math.max(0, identity.last_active_days + intBetween(own, 0, 10))),
         assume_count: intBetween(own, 5, 4000),
@@ -733,11 +749,42 @@ export function estate() {
   }
   for (const identity of identities) {
     const own = credentialsOf.get(identity.arn) ?? [];
-    identity.owned_credentials = own.length;
+    /* The credentials themselves, not a count.
+       The drawer renders `owned_credentials` as a table and guards it with
+       `Array.isArray`, so a number failed the guard silently and every
+       identity reported "Credentials 0" while the register listed 310 of
+       them. `credential_count` carries the figure for the places that only
+       need the number. */
+    identity.owned_credentials = own;
+    identity.credential_count = own.length;
     identity.access_key_count = own.filter((row) => row.type === 'ACCESS_KEY').length;
     identity.access_key_age_days = own
       .filter((row) => row.type === 'ACCESS_KEY')
       .reduce((max, row) => Math.max(max, row.age_days), 0);
+  }
+
+  /* What "assigned to me" means.
+     It used to be inferred from the operator's team, which stopped working
+     the moment the operator became `Admin` with no team: the screen went
+     empty. Inference was the wrong model anyway - the nav section is called
+     "Assigned to me", and an assignment is a fact somebody records, not
+     something derived from an org chart.
+     So a deterministic subset carries an explicit assignment, weighted toward
+     the identities an administrator would actually be handed: the
+     administrator-equivalent ones, the unowned ones and the stale ones. */
+  const assignable = [...identities].sort((a, b) => {
+    const weight = (row) =>
+      (row.is_admin ? 4 : 0) +
+      (row.owner_type === 'ORPHANED' ? 3 : 0) +
+      (row.last_active_days > 90 ? 2 : 0) +
+      (row.is_secret ? 1 : 0);
+    return weight(b) - weight(a) || a.name.localeCompare(b.name);
+  });
+  for (const [index, identity] of assignable.entries()) {
+    if (index >= ASSIGNED_TO_OPERATOR) break;
+    identity.assigned_to = OPERATOR.user;
+    identity.assigned_to_name = OPERATOR.name;
+    identity.assigned_at = daysAgo(intBetween(rng(hashSeed(`assign:${identity.arn}`)), 1, 45));
   }
 
   const secrets = buildSecretEntries(identities, credentials);

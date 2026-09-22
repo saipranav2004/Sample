@@ -1,5 +1,6 @@
 import { SEVERITY_ORDER } from '../domain';
-import { demoRequest, intBetween, pick, rng, sample } from './runtime';
+import { estate as sharedEstate } from './estate';
+import { demoRequest, hashSeed, intBetween, pick, rng, sample } from './runtime';
 
 /**
  * Access graph dataset - who can reach what, and what it would cost.
@@ -453,15 +454,37 @@ export const GRAPH_INPUTS = [
 
 /* ── Account and resource fixtures ────────────────────────────────────────── */
 
-const ACCOUNTS = [
-  { id: '460134481056', name: 'prod-platform', env: 'production', crownJewel: true },
-  { id: '702118451993', name: 'prod-eu', env: 'production', crownJewel: true },
-  { id: '118822604417', name: 'data-platform', env: 'production', crownJewel: true },
-  { id: '905511240066', name: 'staging', env: 'staging', crownJewel: false },
-  { id: '337902445518', name: 'shared-services', env: 'shared', crownJewel: false },
-];
+/**
+ * The accounts, taken from the shared estate rather than declared here.
+ *
+ * This screen used to generate its own estate: its own accounts, its own
+ * identities, its own credentials. That meant an identity you opened in the
+ * explorer did not exist in the graph, and the graph's principal names
+ * appeared nowhere else in the product - which makes the graph look like a
+ * mock-up of a different system rather than a view of this one.
+ *
+ * `crownJewel` is the graph's own judgement and stays here: the estate has no
+ * concept of a crown jewel, and production accounts are where the resources
+ * worth protecting live.
+ */
+const ACCOUNTS = sharedEstate().accounts.map((account) => ({
+  id: account.id,
+  name: account.name,
+  env: account.env,
+  crownJewel: account.env === 'production',
+}));
 
 const REGIONS = ['us-east-1', 'us-east-2', 'eu-west-1', 'ap-south-1'];
+
+/**
+ * How many of the estate's 228 identities the graph is built over.
+ *
+ * Not all of them: an all-pairs reachability analysis over 228 principals
+ * produces tens of thousands of paths, and the screen shows one focus and its
+ * first hop. This is enough for the analysis to be interesting and small
+ * enough that it stays instant.
+ */
+const GRAPH_IDENTITY_BUDGET = 64;
 
 /**
  * Resource archetypes.
@@ -496,23 +519,6 @@ const DATA_NAMES = {
 
 /* Identity naming that matches what the real inventory returns, so a node and
    an Identities row read as the same thing. */
-const IDENTITY_STEMS = [
-  'payments-api', 'ledger-worker', 'invoice-sa', 'refund-worker', 'cost-collector',
-  'schema-migrator', 'metrics-shipper', 'dns-updater', 'backup-runner', 'fraud-scorer',
-  'cache-warmer', 'export-builder', 'notification-fanout', 'session-reaper', 'graph-indexer',
-  'deploy', 'terraform', 'ci-runner', 'image-builder', 'db-admin',
-];
-
-const IDENTITY_TYPES = [
-  { type: 'AWS::IAM::Role', classification: 'NHI_SERVICE', prefix: 'role' },
-  { type: 'AWS::Lambda::Function', classification: 'NHI_SERVICE', prefix: 'role' },
-  { type: 'AWS::EKS::PodIdentity', classification: 'NHI_SERVICE', prefix: 'role' },
-  { type: 'AWS::IAM::Role', classification: 'NHI_CICD', prefix: 'role' },
-  { type: 'AWS::IAM::User', classification: 'NHI_SERVICE', prefix: 'user' },
-  { type: 'AWS::StepFunctions::StateMachine', classification: 'NHI_SERVICE', prefix: 'role' },
-  { type: 'AWS::IAM::Role', classification: 'NHI_AGENT', prefix: 'role' },
-];
-
 const SERVICE_PRINCIPALS = [
   'lambda.amazonaws.com',
   'ec2.amazonaws.com',
@@ -546,13 +552,6 @@ const FEDERATED_PRINCIPALS = [
 ];
 
 /* Credential shapes, matching the vocabulary the Credentials screen uses. */
-const CREDENTIAL_TYPES = [
-  { type: 'ACCESS_KEY', label: 'Access key', longLived: true },
-  { type: 'SECRET', label: 'Secret', longLived: true },
-  { type: 'OIDC_TOKEN', label: 'OIDC token', longLived: false },
-  { type: 'SESSION_TOKEN', label: 'Session token', longLived: false },
-];
-
 const POLICY_NAMES = [
   'PaymentsServiceAccess', 'DataPlatformRead', 'PipelineDeploy', 'ObservabilityWrite',
   'SecretsReader', 'AdminBreakGlass', 'CrossAccountAudit', 'LegacyWildcard',
@@ -611,38 +610,70 @@ function buildGraph() {
     });
   }
 
-  /* Identities. Spread across accounts, with a handful admin-equivalent -
-     enough that the graph has something to converge on, few enough that admin
-     still means something. */
-  const identities = [];
-  for (const account of ACCOUNTS) {
-    const count = account.env === 'production' ? intBetween(next, 7, 9) : intBetween(next, 4, 6);
-    const stems = sample(next, IDENTITY_STEMS, count);
-    for (const stem of stems) {
-      const shape = pick(next, IDENTITY_TYPES);
-      const suffix = intBetween(next, 10, 199);
-      const name = `${stem}-${suffix}`;
-      const arn = `arn:aws:iam::${account.id}:${shape.prefix}/${name}`;
-      const admin = next() < 0.09;
-      const identity = addNode({
-        id: `id-${account.id}-${name}`,
-        kind: 'identity',
-        name,
-        arn,
-        accountId: account.id,
-        accountName: account.name,
-        env: account.env,
-        identityType: shape.type,
-        classification: shape.classification,
-        isAdmin: admin,
-        mfaEnabled: shape.prefix === 'user' ? next() < 0.55 : null,
-        trustType: shape.classification === 'NHI_CICD' ? 'federated' : 'service',
-        lastActiveHoursAgo: intBetween(next, 1, 900),
-        totalEvents: intBetween(next, 40, 48_000),
-      });
-      identities.push(identity);
-    }
-  }
+  /* Identities, projected from the shared estate.
+     Same ids, same ARNs, same names, same accounts, same activity figures as
+     the identity explorer - so a principal opened here is the principal opened
+     there, and the numbers in both places are the same numbers.
+
+     The whole estate is 228 identities. Drawing all of them would be a
+     hairball nobody reads, and this screen opens on one focus and its first
+     hop anyway, so the graph is built over the machine identities plus the
+     humans who own or consume them - the subset the access question is about.
+     They are taken in the estate's own risk order, so the interesting ones are
+     in rather than a random slice. */
+  const shared = sharedEstate();
+  const graphPool = [...shared.identities]
+    .sort((a, b) => {
+      const weight = (row) =>
+        (row.is_admin ? 5 : 0) +
+        (row.is_secret ? 2 : 0) +
+        (row.owner_type === 'ORPHANED' ? 2 : 0) +
+        (row.consumer_count ?? 0) / 4 +
+        (row.classification === 'HUMAN' ? 1 : 0);
+      return weight(b) - weight(a) || a.name.localeCompare(b.name);
+    })
+    .slice(0, GRAPH_IDENTITY_BUDGET);
+
+  const identities = graphPool.map((row) =>
+    addNode({
+      /* The estate's own id, so a link from anywhere else resolves here. */
+      id: row.id,
+      kind: 'identity',
+      name: row.name,
+      arn: row.arn,
+      accountId: row.account_id,
+      accountName: row.account_name,
+      env: row.env,
+      identityType: row.identity_type,
+      classification: row.classification,
+      isAdmin: row.is_admin,
+      mfaEnabled: row.classification === 'HUMAN' || row.console_access ? row.mfa_enabled : null,
+      trustType: row.is_federated ? 'federated' : 'service',
+      /* Hours rather than days, because that is the unit this module's
+         staleness checks already work in. */
+      lastActiveHoursAgo: Math.max(1, row.last_active_days * 24),
+      totalEvents: row.total_events,
+      /* Carried through so the detail panel can show the estate's own
+         attribution rather than inventing its own. */
+      ownerName: row.owner_name,
+      ownerType: row.owner_type,
+      createdByName: row.created_by_name,
+      isSecret: row.is_secret,
+      isFederated: row.is_federated,
+      trustService: row.trust_service,
+      region: row.region,
+      createdAt: row.created_at,
+      lastActive: row.last_active,
+      attachedPolicies: row.attached_policies,
+      matchedRules: row.matched_rules,
+      evidence: row.evidence,
+      credentialCount: row.credential_count,
+      accessKeyCount: row.access_key_count,
+      accessKeyAgeDays: row.access_key_age_days,
+      consumerCount: row.consumer_count,
+      assignedTo: row.assigned_to ?? null,
+    }),
+  );
 
   /* Resources, weighted toward the production accounts. */
   const resources = [];
@@ -686,17 +717,42 @@ function buildGraph() {
     }),
   );
 
-  /* Credentials on a subset of identities, following the real model: a
-     long-lived key that has not been used in months is the interesting case. */
+  /* Credentials, the estate's own.
+     Generated ones would have contradicted the credential register: the
+     register would list a 400-day access key on an identity whose graph node
+     showed none, or showed a different one. Only the long-lived kinds become
+     nodes - a short-lived federated credential is not a thing an attacker
+     steals and holds, and drawing one per identity would double the node
+     count for no analytical gain. */
+  const HOLDABLE = new Set(['ACCESS_KEY', 'SECRET_MANAGER', 'SSM_PARAMETER', 'SERVICE_TOKEN']);
+  const CREDENTIAL_LABELS = {
+    ACCESS_KEY: 'Access key',
+    SECRET_MANAGER: 'Stored secret',
+    SSM_PARAMETER: 'Stored parameter',
+    SERVICE_TOKEN: 'Service token',
+  };
+
   const credentials = [];
   for (const identity of identities) {
-    if (next() > 0.42) continue;
-    const shape = pick(next, CREDENTIAL_TYPES);
-    const ageDays = shape.longLived ? intBetween(next, 20, 1400) : intBetween(next, 0, 2);
-    const lastUsedDays = next() < 0.4 ? intBetween(next, 91, 400) : intBetween(next, 0, 60);
+    const held = (shared.credentialsOf.get(identity.arn) ?? []).filter((row) => HOLDABLE.has(row.type));
+    if (held.length === 0) continue;
+    /* The worst one it holds. A node per credential would crowd the graph
+       without changing the answer, and the worst is what decides the risk. */
+    const worst = held.sort(
+      (a, b) => SEVERITY_ORDER.indexOf(a.severity) - SEVERITY_ORDER.indexOf(b.severity) || b.age_days - a.age_days,
+    )[0];
+    const shape = {
+      type: worst.type,
+      label: CREDENTIAL_LABELS[worst.type] ?? 'Credential',
+      longLived: worst.type === 'ACCESS_KEY' || worst.type === 'SERVICE_TOKEN',
+    };
+    const ageDays = worst.age_days;
+    const lastUsedDays = worst.last_used_days;
     const credential = addNode({
       id: `cred-${identity.id}-${shape.type}`,
       kind: 'credential',
+      credId: worst.cred_id,
+      heldCount: held.length,
       /* Named for what it is, with the identity in the subtitle: a node is a
          176-to-204 pixel box, and "payments-api-23 access key" truncates to
          "payments-api-23 acc..." which tells the reader nothing the shape of
@@ -711,7 +767,9 @@ function buildGraph() {
       stale: lastUsedDays > 90,
       identityId: identity.id,
       accountId: identity.accountId,
-      severity: shape.longLived && lastUsedDays > 90 ? 'HIGH' : shape.longLived ? 'MEDIUM' : 'LOW',
+      /* The register's own severity, so the two screens rate the same
+         credential the same way. */
+      severity: worst.severity,
     });
     credentials.push(credential);
     addEdge({ from: credential.id, to: identity.id, kind: 'HAS_CREDENTIAL' });
@@ -1658,6 +1716,118 @@ export function fetchAttackPaths({ severity = '', vector = '', search = '' } = {
   }, { signal, latency: [180, 400] });
 }
 
+/**
+ * The API surface each service offers, for the "distinct actions" figure.
+ *
+ * Mirrors the estate's own event tables. It is a vocabulary rather than a
+ * sample, so an identity that touched S3 three times still reports a plausible
+ * set of S3 actions rather than only the three that happened to be sampled.
+ */
+const ACTIONS_BY_SERVICE = {
+  's3.amazonaws.com': ['GetObject', 'PutObject', 'ListBucket', 'DeleteObject', 'GetBucketPolicy', 'HeadObject', 'CopyObject'],
+  'dynamodb.amazonaws.com': ['Query', 'PutItem', 'GetItem', 'Scan', 'UpdateItem', 'BatchGetItem', 'DeleteItem'],
+  'secretsmanager.amazonaws.com': ['GetSecretValue', 'DescribeSecret', 'PutSecretValue', 'ListSecrets'],
+  'sts.amazonaws.com': ['AssumeRole', 'AssumeRoleWithWebIdentity', 'GetCallerIdentity'],
+  'kms.amazonaws.com': ['Decrypt', 'Encrypt', 'GenerateDataKey', 'DescribeKey', 'ReEncrypt'],
+  'lambda.amazonaws.com': ['Invoke', 'UpdateFunctionCode', 'GetFunction', 'CreateFunction', 'ListFunctions'],
+  'rds.amazonaws.com': ['DescribeDBInstances', 'CreateDBSnapshot', 'ModifyDBInstance', 'ListTagsForResource'],
+  'sqs.amazonaws.com': ['SendMessage', 'ReceiveMessage', 'DeleteMessage', 'GetQueueAttributes'],
+  'ecr.amazonaws.com': ['GetAuthorizationToken', 'BatchGetImage', 'PutImage', 'DescribeRepositories', 'ListImages'],
+  'ssm.amazonaws.com': ['GetParameter', 'GetParameters', 'PutParameter', 'SendCommand', 'DescribeParameters'],
+  'cloudwatch.amazonaws.com': ['PutMetricData', 'GetMetricStatistics', 'DescribeAlarms', 'ListMetrics'],
+  'iam.amazonaws.com': ['CreateAccessKey', 'AttachRolePolicy', 'PassRole', 'CreatePolicyVersion', 'ListRoles', 'GetRole'],
+};
+
+/**
+ * The observed side of an identity.
+ *
+ * Counted from the shared estate's CloudTrail sample rather than generated, so
+ * "7,228 events" on this panel is the same 7,228 the activity screen pages
+ * through. Errors are a share of calls that failed, which is what separates an
+ * identity doing its job from one probing for permissions it does not have.
+ */
+function observedActivity(arn) {
+  const shared = sharedEstate();
+  const identity = shared.byArn.get(arn);
+  const events = shared.events.filter((event) => event.identity_arn === arn);
+
+  if (!identity) return null;
+
+  const sampled = [...new Set(events.map((event) => event.event_name))];
+  const services = new Map();
+  for (const event of events) {
+    services.set(event.event_source, (services.get(event.event_source) ?? 0) + 1);
+  }
+  const reads = events.filter((event) => event.read_only).length;
+  const writes = events.length - reads;
+
+  /* The sample is a window on a larger total, so the ratio is scaled up to the
+     identity's own event count rather than reported as the raw sample size -
+     otherwise the panel would contradict the "events seen" figure beside it. */
+  const scale = events.length > 0 ? identity.total_events / events.length : 0;
+
+  const own = rng(hashSeed(`obs:${arn}`));
+  const errorRate = identity.owner_type === 'ORPHANED' ? own() * 0.08 : own() * 0.02;
+
+  /* Distinct actions grows with volume but far slower than linearly: a busy
+     workload repeats a small vocabulary. Counting the sample directly reported
+     three actions for an identity with six hundred events, which is not a
+     believable API surface for anything.
+     Call volume per action decays rather than splitting evenly - the first
+     version divided the total equally and printed three actions at exactly 209
+     each, which reads as generated because it is. */
+  const distinctActions = Math.max(
+    1,
+    Math.min(90, Math.round(Math.sqrt(identity.total_events) * (0.8 + own() * 0.7))),
+  );
+
+  const vocabulary = [...sampled];
+  for (const event of events) {
+    for (const name of ACTIONS_BY_SERVICE[event.event_source] ?? []) {
+      if (!vocabulary.includes(name)) vocabulary.push(name);
+    }
+  }
+
+  const ranked = vocabulary.slice(0, Math.max(1, Math.min(vocabulary.length, distinctActions)));
+  /* Zipf-ish: each action gets roughly half the traffic of the one above it,
+     normalised so the parts sum to the whole. */
+  const weights = ranked.map((_, index) => 1 / (index + 1) ** 1.35);
+  const weightTotal = weights.reduce((sum, value) => sum + value, 0) || 1;
+  const topActions = ranked
+    .map((name, index) => ({
+      name,
+      count: Math.max(1, Math.round((identity.total_events * weights[index]) / weightTotal)),
+    }))
+    .slice(0, 6);
+
+  return {
+    eventsSeen: identity.total_events,
+    distinctActions,
+    reads: Math.round(reads * scale),
+    writes: Math.round(writes * scale),
+    sourceIps: new Set(events.map((event) => event.source_ip)).size,
+    regions: new Set(events.map((event) => event.region)).size,
+    errors: Math.round(identity.total_events * errorRate),
+    firstSeen: events.length > 0 ? events[events.length - 1].event_time : null,
+    lastActive: identity.last_active,
+    topActions,
+    /* Decayed like the actions, and for the same reason: scaling the sample
+       counts gave every service the identical figure. Ordered by how often the
+       service appeared in the sample, so the ranking is still the data's. */
+    topServices: (() => {
+      const ordered = [...services.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+      const shares = ordered.map((_, index) => 1 / (index + 1) ** 1.2);
+      const sum = shares.reduce((total, value) => total + value, 0) || 1;
+      return ordered
+        .slice(0, 5)
+        .map(([name], index) => ({
+          name,
+          count: Math.max(1, Math.round((identity.total_events * shares[index]) / sum)),
+        }));
+    })(),
+  };
+}
+
 export function fetchNode(nodeId, signal) {
   return demoRequest(() => {
     const graph = buildGraph();
@@ -1670,6 +1840,12 @@ export function fetchNode(nodeId, signal) {
 
     const inbound = (graph.adjacency.into.get(nodeId) ?? []).map((edge) => describeEdge(graph, edge, 'in'));
     const outbound = (graph.adjacency.out.get(nodeId) ?? []).map((edge) => describeEdge(graph, edge, 'out'));
+
+    /* What this principal has actually done, from the same CloudTrail sample
+       the activity screen lists. Observed behaviour is a different kind of
+       fact from granted permission, and the gap between them is the argument
+       for every least-privilege change - so the panel shows both. */
+    const observed = node.kind === 'identity' ? observedActivity(node.arn) : null;
 
     const through = graph.paths.filter((path) => path.nodeIds.includes(nodeId));
 
@@ -1706,6 +1882,7 @@ export function fetchNode(nodeId, signal) {
       outbound,
       radius: node.kind === 'identity' ? blastRadius(nodeId) : null,
       reach,
+      observed,
       paths: through,
     };
   }, { signal, latency: [160, 360] });

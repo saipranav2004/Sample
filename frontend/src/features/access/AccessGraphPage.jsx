@@ -13,8 +13,8 @@ import {
 } from '../../lib/demo/accessGraph';
 import { useDemoQuery } from '../../lib/demo/useDemoQuery';
 import { exportRowsToCsv, timestampedName } from '../../lib/csv';
-import { severityMeta } from '../../lib/domain';
-import { formatNumber } from '../../lib/format';
+import { SEVERITY_ORDER, severityMeta } from '../../lib/domain';
+import { formatNumber, formatRelative } from '../../lib/format';
 import { PageHeader } from '../../shell/PageHeader';
 import { Button, IconButton } from '../../ui/Button';
 import { Panel, SectionLabel } from '../../ui/Panel';
@@ -23,6 +23,7 @@ import { Modal } from '../../ui/Overlay';
 import { DetailSkeleton } from '../../ui/Skeleton';
 import { ErrorState } from '../../ui/States';
 import { Tag } from '../../ui/Tag';
+import { cn } from '../../ui/cn';
 import { KIND_LABEL, riskReason } from './graphTheme';
 import { AccessFlow } from './AccessFlow';
 import { FocusPicker } from './FocusPicker';
@@ -237,6 +238,32 @@ export default function AccessGraphPage() {
 
   const missingInputs = GRAPH_INPUTS.filter((input) => !input.covered);
 
+  /* Declared once and rendered in one of two places - the grid, or a dock
+     inside full screen - so the two arrangements cannot drift apart. */
+  const inspectorPanel = (
+    <Inspector
+      node={selected ?? focusNode}
+      isFocusNode={!selected}
+      detail={detail}
+      onTrace={onTrace}
+      onExpand={onToggleExpand}
+      expandedIds={expanded}
+    />
+  );
+
+  const findingsPanel = (
+    <AttackPaths
+      data={findings.data}
+      loading={findings.isLoading && !findings.data}
+      error={findings.isError && !findings.data ? findings.error : null}
+      onRetry={findings.refetch}
+      filters={filters}
+      onFilter={setParams}
+      tracedId={tracedPathId}
+      onTrace={onTrace}
+    />
+  );
+
   return (
     <div className="flex flex-col gap-4">
       <PageHeader
@@ -300,35 +327,21 @@ export default function AccessGraphPage() {
               onToggleExpand={onToggleExpand}
               onReveal={onReveal}
               onFullscreenChange={setFullscreen}
+              /* Full screen has to contain everything: leaving it to read the
+                 findings and then re-entering is not a workflow. Both panels
+                 dock inside the full-screen shell. */
+              inspector={inspectorPanel}
+              findings={findingsPanel}
+              findingCount={findings.data?.findings?.length ?? 0}
               height={560}
             />
           </div>
 
-          {!fullscreen && (
-            <Inspector
-              node={selected ?? focusNode}
-              isFocusNode={!selected}
-              detail={detail}
-              onTrace={onTrace}
-              onExpand={onToggleExpand}
-              expandedIds={expanded}
-            />
-          )}
+          {!fullscreen && inspectorPanel}
         </div>
       )}
 
-      {!fullscreen && (
-        <AttackPaths
-          data={findings.data}
-          loading={findings.isLoading && !findings.data}
-          error={findings.isError && !findings.data ? findings.error : null}
-          onRetry={findings.refetch}
-          filters={filters}
-          onFilter={setParams}
-          tracedId={tracedPathId}
-          onTrace={onTrace}
-        />
-      )}
+      {!fullscreen && findingsPanel}
 
       <Modal
         open={inputsOpen}
@@ -410,11 +423,52 @@ function Inspector({ node, isFocusNode, detail, onTrace, onExpand, expandedIds }
   const risk = riskReason(node);
   const radius = detail?.data?.radius;
   const reach = detail?.data?.reach;
+  const observed = detail?.data?.observed;
+
+  /* Grouped by the far end, not one row per path.
+     Every path here passes through the node named at the top of the panel, so
+     the row shows the other end. When four routes share one entry point that
+     printed the same name four times and told the reader nothing - so
+     identical ends collapse into one row with a count, keeping the shortest
+     route as the one Trace follows. */
   const paths = detail?.data?.paths ?? [];
+
+  const pathsByEnd = useMemo(() => {
+    const groups = new Map();
+    for (const path of paths) {
+      const isEntry = path.entryId === node?.id;
+      const key = isEntry ? path.targetId : path.entryId;
+      const name = isEntry ? path.targetName : path.entryName;
+      const existing = groups.get(key);
+      if (!existing) {
+        groups.set(key, { key, name, count: 1, shortest: path, severity: path.severity });
+        continue;
+      }
+      existing.count += 1;
+      if (path.hops < existing.shortest.hops) existing.shortest = path;
+      if (SEVERITY_ORDER.indexOf(path.severity) < SEVERITY_ORDER.indexOf(existing.severity)) {
+        existing.severity = path.severity;
+      }
+    }
+    return [...groups.values()].sort(
+      (a, b) =>
+        SEVERITY_ORDER.indexOf(a.severity) - SEVERITY_ORDER.indexOf(b.severity) ||
+        b.count - a.count ||
+        a.shortest.hops - b.shortest.hops,
+    );
+  }, [paths, node?.id]);
   const isOpen = expandedIds.includes(node.id);
 
   return (
-    <Panel prominence="lead" className="animate-rise flex flex-col gap-4 self-start">
+    /* Bounded and scrollable from the width at which it sits beside the graph.
+       Unbounded, a fully populated panel is taller than the viewport and the
+       reader has to scroll the whole page - past the graph - to reach the
+       policies at its foot. */
+    <Panel
+      prominence="lead"
+      className="access-inspector animate-rise flex flex-col gap-4 self-start"
+      style={{ '--graph-max-h': '560px' }}
+    >
       <div>
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
@@ -535,6 +589,129 @@ function Inspector({ node, isFocusNode, detail, onTrace, onExpand, expandedIds }
         </div>
       )}
 
+      {/* What it has actually done.
+          Granted permission and observed behaviour are different kinds of
+          fact, and the gap between them is the argument for every
+          least-privilege change - so the panel carries both rather than only
+          the policy side. These figures are counted from the same CloudTrail
+          sample the activity screen pages through. */}
+      {observed && (
+        <div>
+          <SectionLabel>Observed behaviour</SectionLabel>
+          <dl className="mt-2 grid grid-cols-3 gap-1.5">
+            <Figure label="Events seen" value={formatNumber(observed.eventsSeen)} />
+            <Figure label="Distinct actions" value={formatNumber(observed.distinctActions)} />
+            <Figure
+              label="Errors"
+              value={formatNumber(observed.errors)}
+              tone={observed.errors > 0 ? 'critical' : 'neutral'}
+            />
+            <Figure label="Reads" value={formatNumber(observed.reads)} />
+            <Figure label="Writes" value={formatNumber(observed.writes)} tone={observed.writes > 0 ? 'medium' : 'neutral'} />
+            <Figure label="Regions" value={formatNumber(observed.regions)} />
+            <Figure label="Source IPs" value={formatNumber(observed.sourceIps)} />
+            <Figure label="Relationships" value={formatNumber(node.consumerCount ?? 0)} />
+            <Figure label="Credentials" value={formatNumber(node.credentialCount ?? 0)} />
+          </dl>
+          <p className="mt-2 text-[11px] leading-relaxed text-ink-3">
+            {observed.firstSeen ? `First seen ${formatRelative(observed.firstSeen)}, ` : ''}
+            last active {formatRelative(observed.lastActive)}.
+          </p>
+
+          {observed.topActions.length > 0 && (
+            <>
+              <SectionLabel className="mt-3">Most used actions</SectionLabel>
+              <ul className="mt-1.5 flex flex-col gap-1">
+                {observed.topActions.slice(0, 5).map((action) => (
+                  <li key={action.name} className="flex items-baseline justify-between gap-2">
+                    <span className="min-w-0 truncate font-mono text-[11px] text-ink-2">{action.name}</span>
+                    <span data-numeric="" className="shrink-0 text-[11px] text-ink-3">
+                      {formatNumber(action.count)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Why the classifier called it what it called it.
+          A classification nobody can check is a label; the rule that produced
+          it is a claim somebody can argue with. */}
+      {node.evidence && (
+        <div>
+          <SectionLabel>Why it is classified this way</SectionLabel>
+          <p className="mt-1.5 text-[11.5px] leading-relaxed text-ink-2">{node.evidence}</p>
+          {Array.isArray(node.matchedRules) && node.matchedRules.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {node.matchedRules.map((rule) => (
+                <Tag key={rule} tone="neutral" size="sm">
+                  {rule.replace(/-/g, ' ')}
+                </Tag>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Who is answerable for it. An unowned machine identity is nobody's to
+          delete, which is why it is still here. */}
+      {(node.ownerName || node.createdByName || node.assignedTo) && (
+        <div>
+          <SectionLabel>Ownership</SectionLabel>
+          <dl className="mt-1.5 flex flex-col gap-1 text-[11.5px]">
+            <Row label="Owner" value={node.ownerName} fallback="Unassigned" warn={!node.ownerName} />
+            <Row label="Created by" value={node.createdByName} />
+            {node.assignedTo && <Row label="Assigned to" value={node.assignedTo} />}
+          </dl>
+        </div>
+      )}
+
+      {/* The policies behind the permissions above. */}
+      {Array.isArray(node.attachedPolicies) && node.attachedPolicies.length > 0 && (
+        <div>
+          <SectionLabel>Attached policies</SectionLabel>
+          <ul className="mt-1.5 flex flex-col gap-1">
+            {node.attachedPolicies.map((policy) => (
+              <li key={policy} className="flex items-center gap-1.5">
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    'size-1.5 shrink-0 rounded-full',
+                    policy === 'AdministratorAccess' ? 'bg-critical' : 'bg-line-strong',
+                  )}
+                />
+                <span className="min-w-0 truncate font-mono text-[11px] text-ink-2" title={policy}>
+                  {policy}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Key hygiene. A long-lived key is the credential an attacker keeps. */}
+      {(node.accessKeyCount ?? 0) > 0 && (
+        <div>
+          <SectionLabel>Key hygiene</SectionLabel>
+          <dl className="mt-1.5 flex flex-col gap-1 text-[11.5px]">
+            <Row label="Long-lived keys" value={formatNumber(node.accessKeyCount)} />
+            <Row
+              label="Oldest key"
+              value={`${formatNumber(node.accessKeyAgeDays)} days`}
+              warn={node.accessKeyAgeDays > 365}
+            />
+          </dl>
+          {node.accessKeyAgeDays > 365 && (
+            <p className="mt-1.5 text-[11px] leading-relaxed text-ink-3">
+              Past a year without rotation. A key this old has usually outlived the person who
+              created it.
+            </p>
+          )}
+        </div>
+      )}
+
       {/* What it connects to, as counts rather than a list: the list is the
           graph, one click away, and repeating it here would be a second copy
           to keep in step. */}
@@ -556,34 +733,34 @@ function Inspector({ node, isFocusNode, detail, onTrace, onExpand, expandedIds }
         <div>
           <SectionLabel>Paths through it</SectionLabel>
           <ul className="mt-1.5 flex flex-col gap-1">
-            {paths.slice(0, 4).map((path) => {
-              const meta = severityMeta(path.severity);
+            {pathsByEnd.slice(0, 4).map((group) => {
+              const meta = severityMeta(group.severity);
               return (
-                <li key={path.id}>
+                <li key={group.key}>
                   <button
                     type="button"
-                    onClick={() => onTrace(path)}
+                    onClick={() => onTrace(group.shortest)}
                     className="flex w-full items-center gap-2 rounded-[var(--radius-control)] px-1.5 py-1.5 text-left hover:bg-surface-3"
                   >
                     <Crosshair aria-hidden="true" className="size-3 shrink-0 text-ink-3" />
-                    {/* The other end only. Every path listed here passes
-                        through the node named at the top of this panel, so
-                        repeating that name in each row spends the line on
-                        something the reader already knows and truncates the
-                        one word they do not. */}
                     <span className="min-w-0 flex-1 truncate text-[11.5px] text-ink-2">
-                      {path.entryId === node.id ? path.targetName : path.entryName}
+                      {group.name}
+                      {group.count > 1 && (
+                        <span data-numeric="" className="ml-1 text-ink-3">
+                          ×{group.count}
+                        </span>
+                      )}
                     </span>
                     <Tag tone={meta.tone} size="sm" dot>
-                      {path.hops}
+                      {group.shortest.hops}
                     </Tag>
                   </button>
                 </li>
               );
             })}
           </ul>
-          {paths.length > 4 && (
-            <p className="mt-1 px-1.5 text-[11px] text-ink-3">{paths.length - 4} more below.</p>
+          {pathsByEnd.length > 4 && (
+            <p className="mt-1 px-1.5 text-[11px] text-ink-3">{pathsByEnd.length - 4} more below.</p>
           )}
         </div>
       )}
@@ -631,3 +808,40 @@ function Split({ label, value, total, tone }) {
 }
 
 export { AccessGraphPage };
+
+/**
+ * One figure in the observed-behaviour grid.
+ *
+ * Three to a row at 340px, which is the widest the panel gets. The label goes
+ * under the number rather than beside it: nine of these side by side would
+ * each get about forty pixels of label, and a truncated label is worse than a
+ * stacked one.
+ */
+function Figure({ label, value, tone = 'neutral' }) {
+  return (
+    <div className="rounded-[var(--radius-control)] border border-line bg-surface-2 px-2 py-1.5">
+      <dd
+        data-numeric=""
+        className={cn(
+          'text-[14px] leading-none font-semibold',
+          tone === 'critical' ? 'text-critical' : tone === 'medium' ? 'text-medium' : 'text-ink',
+        )}
+      >
+        {value}
+      </dd>
+      <dt className="mt-1 text-[10px] leading-tight text-ink-3">{label}</dt>
+    </div>
+  );
+}
+
+/** A label and a value on one line, with the missing case called out. */
+function Row({ label, value, fallback = '-', warn = false }) {
+  return (
+    <div className="flex items-baseline justify-between gap-2">
+      <dt className="shrink-0 text-ink-3">{label}</dt>
+      <dd className={cn('min-w-0 truncate text-right', warn ? 'font-medium text-high' : 'text-ink-2')}>
+        {value || fallback}
+      </dd>
+    </div>
+  );
+}

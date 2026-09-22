@@ -9,12 +9,12 @@ import {
   useReactFlow,
 } from '@xyflow/react';
 import '@xyflow/react/dist/base.css';
-import { Maximize2, Minimize2, RotateCcw } from 'lucide-react';
+import { ListTree, Maximize2, Minimize2, PanelRight, RotateCcw } from 'lucide-react';
 import { EDGE_KINDS } from '../../lib/demo/accessGraph';
 import { EDGE_STYLE, toneFor } from './graphTheme';
 import { HOP_METRICS, hopLabels, layoutHops } from './hopLayout';
 import { nodeTypes } from './GraphNodes';
-import { IconButton } from '../../ui/Button';
+import { Button, IconButton } from '../../ui/Button';
 import { cn } from '../../ui/cn';
 
 /* Below this the 12px node labels stop being readable, so the fit stops
@@ -61,6 +61,11 @@ function FlowInner({
   onToggleExpand,
   onReveal,
   onFullscreenChange,
+  /* Rendered as docks inside the full-screen shell. In the normal layout the
+     page renders these itself, beside and below the graph. */
+  inspector,
+  findings,
+  findingCount = 0,
   className,
   height = 560,
 }) {
@@ -70,6 +75,19 @@ function FlowInner({
   const [fullscreen, setFullscreen] = useState(false);
   const [nativeFullscreen, setNativeFullscreen] = useState(false);
   const [hoverId, setHoverId] = useState('');
+  /* Full screen has to contain everything, or it is a dead end you must leave
+     to do anything. The details panel and the attack paths dock inside it -
+     collapsible, because the point of full screen is the graph. */
+  const [sideDock, setSideDock] = useState(true);
+  const [bottomDock, setBottomDock] = useState(false);
+  /* Where the reader has dragged things.
+     React Flow is controlled here - the nodes come from `layoutHops` on every
+     render - and a controlled graph with no `onNodesChange` silently discards
+     every drag, which is why `nodesDraggable` alone did nothing. Positions the
+     reader sets are kept here and merged back over the layout. Cleared when
+     the graph's shape changes, because a hand-placed position for a node that
+     is no longer on screen is not worth keeping. */
+  const [moved, setMoved] = useState({});
 
   const layout = useMemo(() => {
     const result = layoutHops(data ?? { nodes: [], edges: [], groups: [] }, rowsRef.current);
@@ -113,6 +131,12 @@ function FlowInner({
         ),
       })),
     [layout.nodes, selectedId, tracedNodeIds, hoverSets],
+  );
+
+  /* The layout's position, unless the reader has moved that node. */
+  const placedNodes = useMemo(
+    () => flowNodes.map((node) => (moved[node.id] ? { ...node, position: moved[node.id] } : node)),
+    [flowNodes, moved],
   );
 
   const flowEdges = useMemo(() => {
@@ -227,6 +251,14 @@ function FlowInner({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shape, fullscreen, refit]);
 
+  /* An expansion re-runs the layout, so hand positions from the previous shape
+     no longer describe this graph. Dropping them is the honest choice: keeping
+     them would pin two boxes where the reader left them and lay the new ones
+     out around a hole. */
+  useEffect(() => {
+    setMoved({});
+  }, [shape]);
+
   /* Full screen. The API can be refused - inside a sandboxed frame, or by
      policy - so the promise rejection falls back to a fixed overlay, which
      looks the same to the reader and needs no permission. */
@@ -263,6 +295,12 @@ function FlowInner({
   const expanded = nativeFullscreen || fullscreen;
   useEffect(() => {
     onFullscreenChange?.(expanded);
+    /* Back to the default arrangement on the way out, so entering full screen
+       twice does not give two different layouts. */
+    if (!expanded) {
+      setSideDock(true);
+      setBottomDock(false);
+    }
   }, [expanded, onFullscreenChange]);
 
   /* Escape leaves the fallback overlay. The native API already handles it. */
@@ -294,6 +332,16 @@ function FlowInner({
     },
     [onReveal, onSelect, onToggleExpand],
   );
+
+  const onNodesChange = useCallback((changes) => {
+    let next = null;
+    for (const change of changes) {
+      if (change.type !== 'position' || !change.position) continue;
+      next = next ?? {};
+      next[change.id] = change.position;
+    }
+    if (next) setMoved((current) => ({ ...current, ...next }));
+  }, []);
 
   const labels = hopLabels(layout.columnCount);
 
@@ -341,30 +389,54 @@ function FlowInner({
         <span className="hidden shrink-0 text-[10.5px] text-ink-3 @min-[32rem]:inline">
           {(data?.nodes?.length ?? 0)} of {data?.totalNodes ?? 0} shown
         </span>
+        {expanded && inspector && (
+          <IconButton
+            icon={PanelRight}
+            label={sideDock ? 'Hide the details panel' : 'Show the details panel'}
+            variant={sideDock ? 'primary' : 'secondary'}
+            onClick={() => setSideDock((open) => !open)}
+          />
+        )}
+        {expanded && findings && (
+          <Button
+            variant={bottomDock ? 'primary' : 'secondary'}
+            icon={ListTree}
+            onClick={() => setBottomDock((open) => !open)}
+          >
+            {bottomDock ? 'Hide paths' : `Attack paths${findingCount ? ` ${findingCount}` : ''}`}
+          </Button>
+        )}
+
+        {/* Full size, not `sm`. These two are the only controls on the header
+            and they were 32px glyphs in a 17px-tall strip - small enough that
+            the fullscreen button, the one people look for first, read as
+            decoration. */}
         <IconButton
           icon={RotateCcw}
           label="Fit the graph to the view"
-          size="sm"
+          variant="secondary"
           onClick={() => refit(420)}
         />
         <IconButton
           icon={expanded ? Minimize2 : Maximize2}
           label={expanded ? 'Leave full screen' : 'Show the graph full screen'}
-          size="sm"
+          variant="secondary"
           onClick={toggleFullscreen}
         />
       </div>
 
+      <div className="flex min-h-0 flex-1">
       <div className="access-canvas min-h-0 flex-1">
         <ReactFlow
-          nodes={flowNodes}
+          nodes={placedNodes}
           edges={flowEdges}
           nodeTypes={nodeTypes}
+          onNodesChange={onNodesChange}
           onNodeClick={onNodeClick}
           onNodeMouseEnter={(_event, node) => setHoverId(node.id)}
           onNodeMouseLeave={() => setHoverId('')}
           onPaneClick={() => onSelect?.(null)}
-          nodesDraggable={false}
+          nodesDraggable
           nodesConnectable={false}
           edgesFocusable={false}
           elevateEdgesOnSelect={false}
@@ -407,14 +479,79 @@ function FlowInner({
         </ReactFlow>
       </div>
 
-      {/* One line, three verbs. The chevron and the fold are self-evident once
-          named; everything past that is a manual nobody reads. */}
-      <p className="shrink-0 border-t border-line bg-surface-2 px-3 py-1.5 text-[10.5px] text-ink-3">
-        <span className="@min-[32rem]:hidden">
-          {(data?.nodes?.length ?? 0)} of {data?.totalNodes ?? 0} shown ·{' '}
+        {/* The details panel, docked. Scrolls on its own so the graph keeps
+            the full height beside it. */}
+        {expanded && inspector && sideDock && (
+          <aside
+            aria-label="Selected node"
+            className="animate-slide-left min-h-0 w-[340px] shrink-0 overflow-y-auto overscroll-contain border-l border-line bg-surface p-3 @min-[80rem]:w-[380px]"
+          >
+            {inspector}
+          </aside>
+        )}
+      </div>
+
+      {/* Attack paths, docked to the foot of the screen.
+          Full width rather than a second side panel: a findings list is a
+          column of rows, and the graph is what needs the horizontal span. */}
+      {expanded && findings && bottomDock && (
+        <section
+          aria-label="Attack paths"
+          className="animate-rise max-h-[46vh] min-h-0 shrink-0 overflow-y-auto overscroll-contain border-t border-line bg-surface p-3"
+        >
+          {findings}
+        </section>
+      )}
+
+      {/* The legend and the gestures, on one strip.
+          A directional graph with two line styles needs to say which is which:
+          the reader can see that some edges are red and dashed, and nothing on
+          screen told them that meant a documented escalation rather than
+          "important". */}
+      <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 border-t border-line bg-surface-2 px-3 py-1.5 text-[10.5px] text-ink-3">
+        <span className="flex items-center gap-3">
+          <LegendKey label="Grants access" tone="base" />
+          <LegendKey label="Privilege escalation" tone="escalation" />
+          <LegendKey label="Traced path" tone="traced" />
         </span>
-        Click a node to inspect · the chevron to open its next hop · drag to pan
-      </p>
+        <span aria-hidden="true" className="hidden text-line-strong @min-[44rem]:inline">
+          |
+        </span>
+        <span className="min-w-0">
+          <span className="@min-[32rem]:hidden">
+            {(data?.nodes?.length ?? 0)} of {data?.totalNodes ?? 0} shown ·{' '}
+          </span>
+          Click a node to inspect · the chevron for its next hop · drag a node to move it
+        </span>
+      </div>
     </div>
+  );
+}
+
+/**
+ * One line of the legend.
+ *
+ * A short stroke drawn the way the canvas draws it, rather than a coloured
+ * dot: the difference between the three kinds is as much the dash pattern as
+ * the hue, and a dot cannot show a dash.
+ */
+function LegendKey({ label, tone }) {
+  const style = EDGE_STYLE[tone] ?? EDGE_STYLE.base;
+  return (
+    <span className="flex shrink-0 items-center gap-1.5">
+      <svg aria-hidden="true" width="20" height="6" viewBox="0 0 20 6" className="shrink-0 overflow-visible">
+        <line
+          x1="0"
+          y1="3"
+          x2="20"
+          y2="3"
+          stroke={style.stroke}
+          strokeWidth={style.strokeWidth}
+          strokeDasharray={style.dash ?? undefined}
+          strokeLinecap="round"
+        />
+      </svg>
+      <span>{label}</span>
+    </span>
   );
 }

@@ -300,9 +300,12 @@
   }
 }
 
+/* The travel has to be a whole number of dash periods or the pattern jumps at
+   every loop boundary. `--dash-period` is the dash plus the gap; the animation
+   moves exactly two of them. */
 @keyframes dna-edge-dash {
   to {
-    stroke-dashoffset: -24;
+    stroke-dashoffset: calc(var(--dash-period, 18px) * -2);
   }
 }
 
@@ -375,15 +378,28 @@
     }
   }
 
-  /* Once the panel sits beside the graph rather than under it, the graph takes
-     the height of the row. The panel is frequently the taller of the two, and
-     a fixed graph left a band of empty page beneath it. The floor keeps the
-     canvas usable when the panel is short. */
+  /* Once the panel sits beside the graph rather than under it, both columns
+     are bounded to the same height and each scrolls its own overflow.
+     Letting the graph take the row height was right when the panel was short
+     and wrong once it grew: with every section filled in, the panel ran to
+     1,200px and stretched the canvas to match, which put five nodes in a
+     screen and a half of empty grid. Bounding both is what keeps the two
+     columns aligned without either dictating the other's size. */
   @media (min-width: 1120px) {
     .access-shell-sized {
-      height: auto;
-      flex: 1 1 auto;
-      min-height: min(var(--graph-max-h, 560px), 74vh);
+      height: min(var(--graph-max-h, 560px), 74vh);
+      min-height: 420px;
+    }
+
+    /* The panel is bounded by the same rule at the same breakpoint, and
+       scrolls its own overflow. A container query was wrong here: the graph's
+       height is a viewport question, so a panel sized against its container
+       could disagree with it - and did, running to 1,036px beside a 560px
+       graph. One breakpoint, one figure, two columns that line up. */
+    .access-inspector {
+      max-height: min(var(--graph-max-h, 560px), 74vh);
+      overflow-y: auto;
+      overscroll-behavior: contain;
     }
   }
 
@@ -537,11 +553,32 @@
       stroke-width 0.16s ease-out,
       opacity 0.16s ease-out;
   }
-  /* A traced edge flows from cause to effect, because a path is a sequence and
-     a static line does not say which end it starts at. */
+  /* Every edge flows from cause to effect, not only a traced one.
+     An access graph is directional - "A can become B" is not the same claim as
+     "B can become A" - and an arrowhead states that only at one end of a line
+     the eye has to follow. A slow drift along the whole edge states it
+     continuously, and it is the difference between a diagram that looks static
+     and one that reads as a system with things moving through it.
+     Slow and low-contrast on purpose: this runs on every edge at rest, so
+     anything faster competes with the reader rather than helping them. */
+  .access-canvas .react-flow__edge-path {
+    --dash-period: 14px;
+    stroke-dasharray: 5 9;
+    animation: dna-edge-dash 2.6s linear infinite;
+  }
+
+  /* A traced edge is the same motion, faster and in a solid-dash rhythm, so a
+     path stands out from the ambient drift around it. */
   .access-canvas .access-edge-traced .react-flow__edge-path {
+    --dash-period: 18px;
     stroke-dasharray: 8 10;
     animation: dna-edge-dash 1.1s linear infinite;
+  }
+
+  /* An edge under the cursor's neighbourhood speeds up: the hover already dims
+     everything else, and this gives the survivors a reason to be looked at. */
+  .access-canvas .access-edge-active .react-flow__edge-path {
+    animation-duration: 1.5s;
   }
   .access-canvas .access-edge-dimmed .react-flow__edge-path {
     opacity: 0.14;

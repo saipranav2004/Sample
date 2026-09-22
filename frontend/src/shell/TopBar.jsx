@@ -104,7 +104,7 @@ export function TopBar({ onOpenNav, onOpenCommand }) {
           onClick={() => setMenuOpen((value) => !value)}
           aria-haspopup="menu"
           aria-expanded={menuOpen}
-          aria-label={`Account menu for ${user?.full_name || user?.email || 'signed-in user'}`}
+          aria-label={`Account menu for ${user?.name || user?.email || 'signed-in user'}`}
           className={cn(
             'grid size-10 shrink-0 place-items-center rounded-full transition-[box-shadow,transform] duration-150',
             menuOpen ? 'ring-2 ring-brand/45' : 'hover:ring-2 hover:ring-line-strong',
@@ -114,7 +114,7 @@ export function TopBar({ onOpenNav, onOpenCommand }) {
             aria-hidden="true"
             className="grid size-9 place-items-center rounded-full bg-[linear-gradient(135deg,var(--t-brand)_0%,var(--t-accent)_100%)] text-[13px] font-bold text-white"
           >
-            {initialsOf(user?.full_name || user?.email)}
+            {initialsOf(user?.name || user?.email)}
           </span>
         </button>
 
@@ -129,11 +129,11 @@ export function TopBar({ onOpenNav, onOpenCommand }) {
                 aria-hidden="true"
                 className="grid size-10 shrink-0 place-items-center rounded-full bg-[linear-gradient(135deg,var(--t-brand)_0%,var(--t-accent)_100%)] text-[13px] font-bold text-white"
               >
-                {initialsOf(user?.full_name || user?.email)}
+                {initialsOf(user?.name || user?.email)}
               </span>
               <span className="min-w-0">
                 <span className="block truncate text-[13.5px] font-semibold text-ink">
-                  {user?.full_name || 'Signed in'}
+                  {user?.name || 'Signed in'}
                 </span>
                 {user?.email && (
                   <span className="mt-0.5 block truncate text-[12px] text-ink-3">{user.email}</span>

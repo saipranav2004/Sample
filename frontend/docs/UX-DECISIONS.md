@@ -1744,3 +1744,164 @@ timestamp checks plus a future-date sweep over 8 screens; 7 scan-history
 checks; 13 sign-in checks; 20 pagination checks including the clamp and three
 reset paths; 25 drawer checks including tab content isolation and chronological
 order; 9 cross-page connectivity checks; and 4 access-key format checks.
+
+## 18. Revision: one estate behind the graph too, and a full screen worth entering
+
+### Two fields the drawer needed and the demo API did not supply
+
+Both were reported as "always zero" and "blank", and both were contract
+mismatches rather than missing data:
+
+- **`owned_credentials`** is rendered by the drawer as a table and guarded with
+  `Array.isArray`. The estate set it to a *count*, so the guard failed silently
+  and every identity reported "Credentials 0" while the register listed 310 of
+  them. It is the credential array now; `credential_count` carries the figure
+  for the places that only want the number.
+- **Service access** was a table of dashes. The drawer's column is "Target" -
+  the far end of the relationship, whichever way it runs, with `direction`
+  saying which. `fetchLineage` returned `caller_*` for both directions, so the
+  Target column had nothing to read while the relationship and direction beside
+  it were correct. It returns `target_name`/`target_type` now, and the edges
+  carry the `via` and `source_ip` the Via and Consumers columns were built for.
+
+### The graph is the same estate as everything else
+
+The access graph used to generate its own: its own accounts, its own
+identities, its own credentials. An identity opened in the explorer did not
+exist in the graph, and the graph's principals appeared nowhere else - which
+makes the screen look like a mock-up of a different product rather than a view
+of this one.
+
+It is now projected from `lib/demo/estate.js`:
+
+- **Identities** keep the estate's ids, ARNs, names, accounts, admin flags,
+  owners and event counts. Verified 64/64 matched by id, with names, ARNs,
+  event totals, admin flags and owners agreeing.
+- **Credentials** are the estate's own, and only the long-lived kinds become
+  nodes - a short-lived federated credential is not something an attacker
+  steals and holds. The node carries the register's severity, so the two
+  screens rate the same credential the same way.
+- **Accounts** are the estate's six.
+
+Sixty-four of the 228, taken in the estate's own risk order: an all-pairs
+reachability analysis over 228 principals produces tens of thousands of paths,
+and the screen shows one focus and its first hop. Enough for the analysis to be
+interesting, small enough to stay instant.
+
+The genome fleet is the same change: 189 identities, which is exactly the
+estate's non-human count. Baselines are about machine behaviour, so humans are
+out - a statement about the screen rather than a shortcut. An identity the
+estate says is too young to have a settled baseline is reported as still
+learning, rather than that being a coin toss. The genome keeps its own
+behavioural model (fingerprint, drift, peer group, anomalies), because the
+estate has no concept of those; what it no longer keeps is its own idea of who
+exists.
+
+### Full screen now contains everything
+
+The complaint was that the attack paths are below the graph, and in full screen
+they cannot be reached at all. That is worse than an inconvenience: it makes
+full screen a dead end you must leave to do anything, so the feature is only
+usable for looking.
+
+The pattern the literature settles on is a **docked, collapsible panel inside
+the full-screen view** - panels stacked along an edge, opened and closed with a
+single command, keyboard reachable and not trapping focus. So:
+
+- The **details panel docks right**, open by default, collapsible.
+- The **attack paths dock to the foot**, full width rather than a second side
+  panel: a findings list is a column of rows and the graph is what needs the
+  horizontal span. The toggle carries the finding count.
+- Both panels are the *same elements* the page renders in its grid, declared
+  once and placed in one of two arrangements, so the two cannot drift apart.
+- Leaving full screen resets the docks, so entering it twice gives the same
+  layout twice.
+
+Verified end to end: a path can be traced from inside the bottom dock and the
+graph marks it without leaving full screen.
+
+### The two header controls were 32px glyphs
+
+They are full-size secondary buttons now (40x38 measured). They were the only
+controls on that strip, and the fullscreen button - the one people look for
+first - read as decoration.
+
+### Motion, drag, and a legend
+
+- **Every edge flows at rest**, not only a traced one. An access graph is
+  directional, and an arrowhead states that at one end of a line the eye has to
+  follow; a slow drift states it continuously. Slow and low-contrast on
+  purpose, since it runs on every edge at once. A traced path uses the same
+  motion faster, so it stands out from the ambient drift.
+  The dash travel is a whole number of dash periods - the first version
+  animated to a fixed `-24px` against two different dash patterns, which made
+  the pattern jump at every loop.
+- **Nodes can be dragged.** `nodesDraggable` alone did nothing: React Flow is
+  controlled here, and a controlled graph with no `onNodesChange` silently
+  discards every drag. Hand positions are kept and merged over the layout, and
+  cleared when the graph's shape changes - keeping them would pin two boxes
+  where the reader left them and lay the new ones out around a hole.
+- **A legend**, drawn as strokes rather than dots, because the difference
+  between the three kinds is as much the dash pattern as the hue. A reader
+  could see that some edges were red and dashed and nothing said that meant a
+  documented escalation rather than "important".
+
+### What the panel shows now
+
+From the reference: observed behaviour as a nine-figure grid (events seen,
+distinct actions, errors, reads, writes, regions, source IPs, relationships,
+credentials), most-used actions, why the classifier decided what it decided
+with the rules it matched, ownership, attached policies, and key hygiene.
+
+Granted permission and observed behaviour are different kinds of fact, and the
+gap between them is the argument for every least-privilege change - so the
+panel carries both rather than only the policy side. The figures are counted
+from the same CloudTrail sample the activity screen pages through.
+
+Two of them were visibly generated on the first pass and had to be re-derived:
+**distinct actions** came straight from the sampled events, reporting three
+actions for an identity with six hundred calls, which is not a believable API
+surface for anything; and the per-action counts split the total **evenly**,
+printing three actions at exactly 209 each. Actions now scale with volume far
+slower than linearly - a busy workload repeats a small vocabulary - and call
+volume decays across the ranking. Same fix for the top services.
+
+**Paths through it** listed one row per path, which printed the same entry
+point four times when four routes shared it. Identical far ends collapse into
+one row with a count, and Trace follows the shortest.
+
+### Both columns bounded to one figure
+
+The panel grew from four sections to eleven, and the graph was set to take the
+height of the grid row - correct when the panel was short, wrong once it was
+1,036px, which stretched the canvas to put five nodes in a screen and a half of
+empty grid. Both are now capped by the same rule at the same breakpoint and
+each scrolls its own overflow. A container query was wrong for the panel: the
+graph's height is a viewport question, so a panel sized against its container
+could disagree with it, and did.
+
+### The operator, and what "mine" means
+
+The signed-in operator is `cirm@admin` / `Admin`, with no team. That broke
+"Assigned to me", which inferred ownership from the operator's team and went
+empty. Inference was the wrong model anyway: the nav section is called
+*Assigned to me*, and an assignment is a fact somebody records, not something
+derived from an org chart. Twenty-four identities now carry an explicit
+assignment, weighted toward the ones an administrator would actually be handed
+- administrator-equivalent, unowned, stale.
+
+Sign-in accepts three spellings of the operator - the account name, the email,
+and the email's local part, which is what the form pre-fills. Narrowing it to
+the account name would have broken the pre-filled form the moment the account
+was renamed, which is exactly what happened.
+
+### Verified
+
+258 checks across eighteen suites, all green: 31 estate coherence, 17 drawer
+credentials and service access, 12 graph-to-estate agreement, 13 genome-to-
+estate agreement, 21 full-screen (docks, drag, animation, legend, tracing
+without leaving), 19 inspector sections, 11 column heights, 20 pagination, 13
+sign-in, 14 my-resources, 9 scans removal, 9 cross-page connectivity, 9
+timestamp, 11 future-date, 14 layout, 7 observed-activity, 25 exposure drawer,
+3 filter resets - plus four viewport widths with no horizontal scroll on nine
+pages and no console or page errors.

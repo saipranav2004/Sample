@@ -43,13 +43,27 @@ const isTrue = (value) => value === true || value === 'true';
 
 /* ── Auth ─────────────────────────────────────────────────────────────────── */
 
+
+/**
+ * The pair the sign-in screen pre-fills.
+ *
+ * Exported so the screen and the check that validates it read the same
+ * constant - a hard-coded string in two places is a bug waiting for one of
+ * them to be edited.
+ *
+ * The username is the operator's email local part rather than `OPERATOR.user`,
+ * because the pre-filled value was specified as `das.admin` and the account
+ * name has since changed. `login()` accepts either, so renaming the account
+ * again will not break this form.
+ */
+export const DEMO_CREDENTIALS = { email: OPERATOR.email.split('@')[0], password: 'Das123' };
+
 const SESSION_USER = {
   id: 'user-das-admin',
   username: OPERATOR.user,
   email: OPERATOR.email,
   name: OPERATOR.name,
   role: OPERATOR.role,
-  team: OPERATOR.team,
 };
 
 export function login({ email, password } = {}, signal) {
@@ -59,9 +73,18 @@ export function login({ email, password } = {}, signal) {
          only way to reach this branch is to clear them and type something
          else. Rejecting that is better than accepting anything, which would
          make the password field look decorative. */
+      /* Three spellings of the same operator are accepted: the account name,
+         the email, and the email's local part - which is the one the sign-in
+         screen pre-fills and was asked for by name. Narrowing this to
+         `OPERATOR.user` alone would have broken the pre-filled form the moment
+         the account was renamed to `cirm@admin`. */
       const identifier = lower(email);
-      const expected = [lower(OPERATOR.user), lower(OPERATOR.email)];
-      if (!expected.includes(identifier) || password !== 'Das123') {
+      const expected = [
+        lower(OPERATOR.user),
+        lower(OPERATOR.email),
+        lower(OPERATOR.email.split('@')[0]),
+      ];
+      if (!expected.includes(identifier) || password !== DEMO_CREDENTIALS.password) {
         const error = new Error('That username and password do not match an account.');
         error.status = 401;
         throw error;
@@ -133,14 +156,17 @@ export function fetchSummary(_query, signal) {
 export function fetchMyResources({ page = 1, pageSize = 20 } = {}, signal) {
   return demoRequest(
     () => {
-      /* "Mine" is the operator's own team plus everything they created. An
-         empty screen here would say nothing about the empty state, and a
-         screen listing all 228 would not be "mine". */
+      /* "Mine" is what is assigned to the operator, which the estate records
+         explicitly. Riskiest first, because that is the order somebody works
+         their own queue in. */
       const rows = estate()
-        .identities.filter(
-          (row) => row.team === OPERATOR.team || row.created_by_name === OPERATOR.name || row.owner_name === OPERATOR.name,
-        )
-        .sort((a, b) => Number(b.is_admin) - Number(a.is_admin) || a.name.localeCompare(b.name));
+        .identities.filter((row) => row.assigned_to === OPERATOR.user)
+        .sort(
+          (a, b) =>
+            Number(b.is_admin) - Number(a.is_admin) ||
+            b.last_active_days - a.last_active_days ||
+            a.name.localeCompare(b.name),
+        );
       return paginate(rows, page, pageSize);
     },
     { signal, latency: [200, 380] },
@@ -176,7 +202,7 @@ export function fetchIdentities(query = {}, signal) {
         if (ownerName && row.owner_name !== ownerName) return false;
         if (ownerType && row.owner_type !== ownerType) return false;
         if (isTrue(isSecret) && !row.is_secret) return false;
-        if (isTrue(hasCredentials) && row.owned_credentials === 0) return false;
+        if (isTrue(hasCredentials) && row.credential_count === 0) return false;
         /* Only humans have MFA to be missing, which is what the dashboard
            signal counts against - so the filter has to agree with it. */
         if (isTrue(withoutMfa) && !(row.classification === 'HUMAN' && !row.mfa_enabled)) return false;
@@ -210,23 +236,26 @@ export function fetchLineage({ arn, page = 1, pageSize = 50 } = {}, signal) {
       const { edges, byArn } = estate();
       const rows = [];
 
-      /* Both directions, because the question "who can become this" and the
-         question "what can this become" are asked from the same drawer. */
+      /* The drawer's table is keyed on the OTHER end of the relationship,
+         whichever direction it runs in - it is a "Target" column, and
+         `direction` says whether this identity reaches it or is reached by it.
+         The first version returned `caller_*` for both directions, so the
+         Target column rendered a dash on every row while the relationship and
+         direction beside it were correct. */
       for (const edge of edges) {
         if (edge.target_arn === arn) {
           rows.push({
             id: `in-${edge.caller_arn}-${edge.target_arn}`,
             direction: 'INBOUND',
-            caller_arn: edge.caller_arn,
-            caller_name: edge.caller_name,
-            caller_type: edge.caller_type,
+            target_name: edge.caller_name,
+            target_arn: edge.caller_arn,
+            target_type: edge.caller_type,
             rel_type: edge.rel_type,
+            via: edge.via ?? null,
             is_external: edge.is_external,
             first_assumed: edge.first_assumed,
             last_assumed: edge.last_assumed,
             assume_count: edge.assume_count,
-            label: edge.caller_name,
-            key: `in-${edge.caller_arn}`,
           });
         }
         if (edge.caller_arn === arn) {
@@ -234,16 +263,15 @@ export function fetchLineage({ arn, page = 1, pageSize = 50 } = {}, signal) {
           rows.push({
             id: `out-${edge.target_arn}`,
             direction: 'OUTBOUND',
-            caller_arn: edge.target_arn,
-            caller_name: target?.name ?? edge.target_arn,
-            caller_type: target?.identity_type ?? 'IAM_ROLE',
+            target_name: target?.name ?? edge.target_arn,
+            target_arn: edge.target_arn,
+            target_type: target?.identity_type ?? 'IAM_ROLE',
             rel_type: edge.rel_type,
-            is_external: false,
+            via: edge.via ?? null,
+            is_external: Boolean(target?.is_external),
             first_assumed: edge.first_assumed,
             last_assumed: edge.last_assumed,
             assume_count: edge.assume_count,
-            label: target?.name ?? edge.target_arn,
-            key: `out-${edge.target_arn}`,
           });
         }
       }
@@ -261,8 +289,6 @@ export function fetchConsumers({ arn, page = 1, pageSize = 25 } = {}, signal) {
       const { consumersOf } = estate();
       const rows = (consumersOf.get(arn) ?? []).map((edge) => ({
         id: `consumer-${edge.caller_arn}`,
-        key: edge.caller_arn,
-        label: edge.caller_name,
         caller_arn: edge.caller_arn,
         caller_name: edge.caller_name,
         caller_type: edge.caller_type,
@@ -270,9 +296,12 @@ export function fetchConsumers({ arn, page = 1, pageSize = 25 } = {}, signal) {
         is_external: edge.is_external,
         first_assumed: edge.first_assumed,
         last_assumed: edge.last_assumed,
-        assume_count: edge.assume_count,
+        /* The consumers table has its own two columns the lineage table does
+           not: where the caller came from and how often. */
+        session_count: edge.assume_count,
+        source_ip: edge.source_ip,
       }));
-      rows.sort((a, b) => b.assume_count - a.assume_count);
+      rows.sort((a, b) => b.session_count - a.session_count);
       return paginate(rows, page, pageSize);
     },
     { signal, latency: [180, 340] },
@@ -400,11 +429,3 @@ export async function countCredentials(query = {}, signal) {
 }
 
 
-/**
- * The pair the sign-in screen pre-fills.
- *
- * Exported so the screen and the check that validates it read the same
- * constant - a hard-coded string in two places is a bug waiting for one of
- * them to be edited.
- */
-export const DEMO_CREDENTIALS = { email: OPERATOR.user, password: 'Das123' };

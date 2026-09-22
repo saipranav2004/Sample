@@ -139,7 +139,14 @@ export function layoutHops({ nodes = [], edges = [], groups = [] }, previousRows
       type,
       position,
       data: item,
-      draggable: false,
+      /* Draggable. The layout decides where a node starts, not where it has to
+         stay: an analyst reading a six-hop path will want to pull two boxes
+         apart to see the edge between them, and a canvas that refuses is a
+         picture rather than a tool. React Flow keeps a dragged position until
+         the graph's shape changes, at which point the layout reasserts itself
+         - which is the right trade, because the alternative is remembering
+         hand positions for nodes that may no longer be on screen. */
+      draggable: true,
       selectable: type === 'access',
       /* Declared so React Flow does not have to measure before it can draw an
          edge, which is what removes the one-frame flicker on expansion. */
