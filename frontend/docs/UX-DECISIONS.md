@@ -1905,3 +1905,99 @@ sign-in, 14 my-resources, 9 scans removal, 9 cross-page connectivity, 9
 timestamp, 11 future-date, 14 layout, 7 observed-activity, 25 exposure drawer,
 3 filter resets - plus four viewport widths with no horizontal scroll on nine
 pages and no console or page errors.
+
+## 19. Revision: the tabs, and the last of the graph's own data
+
+Two questions, and the honest answer to both was "partly".
+
+### What was still the graph's own invention
+
+The previous revision moved identities, credentials and accounts onto the
+shared estate and I reported that as done. Three things were still local, and
+one of them was a visible contradiction:
+
+- **Policy names.** The graph drew nodes called `PaymentsServiceAccess` and
+  `LegacyWildcard` while the estate - and so the identity drawer, and this
+  screen's own "Attached policies" list - used AWS-style names. The same
+  identity had one set of policies in its drawer and a different set in the
+  graph. Policy nodes are the estate's names now, deduplicated across every
+  identity, and `managed`/`wildcardAction` are answered by the policy itself
+  rather than a dice roll: `AdministratorAccess` grants everything by
+  definition and `AmazonS3ReadOnlyAccess` does not.
+- **Which policy grants what.** Resource access was attributed to a policy
+  picked at random from the whole set, so the graph could claim an identity
+  reached a bucket through a policy it does not hold. Every policy the estate
+  says an identity carries is now an edge, and the access is attributed to one
+  of those.
+- **Regions.** The graph's own list included `us-east-2`, where no identity in
+  the estate operates, so a resource could sit in a region nothing could reach
+  it from.
+- **External principals.** Every external trust was routed through one of three
+  fixed principals, so a `datadog-integration` was drawn as trusted by Okta -
+  a different claim about the environment, and a wrong one. Each identity's own
+  `trust_service` now becomes its principal.
+
+**What is still local, and why:** the resources - the S3 buckets, DynamoDB
+tables and KMS keys the paths end at. The estate has no resource inventory at
+all, and the graph needs targets for "what can this reach". That is a genuine
+gap rather than a choice, and it is the one part of this screen whose nouns
+exist nowhere else in the product.
+
+### The tabs
+
+The panel was a stack of sections, which worked while there were four. There
+were eleven, and a 340px column holding all of them is a 1,200px scroll where
+the thing you want is never the thing on screen. All ten tabs from the brief
+now exist:
+
+| Tab | What it answers |
+|---|---|
+| Summary | observed behaviour as nine figures |
+| Access | blast radius, reach, connections, paths through it |
+| Credentials | the credentials it holds, with age, last use and status |
+| Key hygiene | long-lived keys and the oldest one |
+| Trust & reach | who can assume it, via what, from where - and what that gets them |
+| Behaviour | the genome's baseline, drift, risk score and open departures |
+| Top events | most-used actions and busiest services |
+| Policies | what it was granted |
+| Ownership | owner, creator, assignee |
+| Why classified | the evidence and the rules that matched |
+
+A tab is hidden when the node has nothing to put in it - an entry point has no
+key hygiene - so the row never offers a click that leads to "nothing here".
+Verified both ways: hidden for an identity holding only secrets, present for
+one holding a long-lived key.
+
+**Credentials and Behaviour are new content, not rearranged.** The panel showed
+a credential *count*; it now lists the estate's own records, matching the
+register. And Behaviour reads the **genome's** model rather than computing one:
+two screens with two different answers to "how does this identity normally
+behave" would be worse than one screen with none. A human gets a statement
+that baselines are for machine identities rather than an invented baseline.
+
+### Three bugs the tabs exposed
+
+- **The tab row could not wrap.** The app's `Tabs` is a single scrolling line
+  with an absolutely positioned sliding indicator, so ten labels in a 340px
+  column showed three and hid seven with no affordance. The panel uses a
+  wrapping pill row - ten tabs across four rows, verified none clipped at
+  390px, 768px or 1700px - still a real tablist with `aria-selected`, a roving
+  tabindex and arrow keys.
+- **Arrow keys moved from the selection, not the focus.** Tabbing to a tab and
+  pressing an arrow jumped from wherever the selection happened to be, which
+  is not where the reader's attention was.
+- **The tab row scrolled away with the content.** With the whole panel
+  scrolling, reading to the foot of a long pane took the tabs off screen, so
+  changing tab meant scrolling back to find the control. The title and tabs are
+  pinned; only the pane below them moves.
+
+### Verified
+
+41 tab checks (all ten present, each pane's content, no leakage between panes,
+no clipping, keyboard movement, the hidden-tab rule both ways, real credential
+ids, real API names, the genome figures matching the genome) and 12 graph-to-
+estate consistency checks (policy names, attributed policies, regions, vendor
+principals, credentials matching the register, the behavioural baseline
+matching the genome exactly, and a human getting no invented baseline). Plus
+the existing suites: 265 checks in total, four viewport widths with no
+horizontal scroll on nine pages, and no console or page errors.

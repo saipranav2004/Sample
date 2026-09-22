@@ -1,5 +1,6 @@
 import { SEVERITY_ORDER } from '../domain';
 import { estate as sharedEstate } from './estate';
+import { genomeFleet } from './genome';
 import { demoRequest, hashSeed, intBetween, pick, rng, sample } from './runtime';
 
 /**
@@ -474,7 +475,10 @@ const ACCOUNTS = sharedEstate().accounts.map((account) => ({
   crownJewel: account.env === 'production',
 }));
 
-const REGIONS = ['us-east-1', 'us-east-2', 'eu-west-1', 'ap-south-1'];
+/* The estate's regions. Its own list included `us-east-2`, which no identity
+   in the estate operates in, so a resource could sit in a region nothing could
+   reach from. */
+const REGIONS = [...new Set(sharedEstate().identities.map((row) => row.region))];
 
 /**
  * How many of the estate's 228 identities the graph is built over.
@@ -552,9 +556,18 @@ const FEDERATED_PRINCIPALS = [
 ];
 
 /* Credential shapes, matching the vocabulary the Credentials screen uses. */
+/**
+ * Policies, taken from the estate rather than named here.
+ *
+ * The graph used to draw policy nodes called `PaymentsServiceAccess` and
+ * `LegacyWildcard` while the estate - and so the identity drawer, and this
+ * screen's own "Attached policies" list - used AWS-style names. The same
+ * identity therefore had one set of policies in its drawer and a different set
+ * in the graph. These are the estate's, deduplicated across every identity it
+ * holds.
+ */
 const POLICY_NAMES = [
-  'PaymentsServiceAccess', 'DataPlatformRead', 'PipelineDeploy', 'ObservabilityWrite',
-  'SecretsReader', 'AdminBreakGlass', 'CrossAccountAudit', 'LegacyWildcard',
+  ...new Set(sharedEstate().identities.flatMap((row) => row.attached_policies ?? [])),
 ];
 
 /* ── Generation ───────────────────────────────────────────────────────────── */
@@ -712,8 +725,12 @@ function buildGraph() {
       id: `pol-${name}`,
       kind: 'policy',
       name,
-      managed: next() < 0.6,
-      wildcardAction: name === 'LegacyWildcard' || next() < 0.18,
+      /* An AWS-managed policy is one whose name AWS publishes; the wildcard
+         question is answered by the policy itself rather than by a dice roll,
+         because `AdministratorAccess` grants everything by definition and
+         `AmazonS3ReadOnlyAccess` does not. */
+      managed: name.startsWith('Amazon') || name.startsWith('AWS') || name.startsWith('CloudWatch'),
+      wildcardAction: name === 'AdministratorAccess' || name === 'PowerUserAccess',
     }),
   );
 
@@ -805,6 +822,43 @@ function buildGraph() {
     });
   }
 
+  /* The vendors the estate says are trusted, one principal each.
+     A SaaS integration's trust policy names the vendor, and the estate records
+     which vendor on the identity. The graph used to route every external trust
+     through one of three fixed principals, so a `datadog-integration` was
+     drawn as trusted by Okta - which is a different claim about the
+     environment, and a wrong one. */
+  const vendorPrincipals = new Map();
+  for (const identity of identities) {
+    const service = identity.trustService;
+    if (!service || !identity.isFederated) continue;
+    /* GitHub Actions already has its own node above. */
+    if (service === 'token.actions.githubusercontent.com') continue;
+    if (!service.endsWith('.com') || service.endsWith('.amazonaws.com')) continue;
+
+    if (!vendorPrincipals.has(service)) {
+      vendorPrincipals.set(
+        service,
+        addNode({
+          id: `fed-${service.replace(/[^a-z0-9]/gi, '-')}`,
+          kind: 'federated',
+          name: service,
+          label: `${service.split('.')[0]} federation`,
+          detail:
+            'A third-party identity provider named in this role trust policy. Whoever controls it can obtain these credentials, and the account cannot see how they protect it.',
+          external: true,
+        }),
+      );
+    }
+    addEdge({
+      from: vendorPrincipals.get(service).id,
+      to: identity.id,
+      kind: 'TRUSTS',
+      detail: `Trust policy names ${service}. The vendor's own access controls decide who can use it.`,
+      external: true,
+    });
+  }
+
   /* Service principals assume the roles they run as. */
   for (const identity of identities) {
     if (identity.identityType === 'AWS::Lambda::Function') {
@@ -870,8 +924,18 @@ function buildGraph() {
     const count = identity.isAdmin ? intBetween(next, 5, 9) : intBetween(next, 1, 4);
     const pool = resources.filter((resource) => resource.accountId === identity.accountId);
     const reach = sample(next, pool.length >= count ? pool : resources, count);
-    const policy = pick(next, policies);
-    addEdge({ from: identity.id, to: policy.id, kind: 'ATTACHED_POLICY' });
+    /* Every policy the estate says this identity carries becomes an edge, and
+       the resource access is attributed to one of those - not to a policy
+       picked at random from the whole set. Attributing access to a policy the
+       identity does not hold is the kind of detail that makes the graph
+       unusable for the argument it exists to support. */
+    const ownPolicies = (identity.attachedPolicies ?? [])
+      .map((name) => byId.get(`pol-${name}`))
+      .filter(Boolean);
+    for (const attached of ownPolicies) {
+      addEdge({ from: identity.id, to: attached.id, kind: 'ATTACHED_POLICY' });
+    }
+    const policy = ownPolicies.find((row) => row.wildcardAction) ?? ownPolicies[0] ?? pick(next, policies);
     for (const resource of reach) {
       const roll = next();
       const kind = identity.isAdmin && roll < 0.35 ? 'CAN_ADMIN' : roll < 0.6 ? 'CAN_READ' : 'CAN_WRITE';
@@ -1828,6 +1892,41 @@ function observedActivity(arn) {
   };
 }
 
+/**
+ * The behavioural baseline for a principal, if the genome has one.
+ *
+ * Read from the genome module rather than recomputed. Two screens with two
+ * different answers for "how does this identity normally behave" would be
+ * worse than one screen with none, and the genome's model is the product's
+ * answer to that question.
+ *
+ * Humans have no genome entry - the fleet is machine identities - so this
+ * returns null for them rather than guessing.
+ */
+function behaviourFor(nodeId) {
+  const entry = genomeFleet().find((row) => row.id === nodeId);
+  if (!entry) return null;
+  return {
+    baselineState: entry.baselineState,
+    learningProgress: entry.learningProgress,
+    learningDays: entry.learningDays,
+    baselineEstablished: entry.baselineEstablished,
+    modelConfidence: entry.modelConfidence,
+    drift: entry.drift,
+    riskScore: entry.riskScore,
+    peerGroup: entry.peerGroup,
+    runtime: entry.kind,
+    fingerprint: entry.fingerprint,
+    anomalies: (entry.anomalies ?? []).map((anomaly) => ({
+      id: anomaly.id,
+      title: anomaly.title,
+      severity: anomaly.severity,
+      type: anomaly.type,
+      detectedAt: anomaly.detectedAt,
+    })),
+  };
+}
+
 export function fetchNode(nodeId, signal) {
   return demoRequest(() => {
     const graph = buildGraph();
@@ -1846,6 +1945,36 @@ export function fetchNode(nodeId, signal) {
        fact from granted permission, and the gap between them is the argument
        for every least-privilege change - so the panel shows both. */
     const observed = node.kind === 'identity' ? observedActivity(node.arn) : null;
+
+    /* The credentials this identity actually holds, and the trust that lets
+       anything assume it - both read from the shared estate, so the tab and
+       the credential register cannot disagree. */
+    const shared = sharedEstate();
+    const heldCredentials =
+      node.kind === 'identity' ? (shared.credentialsOf.get(node.arn) ?? []) : [];
+    const trustedBy =
+      node.kind === 'identity'
+        ? shared.edges
+            .filter((edge) => edge.target_arn === node.arn)
+            .map((edge) => ({
+              name: edge.caller_name,
+              type: edge.caller_type,
+              relationship: edge.rel_type,
+              via: edge.via,
+              external: edge.is_external,
+              sourceIp: edge.source_ip,
+              lastAssumed: edge.last_assumed,
+              sessions: edge.assume_count,
+            }))
+            .sort((a, b) => b.sessions - a.sessions)
+        : [];
+
+    /* The behavioural baseline, from the genome's own model.
+       The genome screen already maintains a fingerprint and a drift figure for
+       every non-human identity in the estate, and it is the same identity, so
+       this reads that rather than inventing a second opinion about how the
+       same principal behaves. */
+    const behaviour = node.kind === 'identity' ? behaviourFor(node.id) : null;
 
     const through = graph.paths.filter((path) => path.nodeIds.includes(nodeId));
 
@@ -1883,6 +2012,9 @@ export function fetchNode(nodeId, signal) {
       radius: node.kind === 'identity' ? blastRadius(nodeId) : null,
       reach,
       observed,
+      credentials: heldCredentials,
+      trustedBy,
+      behaviour,
       paths: through,
     };
   }, { signal, latency: [160, 360] });

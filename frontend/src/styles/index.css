@@ -396,10 +396,12 @@
        height is a viewport question, so a panel sized against its container
        could disagree with it - and did, running to 1,036px beside a 560px
        graph. One breakpoint, one figure, two columns that line up. */
+    /* The panel is bounded; its pane scrolls, not the panel, so the tab row
+       stays put. `height` rather than `max-height` so the flex child below the
+       pinned head has a definite space to scroll within. */
     .access-inspector {
-      max-height: min(var(--graph-max-h, 560px), 74vh);
-      overflow-y: auto;
-      overscroll-behavior: contain;
+      height: min(var(--graph-max-h, 560px), 74vh);
+      min-height: 420px;
     }
   }
 

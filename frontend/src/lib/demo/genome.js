@@ -886,3 +886,15 @@ function daysAgoIso(days) {
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
+
+/**
+ * The fleet itself, for other modules.
+ *
+ * The access graph needs the behavioural baseline for a principal it is already
+ * drawing, and recomputing one there would give the product two different
+ * answers to "how does this identity normally behave". Exported read-only: the
+ * caller reads the model, it does not build one.
+ */
+export function genomeFleet() {
+  return buildFleet().identities;
+}
