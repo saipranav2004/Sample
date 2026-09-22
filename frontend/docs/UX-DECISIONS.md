@@ -1384,3 +1384,195 @@ leave; tracing marks the path; the focus picker filters and redraws; the inputs
 modal names the coverage gaps; full screen engages and exits with the layout
 intact; and no console errors throughout. Eight viewport widths from 390px to
 2560px, both themes, with no horizontal page scroll at any of them.
+
+## 16. Revision: the findings model, and a logo rendered twice
+
+Three things were wrong with the previous revision. One was a bug visible on
+every page, one was a layout fault, and one was a design failure I should have
+caught by asking what the screen was for rather than whether it worked.
+
+### The brand lockup rendered twice below 640px
+
+`BrandLockup` sets `inline-flex` on its own root and merges a caller's
+`className`. The top bar passed `hidden sm:inline-flex`. `cn` is a plain join
+with no Tailwind merge, so the element kept **both** `inline-flex` and
+`hidden`: same property, same specificity, and the winner decided by the order
+Tailwind happened to emit the two utilities in. `inline-flex` won, so below the
+`sm` breakpoint the wordmark rendered alongside the compact mark that was meant
+to replace it, at `y = -4` - overflowing the bar upward.
+
+Measured before the fix, at 390px and 480px:
+
+```
+logo-lockup.png  display=block  visible=true   box=64,-4,153x34
+mark.png         display=block  visible=true   box=64,36,32x32
+```
+
+Two fixes, because one of them is the class of bug rather than the instance:
+
+1. The top bar now puts the display toggle on a **wrapper**, so no component's
+   base class competes with it.
+2. `cn` resolves the display group, last-wins. It is deliberately not a general
+   Tailwind merge - that is a large dependency and a lot of behaviour to reason
+   about - but `display` is the one group where a collision is silent,
+   indistinguishable from working, and settled by stylesheet order.
+
+A runtime audit across eleven routes at three widths found exactly one such
+collision, so hardening `cn` changed the rendering of exactly one element.
+Twenty-four other components put a display class in their own base and accept a
+`className`; none of their callers currently pass a conflicting one, and now it
+would not matter if they did.
+
+### Attack paths were a query result, not analysis
+
+The previous version listed every path the analysis found: twenty-six rows,
+most reading "Unconditioned OIDC trust -> something". Nothing on a row said
+what was wrong or what to do, and the reader had to notice for themselves that
+six of those rows were the same mistake made six times.
+
+Every enterprise tool that does this well groups first and counts second, and
+the reason is not presentational - **the group is the unit of work, because one
+fix closes all of its instances.** Rapid7's InsightCloudSec lists an attack path
+by name with a severity and an instance count, and opens to a description, the
+graph and generated remediation steps. BloodHound Enterprise calls the group a
+finding and quantifies it as exposure and impact percentages, offering the same
+findings as both a graph and a table with the filter and sort state kept in the
+URL.
+
+So the twenty-six paths are now **seven findings**, of two kinds:
+
+- **Technique** - the path works because of a documented privilege-escalation
+  method. The permission combination is the cause, so the finding carries it
+  verbatim, and scoping it is the fix.
+- **Grant** - nothing was escalated; the access was granted. The finding names
+  what was reached, because the grant is the thing to change.
+
+Each row carries four figures, with a header row to label them:
+
+| Figure | What it answers |
+|---|---|
+| Paths | how many routes this one finding accounts for |
+| Exposure | share of entry points that can start one of them |
+| Impact | share of identities that sit on one |
+| Hops | the shortest route in the group |
+
+Exposure and impact are measured against the whole environment, not the
+filtered set, so a figure means the same thing whatever the reader has filtered
+to.
+
+Opened, a finding gives what it is, the permission combination as code, the
+counts that matter (reaches an administrator, reaches a crown jewel, crosses an
+account), **how to close it** in its own column, and what closing it is worth:
+"Closing this removes 6 paths." The instances are still there one level down,
+because eventually somebody has to go and look at one, and each can be traced
+onto the graph above.
+
+### Filters, which the screen had none of
+
+Four dimensions - severity, what the path reaches, what it starts from, and the
+target account - as chips carrying the count each would leave. They stack, and
+they live in the URL with the rest of the view state.
+
+The counts come from the **unfiltered** set on purpose. A filter list whose
+counts shrink as it is used cannot be undone without clearing everything, and
+the reader loses the ability to see what a filter would cost before applying it.
+
+Chips rather than dropdowns because four short lists fit, and a chip shows its
+state without being opened.
+
+### An entry point had no blast radius
+
+`blastRadius()` is a permission-space calculation and only ever ran for
+identities, so opening an entry point - the node an analyst is most likely to
+start from - showed a connection count and nothing else. But "what does an
+attacker get from here" is exactly the question an entry point is opened to
+ask.
+
+`fetchNode` now derives **reach** for any node that holds no policies of its
+own, from the paths that start at it: identities on the way, how many are
+administrator-equivalent, crown jewels, accounts, and the shortest hop count.
+It is the same analysis the findings are grouped from, so the two agree.
+
+### Layout: two heights, and one that follows the row
+
+The canvas was a fixed 560px, which was wrong at both ends. On a phone that is
+most of the screen spent on a graph needing a third of it, and it pushed the
+panel explaining the graph out of sight. On a desktop the opposite: the empty
+canvas is room to expand and pan into, and the panel beside it is frequently
+taller, which left a band of empty page under the graph.
+
+So there are two rules, switched in CSS because it is a viewport question:
+below 768px the frame follows the drawn height, floored at 320px and capped at
+68vh; from 1120px, where the panel moves beside the graph, the graph takes the
+height of the grid row with the old fixed height as its floor.
+
+### Two more phone faults
+
+- **The focus node was clipped off the left edge** (`left: -10` at 390px).
+  Three columns cannot fit at a readable zoom, and `fitView` always centres,
+  which cuts both ends. The graph reads left to right, so the left edge is the
+  anchor: where not even two columns fit, the viewport is set directly with the
+  focus pinned 14px from the left and the overflow falling to the right, where
+  panning is the obvious gesture. Measured after: `left: 14`.
+- **The hop strip clipped a word**, rendering "2 hops" as "2 HOF". Three
+  labels, the node count and two buttons do not fit in 364px. The strip now
+  scrolls rather than hides its overflow, and the node count moves to the
+  footer below 32rem, which is where the room came from.
+
+### Export now carries the finding and the fix
+
+A spreadsheet of twenty-six routes with no statement of what was wrong with any
+of them is not actionable. The export is one row per path carrying its finding,
+the service, the permission combination, exposure, impact, and the remediation
+text - and it respects the filters, because the filtered set is what the person
+exporting is looking at.
+
+### One test that was passing without testing anything
+
+The interaction suite's trace assertion was written as
+`if (await trace.count()) { ... }`. Once the Trace buttons moved inside a
+collapsed finding, the count was zero, the block was skipped, and the suite
+reported no failure. A guard that skips silently is worse than a missing test,
+because it looks like coverage. It now opens a finding first and fails
+explicitly when no Trace button is reachable.
+
+### What is actually failing in this environment
+
+Worth recording, because it is not the frontend. Fourteen routes, deduplicated:
+
+```
+14x  502  /api/auth/me            no Go backend on localhost:8080 in this container
+14x  502  /api/scans
+ 5x  502  /api/credentials
+ 4x  502  /api/dashboard/summary
+ 3x  502  /api/identities, /api/events
+ 4x  401  /secret-scanner/api/*   proxy reaches the real upstream, SCANNER_DASHBOARD_KEY is blank
+15x       ERR_CERT_AUTHORITY_INVALID  Google Fonts, blocked by the sandbox TLS proxy
+```
+
+Zero uncaught page errors across all fourteen. Every one of the three is
+missing infrastructure rather than a defect, and the app surfaces each as a
+visible error state rather than failing: the "Scan list unavailable - retry"
+chip in the top bar is the 401 and the 502 being reported honestly. The 401 in
+particular is the security design working - the proxy chain reaches the scanner
+and is refused for want of a key that was never in the bundle.
+
+Because `/api/auth/login` is one of the 502s, there is no way to obtain a real
+token here, so the screenshots are taken with a synthetic one in
+`localStorage`. Every panel on the access graph is fed from `src/lib/demo`, so
+the screen renders completely regardless - which is why it is the one screen
+that can be assessed in this environment at all.
+
+Fonts fall back to `ui-sans-serif, system-ui` and the layout is unaffected;
+only the typeface differs from production.
+
+### Verified
+
+Twenty-seven graph interaction checks, thirty findings checks (grouping,
+headers, four filter groups, filters applying and stacking in the URL,
+clear-all, a finding's explanation and remediation and permission combination
+and instance list, tracing from inside a finding, step expansion, the entry
+point's reach, and the export's columns and row count), fourteen layout checks,
+one logo check at five widths, a runtime display-collision audit over eleven
+routes, and eight viewport widths from 390px to 2560px with no horizontal page
+scroll and no overflow outside the graph canvas at any of them.

@@ -55,7 +55,14 @@ export function TopBar({ onOpenNav, onOpenCommand }) {
         aria-label="Deep Algorithms - go to posture overview"
         className="shrink-0 rounded px-1"
       >
-        <BrandLockup height={34} className="hidden sm:inline-flex" />
+        {/* The display toggle lives on a wrapper, not on the lockup itself.
+            `cn` is a plain join, so passing `hidden` to a component whose own
+            base class is `inline-flex` left both on the element and let CSS
+            source order decide - which rendered the wordmark AND the mark
+            together below 640px, with the wordmark overflowing the bar. */}
+        <span className="hidden sm:block">
+          <BrandLockup height={34} />
+        </span>
         <img
           src="/brand/mark.png"
           alt="Deep Algorithms"

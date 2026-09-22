@@ -353,6 +353,47 @@
      through the JS import, and an unlayered declaration beats every layered
      one no matter how specific. Without it the attribution keeps its
      `rgba(255,255,255,0.5)` and renders as a pale patch on the dark canvas. */
+  /* The hop strip scrolls when the labels outrun the header, and does it
+     without a visible scrollbar - a 3px trough under a row of 10px labels
+     reads as damage rather than as an affordance. */
+  .access-shell {
+    transition: height 0.32s var(--ease-out-quint);
+  }
+
+  /* Phone: the drawn height, floored so a two-node graph still reads as a
+     canvas and capped so it never takes the whole screen. */
+  .access-shell-sized {
+    height: min(max(320px, var(--graph-content-h, 320px)), 68vh);
+  }
+
+  /* Desktop: the full frame, because the empty part is what an expansion
+     grows into. */
+  @media (min-width: 768px) {
+    .access-shell-sized {
+      height: min(var(--graph-max-h, 560px), 74vh);
+      min-height: 420px;
+    }
+  }
+
+  /* Once the panel sits beside the graph rather than under it, the graph takes
+     the height of the row. The panel is frequently the taller of the two, and
+     a fixed graph left a band of empty page beneath it. The floor keeps the
+     canvas usable when the panel is short. */
+  @media (min-width: 1120px) {
+    .access-shell-sized {
+      height: auto;
+      flex: 1 1 auto;
+      min-height: min(var(--graph-max-h, 560px), 74vh);
+    }
+  }
+
+  .access-hop-strip {
+    scrollbar-width: none;
+  }
+  .access-hop-strip::-webkit-scrollbar {
+    display: none;
+  }
+
   .access-canvas .react-flow__attribution {
     background: transparent !important;
     color: var(--t-ink-3);

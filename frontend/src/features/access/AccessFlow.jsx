@@ -12,7 +12,7 @@ import '@xyflow/react/dist/base.css';
 import { Maximize2, Minimize2, RotateCcw } from 'lucide-react';
 import { EDGE_KINDS } from '../../lib/demo/accessGraph';
 import { EDGE_STYLE, toneFor } from './graphTheme';
-import { hopLabels, layoutHops } from './hopLayout';
+import { HOP_METRICS, hopLabels, layoutHops } from './hopLayout';
 import { nodeTypes } from './GraphNodes';
 import { IconButton } from '../../ui/Button';
 import { cn } from '../../ui/cn';
@@ -20,6 +20,9 @@ import { cn } from '../../ui/cn';
 /* Below this the 12px node labels stop being readable, so the fit stops
    shrinking and starts cropping instead. */
 const MIN_FIT_ZOOM = 0.7;
+
+/* Breathing room between the graph and the frame, in screen pixels. */
+const EDGE_PAD = 14;
 
 /**
  * The canvas.
@@ -63,7 +66,7 @@ function FlowInner({
 }) {
   const shellRef = useRef(null);
   const rowsRef = useRef(new Map());
-  const { fitView } = useReactFlow();
+  const { fitView, setViewport } = useReactFlow();
   const [fullscreen, setFullscreen] = useState(false);
   const [nativeFullscreen, setNativeFullscreen] = useState(false);
   const [hoverId, setHoverId] = useState('');
@@ -173,19 +176,49 @@ function FlowInner({
     (duration) => {
       const frame = shellRef.current?.querySelector('.access-canvas');
       const available = frame?.clientWidth ?? 0;
-      const tooWide = available > 0 && layout.width * MIN_FIT_ZOOM > available;
-      const near = tooWide
-        ? layout.nodes.filter((node) => node.data.depth <= 1).map((node) => ({ id: node.id }))
-        : undefined;
-      fitView({
-        padding: 0.18,
-        duration,
-        minZoom: MIN_FIT_ZOOM,
-        maxZoom: 1.15,
-        ...(near?.length ? { nodes: near } : null),
-      });
+      const height = frame?.clientHeight ?? 0;
+      if (available === 0 || layout.nodes.length === 0) return;
+
+      /* Does the focus and its first hop fit at a readable zoom? Two columns
+         need two node widths and the gap between them. */
+      const nearWidth = Math.min(2, layout.columnCount) * HOP_METRICS.COLUMN_WIDTH;
+      const fits = nearWidth * MIN_FIT_ZOOM <= available - 2 * EDGE_PAD;
+
+      if (fits && layout.width * MIN_FIT_ZOOM > available) {
+        /* The whole graph will not fit but the first two columns will, so fit
+           those and let the reader pan for the rest. */
+        fitView({
+          padding: 0.14,
+          duration,
+          minZoom: MIN_FIT_ZOOM,
+          maxZoom: 1.15,
+          nodes: layout.nodes.filter((node) => node.data.depth <= 1).map((node) => ({ id: node.id })),
+        });
+        return;
+      }
+
+      if (!fits) {
+        /* Not even two columns fit. fitView always centres, which at phone
+           width clipped the focus node off the left edge - the one node the
+           reader is definitely looking for. The graph reads left to right, so
+           the left edge is the anchor: pin it there and let the overflow fall
+           to the right, where panning is the obvious gesture. */
+        const focus = layout.nodes.find((node) => node.data.isFocus) ?? layout.nodes[0];
+        /* `nodeOrigin` is [0, 0.5], so a node's y is its vertical centre. */
+        setViewport(
+          {
+            x: EDGE_PAD,
+            y: height / 2 - focus.position.y * MIN_FIT_ZOOM,
+            zoom: MIN_FIT_ZOOM,
+          },
+          { duration },
+        );
+        return;
+      }
+
+      fitView({ padding: 0.18, duration, minZoom: MIN_FIT_ZOOM, maxZoom: 1.15 });
     },
-    [fitView, layout.nodes, layout.width],
+    [fitView, setViewport, layout.nodes, layout.width, layout.columnCount],
   );
 
   useEffect(() => {
@@ -268,27 +301,44 @@ function FlowInner({
     <div
       ref={shellRef}
       className={cn(
-        'access-shell flex flex-col overflow-hidden rounded-[var(--radius-panel)] border border-line bg-inset',
+        'access-shell @container flex flex-col overflow-hidden rounded-[var(--radius-panel)] border border-line bg-inset',
+        !expanded && 'access-shell-sized',
         fullscreen && 'fixed inset-0 z-[80] rounded-none border-0',
         nativeFullscreen && 'rounded-none border-0',
         className,
       )}
-      /* Taller as the window allows, never taller than the window. A fixed
-         560px is most of a phone screen spent on a graph that only needs a
-         third of it, and pushes the panel that explains it out of sight. */
-      style={expanded ? undefined : { height: `min(${height}px, 62vh)`, minHeight: 340 }}
+      /* Two different problems at the two ends, so two different heights, and
+         the switch is in CSS because it is a viewport question.
+         On a phone a fixed 560px is most of the screen spent on a graph that
+         needs a third of it, and it pushes the panel explaining the graph out
+         of sight - so there the frame follows the drawn height. On a desktop
+         the opposite is true: the empty canvas is room to expand and pan
+         into, and shrinking it to the current contents wastes the space this
+         screen exists to use. `--graph-content-h` and `--graph-max-h` carry
+         the two figures; `.access-shell-sized` picks between them. */
+      style={
+        expanded
+          ? undefined
+          : {
+              '--graph-content-h': `${Math.round(layout.height * MIN_FIT_ZOOM) + 190}px`,
+              '--graph-max-h': `${height}px`,
+            }
+      }
     >
       {/* Hop headings. Outside the canvas so they do not pan away from the
           columns they name. */}
       <div className="flex shrink-0 items-center gap-2 border-b border-line bg-surface-2 px-3 py-1.5">
-        <div className="flex min-w-0 flex-1 items-center gap-4 overflow-hidden">
+        {/* Scrolls rather than clips. Three labels plus the count plus two
+            buttons do not fit in 364px, and `overflow: hidden` resolved that
+            by cutting "2 hops" to "2 HOF". */}
+        <div className="access-hop-strip flex min-w-0 flex-1 items-center gap-4 overflow-x-auto">
           {labels.map((label, index) => (
             <span key={label} className="access-hop-label shrink-0">
               {index === 0 ? label : `→ ${label}`}
             </span>
           ))}
         </div>
-        <span className="shrink-0 text-[10.5px] text-ink-3">
+        <span className="hidden shrink-0 text-[10.5px] text-ink-3 @min-[32rem]:inline">
           {(data?.nodes?.length ?? 0)} of {data?.totalNodes ?? 0} shown
         </span>
         <IconButton
@@ -360,6 +410,9 @@ function FlowInner({
       {/* One line, three verbs. The chevron and the fold are self-evident once
           named; everything past that is a manual nobody reads. */}
       <p className="shrink-0 border-t border-line bg-surface-2 px-3 py-1.5 text-[10.5px] text-ink-3">
+        <span className="@min-[32rem]:hidden">
+          {(data?.nodes?.length ?? 0)} of {data?.totalNodes ?? 0} shown ·{' '}
+        </span>
         Click a node to inspect · the chevron to open its next hop · drag to pan
       </p>
     </div>

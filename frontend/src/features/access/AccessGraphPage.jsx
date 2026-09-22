@@ -7,6 +7,7 @@ import {
   REVEAL_STEP,
   fetchAttackPaths,
   fetchFocusOptions,
+  fetchPathFindings,
   fetchNeighbourhood,
   fetchNode,
 } from '../../lib/demo/accessGraph';
@@ -25,7 +26,7 @@ import { Tag } from '../../ui/Tag';
 import { KIND_LABEL, riskReason } from './graphTheme';
 import { AccessFlow } from './AccessFlow';
 import { FocusPicker } from './FocusPicker';
-import { PathList } from './PathList';
+import { AttackPaths } from './AttackPaths';
 
 /**
  * Access graph.
@@ -72,6 +73,18 @@ export default function AccessGraphPage() {
   }, [searchParams]);
   const tracedPathId = searchParams.get('path') || '';
 
+  /* The findings filters, in the URL with everything else, so a filtered view
+     is a link somebody can send. */
+  const filters = useMemo(
+    () => ({
+      severity: searchParams.get('severity') || '',
+      account: searchParams.get('account') || '',
+      vector: searchParams.get('vector') || '',
+      reach: searchParams.get('reach') || '',
+    }),
+    [searchParams],
+  );
+
   const setParams = useCallback(
     (changes) => {
       const next = new URLSearchParams(searchParams);
@@ -90,6 +103,10 @@ export default function AccessGraphPage() {
     [focusId, expanded.join(','), JSON.stringify(revealed)],
   );
   const paths = useDemoQuery((signal) => fetchAttackPaths({}, signal), []);
+  const findings = useDemoQuery(
+    (signal) => fetchPathFindings(filters, signal),
+    [filters.severity, filters.account, filters.vector, filters.reach],
+  );
 
 
   /* The first hop of the most interesting neighbour opens itself, so the graph
@@ -175,27 +192,48 @@ export default function AccessGraphPage() {
     [setParams],
   );
 
+  /* One row per path, carrying its finding and the fix.
+     Exporting the paths alone produced a spreadsheet nobody could act on: the
+     reader got twenty-six routes and no statement of what was wrong with any
+     of them. Whoever opens this needs the grouping and the remediation, which
+     is the whole point of the screen. Respects the filters, because the
+     filtered set is what the person exporting is looking at. */
+  const exportRows = useMemo(
+    () =>
+      (findings.data?.findings ?? []).flatMap((finding) =>
+        finding.paths.map((path) => ({ finding, path })),
+      ),
+    [findings.data],
+  );
+
   const onExport = useCallback(() => {
     exportRowsToCsv({
       filename: timestampedName('access-attack-paths'),
       columns: [
-        { header: 'Severity', value: (row) => severityMeta(row.severity).label },
-        { header: 'Hops', value: (row) => row.hops },
-        { header: 'Entry point', value: (row) => row.entryName },
-        { header: 'Target', value: (row) => row.targetName },
-        { header: 'Reaches admin', value: (row) => (row.reachesAdmin ? 'yes' : 'no') },
-        { header: 'Controls crown jewel', value: (row) => (row.controlsCrownJewel ? 'yes' : 'no') },
-        { header: 'Escalation edges', value: (row) => row.escalationCount },
-        { header: 'Accounts crossed', value: (row) => row.crossAccountCount },
+        { header: 'Severity', value: (row) => severityMeta(row.path.severity).label },
+        { header: 'Finding', value: (row) => row.finding.title },
+        { header: 'Service', value: (row) => row.finding.service },
+        { header: 'Permissions', value: (row) => row.finding.permissions.join(' + ') },
+        { header: 'Paths in finding', value: (row) => row.finding.instances },
+        { header: 'Exposure %', value: (row) => row.finding.exposure },
+        { header: 'Impact %', value: (row) => row.finding.impact },
+        { header: 'Hops', value: (row) => row.path.hops },
+        { header: 'Entry point', value: (row) => row.path.entryName },
+        { header: 'Target', value: (row) => row.path.targetName },
+        { header: 'Target account', value: (row) => row.path.targetAccountName },
+        { header: 'Reaches admin', value: (row) => (row.path.reachesAdmin ? 'yes' : 'no') },
+        { header: 'Controls crown jewel', value: (row) => (row.path.controlsCrownJewel ? 'yes' : 'no') },
+        { header: 'Accounts crossed', value: (row) => row.path.crossAccountCount },
         {
           header: 'Route',
           value: (row) =>
-            `${row.entryName} -> ${row.steps.map((step) => `[${EDGE_KINDS[step.kind]?.label ?? step.kind}] ${step.toName}`).join(' -> ')}`,
+            `${row.path.entryName} -> ${row.path.steps.map((step) => `[${EDGE_KINDS[step.kind]?.label ?? step.kind}] ${step.toName}`).join(' -> ')}`,
         },
+        { header: 'How to close it', value: (row) => row.finding.prevention },
       ],
-      rows: pathRows,
+      rows: exportRows,
     });
-  }, [pathRows]);
+  }, [exportRows]);
 
   const missingInputs = GRAPH_INPUTS.filter((input) => !input.covered);
 
@@ -218,7 +256,7 @@ export default function AccessGraphPage() {
               label="What this graph is built from"
               onClick={() => setInputsOpen(true)}
             />
-            <Button variant="secondary" icon={Download} onClick={onExport} disabled={pathRows.length === 0}>
+            <Button variant="secondary" icon={Download} onClick={onExport} disabled={exportRows.length === 0}>
               Export
             </Button>
           </>
@@ -235,7 +273,11 @@ export default function AccessGraphPage() {
               : 'grid gap-4 @min-[70rem]:grid-cols-[minmax(0,1fr)_320px] @min-[90rem]:grid-cols-[minmax(0,1fr)_364px]'
           }
         >
-          <div className="min-w-0">
+          {/* A column, so the graph can take whatever height the panel beside it
+              ends up needing. The graph used to be a fixed 560px next to a
+              panel that is often taller, which left a band of empty page under
+              the graph on every desktop. */}
+          <div className="flex min-w-0 flex-col">
             {tracedPath && (
               <div className="animate-fade mb-3 flex flex-wrap items-center gap-2 rounded-[var(--radius-control)] border border-brand/30 bg-info-soft px-3 py-2">
                 <Route aria-hidden="true" className="size-3.5 shrink-0 text-brand" />
@@ -276,11 +318,13 @@ export default function AccessGraphPage() {
       )}
 
       {!fullscreen && (
-        <PathList
-          rows={pathRows}
-          loading={paths.isLoading && !paths.data}
-          error={paths.isError && !paths.data ? paths.error : null}
-          onRetry={paths.refetch}
+        <AttackPaths
+          data={findings.data}
+          loading={findings.isLoading && !findings.data}
+          error={findings.isError && !findings.data ? findings.error : null}
+          onRetry={findings.refetch}
+          filters={filters}
+          onFilter={setParams}
           tracedId={tracedPathId}
           onTrace={onTrace}
         />
@@ -365,6 +409,7 @@ function Inspector({ node, isFocusNode, detail, onTrace, onExpand, expandedIds }
 
   const risk = riskReason(node);
   const radius = detail?.data?.radius;
+  const reach = detail?.data?.reach;
   const paths = detail?.data?.paths ?? [];
   const isOpen = expandedIds.includes(node.id);
 
@@ -410,6 +455,37 @@ function Inspector({ node, isFocusNode, detail, onTrace, onExpand, expandedIds }
           )}
         </div>
       </div>
+
+      {/* Reach, for a node that holds no policies of its own. An entry point
+          has no blast radius in the permission sense, but "what does an
+          attacker get from here" is the question somebody opens one to ask. */}
+      {node.kind !== 'identity' && reach && reach.paths > 0 && (
+        <div>
+          <SectionLabel>{reach.fromHere ? 'Reachable from here' : 'On paths that reach'}</SectionLabel>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <RadiusFigure label="Identities on the way" value={reach.identities} tone="neutral" />
+            <RadiusFigure
+              label="Administrator equivalent"
+              value={reach.admins}
+              tone={reach.admins > 0 ? 'critical' : 'neutral'}
+            />
+          </div>
+          <div className="mt-2.5 flex flex-wrap gap-1.5">
+            {reach.crownJewels > 0 && (
+              <Tag tone="critical" size="sm" dot>
+                {formatNumber(reach.crownJewels)} crown jewel
+                {reach.crownJewels === 1 ? '' : 's'}
+              </Tag>
+            )}
+            <Tag tone="neutral" size="sm">
+              {formatNumber(reach.accounts)} account{reach.accounts === 1 ? '' : 's'}
+            </Tag>
+            <Tag tone="neutral" size="sm">
+              {reach.shortestHops} hop{reach.shortestHops === 1 ? '' : 's'} at the shortest
+            </Tag>
+          </div>
+        </div>
+      )}
 
       {/* Blast radius. Two numbers, because the gap between them is the only
           thing on this screen that a policy review cannot find. */}

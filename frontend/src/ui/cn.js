@@ -1,5 +1,41 @@
+/* Display utilities, unprefixed. Two of these on one element is always a bug:
+   they set the same property at the same specificity, so the winner is decided
+   by the order Tailwind happened to emit them in rather than by the caller. */
+const DISPLAY = new Set([
+  'block',
+  'inline-block',
+  'inline',
+  'flex',
+  'inline-flex',
+  'grid',
+  'inline-grid',
+  'hidden',
+  'contents',
+  'table',
+  'flow-root',
+]);
+
+/**
+ * Joins class names, with one conflict resolved: where a component's own base
+ * class and a caller's `className` both set `display`, the caller wins.
+ *
+ * This is not a general Tailwind merge and is deliberately not one - the full
+ * merge is a large dependency and a lot of behaviour to reason about. It
+ * handles the single group where a collision is silent, indistinguishable from
+ * working, and decided by stylesheet order: passing `hidden` to a component
+ * whose base is `inline-flex` used to leave both classes on the element and
+ * render it anyway.
+ */
 export function cn(...parts) {
-  return parts.flat(Infinity).filter(Boolean).join(' ');
+  const classes = parts.flat(Infinity).filter(Boolean).join(' ').split(/\s+/).filter(Boolean);
+
+  let lastDisplay = -1;
+  for (let i = 0; i < classes.length; i += 1) {
+    if (DISPLAY.has(classes[i])) lastDisplay = i;
+  }
+  if (lastDisplay === -1) return classes.join(' ');
+
+  return classes.filter((name, index) => index === lastDisplay || !DISPLAY.has(name)).join(' ');
 }
 
 /** Shared tone palette: risk language stays identical across every surface. */

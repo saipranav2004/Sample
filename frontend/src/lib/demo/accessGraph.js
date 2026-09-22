@@ -1,3 +1,4 @@
+import { SEVERITY_ORDER } from '../domain';
 import { demoRequest, intBetween, pick, rng, sample } from './runtime';
 
 /**
@@ -1046,6 +1047,9 @@ function makePath(graph, entry, trail, target) {
     targetId: target.id,
     targetName: target.name,
     targetKind: target.kind,
+    targetAccountId: target.accountId ?? '',
+    targetAccountName: target.accountName ?? '',
+    targetEnv: target.env ?? '',
     targetCrownJewel: Boolean(target.crownJewel),
     targetAdmin: Boolean(target.kind === 'identity' && target.isAdmin),
     nodeIds,
@@ -1667,12 +1671,42 @@ export function fetchNode(nodeId, signal) {
     const inbound = (graph.adjacency.into.get(nodeId) ?? []).map((edge) => describeEdge(graph, edge, 'in'));
     const outbound = (graph.adjacency.out.get(nodeId) ?? []).map((edge) => describeEdge(graph, edge, 'out'));
 
+    const through = graph.paths.filter((path) => path.nodeIds.includes(nodeId));
+
+    /* Reach, for a node that has no policies of its own.
+       An entry point cannot have a blast radius in the permission sense - it
+       holds no permissions - but "what does an attacker get from here" is the
+       question somebody opens an entry point to ask, and it was the one figure
+       the panel did not answer. It is derived from the paths that start here,
+       which is the same analysis the findings below are grouped from. */
+    const starting = through.filter((path) => path.entryId === nodeId);
+    const source = starting.length > 0 ? starting : through;
+    const reach =
+      node.kind === 'identity'
+        ? null
+        : {
+            paths: source.length,
+            identities: new Set(
+              source.flatMap((path) =>
+                path.nodeIds.filter((id) => graph.byId.get(id)?.kind === 'identity'),
+              ),
+            ).size,
+            admins: new Set(source.filter((path) => path.reachesAdmin).map((path) => path.targetId)).size,
+            crownJewels: new Set(
+              source.filter((path) => path.targetCrownJewel).map((path) => path.targetId),
+            ).size,
+            accounts: new Set(source.map((path) => path.targetAccountId).filter(Boolean)).size,
+            shortestHops: source.length > 0 ? Math.min(...source.map((path) => path.hops)) : 0,
+            fromHere: starting.length > 0,
+          };
+
     return {
       node,
       inbound,
       outbound,
       radius: node.kind === 'identity' ? blastRadius(nodeId) : null,
-      paths: graph.paths.filter((path) => path.nodeIds.includes(nodeId)),
+      reach,
+      paths: through,
     };
   }, { signal, latency: [160, 360] });
 }
@@ -1762,4 +1796,199 @@ export function preventionDocument(escalationKey, identity) {
     null,
     2,
   ).concat(identity ? `\n\n/* Attach as a permission boundary on ${identity} */` : '');
+}
+
+/* ── Findings ─────────────────────────────────────────────────────────────── */
+
+/**
+ * Attack paths, grouped into findings.
+ *
+ * The previous version listed every path it found. Twenty-six rows reading
+ * "Unconditioned OIDC trust -> something" is a query result, not a piece of
+ * analysis: the reader has to notice for themselves that eight of them are the
+ * same mistake made eight times, and nothing on the row says what to do about
+ * it.
+ *
+ * Every enterprise tool that does this well groups first and counts second -
+ * Rapid7 lists an attack path by name with an instance count, BloodHound calls
+ * the group a finding and quantifies it as exposure and impact. The group is
+ * the unit of work, because one fix closes all of its instances.
+ *
+ * Two kinds of group, because there are two kinds of cause:
+ *
+ *   TECHNIQUE  the path works because of a documented privilege-escalation
+ *              method. The permission combination is the cause and scoping it
+ *              is the fix, so the finding carries both.
+ *   GRANT      nothing was escalated; the access was granted. The fix is the
+ *              grant itself, so the finding names what was reached rather than
+ *              a technique.
+ */
+function findingKeyFor(path) {
+  const escalation = path.steps.find((step) => step.kind === 'ESCALATES_TO' && step.method);
+  if (escalation) return { kind: 'technique', key: `technique:${escalation.method}` };
+  if (path.controlsCrownJewel) return { kind: 'grant', key: 'grant:crown-jewel-admin' };
+  if (path.targetCrownJewel) return { kind: 'grant', key: 'grant:crown-jewel-write' };
+  if (path.reachesAdmin && path.crossAccountCount > 0) return { kind: 'grant', key: 'grant:cross-account-admin' };
+  if (path.reachesAdmin) return { kind: 'grant', key: 'grant:admin' };
+  return { kind: 'grant', key: 'grant:other' };
+}
+
+const GRANT_FINDINGS = {
+  'grant:crown-jewel-admin': {
+    title: 'Control of a crown jewel, including its resource policy',
+    via: 'The identity at the end of these paths can change the resource policy on a resource marked as a crown jewel, which decides who else gets in.',
+    prevention:
+      'Move the resource policy out of reach of the workload identity. Policy changes on a crown jewel belong to a break-glass role with an approval step, not to whatever runs against the data.',
+  },
+  'grant:crown-jewel-write': {
+    title: 'Write access to a crown jewel',
+    via: 'These paths end in write access to a resource marked as a crown jewel.',
+    prevention:
+      'Split read from write. Most workloads that reach a crown jewel only read it, and the write grant is the one worth an exception process.',
+  },
+  'grant:cross-account-admin': {
+    title: 'Administrator-equivalent access across an account boundary',
+    via: 'A role in one account trusts a principal in another, and the trusted principal is administrator-equivalent on the far side.',
+    prevention:
+      'Add an external ID or a condition on the trust policy, and set a permission boundary on the role so crossing the boundary cannot also mean administrator.',
+  },
+  'grant:admin': {
+    title: 'Administrator-equivalent access by a granted route',
+    via: 'Nothing was escalated. The identity was given administrator-equivalent permissions, or a role that has them.',
+    prevention:
+      'Replace the wildcard with the actions the identity has actually used. Access Advisor and the last-used timestamps give the starting list.',
+  },
+  'grant:other': {
+    title: 'Reaches a resource that matters',
+    via: 'These paths end somewhere worth knowing about without reaching administrator or a crown jewel.',
+    prevention: 'Review the grant against what the identity has used in the last ninety days.',
+  },
+};
+
+/**
+ * The findings, with the filters applied and the filter options alongside.
+ *
+ * The options are computed from the unfiltered set on purpose: a filter list
+ * that shrinks as you use it cannot be undone without clearing everything.
+ */
+export function fetchPathFindings(
+  { severity = '', account = '', vector = '', reach = '' } = {},
+  signal,
+) {
+  return demoRequest(() => {
+    const graph = buildGraph();
+    const all = graph.paths;
+
+    const matches = all.filter((path) => {
+      if (severity && path.severity !== severity) return false;
+      if (account && path.targetAccountId !== account) return false;
+      if (vector && path.entryVector !== vector) return false;
+      if (reach === 'admin' && !path.reachesAdmin) return false;
+      if (reach === 'crown' && !path.targetCrownJewel) return false;
+      if (reach === 'cross-account' && path.crossAccountCount === 0) return false;
+      return true;
+    });
+
+    /* Exposure is measured against every entry point in the environment, not
+       against the filtered set, so the figure means the same thing whatever
+       the reader has filtered to. */
+    const entryTotal = graph.entries.length || 1;
+    const identityTotal = graph.identities.length || 1;
+
+    const groups = new Map();
+    for (const path of matches) {
+      const { kind, key } = findingKeyFor(path);
+      if (!groups.has(key)) groups.set(key, { key, kind, paths: [] });
+      groups.get(key).paths.push(path);
+    }
+
+    const findings = [...groups.values()].map((group) => {
+      const paths = group.paths.sort((a, b) => b.score - a.score || a.hops - b.hops);
+      const method = group.kind === 'technique' ? escalationById(group.key.slice('technique:'.length)) : null;
+      const grant = GRANT_FINDINGS[group.key] ?? GRANT_FINDINGS['grant:other'];
+
+      const entries = new Set(paths.map((path) => path.entryId));
+      const targets = new Set(paths.map((path) => path.targetId));
+      const accounts = new Set(paths.map((path) => path.targetAccountId).filter(Boolean));
+      const identitiesOnPath = new Set();
+      for (const path of paths) {
+        for (const id of path.nodeIds) {
+          if (graph.byId.get(id)?.kind === 'identity') identitiesOnPath.add(id);
+        }
+      }
+
+      const severities = paths.map((path) => path.severity);
+      const worst = SEVERITY_ORDER.find((rank) => severities.includes(rank)) ?? 'MEDIUM';
+
+      return {
+        key: group.key,
+        kind: group.kind,
+        title: method ? method.label : grant.title,
+        service: method?.service ?? '',
+        permissions: method?.permissions ?? [],
+        via: method?.via ?? grant.via,
+        prevention: method?.prevention ?? grant.prevention,
+        severity: worst,
+        instances: paths.length,
+        shortestHops: Math.min(...paths.map((path) => path.hops)),
+        entryCount: entries.size,
+        targetCount: targets.size,
+        accountCount: accounts.size,
+        reachesAdmin: paths.filter((path) => path.reachesAdmin).length,
+        crownJewels: paths.filter((path) => path.targetCrownJewel).length,
+        crossAccount: paths.filter((path) => path.crossAccountCount > 0).length,
+        /* Share of entry points that can start a path in this group, and share
+           of identities that sit on one. Two questions a count cannot answer:
+           how much of the perimeter this is reachable from, and how much of the
+           estate it touches. */
+        exposure: Math.round((entries.size / entryTotal) * 100),
+        impact: Math.round((identitiesOnPath.size / identityTotal) * 100),
+        paths,
+      };
+    });
+
+    findings.sort(
+      (a, b) =>
+        SEVERITY_ORDER.indexOf(a.severity) - SEVERITY_ORDER.indexOf(b.severity) ||
+        b.instances - a.instances ||
+        b.exposure - a.exposure,
+    );
+
+    /* Options from the whole set, with counts, so the reader can see what a
+       filter would leave before they apply it. */
+    const countBy = (pick) => {
+      const out = new Map();
+      for (const path of all) {
+        const value = pick(path);
+        if (value) out.set(value, (out.get(value) ?? 0) + 1);
+      }
+      return out;
+    };
+    const accountCounts = countBy((path) => path.targetAccountId);
+    const accountNames = new Map(all.map((path) => [path.targetAccountId, path.targetAccountName]));
+    const vectorCounts = countBy((path) => path.entryVector);
+
+    return {
+      findings,
+      matched: matches.length,
+      total: all.length,
+      options: {
+        severity: SEVERITY_ORDER.map((key) => ({
+          value: key,
+          count: all.filter((path) => path.severity === key).length,
+        })).filter((row) => row.count > 0),
+        account: [...accountCounts.entries()]
+          .map(([value, count]) => ({ value, label: accountNames.get(value) || value, count }))
+          .sort((a, b) => b.count - a.count),
+        vector: [...vectorCounts.entries()]
+          .map(([value, count]) => ({ value, count }))
+          .sort((a, b) => b.count - a.count),
+        reach: [
+          { value: 'admin', count: all.filter((path) => path.reachesAdmin).length },
+          { value: 'crown', count: all.filter((path) => path.targetCrownJewel).length },
+          { value: 'cross-account', count: all.filter((path) => path.crossAccountCount > 0).length },
+        ].filter((row) => row.count > 0),
+      },
+    };
+  }, { signal, latency: [180, 400] });
 }
