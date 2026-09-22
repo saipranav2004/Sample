@@ -1,6 +1,7 @@
 import {
   Activity,
   Dna,
+  Waypoints,
   FileText,
   FileWarning,
   Fingerprint,
@@ -44,6 +45,15 @@ export const NAV_GROUPS = [
     ],
   },
   {
+    key: 'access',
+    label: 'Access',
+    /* Separate from Behaviour on purpose. The genome is what an identity has
+       done; the graph is what it could do. Conflating observed behaviour with
+       granted entitlement is how a quiet identity with administrator access
+       gets mistaken for a safe one. */
+    items: [{ to: '/access-graph', label: 'Access graph', icon: Waypoints, end: true }],
+  },
+  {
     key: 'behaviour',
     label: 'Behaviour',
     items: [{ to: '/genome', label: 'NHI Genome', icon: Dna }],
@@ -80,6 +90,7 @@ export const BREADCRUMBS = {
   '/secrets': ['Inventory', 'Secret-backed'],
   '/exposure': ['Credential exposure', 'Exposed credentials'],
   '/exposure/dismissed': ['Credential exposure', 'Accepted'],
+  '/access-graph': ['Access', 'Access graph'],
   '/genome': ['Behaviour', 'NHI Genome'],
   '/activity': ['Operations', 'Activity'],
   '/scans': ['Operations', 'Scans'],
@@ -92,6 +103,7 @@ export const BREADCRUMBS = {
  * table misses, so a record screen still says where it sits.
  */
 export const BREADCRUMB_PREFIXES = [
+  { prefix: '/access-graph/', trail: ['Access', 'Access graph', 'Identity'] },
   { prefix: '/genome/', trail: ['Behaviour', 'NHI Genome', 'Identity'] },
   { prefix: '/reports/', trail: ['Operations', 'Reports', 'Run'] },
 ];

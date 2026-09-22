@@ -20,6 +20,8 @@ const DismissedPage = lazy(() => import('../features/exposure/DismissedPage'));
 const ActivityPage = lazy(() => import('../features/activity/ActivityPage'));
 const ScansPage = lazy(() => import('../features/scans/ScansPage'));
 const MyResourcesPage = lazy(() => import('../features/account/MyResourcesPage'));
+const AccessGraphPage = lazy(() => import('../features/access/AccessGraphPage'));
+const AccessDetailPage = lazy(() => import('../features/access/AccessDetailPage'));
 const GenomePage = lazy(() => import('../features/genome/GenomePage'));
 const GenomeDetailPage = lazy(() => import('../features/genome/GenomeDetailPage'));
 const ReportsPage = lazy(() => import('../features/reports/ReportsPage'));
@@ -105,6 +107,22 @@ export default function App() {
                   element={
                     <Suspense fallback={<RouteFallback />}>
                       <ScansPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/access-graph"
+                  element={
+                    <Suspense fallback={<RouteFallback />}>
+                      <AccessGraphPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/access-graph/:id"
+                  element={
+                    <Suspense fallback={<RouteFallback />}>
+                      <AccessDetailPage />
                     </Suspense>
                   }
                 />

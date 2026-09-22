@@ -1194,3 +1194,193 @@ There is no Docker daemon in the environment this was built in, so the image
 itself has not been built. The nginx configuration it copies in has been run;
 the Dockerfile has not.
 
+
+## 15. Revision: the access graph, rebuilt on React Flow
+
+The first version of this screen was wrong in a way worth recording, because
+the reason it was wrong is measurable rather than a matter of taste.
+
+### The palette was provably unreadable, not merely ugly
+
+The first draft coloured nodes by kind: eight hues for entry point, federated
+principal, service principal, identity, credential, resource, account and
+policy. A node-link diagram is an **all-pairs** form - panning and expanding
+puts arbitrary nodes side by side - so every pair of hues has to separate, not
+just the pairs that happen to be adjacent in a legend.
+
+Run through the palette validator, the app's own severity hues fail that test
+outright:
+
+```
+The four severity hues as node fills   FAIL - high vs medium 1.6 (deutan), 8.2 normal
+Three hues (accent, caution, critical) FAIL - critical vs caution 14.4 normal, below the 15 floor
+Two hues (accent, critical)            PASS - 23.8 CVD, 31.6 normal light; 19.2 / 29.0 dark
+```
+
+(OKLab Delta E x100. The measurements are recorded in
+`src/features/access/graphTheme.js` beside the code that uses them.)
+
+So the graph spends colour on **two** roles and nothing else:
+
+- **Neutral** - a node with nothing wrong with it. Most of them.
+- **Risk** (`--t-graph-risk`) - an entry point, an administrator-equivalent
+  identity, a crown jewel, a stale credential, or a publicly exposed policy.
+  One hue, reserved, so red on this canvas always means the same thing.
+
+Kind is carried by an **icon plus a word** under the name. That is slower to
+read than colour for one node and faster for a screen full of them, because a
+colour legend with eight entries is a lookup table the reader has to hold in
+their head.
+
+The dark mode risk red is its own value rather than the app's `#f2837a`: that
+step is OKLCH L 0.731, above the 0.67 ceiling for a mark on a dark surface, so
+it reads as pink at small sizes. `--t-graph-risk: #d03b3b` sits inside the
+band and still separates from the accent by Delta E 19.2 under deuteranopia.
+
+### Identities and credentials are not enough to build a graph
+
+The brief asked whether the identity and credential inventories were sufficient
+input. They are not, and the gap is structural rather than a matter of volume:
+**an inventory supplies nodes and no edges.** A list of principals and keys
+says what exists; it says nothing about what can reach what.
+
+Modelled on Cartography's AWS schema and on the permission-relationship
+evaluation that tools like PMapper perform, the graph needs twelve inputs. All
+twelve are listed on the screen itself, under the info button beside the focus
+picker, tagged Collected or Not yet - so the analyst knows the graph's coverage
+rather than assuming completeness:
+
+| Input | What it contributes |
+|---|---|
+| Principals | the identity nodes |
+| Credentials | keys, and their age |
+| Identity policies | permission edges to resources |
+| Trust policies | who may assume what - the pivot edges |
+| Group membership | inherited permissions |
+| Resources | the target nodes |
+| Resource policies | access granted from the other side |
+| Instance profiles | the compute-to-role edge |
+| Observed usage | CloudTrail plus Access Advisor: which edges are real |
+| Organisation structure | account boundaries, and what crossing one means |
+| **Guardrails** | SCPs and permission boundaries - **not yet collected** |
+| **Identity provider** | Identity Center assignments - **not yet collected** |
+
+The last two are marked honestly. Without SCPs and permission boundaries the
+graph over-states reach, because a policy that grants an action may be capped
+by a boundary the graph cannot see. Saying so on the screen is better than a
+graph that looks authoritative and is not.
+
+### It opens almost empty, on purpose
+
+Ninety nodes drawn at once is a hairball, and a hairball is read as
+decoration. The screen follows Shneiderman's overview-first sequence and the
+degree-of-interest tree approach from Card and Nation: keep the drawn graph
+inside a fixed budget, and **represent** what was left out rather than dropping
+it.
+
+- The graph opens on **one focus node and its first hop**, and auto-opens the
+  single most interesting first-hop neighbour so it arrives with a shape rather
+  than as two boxes and a line.
+- Each expansion shows the **three** most interesting neighbours of that node
+  (`VISIBLE_PER_GROUP`) and folds the rest behind a dashed pill: `+6`, plus the
+  kinds behind it, so the reader can tell whether opening it is worth a click.
+- Clicking the fold reveals **two more** (`REVEAL_STEP`), not all six. The
+  graph grows at a pace the eye can follow.
+- Interest is scored, not arbitrary: on a critical path +50, an entry point
+  +40, administrator-equivalent +30, a crown jewel +22, a stale credential +20,
+  a public policy or on any path +18, federated +14, and a policy node -8.
+
+### Row stability, and why it matters more than tidiness
+
+`hopLayout.js` assigns one column per hop and feeds the **previous** layout's
+row assignment back in, so a node on screen before an expansion keeps its row
+after it. A layout that reflowed on every expansion would make the reader lose
+their place, and a reader who loses their place stops expanding.
+
+The guarantee is the **row index**, not the absolute coordinate: every column
+is centred against the tallest one, so a column that grows shifts the shorter
+columns down by half the difference. That shift is absorbed by the refit, which
+animates over the same 420ms; a row shuffle would not be. Fourteen layout
+checks cover no-overlap at 2, 6, 18 and 40 nodes, determinism, row assignment
+and within-column order across an expansion, fold placement below its column,
+the card metrics, and the empty graph.
+
+### One click, in the right place
+
+Expansion was a double-click in the first draft. That was wrong twice over:
+React Flow v12 never delivers `onNodeDoubleClick` for a custom node type -
+verified by instrumenting the handler, which logged three `nodeClick` events
+and no double-click - and a chevron that must be double-clicked is a control
+nobody finds. Now the chevron is the expand target (`data-expand`, with its own
+hover state) and the rest of the card selects. Keyboard users get the same
+action from the panel's Open/Collapse button.
+
+The focus node has **no** chevron: it is always open, and its hidden
+neighbours are behind the fold instead. A control whose click changes nothing
+is worse than no control.
+
+### Full screen, two ways
+
+The real Fullscreen API on the graph's own element, because an analyst tracing
+a six-hop path wants the whole window. The API is refused inside some embedded
+frames, so a rejected promise falls back to a fixed overlay that looks the same
+and needs no permission. `fullscreenchange` keeps the two in step; Escape
+leaves the fallback, and the browser handles Escape for the native case.
+
+### Legibility beats fitting
+
+Three columns of 304px cannot fit in a 390px viewport at any zoom worth
+reading. Below that threshold the auto-fit stops shrinking and starts cropping:
+it fits the focus and its first hop only, so a phone opens on the node the
+reader asked for and pans right for the rest. The floor is `MIN_FIT_ZOOM 0.7`.
+
+### What was removed
+
+- **The KPI cards.** A count of principals or edges is a fact about the
+  dataset, not the account. It changes nothing anybody does next, and four of
+  them across the top pushed the graph - the only thing on the screen that
+  answers a question - below the fold.
+- **Choke points.** Asked for and removed. Blast radius, attack paths and hop
+  distance stayed, because those three are what turn "here is your graph" into
+  "here is the issue and here is what happens".
+- **The hand-rolled SVG canvas.** It got zoom space wrong on large displays:
+  `getBoundingClientRect` is multiplied by the app zoom and SVG user units are
+  not, so at 1800px and above the layout over-scaled by that factor and pushed
+  a third of the graph outside the frame. React Flow owns the viewport now, and
+  that class of bug with it.
+
+### Attack paths are rows, not a table
+
+A path is a sequence, and a table forces a sequence into one cell where it gets
+truncated - which is how the previous version came to display
+`token.actions.githubusercontent.com -> session-reaper-146 -> ...` and tell
+nobody anything. Closed, a row carries severity and hop count, which is the
+whole triage decision. Open, it numbers the steps and names the exact
+permission combination for each escalation, because "privilege escalation
+possible" is a claim nobody can check and `iam:PassRole + lambda:CreateFunction`
+is one anybody can. The twelve escalation methods modelled are the documented
+ones from the Rhino Security Labs set, which is the same set `pmapper preset
+privesc` checks.
+
+Below 34rem the row stacks - route on the first line, meta on the second.
+Flex-wrap alone put the meta cluster on the first line and squeezed the route
+to nothing, which at phone width left rows showing a hop count and no names at
+all.
+
+### All state is in the URL
+
+Focus, what is expanded, what has been revealed, and which path is traced are
+all query parameters, so a link reproduces exactly what somebody was looking at
+when they asked a colleague to come and look.
+
+### Verified
+
+26 interaction checks against the running app: nodes and edges draw; no KPI
+cards; no truncated node label; the panel reports real connection counts on
+arrival rather than after the first click; the fold reveals two at a time; the
+focus carries no dead chevron; the chevron expands and collapses; a card click
+selects without expanding; hover dims the non-neighbouring edges and clears on
+leave; tracing marks the path; the focus picker filters and redraws; the inputs
+modal names the coverage gaps; full screen engages and exits with the layout
+intact; and no console errors throughout. Eight viewport widths from 390px to
+2560px, both themes, with no horizontal page scroll at any of them.

@@ -28,6 +28,17 @@
   --t-surface-2: #f8fafc;
   --t-surface-3: #eef2f7;
   --t-surface-inset: #f1f5f9;
+
+  /* ── Graph marks ────────────────────────────────────────────────────────
+     A mark on a canvas is a different job from a tag or a line of text, and
+     it answers to a different rule: the lightness band and the all-pairs
+     colour-vision separation that a node-link diagram needs, where any two
+     nodes can end up side by side. These two are the graph's entire chromatic
+     vocabulary - everything else on the canvas is neutral. Both validated
+     all-pairs against `--t-surface-inset` in this mode:
+     risk vs accent, delta-E 23.5 under deuteranopia, 30.2 with normal vision. */
+  --t-graph-accent: #0c6eb4;
+  --t-graph-risk: #b42318;
   /* Meter and bar tracks. A wash rather than a fixed surface, so a track keeps
      the same contrast whether it sits on a white panel or a recessed one -
      `surface-3` on `surface-2` was only 10/255 apart and the bars looked like
@@ -125,6 +136,14 @@
   --t-surface-2: #111e31;
   --t-surface-3: #17263c;
   --t-surface-inset: #0a1322;
+
+  /* Stepped for the dark surface rather than reused from light: the dark
+     severity red (#f2837a) sits at OKLCH L 0.73, above the 0.67 ceiling a
+     mark has to stay under, so it reads as a glow instead of an edge. This
+     step validates all-pairs on the dark canvas - delta-E 22.7 deuteranopia,
+     31.2 normal vision, both above 3:1 contrast. */
+  --t-graph-accent: #2f92d8;
+  --t-graph-risk: #d03b3b;
   --t-track: color-mix(in srgb, var(--t-ink-3) 30%, transparent);
   --t-line: #1e2e46;
   --t-line-strong: #2b3f5c;

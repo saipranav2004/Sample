@@ -261,6 +261,268 @@
   will-change: opacity, transform;
 }
 
+/* ── Access graph ───────────────────────────────────────────────────────────
+   The graph is drawn by React Flow, so these styles dress its nodes and edges
+   rather than positioning anything.
+
+   The palette is deliberately narrow: every node is neutral, and colour is
+   spent on two things only - what is selected, and what is already a risk.
+   The reasoning and the measurements are in `features/access/graphTheme.js`;
+   the short version is that a node-link diagram is an all-pairs form, and no
+   assignment of eight hues stays distinguishable when any two nodes can sit
+   side by side.
+
+   Motion here is all transform and opacity, so the compositor runs it and the
+   global reduced-motion rule below switches it off without JavaScript. */
+
+@keyframes dna-node-in {
+  from {
+    opacity: 0;
+    transform: translate3d(-14px, 0, 0) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes dna-focus-halo {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px var(--t-graph-accent),
+      0 0 0 5px color-mix(in oklab, var(--t-graph-accent) 14%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px var(--t-graph-accent),
+      0 0 0 9px color-mix(in oklab, var(--t-graph-accent) 4%, transparent);
+  }
+}
+
+@keyframes dna-edge-dash {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+@layer utilities {
+  /* The canvas. A dotted background reads as a surface you can move rather
+     than a picture, which is the one hint that makes people try dragging. */
+  .access-canvas {
+    background-color: var(--t-surface-inset);
+  }
+  .access-canvas .react-flow__background-pattern {
+    color: var(--t-line);
+  }
+
+  /* React Flow's own chrome, restyled to the app's tokens. */
+  .access-canvas .react-flow__controls {
+    box-shadow: var(--t-shadow-md);
+    border-radius: var(--radius-control);
+    overflow: hidden;
+    border: 1px solid var(--t-line);
+  }
+  .access-canvas .react-flow__controls-button {
+    background: var(--t-surface);
+    border-bottom: 1px solid var(--t-line);
+    color: var(--t-ink-2);
+    width: 26px;
+    height: 26px;
+  }
+  .access-canvas .react-flow__controls-button:hover {
+    background: var(--t-surface-3);
+    color: var(--t-ink);
+  }
+  .access-canvas .react-flow__controls-button svg {
+    fill: currentColor;
+    max-width: 12px;
+    max-height: 12px;
+  }
+  .access-canvas .react-flow__minimap {
+    background: var(--t-surface);
+    border: 1px solid var(--t-line);
+    border-radius: var(--radius-control);
+    overflow: hidden;
+  }
+  .access-canvas .react-flow__minimap-mask {
+    fill: color-mix(in oklab, var(--t-ink) 12%, transparent);
+  }
+  /* `!important` on the background, and only there, for a cascade reason
+     rather than a stylistic one: React Flow's `base.css` arrives unlayered
+     through the JS import, and an unlayered declaration beats every layered
+     one no matter how specific. Without it the attribution keeps its
+     `rgba(255,255,255,0.5)` and renders as a pale patch on the dark canvas. */
+  .access-canvas .react-flow__attribution {
+    background: transparent !important;
+    color: var(--t-ink-3);
+    font-size: 9px;
+  }
+  .access-canvas .react-flow__attribution a {
+    color: var(--t-ink-3);
+  }
+
+  /* ── Nodes ─────────────────────────────────────────────────────────────── */
+  .access-node,
+  .access-more {
+    animation: dna-node-in 0.34s var(--ease-out-quint) both;
+    transition:
+      border-color 0.16s ease-out,
+      box-shadow 0.18s ease-out,
+      transform 0.18s var(--ease-out-quint),
+      background-color 0.16s ease-out;
+    cursor: pointer;
+    box-shadow: var(--t-shadow-sm);
+  }
+
+  .access-node-neutral {
+    background: var(--t-surface);
+    border-color: var(--t-line-strong);
+  }
+  .access-node-critical {
+    background: var(--t-surface);
+    border-color: color-mix(in oklab, var(--t-graph-risk) 55%, var(--t-line-strong));
+  }
+
+  /* Hover lifts the node a little and strengthens its edge. Two pixels and a
+     shadow - enough to confirm the thing is live, not enough to make a graph
+     of forty nodes feel like it is breathing. */
+  .access-node:hover,
+  .access-more:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--t-shadow-md);
+    border-color: var(--t-graph-accent);
+  }
+
+  .access-node-selected {
+    border-color: var(--t-graph-accent);
+    box-shadow:
+      var(--t-shadow-md),
+      0 0 0 1px var(--t-graph-accent);
+  }
+
+  .access-node-focus {
+    animation:
+      dna-node-in 0.34s var(--ease-out-quint) both,
+      dna-focus-halo 3.2s ease-in-out 0.34s infinite;
+  }
+
+  .access-node-traced {
+    border-color: var(--t-graph-accent);
+  }
+
+  .access-node-icon {
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    border-radius: 6px;
+    background: var(--t-surface-3);
+    color: var(--t-ink-2);
+  }
+  .access-node-icon-critical {
+    background: color-mix(in oklab, var(--t-graph-risk) 12%, transparent);
+    color: var(--t-graph-risk);
+  }
+
+  .access-node-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+    flex-shrink: 0;
+    padding: 2px 4px;
+    border-radius: 999px;
+    background: var(--t-surface-3);
+    color: var(--t-ink-2);
+    cursor: pointer;
+    transition:
+      background-color 0.16s ease-out,
+      color 0.16s ease-out,
+      transform 0.16s var(--ease-out-quint);
+  }
+  .access-node:hover .access-node-more {
+    background: var(--t-info-soft);
+    color: var(--t-brand);
+  }
+  /* Its own hover, stronger than the card's, because this is the control and
+     the card around it does something else. */
+  .access-node-more:hover {
+    background: var(--t-info-soft);
+    color: var(--t-brand);
+    box-shadow: inset 0 0 0 1px var(--t-brand);
+    transform: scale(1.08);
+  }
+  .access-node-more-open {
+    background: transparent;
+    color: var(--t-ink-3);
+  }
+
+  /* ── Fold-away ─────────────────────────────────────────────────────────── */
+  .access-more {
+    background: var(--t-surface-2);
+    border-color: var(--t-line);
+    border-style: dashed;
+  }
+  .access-more:hover {
+    background: var(--t-surface);
+    border-style: solid;
+  }
+  .access-more-badge {
+    flex-shrink: 0;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: var(--t-info-soft);
+    color: var(--t-brand);
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  /* Handles exist for the edge geometry, not for connecting anything by hand. */
+  .access-handle {
+    opacity: 0;
+    pointer-events: none;
+    width: 1px;
+    height: 1px;
+    min-width: 1px;
+    min-height: 1px;
+    border: 0;
+  }
+
+  /* ── Edges ─────────────────────────────────────────────────────────────── */
+  .access-canvas .react-flow__edge-path {
+    transition:
+      stroke 0.16s ease-out,
+      stroke-width 0.16s ease-out,
+      opacity 0.16s ease-out;
+  }
+  /* A traced edge flows from cause to effect, because a path is a sequence and
+     a static line does not say which end it starts at. */
+  .access-canvas .access-edge-traced .react-flow__edge-path {
+    stroke-dasharray: 8 10;
+    animation: dna-edge-dash 1.1s linear infinite;
+  }
+  .access-canvas .access-edge-dimmed .react-flow__edge-path {
+    opacity: 0.14;
+  }
+  .access-canvas .react-flow__edge-text {
+    font-size: 9.5px;
+    fill: var(--t-ink-3);
+  }
+  .access-canvas .react-flow__edge-textbg {
+    fill: var(--t-surface-inset);
+  }
+
+  /* Hop headings, rendered above the canvas rather than inside it. */
+  .access-hop-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--t-ink-3);
+  }
+}
+
 /* Staggered section reveal: `data-stagger` index drives the delay. */
 @layer utilities {
   [data-stagger] {
