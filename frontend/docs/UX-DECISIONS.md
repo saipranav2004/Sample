@@ -1576,3 +1576,171 @@ point's reach, and the export's columns and row count), fourteen layout checks,
 one logo check at five widths, a runtime display-collision audit over eleven
 routes, and eight viewport widths from 390px to 2560px with no horizontal page
 scroll and no overflow outside the graph canvas at any of them.
+
+## 17. Revision: one estate behind every screen
+
+This build has no backend. Every Go-API endpoint now serves generated data, and
+the requirement that made it more than a stub was that **the screens have to
+agree with each other**.
+
+### Why it is one estate and not one fixture per screen
+
+If the identity explorer invented its own rows and the credential register
+invented different ones, an identity would own credentials that do not exist,
+an event would name a principal absent from the list, and the dashboard's
+totals would contradict the lists they link into. So there is exactly one
+generated estate in `lib/demo/estate.js`:
+
+| | |
+|---|---|
+| Accounts | 6, across production, staging and development |
+| Identities | **228** - under 250 on purpose, a set a person can read |
+| Non-human share | **83%** (189 of 228). Humans exist to be the owners |
+| Credentials | 310, each belonging to a real identity |
+| CloudTrail events | 1,069, each attributed to a real identity |
+| Assume-role edges | 349 |
+| Secret store entries | 161, each mapping to a real credential |
+
+`lib/demo/api.js` serves it under the **same function names, arguments and
+return shapes** as the real `lib/api/endpoints.js`, so `endpoints.js` delegates
+and **not one screen changed**. Restoring the real API is one file.
+
+The Secret Scanner is the exception and stays live: that service exists and is
+reached through the proxy that attaches `X-Dashboard-Key` server-side.
+
+### Counted, never written
+
+No figure is a literal. Every total is `.length` of the same filtered array the
+link beside it opens, which makes a class of demo bug impossible: the
+dashboard's "admin-level access" count and the list behind it are the same
+expression. Verified in the UI rather than only in the module - the posture
+tile reads 36 and `/identities?is_admin=true` reports 36 of 228.
+
+Nine such pairs are checked, plus that humans and non-humans sum to the total
+and that both breakdowns sum to their totals.
+
+### Names that read like something somebody deployed
+
+Machine identity names are built from a workload and a function rather than
+drawn from a word list, because `svc-ledger-writer`, `gha-deploy-payments`,
+`agent-cost-optimiser`, `datadog-integration` and `eks-pod-checkout` are what a
+real estate looks like and `nhi-042` is not. All 228 names and ARNs are unique.
+
+Age and activity follow the identity's job: ephemeral identities are young and
+busy, SaaS integrations old and quiet, CI/CD runs in bursts. That is what makes
+"stale for 90+ days" mean anything.
+
+### Two figures that were wrong, and how they were found
+
+- **Half the estate was stale.** A uniform draw over each profile's idle range
+  left 109 of 228 (48%) with no activity in 90 days, which reads as an
+  abandoned account rather than a working one - and the point of the signal is
+  that it picks out a minority worth acting on. Cubing the draw skews activity
+  toward recent and leaves a long tail: 49 stale (21%), 40 inactive (18%).
+- **Timestamps in the future.** The activity feed rendered "in 1 hour" and the
+  snapshot strip "in 48 minutes". The estate pinned "now" to a literal instant
+  while the relative formatters compare against the real clock, so every
+  generated timestamp was measured from the wrong origin. The anchor is now
+  `Date.now()` floored to the minute: offsets stay seeded and stable for the
+  life of the page, and nothing is dated forward. Checked across eight screens
+  for any "in N minutes/hours/days" outside a legitimate expiry context.
+
+  The data fix was only half of it. `formatRelativeShort` rendered a future
+  instant as a bare `1h` - not a shorter way of saying "in 1 hour", but a
+  string indistinguishable from `1h ago` except by a missing suffix nobody
+  reads as a signal. It is why the first sweep for future dates passed while
+  the activity feed was visibly showing them, and in a list sorted by time it
+  produced an order that cannot happen: `1h, 55m, 16m` followed by `6m ago`.
+  The future form is prefixed now, so a clock skew or a bad timestamp is
+  visible as one rather than passing for ordinary data. Verified by asserting
+  the feed's WHEN column parses as a past duration on every row and is
+  monotonically descending.
+
+Also corrected: access key ids were `AKIA` plus twelve digits. Real ones are
+twenty characters from an uppercase base-32 alphabet - close enough to pass a
+glance and wrong to anybody who works with them daily.
+
+### The dashboard trend, with the scans screen gone
+
+The scans screen and the top-bar scan picker are commented out: there is one
+discovery run behind these screens, so a list of runs and a picker to choose
+between them are both controls with nothing to do. Four call sites are
+commented together and cross-referenced, so reinstating them is one search.
+
+But the dashboard's trend *is* a history of runs, and one row draws nothing. So
+`fetchScans` serves fourteen daily runs converging on the estate as it stands:
+the newest run's totals are the estate's actual totals, so the last point on
+the chart is the number printed in the tile above it. 215 identities fourteen
+days ago, 228 today.
+
+### Sign-in
+
+The credentials are pre-filled - `das.admin` / `Das123` - and focus lands on
+the submit button, because with no identity provider behind the screen an empty
+form is a guessing game. The fields stay editable and a wrong pair is still
+rejected with a message, so the password field is a control rather than
+decoration; a failure restores the working pair rather than clearing to empty.
+
+### Pagination on the two generated screens
+
+Both were rendering every matched row. Page and size live in the URL, and:
+
+- Any change to *what* is being listed - a search, a facet, a tab - returns to
+  page one. Narrowing the set while holding page seven lands on an empty grid,
+  which reads as "no results" rather than "no seventh page".
+- The page is **clamped to the last one that exists**. `?page=99` from a stale
+  bookmark showed a blank grid with no explanation; it now shows the last page.
+- The pager only appears once there is more than one page.
+- `rows` stays the full matched set, so the count above the grid and the export
+  beside it describe everything the filters matched, not the slice on screen.
+
+The report run history was eight runs across seven templates, which is not what
+a month looks like in a product anybody uses and left nothing to page through.
+It is six weeks at a realistic rate - 46 runs - with failures distributed by
+the seed rather than parked at a fixed index, and four different failure
+reasons, because one repeated string reads as a placeholder.
+
+### The code exposure drawer, in four tabs
+
+Eight stacked sections in one column meant the repository's fork count - the
+thing that decides whether deleting the commit is enough - sat four scrolls
+below the value it applies to. Each tab now answers one question:
+
+| Tab | Question |
+|---|---|
+| Overview | what is it, how certain is the match, how bad is it |
+| Location & commit | where it lives and who put it there |
+| Timeline | when it was written, found, and last touched |
+| Raw match | the masked value and the line it sits on |
+
+Nothing is duplicated between them, and a different finding opens on Overview
+rather than on whichever tab the last one was left on.
+
+**Timeline is new rather than rearranged.** Three timestamps already existed on
+a finding; read as three rows of a table they were just dates. In order they
+give the figure that was not on any screen before: **how long the secret sat
+there before anybody knew.** 91 days, for the worked example - stated with why
+it matters, which is that rotating the credential matters more than deleting
+the commit. Events with no timestamp are omitted rather than drawn as dashes.
+
+### A key collision the fixture exposed
+
+Testing the drawer against a two-row payload surfaced a React duplicate-key
+warning: the findings grid keyed rows on `row.finding_id`, a field **the
+scanner API never returns**. Every row got `undefined`, React saw one
+duplicated key for the whole list, and reconciliation fell back to index order
+- so selecting a row after a dismiss could open its neighbour. The service's
+own allowlist endpoints require `client_id`, `file_path`, `detector` and
+`redacted` to identify a finding, which is the API telling us what the key is;
+`findingKey()` is now shared by the grid, the dismiss set and the drawer. This
+would have affected the live scanner, not just the fixture.
+
+### Verified
+
+31 estate-coherence checks (uniqueness, referential integrity in four
+directions, nine dashboard-to-list agreements, pagination, determinism,
+login accept and reject, lineage, consumers, my-resources, events); 9
+timestamp checks plus a future-date sweep over 8 screens; 7 scan-history
+checks; 13 sign-in checks; 20 pagination checks including the clamp and three
+reset paths; 25 drawer checks including tab content isolation and chronological
+order; 9 cross-page connectivity checks; and 4 access-key format checks.

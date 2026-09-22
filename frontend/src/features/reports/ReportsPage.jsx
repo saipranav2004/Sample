@@ -32,6 +32,7 @@ import { PageHeader } from '../../shell/PageHeader';
 import { Button, IconButton } from '../../ui/Button';
 import { DataGrid } from '../../ui/DataGrid';
 import { Modal } from '../../ui/Overlay';
+import { Pagination } from '../../ui/Pagination';
 import { Panel, PanelHeader } from '../../ui/Panel';
 import { StatStripSkeleton } from '../../ui/Skeleton';
 import { MetricTile } from '../../ui/Stat';
@@ -87,11 +88,25 @@ export default function ReportsPage() {
     : 'library';
 
   const search = searchParams.get('q') || '';
+  const page = Math.max(1, Number(searchParams.get('page')) || 1);
+  const pageSize = Math.min(100, Math.max(10, Number(searchParams.get('size')) || 25));
   const setSearch = useCallback(
     (value) => {
       const next = new URLSearchParams(searchParams);
       if (value) next.set('q', value);
       else next.delete('q');
+      /* Searching from page 3 of the old set would land on an empty tab. */
+      next.delete('page');
+      setSearchParams(next, { replace: true });
+    },
+    [searchParams, setSearchParams],
+  );
+
+  const setPageParam = useCallback(
+    (key, value) => {
+      const next = new URLSearchParams(searchParams);
+      if (value) next.set(key, value);
+      else next.delete(key);
       setSearchParams(next, { replace: true });
     },
     [searchParams, setSearchParams],
@@ -111,6 +126,9 @@ export default function ReportsPage() {
       const next = new URLSearchParams(searchParams);
       if (value === 'library') next.delete('tab');
       else next.set('tab', value);
+      /* Each tab lists something different, so a page number does not carry
+         across. Page 3 of History is not page 3 of Scheduled. */
+      next.delete('page');
       setSearchParams(next, { replace: true });
     },
     [searchParams, setSearchParams],
@@ -362,6 +380,10 @@ export default function ReportsPage() {
         <ScheduledTab
           query={schedules}
           rows={scheduleRows}
+          page={page}
+          pageSize={pageSize}
+          onPageChange={(next) => setPageParam('page', next > 1 ? String(next) : '')}
+          onPageSizeChange={(next) => setPageParam('size', next === 25 ? '' : String(next))}
           search={search}
           onCreate={() => {
             setEditing(null);
@@ -400,6 +422,10 @@ export default function ReportsPage() {
         <HistoryTab
           query={runs}
           rows={runRows}
+          page={page}
+          pageSize={pageSize}
+          onPageChange={(next) => setPageParam('page', next > 1 ? String(next) : '')}
+          onPageSizeChange={(next) => setPageParam('size', next === 25 ? '' : String(next))}
           search={search}
           onRegenerate={(run) => {
             generateReport({ templateId: run.templateId, format: run.format });
@@ -590,7 +616,25 @@ function LibraryTab({ query, templates, search, onClearSearch, onGenerate, onSch
 
 /* ── Scheduled ────────────────────────────────────────────────────────────── */
 
-function ScheduledTab({ query, rows, search, onCreate, onEdit, onToggle, onDelete }) {
+function ScheduledTab({
+  query,
+  rows,
+  page,
+  pageSize,
+  onPageChange,
+  onPageSizeChange,
+  search,
+  onCreate,
+  onEdit,
+  onToggle,
+  onDelete,
+}) {
+  /* `rows` stays whole: the count above the grid and the export beside it both
+     describe everything the search matched, not the slice on screen.
+     The page is clamped to the last one that exists, so a stale link carrying
+     `?page=9` shows the last page rather than an empty grid. */
+  const safePage = Math.min(page, Math.max(1, Math.ceil(rows.length / pageSize)));
+  const pageRows = rows.slice((safePage - 1) * pageSize, (safePage - 1) * pageSize + pageSize);
 
   return (
     <Panel prominence="lead" flush className="animate-rise overflow-hidden">
@@ -678,7 +722,7 @@ function ScheduledTab({ query, rows, search, onCreate, onEdit, onToggle, onDelet
               ),
             },
           ]}
-          rows={rows}
+          rows={pageRows}
           rowKey={(row) => row.id}
           loading={query.isLoading && !query.data}
           refreshing={query.isRefreshing}
@@ -720,14 +764,38 @@ function ScheduledTab({ query, rows, search, onCreate, onEdit, onToggle, onDelet
           }
         />
       )}
+      {/* Only once there is more than a page to walk. */}
+      {!query.isError && rows.length > pageSize && (
+        <Pagination
+          page={safePage}
+          pageSize={pageSize}
+          total={rows.length}
+          unit="schedules"
+          onPageChange={onPageChange}
+          onPageSizeChange={onPageSizeChange}
+        />
+      )}
     </Panel>
   );
 }
 
 /* ── History ──────────────────────────────────────────────────────────────── */
 
-function HistoryTab({ query, rows, search, onRegenerate, onDelete }) {
+function HistoryTab({
+  query,
+  rows,
+  page,
+  pageSize,
+  onPageChange,
+  onPageSizeChange,
+  search,
+  onRegenerate,
+  onDelete,
+}) {
   const running = rows.filter((row) => row.status === 'queued' || row.status === 'running').length;
+  /* Clamped, as in the Scheduled tab above. */
+  const safePage = Math.min(page, Math.max(1, Math.ceil(rows.length / pageSize)));
+  const pageRows = rows.slice((safePage - 1) * pageSize, (safePage - 1) * pageSize + pageSize);
 
   return (
     <Panel prominence="lead" flush className="animate-rise overflow-hidden">
@@ -852,7 +920,7 @@ function HistoryTab({ query, rows, search, onRegenerate, onDelete }) {
                 ) : null,
             },
           ]}
-          rows={rows}
+          rows={pageRows}
           rowKey={(row) => row.id}
           loading={query.isLoading && !query.data}
           refreshing={query.isRefreshing}
@@ -878,6 +946,17 @@ function HistoryTab({ query, rows, search, onRegenerate, onDelete }) {
               />
             )
           }
+        />
+      )}
+      {/* Only once there is more than a page to walk. */}
+      {!query.isError && rows.length > pageSize && (
+        <Pagination
+          page={safePage}
+          pageSize={pageSize}
+          total={rows.length}
+          unit="runs"
+          onPageChange={onPageChange}
+          onPageSizeChange={onPageSizeChange}
         />
       )}
     </Panel>

@@ -105,7 +105,13 @@ export function formatRelativeShort(input) {
 
   const seconds = Math.round((Date.now() - date.getTime()) / 1000);
   const abs = Math.abs(seconds);
-  const suffix = seconds < 0 ? '' : ' ago';
+  /* A future instant used to render as a bare "1h", which is not a shorter way
+     of saying "in 1 hour" - it is indistinguishable from "1h ago" except by a
+     missing suffix nobody reads as a signal. A clock skew or a bad timestamp
+     then looked like ordinary data, and in a list sorted by time it produced
+     an order that cannot happen: 1h, 55m, 16m, then 6m ago. It is prefixed
+     now, so a future date is visible as one. */
+  const future = seconds < 0;
 
   const steps = [
     [60, 1, 's'],
@@ -119,7 +125,7 @@ export function formatRelativeShort(input) {
   for (const [limit, divisor, unit] of steps) {
     if (abs < limit) {
       const amount = Math.max(1, Math.round(abs / divisor));
-      return `${amount}${unit}${suffix}`;
+      return future ? `in ${amount}${unit}` : `${amount}${unit} ago`;
     }
   }
   return DASH;

@@ -6,7 +6,7 @@ import {
   FileWarning,
   Fingerprint,
   Gauge,
-  History,
+  // History, - reinstate with the Scans nav item
   KeyRound,
   ShieldOff,
   UserCircle,
@@ -63,7 +63,12 @@ export const NAV_GROUPS = [
     label: 'Operations',
     items: [
       { to: '/activity', label: 'Activity', icon: Activity },
-      { to: '/scans', label: 'Scans', icon: History },
+      /* Scans is out of this build: there is one discovery run behind these
+         screens, so a list of runs and a picker to choose between them would
+         both be controls with nothing to do. Restore this line, the route in
+         `app/App.jsx`, the breadcrumb below and `<ScanSwitcher />` in
+         `shell/TopBar.jsx` together. */
+      // { to: '/scans', label: 'Scans', icon: History },
       { to: '/reports', label: 'Reports', icon: FileText },
     ],
   },
@@ -93,7 +98,7 @@ export const BREADCRUMBS = {
   '/access-graph': ['Access', 'Access graph'],
   '/genome': ['Behaviour', 'NHI Genome'],
   '/activity': ['Operations', 'Activity'],
-  '/scans': ['Operations', 'Scans'],
+  // '/scans': ['Operations', 'Scans'],
   '/reports': ['Operations', 'Reports'],
   '/my-resources': ['Assigned to me', 'My resources'],
 };

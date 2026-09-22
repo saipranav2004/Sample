@@ -4,6 +4,7 @@ import { AlertTriangle, ArrowRight, BadgeCheck, Clock3, Lock, Mail, ShieldCheck 
 import { useAuth } from '../../app/AuthContext';
 import { Button } from '../../ui/Button';
 import { Field, Input, PasswordInput } from '../../ui/Field';
+import { DEMO_CREDENTIALS } from '../../lib/demo/api';
 
 const TRUST_MARKS = [
   { icon: ShieldCheck, label: 'SOC 2 Type II Certified' },
@@ -32,14 +33,23 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [values, setValues] = useState({ email: '', password: '' });
+  /* Pre-filled for this build.
+     There is no identity provider behind this screen, so an empty form would
+     just be a guessing game for anybody opening the app. The pair is the one
+     `lib/demo/api.js` accepts, the fields stay editable, and a wrong pair is
+     still rejected - so the password field is a real control rather than
+     decoration. */
+  const [values, setValues] = useState({ ...DEMO_CREDENTIALS });
   const [fieldErrors, setFieldErrors] = useState({});
   const [formError, setFormError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const usernameRef = useRef(null);
+  const submitRef = useRef(null);
 
+  /* Focus the submit button rather than the username field: the credentials
+     are already there, so the next thing anybody does is sign in. */
   useEffect(() => {
-    usernameRef.current?.focus();
+    submitRef.current?.focus();
   }, []);
 
   if (isAuthenticated) {
@@ -63,7 +73,7 @@ export default function LoginPage() {
       navigate(location.state?.from?.pathname || '/posture', { replace: true });
     } catch (error) {
       setFormError(error?.message || 'Sign-in failed.');
-      setValues((current) => ({ ...current, password: '' }));
+      setValues({ ...DEMO_CREDENTIALS });
     } finally {
       setSubmitting(false);
     }
@@ -233,6 +243,7 @@ export default function LoginPage() {
               </Field>
 
               <Button
+                ref={submitRef}
                 type="submit"
                 variant="auth"
                 size="auth"

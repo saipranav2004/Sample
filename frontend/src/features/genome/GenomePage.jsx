@@ -17,6 +17,7 @@ import { formatNumber, formatRelative, percentValue } from '../../lib/format';
 import { PageHeader } from '../../shell/PageHeader';
 import { Button } from '../../ui/Button';
 import { DataGrid } from '../../ui/DataGrid';
+import { Pagination } from '../../ui/Pagination';
 import { SearchInput } from '../../ui/Field';
 import { AppliedFilters, FacetRail, useFacetRail } from '../../ui/FacetRail';
 import { Meter, ProportionBar } from '../../ui/Meter';
@@ -62,12 +63,18 @@ export default function GenomePage() {
   const type = searchParams.get('type') || '';
   const status = searchParams.get('status') || '';
   const search = searchParams.get('q') || '';
+  const page = Math.max(1, Number(searchParams.get('page')) || 1);
+  const pageSize = Math.min(100, Math.max(10, Number(searchParams.get('size')) || 25));
 
   const setParam = useCallback(
     (key, value) => {
       const next = new URLSearchParams(searchParams);
       if (value) next.set(key, value);
       else next.delete(key);
+      /* Narrowing the set while holding page 7 lands on an empty grid and
+         reads as "no results". Any change to what is being listed returns to
+         the first page; paging itself obviously does not. */
+      if (key !== 'page' && key !== 'size') next.delete('page');
       setSearchParams(next, { replace: true });
     },
     [searchParams, setSearchParams],
@@ -103,6 +110,20 @@ export default function GenomePage() {
         .some((field) => String(field).toLowerCase().includes(needle)),
     );
   }, [allRows, search]);
+
+  /* The page of rows the grid renders. `rows` stays the full filtered set,
+     because the count above the grid and the export below it both describe
+     everything the filters matched, not the slice on screen.
+
+     The page is clamped to the last one that exists. A stale link or a
+     bookmark carrying `?page=9` against a set that now has two pages would
+     otherwise render an empty grid with no explanation - which reads as "no
+     anomalies" rather than "no ninth page". */
+  const safePage = Math.min(page, Math.max(1, Math.ceil(rows.length / pageSize)));
+  const pageRows = useMemo(
+    () => rows.slice((safePage - 1) * pageSize, (safePage - 1) * pageSize + pageSize),
+    [rows, safePage, pageSize],
+  );
 
   const chips = useMemo(
     () =>
@@ -576,7 +597,7 @@ export default function GenomePage() {
             <DataGrid
               caption="Behavioural anomalies"
               columns={columns}
-              rows={rows}
+              rows={pageRows}
               rowKey={(row) => row.id}
               loading={loading}
               refreshing={feed.isRefreshing}
@@ -608,6 +629,19 @@ export default function GenomePage() {
                   />
                 )
               }
+            />
+          )}
+
+          {/* Only once there is more than a page to walk. A pager under nine
+              rows is a control with nothing to do. */}
+          {!loading && !feed.isError && rows.length > pageSize && (
+            <Pagination
+              page={safePage}
+              pageSize={pageSize}
+              total={rows.length}
+              unit="anomalies"
+              onPageChange={(next) => setParam('page', next > 1 ? String(next) : '')}
+              onPageSizeChange={(next) => setParam('size', next === 25 ? '' : String(next))}
             />
           )}
         </Panel>

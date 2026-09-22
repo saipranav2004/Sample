@@ -5,7 +5,7 @@ import { useAuth } from '../app/AuthContext';
 import { useThemeMode } from '../app/ThemeContext';
 import { usePopover } from '../lib/hooks';
 import { BrandLockup } from './Brand';
-import { ScanSwitcher } from './ScanSwitcher';
+// import { ScanSwitcher } from './ScanSwitcher';
 import { initialsOf, titleCaseEnum } from '../lib/format';
 import { cn } from '../ui/cn';
 
@@ -73,9 +73,10 @@ export function TopBar({ onOpenNav, onOpenCommand }) {
 
       <div aria-hidden="true" className="flex-1" />
 
-      {/* Global scan scope. Marked shrinkable so a long target name yields to
-          the controls beside it instead of widening the bar. */}
-      <ScanSwitcher />
+      {/* Global scan scope. Out of this build along with the scans screen -
+          one discovery run means nothing to switch between. See the note in
+          `shell/navigation.js`. */}
+      {/* <ScanSwitcher /> */}
 
       {/* Search - a real control, not an afterthought. The palette behind it
           carries section jumps and identity lookup. */}

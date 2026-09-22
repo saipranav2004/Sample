@@ -47,7 +47,7 @@ import { ClearState, EmptyState, ErrorState } from '../../ui/States';
 import { cn, TONE_FG } from '../../ui/cn';
 import { GridSkeleton, StatStripSkeleton } from '../../ui/Skeleton';
 import { FindingDrawer } from './FindingDrawer';
-import { describeScannerError, groupByPush, summariseFindings } from './scannerState';
+import { describeScannerError, findingKey, groupByPush, summariseFindings } from './scannerState';
 
 const VIEWS = [
   { value: 'findings', label: 'Credentials', icon: List },
@@ -85,7 +85,7 @@ export default function FindingsPage() {
   const [dismissed, setDismissed] = useState(() => new Set());
 
   const allFindings = useMemo(
-    () => (query.data?.findings ?? []).filter((finding) => !dismissed.has(finding.finding_id)),
+    () => (query.data?.findings ?? []).filter((finding) => !dismissed.has(findingKey(finding))),
     [query.data, dismissed],
   );
 
@@ -341,7 +341,7 @@ export default function FindingsPage() {
         });
         return;
       }
-      setDismissed((current) => new Set(current).add(finding.finding_id));
+      setDismissed((current) => new Set(current).add(findingKey(finding)));
       setSelected(null);
       notify({
         variant: 'success',
@@ -587,7 +587,7 @@ export default function FindingsPage() {
             caption="Exposed credentials"
             columns={columns}
             rows={sorted}
-            rowKey={(row) => row.finding_id}
+            rowKey={findingKey}
             refreshing={query.isRefreshing}
             onRowClick={setSelected}
             density={density}
@@ -728,7 +728,7 @@ function PushList({ pushes, onSelect }) {
               {push.findings.map((finding) => {
                 const meta = severityMeta(finding.risk_tier);
                 return (
-                  <li key={finding.finding_id}>
+                  <li key={findingKey(finding)}>
                     <button
                       type="button"
                       onClick={() => onSelect(finding)}

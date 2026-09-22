@@ -18,7 +18,8 @@ const SecretsPage = lazy(() => import('../features/secrets/SecretsPage'));
 const FindingsPage = lazy(() => import('../features/exposure/FindingsPage'));
 const DismissedPage = lazy(() => import('../features/exposure/DismissedPage'));
 const ActivityPage = lazy(() => import('../features/activity/ActivityPage'));
-const ScansPage = lazy(() => import('../features/scans/ScansPage'));
+// Out of this build - see the note in `shell/navigation.js`.
+// const ScansPage = lazy(() => import('../features/scans/ScansPage'));
 const MyResourcesPage = lazy(() => import('../features/account/MyResourcesPage'));
 const AccessGraphPage = lazy(() => import('../features/access/AccessGraphPage'));
 const AccessDetailPage = lazy(() => import('../features/access/AccessDetailPage'));
@@ -102,14 +103,14 @@ export default function App() {
                     </Suspense>
                   }
                 />
-                <Route
+                {/* <Route
                   path="/scans"
                   element={
                     <Suspense fallback={<RouteFallback />}>
                       <ScansPage />
                     </Suspense>
                   }
-                />
+                /> */}
                 <Route
                   path="/access-graph"
                   element={

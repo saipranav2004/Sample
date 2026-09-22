@@ -1,4 +1,4 @@
-import { OVERLAY_KEYS, demoRequest, hashSeed, intBetween, readOverlay, rng, writeOverlay } from './runtime';
+import { OVERLAY_KEYS, demoRequest, hashSeed, intBetween, pick, readOverlay, rng, writeOverlay } from './runtime';
 
 /**
  * Reports demo dataset.
@@ -173,10 +173,29 @@ function readRuns() {
    the user's own actions write to, so there is no second code path. */
 function seedRuns() {
   const next = rng(hashSeed('runs'));
-  const picks = ['credential-exposure', 'executive-summary', 'identity-inventory', 'credential-hygiene', 'compliance-audit', 'over-permissioned', 'credential-exposure', 'behavioural-anomalies'];
+
+  /* A month of history rather than a handful of runs.
+     Eight runs across seven report types is not what a month looks like in a
+     product anybody is using, and it left the History tab with nothing to
+     page through. This is six weeks of manual runs at a realistic rate, with
+     the failures spread through it rather than parked at one index - a single
+     failure at a fixed position reads as a placeholder. */
+  const ROTATION = [
+    'credential-exposure',
+    'executive-summary',
+    'identity-inventory',
+    'credential-hygiene',
+    'compliance-audit',
+    'over-permissioned',
+    'behavioural-anomalies',
+  ];
+  const picks = Array.from({ length: 46 }, (_, index) => ROTATION[index % ROTATION.length]);
+
   const seeded = picks.map((templateId, index) => {
     const template = templateById(templateId);
-    const failed = index === 5;
+    /* Roughly one run in nine fails, decided by the seed rather than by
+       position, so the outcome column varies down the list. */
+    const failed = next() < 0.11;
     const rowCount = intBetween(next, 60, 1400);
     return {
       id: `run-seed-${index + 1}`,
@@ -188,11 +207,20 @@ function seedRuns() {
          schedule produced it would contradict the screen next to it. */
       trigger: 'manual',
       requestedBy: 'das_admin',
-      startedAt: hoursAgoIso(index * intBetween(next, 5, 30) + 3),
+      /* Cumulative, so the list is strictly newest-first and the gaps between
+         runs vary the way a person's requests do. */
+      startedAt: hoursAgoIso(3 + index * intBetween(next, 14, 30)),
       durationMs: intBetween(next, 1400, 9200),
       rows: rowCount,
       sizeKb: fileSize(rowCount, template.formats[0]),
-      error: failed ? 'The compliance mapping service did not respond in time.' : null,
+      error: failed
+        ? pick(next, [
+            'The compliance mapping service did not respond in time.',
+            'The identity inventory query exceeded the read timeout.',
+            'Rendering failed: a section returned no rows and the template requires one.',
+            'The delivery target rejected the attachment as too large.',
+          ])
+        : null,
     };
   });
   writeOverlay(OVERLAY_KEYS.runs, seeded);

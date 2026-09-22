@@ -4,6 +4,20 @@
  * than that the operator lacks access - say so instead of showing a bare
  * "unauthorized".
  */
+/**
+ * A finding's identity.
+ *
+ * The scanner has no id field - its own allowlist endpoints require all four
+ * of these to identify a finding, which is the service telling us what the key
+ * is. The grid was keying rows on `finding_id`, which the API never returns:
+ * every row got `undefined`, React saw one duplicated key for the whole list,
+ * and reconciliation fell back to index order. Selecting a row after a dismiss
+ * could then open the neighbour.
+ */
+export function findingKey(finding) {
+  return [finding?.client_id, finding?.file_path, finding?.detector, finding?.redacted].join('|');
+}
+
 export function describeScannerError(error) {
   if (error?.status === 401) {
     return {
