@@ -8,9 +8,8 @@ import {
   Gauge,
   // History, - reinstate with the Scans nav item
   KeyRound,
+  Plug,
   ShieldOff,
-  UserCircle,
-  Vault,
 } from 'lucide-react';
 
 /**
@@ -33,7 +32,6 @@ export const NAV_GROUPS = [
     items: [
       { to: '/identities', label: 'Identities', icon: Fingerprint },
       { to: '/credentials', label: 'Credentials', icon: KeyRound },
-      { to: '/secrets', label: 'Secret-backed', icon: Vault },
     ],
   },
   {
@@ -73,9 +71,11 @@ export const NAV_GROUPS = [
     ],
   },
   {
-    key: 'personal',
-    label: 'Assigned to me',
-    items: [{ to: '/my-resources', label: 'My resources', icon: UserCircle }],
+    key: 'settings',
+    label: 'Settings',
+    /* Last in the rail on purpose. Everything above reads the estate; this is
+       the one group that changes how the estate is collected. */
+    items: [{ to: '/integrations', label: 'Integrations', icon: Plug }],
   },
 ];
 
@@ -92,7 +92,6 @@ export const BREADCRUMBS = {
   '/posture': ['Posture'],
   '/identities': ['Inventory', 'Identities'],
   '/credentials': ['Inventory', 'Credentials'],
-  '/secrets': ['Inventory', 'Secret-backed'],
   '/exposure': ['Credential exposure', 'Exposed credentials'],
   '/exposure/dismissed': ['Credential exposure', 'Accepted'],
   '/access-graph': ['Access', 'Access graph'],
@@ -100,7 +99,7 @@ export const BREADCRUMBS = {
   '/activity': ['Operations', 'Activity'],
   // '/scans': ['Operations', 'Scans'],
   '/reports': ['Operations', 'Reports'],
-  '/my-resources': ['Assigned to me', 'My resources'],
+  '/integrations': ['Settings', 'Integrations'],
 };
 
 /**

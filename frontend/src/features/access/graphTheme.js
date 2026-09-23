@@ -24,7 +24,7 @@
  *             icon and its one-word kind label, which survive greyscale, a
  *             projector, and colour blindness. This is also why the graph
  *             reads as calm: on a healthy account almost nothing is coloured.
- *   ACCENT    the trace. What is selected, and the path being followed.
+ *   ACCENT    what the reader has selected.
  *   CRITICAL  risk that is already true - an administrator-equivalent
  *             identity, a crown jewel, a stale key, an escalation edge.
  *
@@ -116,9 +116,8 @@ export function riskReason(node) {
   return null;
 }
 
-/** Edge styling. Neutral unless it is an escalation or part of the trace. */
+/** Edge styling. Neutral unless the relationship is a documented escalation. */
 export const EDGE_STYLE = {
   base: { stroke: 'var(--t-line-strong)', strokeWidth: 1.4 },
   escalation: { stroke: 'var(--t-graph-risk)', strokeWidth: 1.8, dash: '5 4' },
-  traced: { stroke: 'var(--t-graph-accent)', strokeWidth: 2.4 },
 };

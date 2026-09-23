@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Crosshair, Radius } from 'lucide-react';
-import { SEVERITY_ORDER, severityMeta } from '../../lib/domain';
+import { Radius } from 'lucide-react';
+import { actorTypeMeta, credentialKindMeta, severityMeta } from '../../lib/domain';
 import { formatNumber, formatRelative } from '../../lib/format';
 import { Button } from '../../ui/Button';
 import { Panel, SectionLabel } from '../../ui/Panel';
@@ -44,7 +44,7 @@ const ALL_TABS = [
   { value: 'why', label: 'Why classified' },
 ];
 
-export function IdentityPanel({ node, isFocusNode, detail, onTrace, onExpand, expandedIds }) {
+export function IdentityPanel({ node, isFocusNode, detail, onExpand, expandedIds }) {
   const [tab, setTab] = useState('summary');
 
   const data = detail?.data;
@@ -54,38 +54,6 @@ export function IdentityPanel({ node, isFocusNode, detail, onTrace, onExpand, ex
   const credentials = data?.credentials ?? [];
   const trustedBy = data?.trustedBy ?? [];
   const behaviour = data?.behaviour;
-  const paths = data?.paths ?? [];
-
-  /* Grouped by the far end, not one row per path.
-     Every path here passes through the node named at the top of the panel, so
-     the row shows the other end. When four routes share one entry point that
-     printed the same name four times and told the reader nothing - so
-     identical ends collapse into one row with a count, keeping the shortest
-     route as the one Trace follows. */
-  const pathsByEnd = useMemo(() => {
-    const groups = new Map();
-    for (const path of paths) {
-      const isEntry = path.entryId === node?.id;
-      const key = isEntry ? path.targetId : path.entryId;
-      const name = isEntry ? path.targetName : path.entryName;
-      const existing = groups.get(key);
-      if (!existing) {
-        groups.set(key, { key, name, count: 1, shortest: path, severity: path.severity });
-        continue;
-      }
-      existing.count += 1;
-      if (path.hops < existing.shortest.hops) existing.shortest = path;
-      if (SEVERITY_ORDER.indexOf(path.severity) < SEVERITY_ORDER.indexOf(existing.severity)) {
-        existing.severity = path.severity;
-      }
-    }
-    return [...groups.values()].sort(
-      (a, b) =>
-        SEVERITY_ORDER.indexOf(a.severity) - SEVERITY_ORDER.indexOf(b.severity) ||
-        b.count - a.count ||
-        a.shortest.hops - b.shortest.hops,
-    );
-  }, [paths, node?.id]);
 
   /* A tab with nothing behind it is not offered. The counts sit on the tab so
      the reader can see what is there before they click. */
@@ -93,10 +61,10 @@ export function IdentityPanel({ node, isFocusNode, detail, onTrace, onExpand, ex
     if (!node) return [];
     const has = {
       summary: true,
-      access: Boolean(radius) || Boolean(reach && reach.paths > 0) || true,
+      access: true,
       credentials: credentials.length > 0,
       keys: (node.accessKeyCount ?? 0) > 0,
-      trust: trustedBy.length > 0 || Boolean(reach && reach.paths > 0),
+      trust: trustedBy.length > 0 || Boolean(reach),
       behaviour: Boolean(behaviour),
       events: Boolean(observed && observed.topActions?.length > 0),
       policies: Array.isArray(node.attachedPolicies) && node.attachedPolicies.length > 0,
@@ -143,7 +111,14 @@ export function IdentityPanel({ node, isFocusNode, detail, onTrace, onExpand, ex
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <p className="text-[10.5px] font-semibold tracking-[0.1em] text-ink-3 uppercase">
-              {isFocusNode ? 'Focus' : 'Selected'} · {KIND_LABEL[node.kind] ?? node.kind}
+              {isFocusNode ? 'Focus' : 'Selected'} ·{' '}
+              {/* For an identity, the actor type is more use than the word
+                  "Identity": every node in that column is an identity, and
+                  what the reader wants to know is whether this one is a
+                  function, a pipeline or a vendor platform. */}
+              {node.kind === 'identity' && node.identityType
+                ? actorTypeMeta(node.identityType).label
+                : (KIND_LABEL[node.kind] ?? node.kind)}
             </p>
             <h2 className="mt-0.5 truncate text-[16px] font-semibold text-ink" title={node.name}>
               {node.name}
@@ -242,11 +217,11 @@ export function IdentityPanel({ node, isFocusNode, detail, onTrace, onExpand, ex
 
         {activeTab === 'access' && (
           <>
-                  {node.kind !== 'identity' && reach && reach.paths > 0 && (
+                  {node.kind !== 'identity' && reach && reach.identities > 0 && (
                     <div>
-                      <SectionLabel>{reach.fromHere ? 'Reachable from here' : 'On paths that reach'}</SectionLabel>
+                      <SectionLabel>Reachable from here</SectionLabel>
                       <div className="mt-2 grid grid-cols-2 gap-2">
-                        <RadiusFigure label="Identities on the way" value={reach.identities} tone="neutral" />
+                        <RadiusFigure label="Identities reached" value={reach.identities} tone="neutral" />
                         <RadiusFigure
                           label="Administrator equivalent"
                           value={reach.admins}
@@ -261,10 +236,10 @@ export function IdentityPanel({ node, isFocusNode, detail, onTrace, onExpand, ex
                           </Tag>
                         )}
                         <Tag tone="neutral" size="sm">
-                          {formatNumber(reach.accounts)} account{reach.accounts === 1 ? '' : 's'}
+                          {formatNumber(reach.resources)} resource{reach.resources === 1 ? '' : 's'}
                         </Tag>
                         <Tag tone="neutral" size="sm">
-                          {reach.shortestHops} hop{reach.shortestHops === 1 ? '' : 's'} at the shortest
+                          {formatNumber(reach.accounts)} account{reach.accounts === 1 ? '' : 's'}
                         </Tag>
                       </div>
                     </div>
@@ -330,41 +305,6 @@ export function IdentityPanel({ node, isFocusNode, detail, onTrace, onExpand, ex
                     </dl>
                   </div>
 
-                  {paths.length > 0 && (
-                    <div>
-                      <SectionLabel>Paths through it</SectionLabel>
-                      <ul className="mt-1.5 flex flex-col gap-1">
-                        {pathsByEnd.slice(0, 4).map((group) => {
-                          const meta = severityMeta(group.severity);
-                          return (
-                            <li key={group.key}>
-                              <button
-                                type="button"
-                                onClick={() => onTrace(group.shortest)}
-                                className="flex w-full items-center gap-2 rounded-[var(--radius-control)] px-1.5 py-1.5 text-left hover:bg-surface-3"
-                              >
-                                <Crosshair aria-hidden="true" className="size-3 shrink-0 text-ink-3" />
-                                <span className="min-w-0 flex-1 truncate text-[11.5px] text-ink-2">
-                                  {group.name}
-                                  {group.count > 1 && (
-                                    <span data-numeric="" className="ml-1 text-ink-3">
-                                      ×{group.count}
-                                    </span>
-                                  )}
-                                </span>
-                                <Tag tone={meta.tone} size="sm" dot>
-                                  {group.shortest.hops}
-                                </Tag>
-                              </button>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                      {pathsByEnd.length > 4 && (
-                        <p className="mt-1 px-1.5 text-[11px] text-ink-3">{pathsByEnd.length - 4} more below.</p>
-                      )}
-                    </div>
-                  )}
           </>
         )}
 
@@ -568,7 +508,7 @@ function CredentialList({ credentials }) {
                   {credential.cred_id}
                 </span>
                 <span className="mt-0.5 block text-[10.5px] text-ink-3">
-                  {CREDENTIAL_LABEL[credential.type] ?? credential.type}
+                  {credentialKindMeta(credential.type).label}
                 </span>
               </span>
               <Tag tone={meta.tone} size="sm" dot>
@@ -593,14 +533,6 @@ function CredentialList({ credentials }) {
     </ul>
   );
 }
-
-const CREDENTIAL_LABEL = {
-  ACCESS_KEY: 'Long-lived access key',
-  SECRET_MANAGER: 'Secrets Manager entry',
-  SSM_PARAMETER: 'Parameter Store entry',
-  OIDC_TRUST: 'Federated trust, short-lived',
-  SERVICE_TOKEN: 'Service token',
-};
 
 /**
  * Who can become this identity, and what it reaches once they have.
@@ -653,11 +585,11 @@ function TrustList({ trustedBy, reach }) {
         )}
       </div>
 
-      {reach && reach.paths > 0 && (
+      {reach && reach.identities > 0 && (
         <div>
           <SectionLabel>What arriving here reaches</SectionLabel>
           <dl className="mt-2 grid grid-cols-2 gap-1.5">
-            <Figure label="Identities on the way" value={formatNumber(reach.identities)} />
+            <Figure label="Identities reached" value={formatNumber(reach.identities)} />
             <Figure
               label="Administrator equivalent"
               value={formatNumber(reach.admins)}

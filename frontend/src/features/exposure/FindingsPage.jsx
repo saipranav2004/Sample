@@ -5,6 +5,7 @@ import {
   FileWarning,
   GitCommitHorizontal,
   List,
+  Radar,
   SearchX,
   ShieldOff,
 } from 'lucide-react';
@@ -33,6 +34,7 @@ import { exportRowsToCsv, timestampedName } from '../../lib/csv';
 import { PageHeader } from '../../shell/PageHeader';
 import { Button } from '../../ui/Button';
 import { Panel } from '../../ui/Panel';
+import { Pagination } from '../../ui/Pagination';
 import { SearchInput } from '../../ui/Field';
 import { AppliedFilters, FacetRail, useFacetRail } from '../../ui/FacetRail';
 import { RecordBar, ResultCount, ShowFiltersButton, WorkArea } from '../../ui/WorkArea';
@@ -46,8 +48,20 @@ import { useToast } from '../../ui/Toast';
 import { ClearState, EmptyState, ErrorState } from '../../ui/States';
 import { cn, TONE_FG } from '../../ui/cn';
 import { GridSkeleton, StatStripSkeleton } from '../../ui/Skeleton';
+import { DeepScanDrawer } from './DeepScanDrawer';
 import { FindingDrawer } from './FindingDrawer';
 import { describeScannerError, findingKey, groupByPush, summariseFindings } from './scannerState';
+
+/**
+ * Rows per page.
+ *
+ * `GET /api/findings` has no page parameter - it returns the whole live set in
+ * one response - so paging happens here, over the filtered and sorted array.
+ * That is not a smaller request, it is a shorter page: a single repository can
+ * carry hundreds of findings, and a browser asked to lay out 800 grid rows
+ * drops frames on every sort and every keystroke in the search box.
+ */
+const DEFAULT_PAGE_SIZE = 25;
 
 const VIEWS = [
   { value: 'findings', label: 'Credentials', icon: List },
@@ -79,10 +93,26 @@ export default function FindingsPage() {
   const [confidence, setConfidence] = useState('');
   const [visibility, setVisibility] = useState('');
   const [sort, setSort] = useState({ key: 'detected', direction: 'desc' });
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [selected, setSelected] = useState(null);
+  const [deepScanOpen, setDeepScanOpen] = useState(false);
   /* Locally dismissed ids, so a row leaves the list the moment the write
      succeeds rather than after a full refetch. */
   const [dismissed, setDismissed] = useState(() => new Set());
+
+  /* Any change to what is being listed sends the reader back to page one.
+     Without this, narrowing a 400-row list to 12 while on page 6 shows an
+     empty grid and reads as "no results" - the single most common pagination
+     bug there is. Wrapped rather than repeated at each call site so a filter
+     added later cannot forget it. */
+  const withReset = useCallback(
+    (setter) => (value) => {
+      setPage(1);
+      setter(value);
+    },
+    [],
+  );
 
   const allFindings = useMemo(
     () => (query.data?.findings ?? []).filter((finding) => !dismissed.has(findingKey(finding))),
@@ -150,6 +180,23 @@ export default function FindingsPage() {
     return groups.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   }, [sorted]);
 
+  /* The two views page independently, because a page of 25 pushes is not a
+     page of 25 findings. Whichever is on screen supplies the total. */
+  const pagedTotal = view === 'pushes' ? pushes.length : sorted.length;
+  /* Clamped rather than trusted. A dismiss on the last page, or a filter that
+     shrinks the set, can leave `page` past the end - and a page past the end
+     renders a blank grid that looks like a bug rather than an empty page. */
+  const safePage = Math.min(page, Math.max(1, Math.ceil(pagedTotal / pageSize)));
+  const pageStart = (safePage - 1) * pageSize;
+  const pageRows = useMemo(
+    () => sorted.slice(pageStart, pageStart + pageSize),
+    [sorted, pageStart, pageSize],
+  );
+  const pagePushes = useMemo(
+    () => pushes.slice(pageStart, pageStart + pageSize),
+    [pushes, pageStart, pageSize],
+  );
+
   /* Every facet count is computed from the live set the service returned, so
      the numbers and the rows can never disagree. */
   const repositoryOptions = useMemo(() => {
@@ -207,7 +254,10 @@ export default function FindingsPage() {
           count: summary.byTier[value],
           active: tier === value,
         })),
-        onToggle: (value) => setTier((current) => (current === value ? '' : value)),
+        onToggle: (value) => {
+          setPage(1);
+          setTier((current) => (current === value ? '' : value));
+        },
         note: 'Critical cannot occur on this deployment - liveness verification is unavailable, so the scanner never raises that tier.',
       },
       {
@@ -219,32 +269,47 @@ export default function FindingsPage() {
           count: entry.value,
           active: detector === entry.key,
         })),
-        onToggle: (value) => setDetector((current) => (current === value ? '' : value)),
+        onToggle: (value) => {
+          setPage(1);
+          setDetector((current) => (current === value ? '' : value));
+        },
       },
       {
         key: 'repository',
         label: 'Repository',
         options: repositoryOptions,
-        onToggle: (value) => setRepository((current) => (current === value ? '' : value)),
+        onToggle: (value) => {
+          setPage(1);
+          setRepository((current) => (current === value ? '' : value));
+        },
       },
       {
         key: 'visibility',
         label: 'Repository visibility',
         options: visibilityOptions,
-        onToggle: (value) => setVisibility((current) => (current === value ? '' : value)),
+        onToggle: (value) => {
+          setPage(1);
+          setVisibility((current) => (current === value ? '' : value));
+        },
         note: 'Reported by GitHub only. A CodeCommit repository is private to its AWS account by definition, so the scanner has nothing to report.',
       },
       {
         key: 'category',
         label: 'Secret category',
         options: categoryOptions,
-        onToggle: (value) => setCategory((current) => (current === value ? '' : value)),
+        onToggle: (value) => {
+          setPage(1);
+          setCategory((current) => (current === value ? '' : value));
+        },
       },
       {
         key: 'confidence',
         label: 'Match confidence',
         options: confidenceOptions,
-        onToggle: (value) => setConfidence((current) => (current === value ? '' : value)),
+        onToggle: (value) => {
+          setPage(1);
+          setConfidence((current) => (current === value ? '' : value));
+        },
         note: 'How certain the pattern match is. Separate from risk tier, which is how bad the secret would be if real.',
       },
     ],
@@ -374,6 +439,13 @@ export default function FindingsPage() {
   }
 
   const loading = query.isLoading && !query.data;
+  /* High, plus critical if it ever appears.
+     The service cannot currently raise CRITICAL - liveness verification is
+     unavailable on this deployment, so `verification_status` is always
+     UNSUPPORTED and the tier is never assigned. A tile labelled "Critical"
+     would therefore be a permanent zero, which is worse than no tile: it
+     reads as good news. Folded in here instead, so the number is not lost on
+     the day the service starts emitting it. */
   const highish = (summary.byTier.CRITICAL || 0) + (summary.byTier.HIGH || 0);
 
   const columns = [
@@ -468,7 +540,7 @@ export default function FindingsPage() {
           <Tabs
             size="sm"
             value={platform}
-            onChange={setPlatform}
+            onChange={withReset(setPlatform)}
             tabs={[
               { value: 'all', label: 'All platforms', count: summary.total },
               { value: 'github', label: 'GitHub', count: summary.byPlatform.github },
@@ -478,6 +550,12 @@ export default function FindingsPage() {
         }
         actions={
           <>
+            {/* A deep scan is something you do to a repository already on this
+                screen, so it opens here rather than living in the navigation
+                as a peer of the findings it produces. */}
+            <Button variant="secondary" icon={Radar} onClick={() => setDeepScanOpen(true)}>
+              Deep scan
+            </Button>
             <Button as={Link} to="/exposure/dismissed" variant="ghost" icon={ShieldOff}>
               Dismissed
             </Button>
@@ -497,10 +575,10 @@ export default function FindingsPage() {
             caption="Excludes anything already allowlisted"
           />
           <MetricTile
-            label="High or critical"
+            label="High risk tier"
             value={highish}
             tone={highish > 0 ? 'critical' : 'low'}
-            caption="Actionable risk tier, not detector severity"
+            caption={`${formatNumber(summary.byTier.MEDIUM || 0)} medium, ${formatNumber(summary.byTier.LOW || 0)} low`}
             meter={percentValue(highish, summary.total)}
             meterLabel="Share of live exposures"
           />
@@ -541,7 +619,7 @@ export default function FindingsPage() {
             <TableToolbar>
               {/* View mode stays in the open: it changes which records are
                   listed, which is not a display preference. */}
-              <SegmentedControl label="View mode" options={VIEWS} value={view} onChange={setView} />
+              <SegmentedControl label="View mode" options={VIEWS} value={view} onChange={withReset(setView)} />
               {!railOpen && (
                 <ShowFiltersButton onClick={toggleRail} appliedCount={chips.length} />
               )}
@@ -565,14 +643,14 @@ export default function FindingsPage() {
           <SearchInput
             size="sm"
             value={search}
-            onChange={setSearch}
+            onChange={withReset(setSearch)}
             placeholder="Search repository, file, branch, detector or author…"
             className="w-full min-w-0 sm:max-w-sm"
           />
           <ResultCount
-            shown={formatNumber(sorted.length)}
-            total={formatNumber(summary.total)}
-            unit="exposed credentials"
+            shown={formatNumber(pagedTotal)}
+            total={formatNumber(view === 'pushes' ? groupByPush(allFindings).length : summary.total)}
+            unit={view === 'pushes' ? 'pushes' : 'exposed credentials'}
             filtered={chips.length > 0 || platform !== 'all'}
             loading={loading}
           />
@@ -586,13 +664,13 @@ export default function FindingsPage() {
           <DataGrid
             caption="Exposed credentials"
             columns={columns}
-            rows={sorted}
+            rows={pageRows}
             rowKey={findingKey}
             refreshing={query.isRefreshing}
             onRowClick={setSelected}
             density={density}
             sort={sort}
-            onSortChange={setSort}
+            onSortChange={withReset(setSort)}
             rowActions={(row) => {
               const link = findingLink(row);
               return (
@@ -648,7 +726,23 @@ export default function FindingsPage() {
             }
           />
         ) : (
-          <PushList pushes={pushes} onSelect={setSelected} />
+          <PushList pushes={pagePushes} onSelect={setSelected} />
+        )}
+
+        {/* Only once there is more than one page. A pager under a list of six
+            is a control that can never be used. */}
+        {!loading && pagedTotal > pageSize && (
+          <Pagination
+            page={safePage}
+            pageSize={pageSize}
+            total={pagedTotal}
+            unit={view === 'pushes' ? 'pushes' : 'exposed credentials'}
+            onPageChange={setPage}
+            onPageSizeChange={(next) => {
+              setPage(1);
+              setPageSize(next);
+            }}
+          />
         )}
       </Panel>
       </WorkArea>
@@ -658,6 +752,15 @@ export default function FindingsPage() {
         onClose={() => setSelected(null)}
         onDismiss={onDismiss}
         dismissing={dismissal.pending}
+      />
+
+      {/* The live set is passed in rather than fetched again: it is already
+          loaded here, and a second identical request would only introduce a
+          way for the two lists to disagree. */}
+      <DeepScanDrawer
+        open={deepScanOpen}
+        onClose={() => setDeepScanOpen(false)}
+        findings={allFindings}
       />
     </div>
   );

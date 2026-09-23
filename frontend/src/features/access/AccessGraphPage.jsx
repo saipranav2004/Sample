@@ -1,19 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Download, Info, Route } from 'lucide-react';
+import { Download, Info } from 'lucide-react';
 import {
   EDGE_KINDS,
   GRAPH_INPUTS,
   REVEAL_STEP,
-  fetchAttackPaths,
   fetchFocusOptions,
-  fetchPathFindings,
   fetchNeighbourhood,
   fetchNode,
 } from '../../lib/demo/accessGraph';
 import { useDemoQuery } from '../../lib/demo/useDemoQuery';
 import { exportRowsToCsv, timestampedName } from '../../lib/csv';
-import { severityMeta } from '../../lib/domain';
 import { PageHeader } from '../../shell/PageHeader';
 import { Button, IconButton } from '../../ui/Button';
 import { Modal } from '../../ui/Overlay';
@@ -21,14 +18,13 @@ import { ErrorState } from '../../ui/States';
 import { Tag } from '../../ui/Tag';
 import { AccessFlow } from './AccessFlow';
 import { FocusPicker } from './FocusPicker';
-import { AttackPaths } from './AttackPaths';
 import { IdentityPanel } from './IdentityPanel';
 
 /**
  * Access graph.
  *
  * ── The shape of the screen ─────────────────────────────────────────────────
- * Graph on the left, one panel on the right, one list below. Nothing else.
+ * Graph on the left, one panel on the right. Nothing else.
  *
  * There are no headline counters, on purpose. A count of principals or edges
  * is a fact about the dataset, not about the account: it does not change what
@@ -67,19 +63,6 @@ export default function AccessGraphPage() {
     }
     return out;
   }, [searchParams]);
-  const tracedPathId = searchParams.get('path') || '';
-
-  /* The findings filters, in the URL with everything else, so a filtered view
-     is a link somebody can send. */
-  const filters = useMemo(
-    () => ({
-      severity: searchParams.get('severity') || '',
-      account: searchParams.get('account') || '',
-      vector: searchParams.get('vector') || '',
-      reach: searchParams.get('reach') || '',
-    }),
-    [searchParams],
-  );
 
   const setParams = useCallback(
     (changes) => {
@@ -98,12 +81,6 @@ export default function AccessGraphPage() {
     (signal) => fetchNeighbourhood({ focusId, expanded, revealed }, signal),
     [focusId, expanded.join(','), JSON.stringify(revealed)],
   );
-  const paths = useDemoQuery((signal) => fetchAttackPaths({}, signal), []);
-  const findings = useDemoQuery(
-    (signal) => fetchPathFindings(filters, signal),
-    [filters.severity, filters.account, filters.vector, filters.reach],
-  );
-
 
   /* The first hop of the most interesting neighbour opens itself, so the graph
      arrives with a shape to read rather than as two boxes and a line. One hop,
@@ -132,21 +109,6 @@ export default function AccessGraphPage() {
     [inspectedId],
   );
 
-  const pathRows = useMemo(() => paths.data?.rows ?? [], [paths.data]);
-  const tracedPath = useMemo(
-    () => pathRows.find((path) => path.id === tracedPathId) ?? null,
-    [pathRows, tracedPathId],
-  );
-
-  const tracedNodeIds = useMemo(
-    () => new Set(tracedPath ? tracedPath.nodeIds : []),
-    [tracedPath],
-  );
-  const tracedEdgeIds = useMemo(
-    () => new Set(tracedPath ? tracedPath.edgeIds : []),
-    [tracedPath],
-  );
-
   const onToggleExpand = useCallback(
     (node) => {
       const isOpen = expanded.includes(node.id);
@@ -170,62 +132,36 @@ export default function AccessGraphPage() {
     [revealed, setParams],
   );
 
-  /* Tracing a path opens every node on it, so the path is actually visible
-     rather than highlighted somewhere off screen. */
-  const onTrace = useCallback(
-    (path) => {
-      if (!path) {
-        setParams({ path: '' });
-        return;
-      }
-      setParams({
-        focus: path.entryId,
-        open: path.nodeIds.join(','),
-        more: '',
-        path: path.id,
-      });
-    },
-    [setParams],
-  );
-
-  /* One row per path, carrying its finding and the fix.
-     Exporting the paths alone produced a spreadsheet nobody could act on: the
-     reader got twenty-six routes and no statement of what was wrong with any
-     of them. Whoever opens this needs the grouping and the remediation, which
-     is the whole point of the screen. Respects the filters, because the
-     filtered set is what the person exporting is looking at. */
-  const exportRows = useMemo(
-    () =>
-      (findings.data?.findings ?? []).flatMap((finding) =>
-        finding.paths.map((path) => ({ finding, path })),
-      ),
-    [findings.data],
-  );
+  /* One row per drawn relationship.
+     The export is the graph on screen, written down: whoever opens the file
+     gets the same edges in the same words, with the sentence that explains
+     each one. Exporting the node list instead would hand the reader an
+     inventory they already have on the Identities screen - the edges are what
+     only this screen knows. */
+  const exportRows = useMemo(() => {
+    const nodes = new Map((graph.data?.nodes ?? []).map((node) => [node.id, node]));
+    return (graph.data?.edges ?? []).map((edge) => ({
+      edge,
+      from: nodes.get(edge.from),
+      to: nodes.get(edge.to),
+    }));
+  }, [graph.data]);
 
   const onExport = useCallback(() => {
     exportRowsToCsv({
-      filename: timestampedName('access-attack-paths'),
+      filename: timestampedName('access-graph-relationships'),
       columns: [
-        { header: 'Severity', value: (row) => severityMeta(row.path.severity).label },
-        { header: 'Finding', value: (row) => row.finding.title },
-        { header: 'Service', value: (row) => row.finding.service },
-        { header: 'Permissions', value: (row) => row.finding.permissions.join(' + ') },
-        { header: 'Paths in finding', value: (row) => row.finding.instances },
-        { header: 'Exposure %', value: (row) => row.finding.exposure },
-        { header: 'Impact %', value: (row) => row.finding.impact },
-        { header: 'Hops', value: (row) => row.path.hops },
-        { header: 'Entry point', value: (row) => row.path.entryName },
-        { header: 'Target', value: (row) => row.path.targetName },
-        { header: 'Target account', value: (row) => row.path.targetAccountName },
-        { header: 'Reaches admin', value: (row) => (row.path.reachesAdmin ? 'yes' : 'no') },
-        { header: 'Controls crown jewel', value: (row) => (row.path.controlsCrownJewel ? 'yes' : 'no') },
-        { header: 'Accounts crossed', value: (row) => row.path.crossAccountCount },
-        {
-          header: 'Route',
-          value: (row) =>
-            `${row.path.entryName} -> ${row.path.steps.map((step) => `[${EDGE_KINDS[step.kind]?.label ?? step.kind}] ${step.toName}`).join(' -> ')}`,
-        },
-        { header: 'How to close it', value: (row) => row.finding.prevention },
+        { header: 'Relationship', value: (row) => EDGE_KINDS[row.edge.kind]?.label ?? row.edge.kind },
+        { header: 'From', value: (row) => row.from?.name ?? row.edge.from },
+        { header: 'From kind', value: (row) => row.from?.kind ?? '' },
+        { header: 'From account', value: (row) => row.from?.accountName ?? '' },
+        { header: 'To', value: (row) => row.to?.name ?? row.edge.to },
+        { header: 'To kind', value: (row) => row.to?.kind ?? '' },
+        { header: 'To account', value: (row) => row.to?.accountName ?? '' },
+        { header: 'Cross-account', value: (row) => (row.edge.crossAccount ? 'yes' : 'no') },
+        { header: 'Privilege escalation', value: (row) => (row.edge.kind === 'ESCALATES_TO' ? 'yes' : 'no') },
+        { header: 'Wildcard grant', value: (row) => (row.edge.wildcard ? 'yes' : 'no') },
+        { header: 'What it means', value: (row) => row.edge.detail ?? '' },
       ],
       rows: exportRows,
     });
@@ -240,22 +176,8 @@ export default function AccessGraphPage() {
       node={selected ?? focusNode}
       isFocusNode={!selected}
       detail={detail}
-      onTrace={onTrace}
       onExpand={onToggleExpand}
       expandedIds={expanded}
-    />
-  );
-
-  const findingsPanel = (
-    <AttackPaths
-      data={findings.data}
-      loading={findings.isLoading && !findings.data}
-      error={findings.isError && !findings.data ? findings.error : null}
-      onRetry={findings.refetch}
-      filters={filters}
-      onFilter={setParams}
-      tracedId={tracedPathId}
-      onTrace={onTrace}
     />
   );
 
@@ -270,7 +192,7 @@ export default function AccessGraphPage() {
               value={focusId || graph.data?.focus?.id || ''}
               onChange={(id) => {
                 setSelected(null);
-                setParams({ focus: id, open: '', more: '', path: '' });
+                setParams({ focus: id, open: '', more: '' });
               }}
             />
             <IconButton
@@ -300,34 +222,17 @@ export default function AccessGraphPage() {
               panel that is often taller, which left a band of empty page under
               the graph on every desktop. */}
           <div className="flex min-w-0 flex-col">
-            {tracedPath && (
-              <div className="animate-fade mb-3 flex flex-wrap items-center gap-2 rounded-[var(--radius-control)] border border-brand/30 bg-info-soft px-3 py-2">
-                <Route aria-hidden="true" className="size-3.5 shrink-0 text-brand" />
-                <span className="min-w-0 text-[12px] text-ink-2">
-                  Tracing <span className="font-semibold text-ink">{tracedPath.entryName}</span> to{' '}
-                  <span className="font-semibold text-ink">{tracedPath.targetName}</span>
-                </span>
-                <Button variant="ghost" size="sm" className="ml-auto" onClick={() => onTrace(null)}>
-                  Stop tracing
-                </Button>
-              </div>
-            )}
-
             <AccessFlow
               data={graph.data}
               selectedId={selected?.id ?? ''}
-              tracedNodeIds={tracedNodeIds}
-              tracedEdgeIds={tracedEdgeIds}
               onSelect={setSelected}
               onToggleExpand={onToggleExpand}
               onReveal={onReveal}
               onFullscreenChange={setFullscreen}
               /* Full screen has to contain everything: leaving it to read the
-                 findings and then re-entering is not a workflow. Both panels
-                 dock inside the full-screen shell. */
+                 details and then re-entering is not a workflow. The panel
+                 docks inside the full-screen shell. */
               inspector={inspectorPanel}
-              findings={findingsPanel}
-              findingCount={findings.data?.findings?.length ?? 0}
               height={560}
             />
           </div>
@@ -335,8 +240,6 @@ export default function AccessGraphPage() {
           {!fullscreen && inspectorPanel}
         </div>
       )}
-
-      {!fullscreen && findingsPanel}
 
       <Modal
         open={inputsOpen}
@@ -398,8 +301,4 @@ export default function AccessGraphPage() {
   );
 }
 
-
-
 export { AccessGraphPage };
-
-

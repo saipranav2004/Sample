@@ -54,7 +54,7 @@ export default function ScansPage() {
         previous,
         identities: previous ? scan.total_identities - previous.total_identities : null,
         events: previous ? scan.total_events - previous.total_events : null,
-        secrets: previous ? scan.total_secrets - previous.total_secrets : null,
+        credentials: previous ? scan.total_credentials - previous.total_credentials : null,
       });
     });
     return map;
@@ -70,7 +70,7 @@ export default function ScansPage() {
         subtitle: scan.target_name || scan.account_id || scan.scan_id,
         identities: Number(scan.total_identities) || 0,
         events: Number(scan.total_events) || 0,
-        secrets: Number(scan.total_secrets) || 0,
+        credentials: Number(scan.total_credentials) || 0,
       })),
     [chronological],
   );
@@ -115,11 +115,11 @@ export default function ScansPage() {
             style={{ '--stagger': 2 }}
           />
           <MetricTile
-            label="Secret-backed, latest scan"
-            value={latest?.total_secrets}
-            sparkline={trendData.map((point) => point.secrets)}
+            label="Credentials, latest scan"
+            value={latest?.total_credentials}
+            sparkline={trendData.map((point) => point.credentials)}
             tone="high"
-            caption={deltaCaption(latestDelta?.secrets, 'since the previous scan')}
+            caption={deltaCaption(latestDelta?.credentials, 'since the previous scan')}
             className="animate-rise"
             data-stagger=""
             style={{ '--stagger': 3 }}
@@ -144,7 +144,7 @@ export default function ScansPage() {
               {[
                 { key: 'identities', label: 'Identities', color: 'var(--t-series-1)' },
                 { key: 'events', label: 'CloudTrail events', color: 'var(--t-series-5)' },
-                { key: 'secrets', label: 'Secret-backed identities', color: 'var(--t-series-2)' },
+                { key: 'credentials', label: 'Credentials', color: 'var(--t-series-2)' },
               ].map((series, index, list) => (
                 <div key={series.key}>
                   <div className="flex items-baseline justify-between gap-3">
@@ -248,14 +248,14 @@ export default function ScansPage() {
                 ),
               },
               {
-                key: 'secrets',
-                header: 'Secrets',
+                key: 'credentials',
+                header: 'Credentials',
                 align: 'right',
                 width: '9%',
                 priority: 'wide',
                 cell: (row) => (
                   <span data-numeric="" className="text-[13px] text-ink-2">
-                    {formatNumber(row.total_secrets)}
+                    {formatNumber(row.total_credentials)}
                   </span>
                 ),
               },
@@ -339,14 +339,14 @@ function DeltaCell({ delta }) {
   return (
     <span
       className="block min-w-0"
-      title={`Against the previous completed scan: identities ${signed(delta.identities)}, events ${signed(delta.events)}, secret-backed ${signed(delta.secrets)}`}
+      title={`Against the previous completed scan: identities ${signed(delta.identities)}, events ${signed(delta.events)}, credentials ${signed(delta.credentials)}`}
     >
       <span className={cn('flex items-center gap-1 text-[12.5px] font-semibold', TONE_FG[tone])}>
         <Icon aria-hidden="true" className="size-3.5 shrink-0" />
         <span data-numeric="">{signed(value)} identities</span>
       </span>
       <span className="mt-0.5 block truncate text-[11px] text-ink-3" data-numeric="">
-        {signed(delta.secrets)} secret-backed
+        {signed(delta.credentials)} credentials
       </span>
     </span>
   );

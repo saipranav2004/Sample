@@ -363,6 +363,22 @@ export function FindingDrawer({ finding, onClose, onDismiss, dismissing }) {
           </div>
 
 
+          {/* The service's own id for this record.
+              On the Raw tab rather than the Overview because it is not part of
+              triage - it is what somebody quotes in a support ticket, and the
+              first thing they are asked for. A finding recorded before the
+              field existed has none, which is why it is guarded. */}
+          {finding.finding_id !== undefined && finding.finding_id !== null && (
+            <div>
+              <SectionLabel>Record id</SectionLabel>
+              <p className="mt-1.5 font-mono text-[12px] break-all text-ink-2">{finding.finding_id}</p>
+              <p className="mt-1.5 text-[11.5px] leading-relaxed text-ink-3">
+                The scanner's unique id for this finding. Allowlist writes are keyed on the file
+                path, detector and redacted value instead, which is what those endpoints accept.
+              </p>
+            </div>
+          )}
+
           {/* The line the secret sits on, masked by the scanner the same way the
               value is. Shown next to the value because "what does this code
               actually look like" is the first question a reviewer asks, and the
@@ -480,13 +496,21 @@ function FindingTimeline({ finding, authoredAt }) {
     },
   ].filter(Boolean);
 
-  events.sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
+  /* `authoredAt` is already a Date - `parseCommitAuthoredAt` had to be, because
+     CodeCommit passes git's raw "1758454920 +0530" through and that is not a
+     parseable date string - while the other two are ISO strings straight from
+     the service. Normalising to milliseconds keeps a Date and a string from
+     being compared through `Date.parse`, which stringifies a Date and loses
+     its sub-second part on the way. */
+  const millis = (value) => (value instanceof Date ? value.getTime() : Date.parse(value));
+
+  events.sort((a, b) => millis(a.at) - millis(b.at));
 
   /* How long it sat there before anybody knew. The single most useful figure
      on this tab, and it is not on any of the others. */
   const exposedDays =
     authoredAt && finding.created_at
-      ? Math.max(0, Math.round((Date.parse(finding.created_at) - Date.parse(authoredAt)) / 86_400_000))
+      ? Math.max(0, Math.round((millis(finding.created_at) - millis(authoredAt)) / 86_400_000))
       : null;
 
   if (events.length === 0) {

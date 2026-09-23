@@ -76,6 +76,208 @@ export function classificationMeta(value) {
   );
 }
 
+/* ── Actor type (what an identity IS) ─────────────────────────────────────── */
+
+/**
+ * What an identity's type is, and what it is not.
+ *
+ * ── The correction this table makes ─────────────────────────────────────────
+ * Every machine identity here used to report its type as `IAM_ROLE`, which is
+ * wrong in a way that matters: an IAM role is not an actor, it is a set of
+ * permissions that an actor assumes. The thing that acts is the EC2 instance,
+ * the Lambda function, the ECS task, the CodeBuild project, the Bedrock agent.
+ * That is the identity. The role is the credential it holds - which is why
+ * roles now appear in the credential inventory, and actors appear here.
+ *
+ * The consequence is not cosmetic. Two Lambda functions sharing one execution
+ * role are two identities with one credential between them; reported as
+ * "IAM_ROLE" they collapse into one row and the second function disappears.
+ * Conversely a role nothing assumes is an unused credential, not a dormant
+ * identity - and the remediation for those two is different.
+ *
+ * ── Where the list comes from ───────────────────────────────────────────────
+ * The actor inventory: each entry is an entity that genuinely acts, the AWS
+ * API that discovers it, and how its bound credential is resolved from the
+ * same response. `boundVia` is that second step - the field on the discovery
+ * response that names the role.
+ *
+ * Two entries are the documented exceptions, where the actor and the
+ * credential really are the same object: an IAM user used as a service
+ * account (no compute wrapper exists to point at), and the root account.
+ */
+const ACTOR_TYPES = {
+  'AWS::EC2::Instance': {
+    label: 'EC2 instance',
+    category: 'COMPUTE',
+    discoveryApi: 'ec2:DescribeInstances',
+    boundVia: 'IamInstanceProfile in the same response',
+  },
+  'AWS::Lambda::Function': {
+    label: 'Lambda function',
+    category: 'COMPUTE',
+    discoveryApi: 'lambda:ListFunctions',
+    boundVia: 'Role field in the same response',
+  },
+  'AWS::ECS::Task': {
+    label: 'ECS task',
+    category: 'COMPUTE',
+    discoveryApi: 'ecs:ListTasks -> DescribeTasks',
+    boundVia: 'DescribeTaskDefinition.taskRoleArn',
+  },
+  'AWS::ECS::FargateTask': {
+    label: 'Fargate task',
+    category: 'COMPUTE',
+    discoveryApi: 'ecs:ListTasks, launchType=FARGATE',
+    boundVia: 'DescribeTaskDefinition.taskRoleArn',
+  },
+  'AWS::EKS::Pod': {
+    label: 'EKS pod',
+    category: 'COMPUTE',
+    discoveryApi: 'eks:ListPodIdentityAssociations',
+    boundVia: 'RoleArn on the association, or the IRSA service-account annotation',
+  },
+  'AWS::AppRunner::Service': {
+    label: 'App Runner service',
+    category: 'COMPUTE',
+    discoveryApi: 'apprunner:ListServices -> DescribeService',
+    boundVia: 'InstanceConfiguration.InstanceRoleArn',
+  },
+  'AWS::Batch::Job': {
+    label: 'Batch job',
+    category: 'COMPUTE',
+    discoveryApi: 'batch:ListJobs -> DescribeJobs',
+    boundVia: 'jobDefinition -> jobRoleArn',
+  },
+  'AWS::StepFunctions::StateMachine': {
+    label: 'Step Functions state machine',
+    category: 'ORCHESTRATION',
+    discoveryApi: 'states:ListStateMachines',
+    boundVia: 'roleArn on the state machine',
+  },
+  'AWS::Events::Rule': {
+    label: 'EventBridge rule',
+    category: 'ORCHESTRATION',
+    discoveryApi: 'events:ListRules -> ListTargets',
+    boundVia: 'RoleArn on the target',
+  },
+  'AWS::CodeBuild::Project': {
+    label: 'CodeBuild project',
+    category: 'CICD',
+    discoveryApi: 'codebuild:ListProjects -> BatchGetProjects',
+    boundVia: 'ServiceRole field',
+  },
+  'AWS::CodePipeline::Pipeline': {
+    label: 'CodePipeline pipeline',
+    category: 'CICD',
+    discoveryApi: 'codepipeline:ListPipelines -> GetPipeline',
+    boundVia: 'Per-stage RoleArn',
+  },
+  'GitHub::Actions::WorkflowRun': {
+    label: 'GitHub Actions workflow',
+    category: 'CICD',
+    discoveryApi: 'iam:ListRoles, filtered on the GitHub OIDC trust principal',
+    boundVia: 'The role itself - the run is external, visible only through the OIDC sub condition',
+  },
+  'GitLab::CI::Job': {
+    label: 'GitLab CI job',
+    category: 'CICD',
+    discoveryApi: 'iam:ListRoles, filtered on the GitLab OIDC issuer',
+    boundVia: 'The role itself, matched by the OIDC sub condition',
+  },
+  'Terraform::Run': {
+    label: 'Terraform run',
+    category: 'CICD',
+    discoveryApi: 'Not discoverable from an AWS API - inferred from CloudTrail session names',
+    boundVia: 'The role assumed, correlated through CloudTrail',
+  },
+  'AWS::Bedrock::Agent': {
+    label: 'Bedrock agent',
+    category: 'AI_AGENT',
+    discoveryApi: 'bedrock:ListAgents -> GetAgent',
+    boundVia: 'agentResourceRoleArn',
+  },
+  'AWS::Bedrock::KnowledgeBase': {
+    label: 'Bedrock knowledge base',
+    category: 'AI_AGENT',
+    discoveryApi: 'bedrock:ListKnowledgeBases -> GetKnowledgeBase',
+    boundVia: 'roleArn',
+  },
+  'AWS::SageMaker::Endpoint': {
+    label: 'SageMaker endpoint',
+    category: 'AI_AGENT',
+    discoveryApi: 'sagemaker:ListEndpoints -> DescribeEndpointConfig',
+    boundVia: "The model's ExecutionRoleArn",
+  },
+  'AWS::SageMaker::NotebookInstance': {
+    label: 'SageMaker notebook',
+    category: 'AI_AGENT',
+    discoveryApi: 'sagemaker:ListNotebookInstances',
+    boundVia: 'RoleArn',
+  },
+  'AWS::Glue::JobRun': {
+    label: 'Glue job run',
+    category: 'DATA',
+    discoveryApi: 'glue:GetJobs -> GetJobRuns',
+    boundVia: 'Role field',
+  },
+  'AWS::EMR::Step': {
+    label: 'EMR step',
+    category: 'DATA',
+    discoveryApi: 'emr:ListClusters -> DescribeCluster',
+    boundVia: 'ServiceRole, and the EC2 fleet instance profile - two actors, not one',
+  },
+  'AWS::ApiGateway::Integration': {
+    label: 'API Gateway integration',
+    category: 'NETWORK',
+    discoveryApi: 'apigateway:GetRestApis -> GetIntegration',
+    boundVia: 'credentials field, per integration',
+  },
+  'External::SaaSVendor': {
+    label: 'SaaS vendor platform',
+    category: 'FEDERATED',
+    discoveryApi: 'iam:ListRoles, trust principal matched against known vendor account ids',
+    boundVia: "The role itself - the actor lives outside the account",
+  },
+  'AWS::IAM::User': {
+    label: 'IAM user as service account',
+    category: 'EXCEPTION',
+    discoveryApi: 'iam:ListUsers',
+    boundVia: 'None. The user is both actor and credential holder - the documented exception',
+  },
+  UNKNOWN: {
+    label: 'Unclassified actor',
+    category: 'UNKNOWN',
+    discoveryApi: 'Seen in CloudTrail, not resolved to a discoverable actor',
+    boundVia: 'The principal recorded on the event',
+  },
+};
+
+export function actorTypeMeta(key) {
+  return ACTOR_TYPES[key] ?? ACTOR_TYPES.UNKNOWN;
+}
+
+export const ACTOR_CATEGORIES = {
+  COMPUTE: 'Compute',
+  ORCHESTRATION: 'Serverless orchestration',
+  CICD: 'CI/CD pipeline',
+  AI_AGENT: 'AI and agents',
+  DATA: 'Data pipeline',
+  NETWORK: 'Networking and edge',
+  FEDERATED: 'Federated external',
+  EXCEPTION: 'Special case',
+  HUMAN: 'Person',
+  UNKNOWN: 'Unclassified',
+};
+
+/** A category label for a facet or a column heading. */
+export function actorCategoryMeta(key) {
+  const value = String(key || 'UNKNOWN').toUpperCase();
+  return { label: ACTOR_CATEGORIES[value] ?? 'Unclassified', key: value };
+}
+
+/** Category order for a facet, so the list does not reshuffle by count. */
+export const ACTOR_CATEGORY_ORDER = Object.keys(ACTOR_CATEGORIES);
+
 /* ── Severity / risk tier (credentials + code findings share this scale) ─── */
 
 export const SEVERITIES = {
@@ -105,6 +307,65 @@ export const OWNER_TYPES = {
 export function ownerTypeMeta(value) {
   const key = String(value || '').toUpperCase();
   return OWNER_TYPES[key] || { label: value ? String(value).replace(/_/g, ' ') : 'Unassigned', tone: 'neutral' };
+}
+
+/* ── Credential kinds (what an identity HOLDS) ───────────────────────────── */
+
+/**
+ * The kinds of credential an actor can hold.
+ *
+ * `ASSUMED_ROLE` leads the table because it is the correction this vocabulary
+ * makes: an IAM role is a credential, not an identity. It used to be reported
+ * as an identity's "type", which put a set of permissions in the inventory of
+ * things that act - and left the actual actor, the Lambda function or the EC2
+ * instance holding it, unlisted.
+ *
+ * `longLived` is the distinction that decides urgency. A role assumed through
+ * STS issues credentials that expire in an hour; an access key does not expire
+ * at all. Those are not the same risk, and sorting by age alone hides it.
+ */
+export const CREDENTIAL_KINDS = {
+  ASSUMED_ROLE: {
+    label: 'Assumed role',
+    longLived: false,
+    what: 'An IAM role the actor assumes through STS. The credentials it issues expire; the role itself does not rotate and has no expiry to track.',
+  },
+  ACCESS_KEY: {
+    label: 'Access key',
+    longLived: true,
+    what: 'A long-lived key pair. It never expires on its own, which is why age and last use are the two figures that matter for it.',
+  },
+  SECRET_MANAGER: {
+    label: 'Secrets Manager entry',
+    longLived: true,
+    what: 'Credential material held in Secrets Manager. Long-lived, but managed - a rotation schedule can be attached to it.',
+  },
+  SSM_PARAMETER: {
+    label: 'SSM parameter',
+    longLived: true,
+    what: 'A SecureString parameter read at start-up. Long-lived, and rotation is whatever the owning team built.',
+  },
+  OIDC_TRUST: {
+    label: 'OIDC trust',
+    longLived: false,
+    what: 'Federation, not a stored credential. Nothing to rotate - the risk lives in the trust policy condition, not in a secret.',
+  },
+  SERVICE_TOKEN: {
+    label: 'Service token',
+    longLived: true,
+    what: 'A token issued to a third-party integration. Long-lived unless the vendor rotates it, and usually invisible to AWS.',
+  },
+};
+
+export function credentialKindMeta(value) {
+  const key = String(value || '').toUpperCase();
+  return (
+    CREDENTIAL_KINDS[key] ?? {
+      label: key ? key.replace(/_/g, ' ').toLowerCase().replace(/^./, (c) => c.toUpperCase()) : 'Credential',
+      longLived: true,
+      what: 'A credential kind this dashboard does not have a description for.',
+    }
+  );
 }
 
 /* ── Posture signals ─────────────────────────────────────────────────────────
@@ -162,16 +423,6 @@ export const POSTURE_SIGNALS = [
     tone: 'medium',
     query: { is_inactive: 'true' },
     rationale: 'Dormant but not yet stale. Worth confirming they are still needed.',
-  },
-  {
-    key: 'secrets',
-    label: 'Secret-backed identities',
-    field: 'total_secrets',
-    denominator: 'total_identities',
-    denominatorLabel: 'of all identities',
-    tone: 'medium',
-    query: { is_secret: 'true' },
-    rationale: 'Identities whose credentials are held in a secret store entry.',
   },
   {
     key: 'federated',
@@ -240,14 +491,7 @@ export function findingLink(finding) {
    each screen.                                                              */
 
 /** Fields that never populate for CodeCommit, per the integration guide. */
-const GITHUB_ONLY_FIELDS = [
-  'additions',
-  'deletions',
-  'repo_visibility',
-  'repo_stars',
-  'repo_forks',
-  'repo_pushed_at',
-];
+const GITHUB_ONLY_FIELDS = ['additions', 'deletions', 'repo_stars', 'repo_forks', 'repo_pushed_at'];
 
 export function isGithubOnlyField(field) {
   return GITHUB_ONLY_FIELDS.includes(field);

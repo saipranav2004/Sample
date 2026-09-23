@@ -7,14 +7,22 @@
 /**
  * A finding's identity.
  *
- * The scanner has no id field - its own allowlist endpoints require all four
- * of these to identify a finding, which is the service telling us what the key
- * is. The grid was keying rows on `finding_id`, which the API never returns:
- * every row got `undefined`, React saw one duplicated key for the whole list,
- * and reconciliation fell back to index order. Selecting a row after a dismiss
- * could then open the neighbour.
+ * `finding_id` is the service's own unique id and the guide names it as the
+ * React list key, so it is used first. The four-field composite behind it is
+ * the fallback, and it is not arbitrary: those are exactly the four fields the
+ * allowlist endpoints require to identify a finding, which is the service
+ * telling us what a finding's identity is. It covers a row recorded before
+ * `finding_id` existed - without it those rows all key on `undefined`, React
+ * sees one duplicated key for the whole list, reconciliation falls back to
+ * index order, and selecting a row after a dismiss opens its neighbour.
+ *
+ * Allowlist writes still send the four fields (see `toAllowlistPayload`);
+ * `finding_id` is a read-side key, not an accepted request parameter.
  */
 export function findingKey(finding) {
+  if (finding?.finding_id !== undefined && finding?.finding_id !== null) {
+    return `id:${finding.finding_id}`;
+  }
   return [finding?.client_id, finding?.file_path, finding?.detector, finding?.redacted].join('|');
 }
 
@@ -42,7 +50,14 @@ export function describeScannerError(error) {
   };
 }
 
-/** Counts by risk tier, platform and repository - the guide's own recipe. */
+/**
+ * Counts by risk tier, platform and repository - the guide's own recipe.
+ *
+ * `CRITICAL` is counted but the screens do not give it a tile of its own: the
+ * service cannot currently emit it, so a tile for it would be a permanent
+ * zero. Counted anyway, because the day it starts emitting one the number has
+ * to appear somewhere rather than be silently dropped.
+ */
 export function summariseFindings(findings = []) {
   const byTier = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0 };
   const byPlatform = { github: 0, codecommit: 0 };
@@ -93,4 +108,112 @@ export function groupByPush(findings = []) {
     groups.get(key).findings.push(finding);
   }
   return [...groups.values()];
+}
+
+/* ── Deep scan (endpoints 5 and 6) ────────────────────────────────────────── */
+
+/**
+ * How often to poll `GET /api/deep-scan-status`.
+ *
+ * Five seconds, which is the interval the integration guide states the
+ * service's own dashboard uses. There is no push notification for a deep
+ * scan, so polling is the only mechanism available.
+ */
+export const DEEP_SCAN_POLL_MS = 5000;
+
+export const DEEP_SCAN_STATES = {
+  not_started: {
+    label: 'Not started',
+    tone: 'neutral',
+    description: 'No deep scan has ever been requested for this repository.',
+  },
+  running: {
+    label: 'Running',
+    tone: 'info',
+    description: 'Walking every commit from the first one to HEAD.',
+  },
+  complete: {
+    label: 'Complete',
+    tone: 'low',
+    description: 'The whole history has been read. Any secret it found is in the live set.',
+  },
+  failed: {
+    label: 'Failed',
+    tone: 'critical',
+    description: 'The walk itself raised. Requesting it again starts a fresh attempt.',
+  },
+};
+
+export function deepScanStateMeta(value) {
+  const key = String(value || 'not_started').toLowerCase();
+  return (
+    DEEP_SCAN_STATES[key] ?? {
+      label: value ? String(value) : 'Unknown',
+      tone: 'neutral',
+      description: 'The service reported a state this dashboard does not recognise.',
+    }
+  );
+}
+
+/**
+ * What went wrong with a deep scan, in words an operator can act on.
+ *
+ * `error` from the service is the raw exception message. The guide is explicit
+ * that it is fine for an operator and not something to put in front of an end
+ * user as-is, so it is shown under a heading that says what it is rather than
+ * as the page's own error text - and the two commonest causes are named,
+ * because the raw string does not say what to do about either.
+ */
+export function describeDeepScanFailure(status) {
+  const raw = String(status?.error || '');
+  if (/AccessDenied|UnauthorizedOperation|not authorized/i.test(raw)) {
+    return {
+      cause: 'The scanner is missing an IAM permission on this repository.',
+      fix: 'Re-check the read permissions granted to the scanner role, then request the scan again.',
+      raw,
+    };
+  }
+  if (/installation|revoked|404|Not Found|credentials/i.test(raw)) {
+    return {
+      cause: 'The GitHub installation for this client looks revoked or removed.',
+      fix: 'Re-install the app for this organisation, then request the scan again.',
+      raw,
+    };
+  }
+  return {
+    cause: 'The history walk raised before it finished.',
+    fix: 'Requesting it again starts a fresh attempt and clears this error.',
+    raw,
+  };
+}
+
+/**
+ * What a request to start a deep scan failed on.
+ *
+ * Every status the guide documents means something different to the person
+ * looking at the screen, and one of them is safe to simply retry.
+ */
+export function describeDeepScanRequestError(error) {
+  const status = error?.status;
+  const message = error?.response?.data?.error || error?.message || '';
+  if (status === 404) {
+    return { title: 'Unknown client', message: `The scanner has no record of this client id. ${message}`.trim(), retryable: false };
+  }
+  if (status === 400) {
+    return {
+      title: 'The service refused the request',
+      message:
+        message ||
+        'Either the repository is not one this client has onboarded, or it was given in the wrong shape - a bare name for CodeCommit, owner/repo for GitHub.',
+      retryable: false,
+    };
+  }
+  if (status === 502) {
+    return {
+      title: 'The backend for this client was unreachable',
+      message: 'CodeCommit and GitHub are separate services behind the scanner, and the one owning this client did not answer. This is safe to retry.',
+      retryable: true,
+    };
+  }
+  return { title: 'Could not start the deep scan', message: message || 'The scanner returned an unexpected error.', retryable: true };
 }

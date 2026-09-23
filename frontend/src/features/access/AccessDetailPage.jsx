@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Download, ExternalLink, Route, ShieldCheck, Waypoints } from 'lucide-react';
+import { ArrowLeft, Download, ExternalLink, ShieldCheck } from 'lucide-react';
 import {
   EDGE_KINDS,
   NODE_KINDS,
@@ -9,7 +9,7 @@ import {
 } from '../../lib/demo/accessGraph';
 import { useDemoQuery } from '../../lib/demo/useDemoQuery';
 import { exportRowsToCsv, timestampedName } from '../../lib/csv';
-import { classificationMeta, severityMeta } from '../../lib/domain';
+import { actorTypeMeta, classificationMeta } from '../../lib/domain';
 import { formatNumber } from '../../lib/format';
 import { PageHeader } from '../../shell/PageHeader';
 import { Button } from '../../ui/Button';
@@ -41,7 +41,6 @@ const TABS = [
   { value: 'access', label: 'Effective access' },
   { value: 'routes', label: 'Routes in and out' },
   { value: 'escalations', label: 'Escalations' },
-  { value: 'paths', label: 'Paths' },
 ];
 
 export default function AccessDetailPage() {
@@ -164,7 +163,9 @@ export default function AccessDetailPage() {
                 Administrator equivalent
               </Tag>
             )}
-            <span className="text-[11.5px] text-ink-3">{identity.identityType}</span>
+            <span className="text-[11.5px] text-ink-3">
+              {actorTypeMeta(identity.identityType).label}
+            </span>
           </div>
         }
       />
@@ -197,10 +198,14 @@ export default function AccessDetailPage() {
           style={{ '--stagger': 2 }}
         />
         <MetricTile
-          label="Paths through it"
-          value={data.paths.length}
+          label="Identities it can become"
+          value={radius.identitiesReached}
           tone="info"
-          caption={data.paths.length > 0 ? 'It is a pivot, not only a target' : 'No known path runs through it'}
+          caption={
+            radius.adminReached > 0
+              ? `${formatNumber(radius.adminReached)} of them administrator equivalent`
+              : 'None of them administrator equivalent'
+          }
           className="animate-rise"
           data-stagger=""
           style={{ '--stagger': 3 }}
@@ -347,46 +352,6 @@ export default function AccessDetailPage() {
           </div>
         )}
 
-        {tab === 'paths' && (
-          <div className="flex flex-col gap-2.5 p-4">
-            {data.paths.length === 0 ? (
-              <EmptyState
-                icon={Waypoints}
-                title="No path runs through this identity"
-                description="It is not currently reachable from any entry point the graph knows about."
-              />
-            ) : (
-              data.paths.map((path, index) => {
-                const meta = severityMeta(path.severity);
-                return (
-                  <Link
-                    key={path.id}
-                    to={`/access-graph?path=${encodeURIComponent(path.id)}`}
-                    className="animate-rise flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-[var(--radius-control)] border border-line bg-surface-2 p-3 hover:border-line-strong"
-                    data-stagger=""
-                    style={{ '--stagger': Math.min(index, 4) }}
-                  >
-                    <Route aria-hidden="true" className="size-4 shrink-0 text-ink-3" />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[13px] font-medium text-ink">
-                        {path.entryName} → {path.targetName}
-                      </span>
-                      <span className="mt-0.5 block truncate text-[11.5px] text-ink-3">
-                        {path.steps.map((step) => step.toName).join(' → ')}
-                      </span>
-                    </span>
-                    <Tag tone={meta.tone} size="sm" dot>
-                      {meta.label}
-                    </Tag>
-                    <span className="shrink-0 text-[11.5px] text-ink-3">
-                      {path.hops} hop{path.hops === 1 ? '' : 's'}
-                    </span>
-                  </Link>
-                );
-              })
-            )}
-          </div>
-        )}
       </Panel>
 
       <Modal

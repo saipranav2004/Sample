@@ -14,19 +14,18 @@ import LoginPage from '../features/auth/LoginPage';
 const PosturePage = lazy(() => import('../features/posture/PosturePage'));
 const IdentitiesPage = lazy(() => import('../features/identities/IdentitiesPage'));
 const CredentialsPage = lazy(() => import('../features/credentials/CredentialsPage'));
-const SecretsPage = lazy(() => import('../features/secrets/SecretsPage'));
 const FindingsPage = lazy(() => import('../features/exposure/FindingsPage'));
 const DismissedPage = lazy(() => import('../features/exposure/DismissedPage'));
 const ActivityPage = lazy(() => import('../features/activity/ActivityPage'));
 // Out of this build - see the note in `shell/navigation.js`.
 // const ScansPage = lazy(() => import('../features/scans/ScansPage'));
-const MyResourcesPage = lazy(() => import('../features/account/MyResourcesPage'));
 const AccessGraphPage = lazy(() => import('../features/access/AccessGraphPage'));
 const AccessDetailPage = lazy(() => import('../features/access/AccessDetailPage'));
 const GenomePage = lazy(() => import('../features/genome/GenomePage'));
 const GenomeDetailPage = lazy(() => import('../features/genome/GenomeDetailPage'));
 const ReportsPage = lazy(() => import('../features/reports/ReportsPage'));
 const ReportViewPage = lazy(() => import('../features/reports/ReportViewPage'));
+const IntegrationsPage = lazy(() => import('../features/integrations/IntegrationsPage'));
 const NotFoundPage = lazy(() => import('../features/NotFoundPage'));
 
 export default function App() {
@@ -68,14 +67,6 @@ export default function App() {
                   element={
                     <Suspense fallback={<RouteFallback />}>
                       <CredentialsPage />
-                    </Suspense>
-                  }
-                />
-                <Route
-                  path="/secrets"
-                  element={
-                    <Suspense fallback={<RouteFallback />}>
-                      <SecretsPage />
                     </Suspense>
                   }
                 />
@@ -160,10 +151,10 @@ export default function App() {
                   }
                 />
                 <Route
-                  path="/my-resources"
+                  path="/integrations"
                   element={
                     <Suspense fallback={<RouteFallback />}>
-                      <MyResourcesPage />
+                      <IntegrationsPage />
                     </Suspense>
                   }
                 />

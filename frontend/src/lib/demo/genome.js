@@ -10,6 +10,7 @@ import {
   writeOverlay,
 } from './runtime';
 import { estate as sharedEstate } from './estate';
+import { actorTypeMeta } from '../domain';
 import { formatDate } from '../format';
 
 /**
@@ -85,50 +86,51 @@ let cache = null;
  *
  * The genome screen talks about runtimes - a Lambda function, an EKS pod, a
  * CI/CD runner - because a baseline is a statement about how a *workload*
- * behaves. The estate classifies by purpose. The name carries the runtime for
- * the ephemeral and CI/CD ones, which is exactly where the distinction
- * matters, so it is read off the name rather than guessed.
+ * behaves. It used to guess that from the identity's name, with a fallback
+ * table that answered "IAM role" for anything it could not place: a role is
+ * not a runtime, and "how does an IAM role normally behave" is not a question
+ * with an answer.
+ *
+ * The estate now records the actor type directly, so this reads it. The actor
+ * type is the runtime - an EC2 instance, a Glue job run, a Bedrock agent - and
+ * its category is what decides which peer group the baseline is compared
+ * against.
  */
-const RUNTIME_BY_PREFIX = {
-  'eks-pod': { kind: 'EKS pod (IRSA)', category: 'Compute' },
-  'lambda-exec': { kind: 'Lambda function', category: 'Serverless' },
-  'batch-job': { kind: 'Batch job', category: 'Compute' },
-  'fargate-task': { kind: 'ECS task role', category: 'Compute' },
-  'glue-job': { kind: 'Glue job', category: 'Data' },
-  'emr-step': { kind: 'EMR step', category: 'Data' },
-  gha: { kind: 'GitHub Actions', category: 'CI/CD' },
-  codebuild: { kind: 'CodeBuild project', category: 'CI/CD' },
-  codepipeline: { kind: 'CodePipeline stage', category: 'CI/CD' },
-  jenkins: { kind: 'Jenkins agent', category: 'CI/CD' },
-  argocd: { kind: 'Argo CD', category: 'CI/CD' },
-  terraform: { kind: 'Terraform runner', category: 'CI/CD' },
-};
-
-const RUNTIME_BY_CLASSIFICATION = {
-  NHI_SERVICE: { kind: 'IAM role', category: 'Compute' },
-  NHI_AGENT: { kind: 'Bedrock agent', category: 'AI agent' },
-  NHI_SAAS: { kind: 'External integration', category: 'Third party' },
-  NHI_CICD: { kind: 'GitHub Actions', category: 'CI/CD' },
-  NHI_EPHEMERAL: { kind: 'Step Functions', category: 'Serverless' },
-  DUAL_IDENTITY: { kind: 'IAM access key', category: 'Static credential' },
-  UNCLASSIFIED: { kind: 'IAM role', category: 'Compute' },
+const PEER_CATEGORY_BY_ACTOR_CATEGORY = {
+  COMPUTE: 'Compute',
+  ORCHESTRATION: 'Serverless',
+  CICD: 'CI/CD',
+  DATA: 'Data',
+  AI_AGENT: 'AI agent',
+  FEDERATED: 'Third party',
+  NETWORK: 'Compute',
+  /* A dual identity is an IAM user used as a service account, so what it holds
+     - a static key - is the thing its peers share. */
+  EXCEPTION: 'Static credential',
+  UNKNOWN: 'Compute',
+  HUMAN: 'Compute',
 };
 
 function runtimeFor(row) {
-  for (const [prefix, runtime] of Object.entries(RUNTIME_BY_PREFIX)) {
-    if (row.name.startsWith(`${prefix}-`)) return runtime;
-  }
-  return RUNTIME_BY_CLASSIFICATION[row.classification] ?? RUNTIME_BY_CLASSIFICATION.UNCLASSIFIED;
+  const meta = actorTypeMeta(row.identity_type);
+  return {
+    kind: meta.label,
+    category: PEER_CATEGORY_BY_ACTOR_CATEGORY[meta.category] ?? 'Compute',
+  };
 }
 
+/* Peer-group names describe the workloads, not the roles they assume: a
+   baseline compares a Lambda function against other Lambda functions, and
+   calling that group "execution roles" put the credential's name on a group
+   of actors. */
 const PEER_GROUP_BY_CATEGORY = {
-  Compute: 'Compute workload roles',
-  Serverless: 'Serverless execution roles',
-  'CI/CD': 'CI/CD deploy identities',
+  Compute: 'Compute workloads',
+  Serverless: 'Serverless orchestration',
+  'CI/CD': 'CI/CD pipelines',
   Data: 'Data pipeline jobs',
-  'AI agent': 'Agent identities',
+  'AI agent': 'Agents and inference',
   'Third party': 'Third-party integrations',
-  'Static credential': 'Key-holding identities',
+  'Static credential': 'Static key holders',
 };
 
 function buildFleet() {

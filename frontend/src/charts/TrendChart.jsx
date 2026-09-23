@@ -14,7 +14,7 @@ import { cn } from '../ui/cn';
 /**
  * One measure over the sequence of completed scans.
  *
- * Deliberately one series per chart: identities, events and secrets differ by
+ * Deliberately one series per chart: identities, events and credentials differ by
  * orders of magnitude, and a shared axis would flatten two of them while a
  * second axis would invite false comparisons. Small multiples instead.
  */

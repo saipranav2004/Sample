@@ -26,6 +26,7 @@
  */
 
 import { hashSeed, intBetween, pick, rng, sample } from './runtime';
+import { actorTypeMeta } from '../domain';
 
 /** Held under 250 on purpose: a demonstration estate a person can read. */
 const TOTAL_IDENTITIES = 228;
@@ -95,7 +96,7 @@ const PEOPLE = [
 export const OPERATOR = {
   user: 'cirm@admin',
   name: 'Admin',
-  email: 'das.admin@deepalgorithms.io',
+  email: 'das.admin@gmail.com',
   // team: 'Security Engineering',
   role: 'Security administrator',
 };
@@ -155,16 +156,97 @@ const SAAS_VENDORS = [
 ];
 const EPHEMERAL_HOSTS = ['eks-pod', 'lambda-exec', 'batch-job', 'fargate-task', 'glue-job', 'emr-step'];
 
-const IDENTITY_TYPES = {
-  HUMAN: 'IAM_USER',
-  NHI_SERVICE: 'IAM_ROLE',
-  NHI_AGENT: 'IAM_ROLE',
-  NHI_CICD: 'IAM_ROLE',
-  NHI_SAAS: 'IAM_ROLE',
-  NHI_EPHEMERAL: 'IAM_ROLE',
-  DUAL_IDENTITY: 'IAM_USER',
-  UNCLASSIFIED: 'IAM_ROLE',
+/** Candidate actor types per classification, in the proportions they occur. */
+const ACTOR_POOL = {
+  NHI_SERVICE: [
+    'AWS::Lambda::Function',
+    'AWS::Lambda::Function',
+    'AWS::ECS::Task',
+    'AWS::EC2::Instance',
+    'AWS::ApiGateway::Integration',
+    'AWS::AppRunner::Service',
+    'AWS::StepFunctions::StateMachine',
+  ],
+  NHI_AGENT: [
+    'AWS::Bedrock::Agent',
+    'AWS::Bedrock::KnowledgeBase',
+    'AWS::SageMaker::Endpoint',
+    'AWS::SageMaker::NotebookInstance',
+  ],
+  NHI_CICD: [
+    'AWS::CodeBuild::Project',
+    'AWS::CodePipeline::Pipeline',
+    'GitHub::Actions::WorkflowRun',
+    'GitLab::CI::Job',
+    'Terraform::Run',
+  ],
+  NHI_SAAS: ['External::SaaSVendor'],
+  UNCLASSIFIED: ['UNKNOWN'],
 };
+
+/**
+ * Ephemeral actors take their type from their own name.
+ *
+ * The name stems already say what the workload is - `eks-pod-...`,
+ * `glue-job-...` - so deriving the type from the stem keeps the name and the
+ * type from contradicting each other, which a random draw would let happen.
+ */
+const EPHEMERAL_ACTOR_TYPES = {
+  'eks-pod': 'AWS::EKS::Pod',
+  'lambda-exec': 'AWS::Lambda::Function',
+  'batch-job': 'AWS::Batch::Job',
+  'fargate-task': 'AWS::ECS::FargateTask',
+  'glue-job': 'AWS::Glue::JobRun',
+  'emr-step': 'AWS::EMR::Step',
+};
+
+function actorTypeFor(next, classification, name) {
+  if (classification === 'NHI_EPHEMERAL') {
+    const stem = Object.keys(EPHEMERAL_ACTOR_TYPES).find((key) => name.startsWith(key));
+    return stem ? EPHEMERAL_ACTOR_TYPES[stem] : 'AWS::Lambda::Function';
+  }
+  /* A dual identity is the documented exception: a human account that is also
+     used as a service account, so the user IS the actor. */
+  if (classification === 'DUAL_IDENTITY') return 'AWS::IAM::User';
+  const pool = ACTOR_POOL[classification];
+  return pool ? pick(next, pool) : 'UNKNOWN';
+}
+
+/**
+ * The actor's own resource id, in the shape its service uses.
+ *
+ * Not the role name. An EC2 instance is `i-0a1b2c3d4e5f6a7b8`; the role it
+ * assumes has a name somebody chose. Showing the role name as the actor's id
+ * is how two instances on one role end up looking like one thing.
+ */
+function actorIdFor(actorType, name, seed) {
+  const own = rng(hashSeed(`actor:${name}`));
+  const hex = (length) => {
+    let out = '';
+    for (let i = 0; i < length; i += 1) out += '0123456789abcdef'[Math.floor(own() * 16)];
+    return out;
+  };
+  switch (actorType) {
+    case 'AWS::EC2::Instance':
+      return `i-0${hex(16)}`;
+    case 'AWS::ECS::Task':
+    case 'AWS::ECS::FargateTask':
+      return `task/${hex(32)}`;
+    case 'AWS::EKS::Pod':
+      return `${name}-${hex(5)}`;
+    case 'AWS::Batch::Job':
+      return `${hex(8)}-${hex(4)}-${hex(4)}`;
+    case 'AWS::Glue::JobRun':
+      return `jr_${hex(24)}`;
+    case 'AWS::EMR::Step':
+      return `s-${hex(13).toUpperCase()}`;
+    case 'GitHub::Actions::WorkflowRun':
+    case 'GitLab::CI::Job':
+      return `${name}@${seed}`;
+    default:
+      return name;
+  }
+}
 
 /**
  * How the estate is composed. NHI classifications carry the weight because
@@ -250,6 +332,15 @@ const POLICY_NAMES = [
   'PowerUserAccess',
 ];
 
+/**
+ * What counts as a credential.
+ *
+ * `ASSUMED_ROLE` leads the list because it is the correction: an IAM role is
+ * a credential an actor assumes, not an identity of its own, so every
+ * non-human actor in this estate contributes one row here for the role it
+ * holds. It is not drawn from this pool at random - it is generated once per
+ * actor, deterministically, because the relationship is one-to-one.
+ */
 const CREDENTIAL_TYPES = ['ACCESS_KEY', 'SECRET_MANAGER', 'SSM_PARAMETER', 'OIDC_TRUST', 'SERVICE_TOKEN'];
 
 /* ── Generation ───────────────────────────────────────────────────────────── */
@@ -321,7 +412,15 @@ function buildIdentities() {
       arn: `arn:aws:iam::${account.id}:user/${name}`,
       name,
       classification: 'HUMAN',
-      identity_type: 'IAM_USER',
+      /* A person is the actor. The IAM user is both the actor and the
+         credential holder here, which is why `principal_type` and the actor
+         agree for a human and diverge for everything else. */
+      identity_type: 'AWS::IAM::User',
+      actor_category: 'HUMAN',
+      actor_id: name,
+      discovery_api: 'iam:ListUsers',
+      principal_type: 'IAM_USER',
+      principal_arn: `arn:aws:iam::${account.id}:user/${name}`,
       account_id: account.id,
       account_name: account.name,
       env: account.env,
@@ -360,6 +459,10 @@ function buildIdentities() {
   for (const classification of plan) {
     const account = pick(next, ACCOUNTS);
     const name = nameFor(next, classification, used);
+    /* The actor first, then the role it assumes - in that order, because the
+       actor is the identity and the role is what it holds. */
+    const actorType = actorTypeFor(next, classification, name);
+    const actorMeta = actorTypeMeta(actorType);
     const ownerType = pick(next, OWNER_TYPES);
     const orphaned = ownerType === 'ORPHANED';
     const creator = pick(next, humans);
@@ -391,12 +494,32 @@ function buildIdentities() {
     const isSecret = classification === 'NHI_SAAS' ? next() > 0.3 : next() > 0.72;
     const federated = classification === 'NHI_CICD' || classification === 'NHI_SAAS' ? next() > 0.25 : next() > 0.85;
 
+    /* A dual identity is an IAM user acting as a service account, so its
+       principal is a user rather than a role - the one case where the actor
+       and the credential really are the same object. */
+    const isUserPrincipal = classification === 'DUAL_IDENTITY';
+    const principalArn = isUserPrincipal
+      ? `arn:aws:iam::${account.id}:user/${name}`
+      : `arn:aws:iam::${account.id}:role/${name}`;
+
     identities.push({
       id: `id-${account.id}-${name}`,
-      arn: `arn:aws:iam::${account.id}:role/${name}`,
+      /* Still the principal ARN, because that is what AWS evaluates
+         authorization against and what CloudTrail records - so it stays the
+         join key across events, credentials and the graph. The actor is
+         described by the four fields under it. */
+      arn: principalArn,
       name,
       classification,
-      identity_type: IDENTITY_TYPES[classification],
+      identity_type: actorType,
+      actor_category: actorMeta.category,
+      actor_id: actorIdFor(actorType, name, account.id),
+      discovery_api: actorMeta.discoveryApi,
+      /* What the actor holds. An IAM role is a credential, not an identity -
+         it appears in the credential inventory as an ASSUMED_ROLE row. */
+      principal_type: isUserPrincipal ? 'IAM_USER' : 'IAM_ROLE',
+      principal_arn: principalArn,
+      bound_via: actorMeta.boundVia,
       account_id: account.id,
       account_name: account.name,
       env: account.env,
@@ -488,6 +611,46 @@ function buildCredentials(identities) {
 
   for (const identity of identities) {
     const own = rng(hashSeed(`cred:${identity.arn}`));
+
+    /* The role the actor assumes, as a credential row.
+       This is where the IAM roles that used to be listed as identities live
+       now. An actor holds exactly one principal, so this is one row per
+       non-human actor - and its age and last use are the actor's, because a
+       role's own age says nothing about whether anybody is using it.
+       Skipped for humans and dual identities: their principal is an IAM user,
+       which is the documented exception where the actor and the credential are
+       the same object, so a separate row would double-count it. */
+    if (identity.principal_type === 'IAM_ROLE') {
+      const roleStale = identity.last_active_days > 90;
+      credentials.push({
+        id: `cred-${serial}`,
+        cred_id: identity.name,
+        type: 'ASSUMED_ROLE',
+        identity_arn: identity.arn,
+        identity_name: identity.name,
+        identity_type: identity.identity_type,
+        identity_classification: identity.classification,
+        account_id: identity.account_id,
+        account_name: identity.account_name,
+        /* An administrator-equivalent role nothing has assumed for months is
+           the worst row in this inventory: full permissions, nobody watching,
+           and no rotation event that would ever draw attention to it. */
+        severity: identity.is_admin && roleStale ? 'CRITICAL' : identity.is_admin ? 'HIGH' : roleStale ? 'MEDIUM' : 'LOW',
+        status: roleStale ? 'UNUSED' : 'ACTIVE',
+        created_at: identity.created_at,
+        age_days: Math.max(1, Math.round((NOW - Date.parse(identity.created_at)) / DAY)),
+        /* A role does not expire. Stating null rather than a date keeps the
+           Credentials screen from implying a rotation deadline that does not
+           exist for this type. */
+        expires_at: null,
+        last_used_date: identity.last_active,
+        last_used_days: identity.last_active_days,
+        last_used_service: 'sts.amazonaws.com',
+        description: `IAM role assumed by ${actorTypeMeta(identity.identity_type).label} ${identity.actor_id}. Resolved from ${identity.bound_via}.`,
+      });
+      serial += 1;
+    }
+
     /* Humans hold at most one key; machines hold what their trust model
        implies, and a federated identity often holds none at all - which is the
        point of federating it. */
@@ -618,7 +781,7 @@ function buildRelationships(identities) {
         target_arn: identity.arn,
         caller_arn: caller.arn,
         caller_name: caller.name,
-        caller_type: caller.classification === 'HUMAN' ? 'IAM_USER' : 'IAM_ROLE',
+        caller_type: caller.identity_type,
         rel_type: 'ASSUME_ROLE',
         via: `sts:AssumeRole from ${caller.name}`,
         is_external: false,
@@ -707,28 +870,34 @@ function buildEvents(identities) {
   return events;
 }
 
-function buildSecretEntries(identities, credentials) {
+/**
+ * Secret-store metadata, attached to the credential it describes.
+ *
+ * It used to be a separate list with a screen of its own, which put the same
+ * fact in two places: "this credential lives in Secrets Manager" is a property
+ * of the credential, not a different kind of object. A credential is either
+ * held in a managed store or it is not, and the Credentials screen is where
+ * that is answered.
+ */
+function attachSecretStores(identities, credentials) {
   const byArn = new Map(identities.map((row) => [row.arn, row]));
-  return credentials
-    .filter((credential) => credential.type === 'SECRET_MANAGER' || credential.type === 'SSM_PARAMETER')
-    .map((credential) => {
-      const identity = byArn.get(credential.identity_arn);
-      const own = rng(hashSeed(`sec:${credential.id}`));
-      return {
-        id: `secret-${credential.id}`,
-        secret_arn:
-          credential.type === 'SECRET_MANAGER'
-            ? `arn:aws:secretsmanager:${identity.region}:${identity.account_id}:secret:${identity.name}-${String(hashSeed(credential.id)).slice(0, 6)}`
-            : `arn:aws:ssm:${identity.region}:${identity.account_id}:parameter/${identity.env}/${identity.name}`,
-        secret_name: credential.type === 'SECRET_MANAGER' ? `${identity.env}/${identity.name}` : `/${identity.env}/${identity.name}`,
-        store: credential.type === 'SECRET_MANAGER' ? 'Secrets Manager' : 'Parameter Store',
-        rotation_enabled: own() > 0.42,
-        rotation_days: own() > 0.42 ? pick(own, [30, 60, 90]) : null,
-        last_rotated: credential.created_at,
-        credential_id: credential.id,
-        ...identity,
-      };
-    });
+  for (const credential of credentials) {
+    if (credential.type !== 'SECRET_MANAGER' && credential.type !== 'SSM_PARAMETER') continue;
+    const identity = byArn.get(credential.identity_arn);
+    if (!identity) continue;
+    const own = rng(hashSeed(`sec:${credential.id}`));
+    const rotates = own() > 0.42;
+    credential.store = credential.type === 'SECRET_MANAGER' ? 'Secrets Manager' : 'Parameter Store';
+    credential.store_arn =
+      credential.type === 'SECRET_MANAGER'
+        ? `arn:aws:secretsmanager:${identity.region}:${identity.account_id}:secret:${identity.name}-${String(hashSeed(credential.id)).slice(0, 6)}`
+        : `arn:aws:ssm:${identity.region}:${identity.account_id}:parameter/${identity.env}/${identity.name}`;
+    credential.store_name =
+      credential.type === 'SECRET_MANAGER' ? `${identity.env}/${identity.name}` : `/${identity.env}/${identity.name}`;
+    credential.rotation_enabled = rotates;
+    credential.rotation_days = rotates ? pick(own, [30, 60, 90]) : null;
+    credential.last_rotated = credential.created_at;
+  }
 }
 
 /** The whole estate, built once. */
@@ -737,6 +906,7 @@ export function estate() {
 
   const identities = buildIdentities();
   const credentials = buildCredentials(identities);
+  attachSecretStores(identities, credentials);
   const { edges, consumersOf } = buildRelationships(identities);
   const events = buildEvents(identities);
 
@@ -777,7 +947,11 @@ export function estate() {
       (row.is_admin ? 4 : 0) +
       (row.owner_type === 'ORPHANED' ? 3 : 0) +
       (row.last_active_days > 90 ? 2 : 0) +
-      (row.is_secret ? 1 : 0);
+      /* A long-lived key, not a managed-store entry. A credential kept in
+         Secrets Manager with a rotation schedule is the good case; it used to
+         add weight here, which put the better-managed identities at the top of
+         somebody's queue. */
+      (row.access_key_count > 0 ? 1 : 0);
     return weight(b) - weight(a) || a.name.localeCompare(b.name);
   });
   for (const [index, identity] of assignable.entries()) {
@@ -787,7 +961,6 @@ export function estate() {
     identity.assigned_at = daysAgo(intBetween(rng(hashSeed(`assign:${identity.arn}`)), 1, 45));
   }
 
-  const secrets = buildSecretEntries(identities, credentials);
 
   cache = {
     accounts: ACCOUNTS,
@@ -798,7 +971,6 @@ export function estate() {
     edges,
     consumersOf,
     events,
-    secrets,
     byArn: new Map(identities.map((row) => [row.arn, row])),
   };
   return cache;

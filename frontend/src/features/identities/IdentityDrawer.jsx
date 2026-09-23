@@ -14,7 +14,10 @@ import { fetchConsumers, fetchEvents, fetchLineage } from '../../lib/api/endpoin
 import { useQuery } from '../../lib/hooks';
 import { useScanContext } from '../../app/ScanContext';
 import {
+  actorCategoryMeta,
+  actorTypeMeta,
   classificationMeta,
+  credentialKindMeta,
   lineageDirectionMeta,
   ownerTypeMeta,
   severityMeta,
@@ -99,7 +102,11 @@ export function IdentityDrawer({ identity, open, onClose }) {
       subtitle={<CopyableValue value={arn} />}
       header={
         <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-          {identity.identity_type && <Tag tone="neutral" size="sm">{titleCaseEnum(identity.identity_type)}</Tag>}
+          {identity.identity_type && (
+            <Tag tone="neutral" size="sm">
+              {actorTypeMeta(identity.identity_type).label}
+            </Tag>
+          )}
           {identity.is_admin && (
             <Tag tone="critical" size="sm" icon={ShieldAlert}>
               Admin access
@@ -110,7 +117,6 @@ export function IdentityDrawer({ identity, open, onClose }) {
               {identity.mfa_enabled ? 'MFA enabled' : 'MFA disabled'}
             </Tag>
           )}
-          {identity.is_secret && <Tag tone="medium" size="sm">Secret-backed</Tag>}
           {identity.trust_type && (
             <Tag tone="info" size="sm" icon={Globe}>
               {titleCaseEnum(identity.trust_type)}
@@ -135,9 +141,36 @@ export function IdentityDrawer({ identity, open, onClose }) {
               <DetailRow label="AWS account" mono>
                 {arnAccount(identity.arn)}
               </DetailRow>
-              <DetailRow label="Resource type">
-                {identity.identity_type ? titleCaseEnum(identity.identity_type) : '-'}
+              {/* What this identity IS. The row used to read "Resource type:
+                  IAM role", which named the credential rather than the actor -
+                  and an IAM role is not a thing that acts, it is a set of
+                  permissions that something else assumes. The four rows below
+                  say what acts, which instance of it, how it was found, and
+                  what it holds. */}
+              <DetailRow label="Actor type">
+                {actorTypeMeta(identity.identity_type).label}
               </DetailRow>
+              {identity.actor_id && identity.actor_id !== identity.name && (
+                <DetailRow label="Actor id" mono>
+                  <CopyableValue value={identity.actor_id} />
+                </DetailRow>
+              )}
+              <DetailRow label="Actor category">
+                {actorCategoryMeta(identity.actor_category).label}
+              </DetailRow>
+              {identity.discovery_api && (
+                <DetailRow label="Discovered by" mono>
+                  {identity.discovery_api}
+                </DetailRow>
+              )}
+              <DetailRow label="Holds">
+                {identity.principal_type === 'IAM_USER'
+                  ? 'An IAM user - this actor is both the thing that acts and the credential holder.'
+                  : 'An IAM role, listed on the Credentials screen as the credential it assumes.'}
+              </DetailRow>
+              {identity.bound_via && identity.principal_type === 'IAM_ROLE' && (
+                <DetailRow label="Role resolved from">{identity.bound_via}</DetailRow>
+              )}
               <DetailRow label="Classification">{meta.label}</DetailRow>
               <DetailRow label="Created">{formatDateTime(identity.created_at)}</DetailRow>
               <DetailRow label="Discovered">{formatDateTime(identity.discovered_at)}</DetailRow>
@@ -263,7 +296,7 @@ export function IdentityDrawer({ identity, open, onClose }) {
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="text-[13px] font-semibold text-ink">
-                        {credential.type ? titleCaseEnum(credential.type) : 'Credential'}
+                        {credentialKindMeta(credential.type).label}
                       </p>
                       <div className="flex items-center gap-1.5">
                         {credential.status && (
@@ -356,7 +389,7 @@ export function IdentityDrawer({ identity, open, onClose }) {
                         {row.target_name || '-'}
                       </span>
                       <span className="block truncate text-[11px] text-ink-3">
-                        {row.target_type ? titleCaseEnum(row.target_type) : '-'}
+                        {row.target_type ? actorTypeMeta(row.target_type).label : '-'}
                       </span>
                     </span>
                   ),
@@ -444,7 +477,7 @@ export function IdentityDrawer({ identity, open, onClose }) {
                           {row.caller_arn || '-'}
                         </span>
                         <span className="block truncate text-[11px] text-ink-3">
-                          {row.caller_type ? titleCaseEnum(row.caller_type) : '-'}
+                          {row.caller_type ? actorTypeMeta(row.caller_type).label : '-'}
                         </span>
                       </span>
                     ),

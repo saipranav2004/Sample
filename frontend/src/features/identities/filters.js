@@ -1,3 +1,5 @@
+import { ACTOR_CATEGORIES, ACTOR_CATEGORY_ORDER, actorTypeMeta } from '../../lib/domain';
+
 /**
  * Identity explorer filters.
  *
@@ -40,13 +42,6 @@ export const FACETS = [
     hint: 'Dormant but not yet stale',
   },
   {
-    param: 'is_secret',
-    label: 'Secret-backed',
-    tone: 'medium',
-    summaryField: 'total_secrets',
-    hint: 'Credentials stored in a secret store entry',
-  },
-  {
     param: 'has_credentials',
     label: 'Holds credentials',
     tone: 'info',
@@ -61,6 +56,19 @@ export const FACETS = [
   },
 ];
 
+/**
+ * Actor category, as a facet.
+ *
+ * This is the filter that replaced "identity type", which used to offer
+ * IAM_ROLE and IAM_USER - two credential kinds, not two kinds of identity. A
+ * category here is what the actor IS: compute, a pipeline, an agent, a data
+ * job, a vendor platform outside the account.
+ */
+export const ACTOR_CATEGORY_OPTIONS = ACTOR_CATEGORY_ORDER.map((value) => ({
+  value,
+  label: ACTOR_CATEGORIES[value],
+}));
+
 export const OWNER_TYPE_OPTIONS = [
   { value: 'HUMAN', label: 'Human owner' },
   { value: 'NHI_CICD', label: 'CI/CD managed' },
@@ -72,6 +80,7 @@ export const OWNER_TYPE_OPTIONS = [
 export const FILTER_PARAMS = [
   'search',
   'classification',
+  'actor_category',
   'identity_type',
   'owner_type',
   ...FACETS.map((facet) => facet.param),
@@ -82,6 +91,7 @@ export function readFilters(searchParams) {
   const filters = {
     search: searchParams.get('search') || '',
     classification: searchParams.get('classification') || '',
+    actorCategory: searchParams.get('actor_category') || '',
     identityType: searchParams.get('identity_type') || '',
     ownerType: searchParams.get('owner_type') || '',
     page: Number(searchParams.get('page')) || 1,
@@ -109,8 +119,15 @@ export function describeFilters(searchParams) {
   const classification = searchParams.get('classification');
   if (classification) chips.push({ key: 'classification', label: 'Class', value: classification });
 
+  const actorCategory = searchParams.get('actor_category');
+  if (actorCategory) {
+    chips.push({ key: 'actor_category', label: 'Actor', value: ACTOR_CATEGORIES[actorCategory] || actorCategory });
+  }
+
   const identityType = searchParams.get('identity_type');
-  if (identityType) chips.push({ key: 'identity_type', label: 'Type', value: identityType });
+  if (identityType) {
+    chips.push({ key: 'identity_type', label: 'Actor type', value: actorTypeMeta(identityType).label });
+  }
 
   const ownerType = searchParams.get('owner_type');
   if (ownerType) {

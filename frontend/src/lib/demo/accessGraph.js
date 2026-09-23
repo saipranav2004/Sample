@@ -13,7 +13,8 @@ import { demoRequest, hashSeed, intBetween, pick, rng, sample } from './runtime'
  * policy document. The node and edge vocabulary here follows the established
  * ones rather than being invented:
  *
- *   Nodes    account, identity (role/user), federated principal, service
+ *   Nodes    account, identity (the actor, plus the principal it assumes),
+ *            federated principal, service
  *            principal, credential, policy, resource - the taxonomy
  *            Cartography's AWS schema uses (AWSAccount, AWSPrincipal, AWSRole,
  *            AWSUser, AWSFederatedPrincipal, AWSServicePrincipal,
@@ -31,18 +32,13 @@ import { demoRequest, hashSeed, intBetween, pick, rng, sample } from './runtime'
  *   (Rhino Security Labs' catalogue, the same set PMapper's `preset privesc`
  *   checks), with the real permission combination attached. See ESCALATIONS.
  *
- * An attack path is entry point -> pivots -> target, the structure attack path
- * analysis has settled on, and is scored by what it reaches rather than by how
- * many steps it takes: a two-hop path to a crown-jewel data store outranks a
- * five-hop path to a log bucket.
- *
- * A choke point is an edge that appears in many paths. It is the only figure
- * on the screen that tells an operator what to do first, because cutting one
- * choke point closes every path through it - which is a different and much
- * shorter list than "fix these 40 findings".
+ * Blast radius is the figure the screen is built around: what one identity's
+ * own policies grant (direct), against what it ends up with after assuming
+ * everything it can assume (effective). The gap between the two is the entire
+ * argument for reading IAM as a graph rather than as a list of policies.
  *
  * ── Where the data comes from ───────────────────────────────────────────────
- * There is no graph endpoint. The nodes, edges, paths and blast radii here are
+ * There is no graph endpoint. The nodes, edges and blast radii here are
  * generated in the browser, deterministically, under the same suspension
  * `lib/demo/runtime.js` documents for the other two features - and contained
  * the same way: nothing outside `features/access` imports this module.
@@ -54,7 +50,7 @@ import { demoRequest, hashSeed, intBetween, pick, rng, sample } from './runtime'
  * `/api/credentials` model - so a node here and a row on the Identities or
  * Credentials screen are the same thing described twice, and both screens are
  * reachable from the graph by search. When a real graph endpoint arrives, the
- * selectors at the bottom are what change.
+ * fetchers at the bottom are what change.
  */
 
 /* ── Vocabulary ───────────────────────────────────────────────────────────── */
@@ -83,7 +79,8 @@ export const NODE_KINDS = {
     label: 'Identity',
     plural: 'Identities',
     tone: 'brand',
-    description: 'An IAM role or user inside the account. The same identities the Identities screen lists.',
+    description:
+      'Something inside the account that acts - a function, a task, a pipeline, an agent - together with the IAM principal it assumes. The same identities the Identities screen lists.',
   },
   service: {
     label: 'Service principal',
@@ -191,28 +188,6 @@ export const EDGE_KINDS = {
     description: 'Control of the resource itself, including its policy - which means control of who else can reach it.',
   },
 };
-
-/** The three levels the graph is read at. */
-export const GRAPH_LEVELS = [
-  {
-    value: 'accounts',
-    label: 'Accounts',
-    title: 'Trust between accounts',
-    lede: 'Where the zone of trust is crossed. An edge here is a role in one account that another account can assume.',
-  },
-  {
-    value: 'identities',
-    label: 'Identities',
-    title: 'Reachability between identities',
-    lede: 'Who can become whom. Assume-role, pass-role and escalation edges, from the entry points inward.',
-  },
-  {
-    value: 'resources',
-    label: 'Resources',
-    title: 'Effective access to resources',
-    lede: 'What the reachable identities can act on, and at what level. This is the blast radius, drawn.',
-  },
-];
 
 /**
  * Documented privilege escalation methods.
@@ -353,10 +328,19 @@ export const ESCALATIONS = [
 export const GRAPH_INPUTS = [
   {
     key: 'principals',
-    label: 'Identities',
+    label: 'Principals',
     source: 'iam:ListRoles, ListUsers, ListGroups',
-    gives: 'The principal nodes.',
+    gives: 'The set of things permissions can be attached to.',
     without: 'No nodes.',
+    covered: true,
+    from: 'Credentials',
+  },
+  {
+    key: 'actors',
+    label: 'Actors',
+    source: 'ec2:DescribeInstances, lambda:ListFunctions, ecs:ListTasks, codebuild:ListProjects, bedrock:ListAgents, and the rest',
+    gives: 'Who is using each principal. A role with nothing assuming it is an unused credential, not a dormant identity.',
+    without: 'A graph of roles rather than a graph of identities - two functions sharing one role collapse into one node.',
     covered: true,
     from: 'Identities',
   },
@@ -382,7 +366,7 @@ export const GRAPH_INPUTS = [
     label: 'Trust policies',
     source: 'The AssumeRolePolicyDocument on each role',
     gives: 'Who can become whom, including federated, service and cross-account principals.',
-    without: 'No entry points, so no attack paths.',
+    without: 'No entry points, and no way to tell an external principal from an internal one.',
     covered: true,
   },
   {
@@ -438,7 +422,7 @@ export const GRAPH_INPUTS = [
     label: 'SCPs and permission boundaries',
     source: 'organizations:ListPolicies, the PermissionsBoundary on each principal',
     gives: 'The cap. A granted permission an SCP denies is not a real edge.',
-    without: 'False positives: paths the account would already refuse.',
+    without: 'False positives: edges the account would already refuse.',
     covered: false,
     note: 'Not yet collected, so an edge here is what the identity and resource policies allow, before any organisation-level deny is applied.',
   },
@@ -483,10 +467,9 @@ const REGIONS = [...new Set(sharedEstate().identities.map((row) => row.region))]
 /**
  * How many of the estate's 228 identities the graph is built over.
  *
- * Not all of them: an all-pairs reachability analysis over 228 principals
- * produces tens of thousands of paths, and the screen shows one focus and its
- * first hop. This is enough for the analysis to be interesting and small
- * enough that it stays instant.
+ * Not all of them: a reachability analysis over 228 principals is far more
+ * graph than one focus and its first hop can show. This is enough for the
+ * analysis to be interesting and small enough that it stays instant.
  */
 const GRAPH_IDENTITY_BUDGET = 64;
 
@@ -639,7 +622,10 @@ function buildGraph() {
     .sort((a, b) => {
       const weight = (row) =>
         (row.is_admin ? 5 : 0) +
-        (row.is_secret ? 2 : 0) +
+        /* A long-lived key, not a managed-store entry: a credential in a
+           rotating store is the safer arrangement, and weighting it as risk
+           pulled the better-managed identities into the graph first. */
+        (row.access_key_count > 0 ? 2 : 0) +
         (row.owner_type === 'ORPHANED' ? 2 : 0) +
         (row.consumer_count ?? 0) / 4 +
         (row.classification === 'HUMAN' ? 1 : 0);
@@ -671,7 +657,6 @@ function buildGraph() {
       ownerName: row.owner_name,
       ownerType: row.owner_type,
       createdByName: row.created_by_name,
-      isSecret: row.is_secret,
       isFederated: row.is_federated,
       trustService: row.trust_service,
       region: row.region,
@@ -1024,7 +1009,6 @@ function buildGraph() {
 
   cached = { nodes, edges, byId, accounts: ACCOUNTS, identities, resources, credentials, policies, entries };
   cached.adjacency = buildAdjacency(nodes, edges);
-  cached.paths = buildPaths(cached);
   return cached;
 }
 
@@ -1054,147 +1038,6 @@ const TRAVERSAL_KINDS = new Set([
 
 /** Edges that represent access to something rather than movement. */
 const ACCESS_KINDS = new Set(['CAN_READ', 'CAN_WRITE', 'CAN_ADMIN']);
-
-/**
- * Attack paths: entry point, pivots, target.
- *
- * Breadth-first from each entry, bounded at five hops - beyond that a path
- * stops being something anyone will act on. A path is kept only if it ends
- * somewhere that matters: an admin-equivalent identity, or write/admin access
- * to a crown-jewel resource. Everything else is reachability, not a finding.
- */
-function buildPaths(graph) {
-  const { adjacency, byId, entries } = graph;
-  const found = [];
-
-  for (const entry of entries) {
-    const queue = [{ node: entry.id, trail: [] }];
-    const seen = new Set([entry.id]);
-
-    while (queue.length > 0) {
-      const { node, trail } = queue.shift();
-      if (trail.length >= 5) continue;
-
-      for (const edge of adjacency.out.get(node) ?? []) {
-        const target = byId.get(edge.to);
-        if (!target) continue;
-        const nextTrail = [...trail, edge];
-
-        if (ACCESS_KINDS.has(edge.kind)) {
-          if (target.crownJewel && (edge.kind === 'CAN_WRITE' || edge.kind === 'CAN_ADMIN')) {
-            found.push(makePath(graph, entry, nextTrail, target));
-          }
-          continue;
-        }
-
-        if (!TRAVERSAL_KINDS.has(edge.kind)) continue;
-
-        if (target.kind === 'identity' && target.isAdmin) {
-          found.push(makePath(graph, entry, nextTrail, target));
-        }
-
-        if (!seen.has(edge.to)) {
-          seen.add(edge.to);
-          queue.push({ node: edge.to, trail: nextTrail });
-        }
-      }
-    }
-  }
-
-  /* Deduplicate by the edge chain, then rank. */
-  const unique = new Map();
-  for (const path of found) {
-    if (!unique.has(path.id)) unique.set(path.id, path);
-  }
-  const ranked = [...unique.values()].sort((a, b) => b.score - a.score || a.hops - b.hops);
-
-  /* Capped, because nobody works a list of 300 - but capped per target kind
-     rather than off the top of one ranking. Admin-equivalent paths outscore
-     data paths, so a single cut would have reported "every path leads to an
-     admin role" and quietly dropped every path to a customer table. */
-  const toIdentities = ranked.filter((path) => path.targetKind === 'identity').slice(0, 20);
-  const toResources = ranked.filter((path) => path.targetKind === 'resource').slice(0, 16);
-  return [...toIdentities, ...toResources].sort((a, b) => b.score - a.score || a.hops - b.hops);
-}
-
-function makePath(graph, entry, trail, target) {
-  const { byId } = graph;
-  const id = `path-${entry.id}-${trail.map((edge) => edge.id).join('|')}`;
-  const nodeIds = [entry.id, ...trail.map((edge) => edge.to)];
-  const escalations = trail.filter((edge) => edge.kind === 'ESCALATES_TO');
-  const crossAccount = trail.filter((edge) => edge.crossAccount).length;
-
-  const lastEdge = trail[trail.length - 1];
-  const reachesAdmin = target.kind === 'identity' && Boolean(target.isAdmin);
-  const controlsCrownJewel = Boolean(target.crownJewel) && lastEdge?.kind === 'CAN_ADMIN';
-  const writesCrownJewel = Boolean(target.crownJewel) && lastEdge?.kind === 'CAN_WRITE';
-
-  /* Severity comes from what the path reaches, and score only orders the list.
-     Keeping them apart matters: a score is a number somebody tuned, whereas
-     "this ends in administrator-equivalent access through an escalation nobody
-     granted" is a statement about the environment that does not move when the
-     weights change.
-
-       CRITICAL  admin-equivalent by a route nobody intended (an escalation or
-                 a crossed account boundary), or control of a crown jewel -
-                 control includes the resource policy, so it includes who else
-                 gets in.
-       HIGH      admin-equivalent by a granted route, or write to a crown jewel.
-       MEDIUM    anything else that still ends somewhere that matters.          */
-  const severity =
-    (reachesAdmin && (escalations.length > 0 || crossAccount > 0)) || controlsCrownJewel
-      ? 'CRITICAL'
-      : reachesAdmin || writesCrownJewel
-        ? 'HIGH'
-        : 'MEDIUM';
-
-  /* The ordering number. Impact first, then how little work the path takes,
-     because two paths of equal impact are not equally urgent. */
-  let score = 30;
-  if (reachesAdmin) score += 30;
-  if (controlsCrownJewel) score += 34;
-  else if (writesCrownJewel) score += 24;
-  else if (target.crownJewel) score += 14;
-  score += Math.min(16, escalations.length * 8);
-  score += Math.min(12, crossAccount * 6);
-  if (entry.vector === 'credential') score += 6;
-  score -= (trail.length - 1) * 3;
-  score = Math.max(12, Math.min(99, score));
-
-  return {
-    id,
-    entryId: entry.id,
-    entryName: entry.name,
-    entryVector: entry.vector,
-    targetId: target.id,
-    targetName: target.name,
-    targetKind: target.kind,
-    targetAccountId: target.accountId ?? '',
-    targetAccountName: target.accountName ?? '',
-    targetEnv: target.env ?? '',
-    targetCrownJewel: Boolean(target.crownJewel),
-    targetAdmin: Boolean(target.kind === 'identity' && target.isAdmin),
-    nodeIds,
-    edgeIds: trail.map((edge) => edge.id),
-    hops: trail.length,
-    escalationCount: escalations.length,
-    crossAccountCount: crossAccount,
-    score,
-    severity,
-    reachesAdmin,
-    controlsCrownJewel,
-    steps: trail.map((edge) => ({
-      edgeId: edge.id,
-      kind: edge.kind,
-      method: edge.method ?? null,
-      detail: edge.detail ?? null,
-      fromName: byId.get(edge.from)?.name ?? edge.from,
-      fromKind: byId.get(edge.from)?.kind ?? null,
-      toName: byId.get(edge.to)?.name ?? edge.to,
-      toKind: byId.get(edge.to)?.kind ?? null,
-    })),
-  };
-}
 
 /* ── Blast radius ─────────────────────────────────────────────────────────── */
 
@@ -1228,10 +1071,16 @@ export function blastRadius(identityId) {
       if (edge.kind === 'ESCALATES_TO') escalationHops += 1;
       if (edge.crossAccount) crossAccountHops += 1;
       const target = byId.get(edge.to);
-      if (target?.kind === 'identity') {
-        reachedIdentities.add(target.id);
-        queue.push(target.id);
-      }
+      if (!target) continue;
+      /* Walk through whatever the edge leads to, and count only identities.
+         Stopping the walk at anything that was not an identity meant a reach
+         computed from an entry point was always zero: an entry point's first
+         hop is the federated principal it represents, so the search reached
+         that, declined to continue, and reported that nothing was reachable
+         from outside the account at all. Only traversal edges are followed,
+         so this cannot wander into resources or policies. */
+      if (target.kind === 'identity') reachedIdentities.add(target.id);
+      queue.push(target.id);
     }
   }
 
@@ -1286,167 +1135,7 @@ export function blastRadius(identityId) {
       .filter((edge) => edge.kind === 'HAS_CREDENTIAL' && edge.to === identityId)
       .map((edge) => byId.get(edge.from))
       .filter(Boolean),
-    pathsThrough: graph.paths.filter((path) => path.nodeIds.includes(identityId)),
   };
-}
-
-/* ── Level projections ────────────────────────────────────────────────────── */
-
-/**
- * The graph at one of three levels.
- *
- * A single 200-node picture is a hairball nobody reads, so each level answers
- * one question with only the nodes that question needs: which accounts trust
- * each other, who can become whom, and what the reachable identities can act
- * on. Every level is laid out in tiers, left to right, because an access graph
- * has a direction - outside to inside - and a force-directed blob throws that
- * away.
- */
-function projectAccounts(graph) {
-  const nodes = graph.nodes.filter((node) => node.kind === 'account');
-  const edgeMap = new Map();
-
-  for (const edge of graph.edges) {
-    if (edge.kind !== 'ASSUME_ROLE' || !edge.crossAccount) continue;
-    const from = graph.byId.get(edge.from);
-    const to = graph.byId.get(edge.to);
-    if (!from?.accountId || !to?.accountId) continue;
-    const key = `${from.accountId}->${to.accountId}`;
-    const existing = edgeMap.get(key) ?? {
-      id: `acct-edge-${key}`,
-      from: `acct-${from.accountId}`,
-      to: `acct-${to.accountId}`,
-      kind: 'ASSUME_ROLE',
-      count: 0,
-      samples: [],
-    };
-    existing.count += 1;
-    if (existing.samples.length < 4) existing.samples.push({ from: from.name, to: to.name });
-    edgeMap.set(key, existing);
-  }
-
-  const externalNodes = graph.nodes.filter((node) => node.kind === 'federated');
-  const externalEdges = [];
-  for (const fed of externalNodes) {
-    const accounts = new Set();
-    for (const edge of graph.adjacency.out.get(fed.id) ?? []) {
-      const target = graph.byId.get(edge.to);
-      if (target?.accountId) accounts.add(target.accountId);
-    }
-    for (const accountId of accounts) {
-      externalEdges.push({
-        id: `fed-edge-${fed.id}-${accountId}`,
-        from: fed.id,
-        to: `acct-${accountId}`,
-        kind: 'TRUSTS',
-        count: 1,
-      });
-    }
-  }
-
-  return {
-    nodes: [...externalNodes, ...nodes],
-    edges: [...externalEdges, ...edgeMap.values()],
-    /* Tier layering: the five accounts are peers. Laying them out by hop
-       distance would chain them into a hierarchy that does not exist just
-       because one can assume a role in another. */
-    layering: 'tiers',
-    tiers: [
-      { key: 'outside', label: 'Outside the zone of trust', kinds: ['federated'] },
-      { key: 'accounts', label: 'Accounts', kinds: ['account'] },
-    ],
-  };
-}
-
-function projectIdentities(graph, { accountId = '', focusPathId = '' } = {}) {
-  const inPaths = new Set();
-  for (const path of graph.paths) {
-    for (const id of path.nodeIds) inPaths.add(id);
-  }
-
-  const focus = focusPathId ? graph.paths.find((path) => path.id === focusPathId) : null;
-  const keep = new Set(focus ? focus.nodeIds : inPaths);
-
-  const nodes = graph.nodes.filter((node) => {
-    if (!keep.has(node.id)) return false;
-    if (node.kind === 'resource' || node.kind === 'policy') return false;
-    if (accountId && node.accountId && node.accountId !== accountId) return false;
-    return true;
-  });
-  const ids = new Set(nodes.map((node) => node.id));
-  const edges = graph.edges.filter(
-    (edge) => ids.has(edge.from) && ids.has(edge.to) && TRAVERSAL_KINDS.has(edge.kind),
-  );
-
-  return {
-    nodes,
-    edges,
-    /* Depth layering: a column here is a hop count, which is what an operator
-       is counting when they ask how far in something is. */
-    layering: 'depth',
-    tiers: [
-      { key: 'entry', label: 'Entry', kinds: ['entry'] },
-      { key: 'outside', label: 'Outside', kinds: ['federated', 'service'] },
-      { key: 'credential', label: 'Credentials', kinds: ['credential'] },
-      { key: 'identity', label: 'Identities', kinds: ['identity'] },
-    ],
-  };
-}
-
-function projectResources(graph, { identityId = '', accountId = '' } = {}) {
-  /* Defaults to the identity with the widest effective access rather than
-     whichever one happens to lead the path list: this level exists to show a
-     blast radius, so it should open on the largest one. */
-  const seedId = identityId || widestRadiusIdentity(graph);
-  if (!seedId) return { nodes: [], edges: [], tiers: [] };
-
-  const radius = blastRadius(seedId);
-  const identity = graph.byId.get(seedId);
-  const reachedIds = new Set([seedId, ...radius.effective.rows.map((row) => row.viaIdentityId)]);
-
-  const identityNodes = [...reachedIds].map((id) => graph.byId.get(id)).filter(Boolean);
-  const resourceNodes = radius.effective.rows
-    .filter((row) => !accountId || row.resource.accountId === accountId)
-    .map((row) => row.resource);
-
-  const nodes = [...identityNodes, ...dedupe(resourceNodes)];
-  const ids = new Set(nodes.map((node) => node.id));
-  const edges = graph.edges.filter(
-    (edge) =>
-      ids.has(edge.from) &&
-      ids.has(edge.to) &&
-      (ACCESS_KINDS.has(edge.kind) || edge.kind === 'ASSUME_ROLE' || edge.kind === 'ESCALATES_TO'),
-  );
-
-  return {
-    nodes,
-    edges,
-    focusId: seedId,
-    focusName: identity?.name,
-    layering: 'depth',
-    tiers: [
-      { key: 'identity', label: 'Identities', kinds: ['identity'] },
-      { key: 'resource', label: 'Resources', kinds: ['resource'] },
-    ],
-  };
-}
-
-function widestRadiusIdentity(graph) {
-  let best = null;
-  let bestTotal = -1;
-  for (const identity of graph.identities) {
-    const total = blastRadius(identity.id).effective.total;
-    if (total > bestTotal) {
-      bestTotal = total;
-      best = identity.id;
-    }
-  }
-  return best;
-}
-
-function dedupe(list) {
-  const seen = new Set();
-  return list.filter((item) => (seen.has(item.id) ? false : (seen.add(item.id), true)));
 }
 
 /* ── Degree of interest, and expansion ───────────────────────────────────── */
@@ -1470,13 +1159,11 @@ export const REVEAL_STEP = 2;
  * Ranked by what an analyst is looking for rather than alphabetically, so the
  * three that survive the budget are the three that would have been clicked.
  * An administrator-equivalent identity outranks an ordinary one; a crown jewel
- * outranks a log group; anything on a critical path outranks everything else,
- * because that is the reason this screen was opened.
+ * outranks a log group; an entry point outranks everything else, because a
+ * node reachable from outside the account is where an analyst starts.
  */
-function interestOf(node, context) {
+function interestOf(node) {
   let score = 10;
-  if (context.criticalNodeIds.has(node.id)) score += 50;
-  if (context.pathNodeIds.has(node.id)) score += 18;
   if (node.kind === 'entry') score += 40;
   if (node.isAdmin) score += 30;
   if (node.crownJewel) score += 22;
@@ -1510,16 +1197,6 @@ export function fetchNeighbourhood({ focusId, expanded = [], revealed = {} } = {
       error.status = 404;
       throw error;
     }
-
-    const criticalNodeIds = new Set();
-    const pathNodeIds = new Set();
-    for (const path of graph.paths) {
-      for (const id of path.nodeIds) {
-        pathNodeIds.add(id);
-        if (path.severity === 'CRITICAL') criticalNodeIds.add(id);
-      }
-    }
-    const context = { criticalNodeIds, pathNodeIds };
 
     const openSet = new Set([focus.id, ...expanded]);
     const depth = new Map([[focus.id, 0]]);
@@ -1573,7 +1250,7 @@ export function fetchNeighbourhood({ focusId, expanded = [], revealed = {} } = {
       }
 
       const ranked = [...byNeighbour.values()].sort(
-        (a, b) => interestOf(b.node, context) - interestOf(a.node, context) ||
+        (a, b) => interestOf(b.node) - interestOf(a.node) ||
           String(a.node.name).localeCompare(String(b.node.name)),
       );
 
@@ -1625,9 +1302,7 @@ export function fetchNeighbourhood({ focusId, expanded = [], revealed = {} } = {
         expanded: openSet.has(node.id),
         neighbourCount: neighbourIds.size,
         unseenCount: unseen,
-        onCriticalPath: criticalNodeIds.has(node.id),
-        onPath: pathNodeIds.has(node.id),
-        interest: interestOf(node, context),
+        interest: interestOf(node),
       };
     });
 
@@ -1669,34 +1344,29 @@ function summariseHidden(nodes) {
 /**
  * Where the graph opens.
  *
- * On the entry point that leads to the most critical paths, because that is
- * the node an analyst would have searched for. Falling back to the widest
- * blast radius when no path reaches anything.
+ * On the entry point whose reach is widest - the node outside the account that
+ * ends up with the most identities behind it. That is the node an analyst
+ * would have searched for, and it is read from the graph's own edges rather
+ * than from a precomputed list.
  */
 function defaultFocusId(graph) {
-  const counts = new Map();
-  for (const path of graph.paths) {
-    if (path.severity !== 'CRITICAL') continue;
-    counts.set(path.entryId, (counts.get(path.entryId) ?? 0) + 1);
+  let best = null;
+  let bestReach = -1;
+  for (const entry of graph.entries) {
+    const reach = blastRadius(entry.id);
+    const score = reach.adminReached * 10 + reach.identitiesReached;
+    if (score > bestReach) {
+      bestReach = score;
+      best = entry.id;
+    }
   }
-  const best = [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
-  return best ? best[0] : (graph.entries[0]?.id ?? graph.identities[0]?.id);
+  return best ?? graph.entries[0]?.id ?? graph.identities[0]?.id;
 }
 
 /** Nodes worth offering as a starting point, ranked the same way. */
 export function fetchFocusOptions(signal) {
   return demoRequest(() => {
     const graph = buildGraph();
-    const criticalNodeIds = new Set();
-    const pathNodeIds = new Set();
-    for (const path of graph.paths) {
-      for (const id of path.nodeIds) {
-        pathNodeIds.add(id);
-        if (path.severity === 'CRITICAL') criticalNodeIds.add(id);
-      }
-    }
-    const context = { criticalNodeIds, pathNodeIds };
-
     const rows = [...graph.entries, ...graph.identities, ...graph.resources]
       .map((node) => ({
         id: node.id,
@@ -1705,79 +1375,12 @@ export function fetchFocusOptions(signal) {
         accountName: node.accountName,
         isAdmin: Boolean(node.isAdmin),
         crownJewel: Boolean(node.crownJewel),
-        interest: interestOf(node, context),
+        interest: interestOf(node),
       }))
       .sort((a, b) => b.interest - a.interest || a.name.localeCompare(b.name));
 
     return { rows, defaultId: defaultFocusId(graph) };
   }, { signal, latency: [120, 240] });
-}
-
-/* ── Selectors ────────────────────────────────────────────────────────────── */
-
-export function fetchGraphSummary(signal) {
-  return demoRequest(() => {
-    const graph = buildGraph();
-
-    return {
-      totals: {
-        principals: graph.identities.length + graph.nodes.filter((n) => n.kind === 'federated' || n.kind === 'service').length,
-        identities: graph.identities.length,
-        admins: graph.identities.filter((identity) => identity.isAdmin).length,
-        accounts: graph.accounts.length,
-        resources: graph.resources.length,
-        crownJewels: graph.resources.filter((resource) => resource.crownJewel).length,
-        credentials: graph.credentials.length,
-        staleCredentials: graph.credentials.filter((credential) => credential.stale && credential.longLived).length,
-        edges: graph.edges.length,
-        escalationEdges: graph.edges.filter((edge) => edge.kind === 'ESCALATES_TO').length,
-        crossAccountEdges: graph.edges.filter((edge) => edge.crossAccount).length,
-        externalTrusts: graph.edges.filter((edge) => edge.kind === 'TRUSTS' && edge.external).length,
-        paths: graph.paths.length,
-        criticalPaths: graph.paths.filter((path) => path.severity === 'CRITICAL').length,
-      },
-      byKind: Object.keys(NODE_KINDS).map((kind) => ({
-        key: kind,
-        label: NODE_KINDS[kind].plural,
-        count: graph.nodes.filter((node) => node.kind === kind).length,
-      })),
-      accounts: graph.accounts.map((account) => ({
-        ...account,
-        identities: graph.identities.filter((identity) => identity.accountId === account.id).length,
-        resources: graph.resources.filter((resource) => resource.accountId === account.id).length,
-        admins: graph.identities.filter((identity) => identity.accountId === account.id && identity.isAdmin).length,
-      })),
-    };
-  }, { signal, latency: [200, 420] });
-}
-
-export function fetchGraphLevel({ level = 'identities', accountId = '', identityId = '', pathId = '' } = {}, signal) {
-  return demoRequest(() => {
-    const graph = buildGraph();
-    if (level === 'accounts') return { level, ...projectAccounts(graph) };
-    if (level === 'resources') return { level, ...projectResources(graph, { identityId, accountId }) };
-    return { level, ...projectIdentities(graph, { accountId, focusPathId: pathId }) };
-  }, { signal, latency: [220, 480] });
-}
-
-export function fetchAttackPaths({ severity = '', vector = '', search = '' } = {}, signal) {
-  return demoRequest(() => {
-    const graph = buildGraph();
-    const needle = search.trim().toLowerCase();
-
-    const rows = graph.paths
-      .filter((path) => {
-        if (severity && path.severity !== severity) return false;
-        if (vector && path.entryVector !== vector) return false;
-        if (!needle) return true;
-        return [path.entryName, path.targetName, ...path.steps.map((step) => `${step.fromName} ${step.toName}`)]
-          .join(' ')
-          .toLowerCase()
-          .includes(needle);
-      });
-
-    return { rows, total: graph.paths.length };
-  }, { signal, latency: [180, 400] });
 }
 
 /**
@@ -1976,34 +1579,24 @@ export function fetchNode(nodeId, signal) {
        same principal behaves. */
     const behaviour = node.kind === 'identity' ? behaviourFor(node.id) : null;
 
-    const through = graph.paths.filter((path) => path.nodeIds.includes(nodeId));
-
-    /* Reach, for a node that has no policies of its own.
+    /* Reach, for a node that holds no policies of its own.
        An entry point cannot have a blast radius in the permission sense - it
-       holds no permissions - but "what does an attacker get from here" is the
-       question somebody opens an entry point to ask, and it was the one figure
-       the panel did not answer. It is derived from the paths that start here,
-       which is the same analysis the findings below are grouped from. */
-    const starting = through.filter((path) => path.entryId === nodeId);
-    const source = starting.length > 0 ? starting : through;
-    const reach =
-      node.kind === 'identity'
-        ? null
-        : {
-            paths: source.length,
-            identities: new Set(
-              source.flatMap((path) =>
-                path.nodeIds.filter((id) => graph.byId.get(id)?.kind === 'identity'),
-              ),
-            ).size,
-            admins: new Set(source.filter((path) => path.reachesAdmin).map((path) => path.targetId)).size,
-            crownJewels: new Set(
-              source.filter((path) => path.targetCrownJewel).map((path) => path.targetId),
-            ).size,
-            accounts: new Set(source.map((path) => path.targetAccountId).filter(Boolean)).size,
-            shortestHops: source.length > 0 ? Math.min(...source.map((path) => path.hops)) : 0,
-            fromHere: starting.length > 0,
-          };
+       grants nothing - but "what does somebody arriving here end up with" is
+       the question an entry point is opened to ask. It is the same traversal
+       the blast radius walks, run from this node: assume-role, pass-role,
+       trust and escalation edges followed outward, then the access those
+       identities hold. Read from the graph's edges, so it agrees with what is
+       drawn on the canvas. */
+    const outwardReach = node.kind === 'identity' ? null : blastRadius(nodeId);
+    const reach = outwardReach
+      ? {
+          identities: outwardReach.identitiesReached,
+          admins: outwardReach.adminReached,
+          crownJewels: outwardReach.effective.crownJewels,
+          accounts: outwardReach.effective.accounts,
+          resources: outwardReach.effective.total,
+        }
+      : null;
 
     return {
       node,
@@ -2015,7 +1608,6 @@ export function fetchNode(nodeId, signal) {
       credentials: heldCredentials,
       trustedBy,
       behaviour,
-      paths: through,
     };
   }, { signal, latency: [160, 360] });
 }
@@ -2041,7 +1633,6 @@ export function fetchIdentityAccess(identityId, signal) {
           ...describeEdge(graph, edge, 'out'),
           method: ESCALATIONS.find((entry) => entry.key === edge.method) ?? null,
         })),
-      paths: radius.pathsThrough,
     };
   }, { signal, latency: [200, 420] });
 }
@@ -2105,199 +1696,4 @@ export function preventionDocument(escalationKey, identity) {
     null,
     2,
   ).concat(identity ? `\n\n/* Attach as a permission boundary on ${identity} */` : '');
-}
-
-/* ── Findings ─────────────────────────────────────────────────────────────── */
-
-/**
- * Attack paths, grouped into findings.
- *
- * The previous version listed every path it found. Twenty-six rows reading
- * "Unconditioned OIDC trust -> something" is a query result, not a piece of
- * analysis: the reader has to notice for themselves that eight of them are the
- * same mistake made eight times, and nothing on the row says what to do about
- * it.
- *
- * Every enterprise tool that does this well groups first and counts second -
- * Rapid7 lists an attack path by name with an instance count, BloodHound calls
- * the group a finding and quantifies it as exposure and impact. The group is
- * the unit of work, because one fix closes all of its instances.
- *
- * Two kinds of group, because there are two kinds of cause:
- *
- *   TECHNIQUE  the path works because of a documented privilege-escalation
- *              method. The permission combination is the cause and scoping it
- *              is the fix, so the finding carries both.
- *   GRANT      nothing was escalated; the access was granted. The fix is the
- *              grant itself, so the finding names what was reached rather than
- *              a technique.
- */
-function findingKeyFor(path) {
-  const escalation = path.steps.find((step) => step.kind === 'ESCALATES_TO' && step.method);
-  if (escalation) return { kind: 'technique', key: `technique:${escalation.method}` };
-  if (path.controlsCrownJewel) return { kind: 'grant', key: 'grant:crown-jewel-admin' };
-  if (path.targetCrownJewel) return { kind: 'grant', key: 'grant:crown-jewel-write' };
-  if (path.reachesAdmin && path.crossAccountCount > 0) return { kind: 'grant', key: 'grant:cross-account-admin' };
-  if (path.reachesAdmin) return { kind: 'grant', key: 'grant:admin' };
-  return { kind: 'grant', key: 'grant:other' };
-}
-
-const GRANT_FINDINGS = {
-  'grant:crown-jewel-admin': {
-    title: 'Control of a crown jewel, including its resource policy',
-    via: 'The identity at the end of these paths can change the resource policy on a resource marked as a crown jewel, which decides who else gets in.',
-    prevention:
-      'Move the resource policy out of reach of the workload identity. Policy changes on a crown jewel belong to a break-glass role with an approval step, not to whatever runs against the data.',
-  },
-  'grant:crown-jewel-write': {
-    title: 'Write access to a crown jewel',
-    via: 'These paths end in write access to a resource marked as a crown jewel.',
-    prevention:
-      'Split read from write. Most workloads that reach a crown jewel only read it, and the write grant is the one worth an exception process.',
-  },
-  'grant:cross-account-admin': {
-    title: 'Administrator-equivalent access across an account boundary',
-    via: 'A role in one account trusts a principal in another, and the trusted principal is administrator-equivalent on the far side.',
-    prevention:
-      'Add an external ID or a condition on the trust policy, and set a permission boundary on the role so crossing the boundary cannot also mean administrator.',
-  },
-  'grant:admin': {
-    title: 'Administrator-equivalent access by a granted route',
-    via: 'Nothing was escalated. The identity was given administrator-equivalent permissions, or a role that has them.',
-    prevention:
-      'Replace the wildcard with the actions the identity has actually used. Access Advisor and the last-used timestamps give the starting list.',
-  },
-  'grant:other': {
-    title: 'Reaches a resource that matters',
-    via: 'These paths end somewhere worth knowing about without reaching administrator or a crown jewel.',
-    prevention: 'Review the grant against what the identity has used in the last ninety days.',
-  },
-};
-
-/**
- * The findings, with the filters applied and the filter options alongside.
- *
- * The options are computed from the unfiltered set on purpose: a filter list
- * that shrinks as you use it cannot be undone without clearing everything.
- */
-export function fetchPathFindings(
-  { severity = '', account = '', vector = '', reach = '' } = {},
-  signal,
-) {
-  return demoRequest(() => {
-    const graph = buildGraph();
-    const all = graph.paths;
-
-    const matches = all.filter((path) => {
-      if (severity && path.severity !== severity) return false;
-      if (account && path.targetAccountId !== account) return false;
-      if (vector && path.entryVector !== vector) return false;
-      if (reach === 'admin' && !path.reachesAdmin) return false;
-      if (reach === 'crown' && !path.targetCrownJewel) return false;
-      if (reach === 'cross-account' && path.crossAccountCount === 0) return false;
-      return true;
-    });
-
-    /* Exposure is measured against every entry point in the environment, not
-       against the filtered set, so the figure means the same thing whatever
-       the reader has filtered to. */
-    const entryTotal = graph.entries.length || 1;
-    const identityTotal = graph.identities.length || 1;
-
-    const groups = new Map();
-    for (const path of matches) {
-      const { kind, key } = findingKeyFor(path);
-      if (!groups.has(key)) groups.set(key, { key, kind, paths: [] });
-      groups.get(key).paths.push(path);
-    }
-
-    const findings = [...groups.values()].map((group) => {
-      const paths = group.paths.sort((a, b) => b.score - a.score || a.hops - b.hops);
-      const method = group.kind === 'technique' ? escalationById(group.key.slice('technique:'.length)) : null;
-      const grant = GRANT_FINDINGS[group.key] ?? GRANT_FINDINGS['grant:other'];
-
-      const entries = new Set(paths.map((path) => path.entryId));
-      const targets = new Set(paths.map((path) => path.targetId));
-      const accounts = new Set(paths.map((path) => path.targetAccountId).filter(Boolean));
-      const identitiesOnPath = new Set();
-      for (const path of paths) {
-        for (const id of path.nodeIds) {
-          if (graph.byId.get(id)?.kind === 'identity') identitiesOnPath.add(id);
-        }
-      }
-
-      const severities = paths.map((path) => path.severity);
-      const worst = SEVERITY_ORDER.find((rank) => severities.includes(rank)) ?? 'MEDIUM';
-
-      return {
-        key: group.key,
-        kind: group.kind,
-        title: method ? method.label : grant.title,
-        service: method?.service ?? '',
-        permissions: method?.permissions ?? [],
-        via: method?.via ?? grant.via,
-        prevention: method?.prevention ?? grant.prevention,
-        severity: worst,
-        instances: paths.length,
-        shortestHops: Math.min(...paths.map((path) => path.hops)),
-        entryCount: entries.size,
-        targetCount: targets.size,
-        accountCount: accounts.size,
-        reachesAdmin: paths.filter((path) => path.reachesAdmin).length,
-        crownJewels: paths.filter((path) => path.targetCrownJewel).length,
-        crossAccount: paths.filter((path) => path.crossAccountCount > 0).length,
-        /* Share of entry points that can start a path in this group, and share
-           of identities that sit on one. Two questions a count cannot answer:
-           how much of the perimeter this is reachable from, and how much of the
-           estate it touches. */
-        exposure: Math.round((entries.size / entryTotal) * 100),
-        impact: Math.round((identitiesOnPath.size / identityTotal) * 100),
-        paths,
-      };
-    });
-
-    findings.sort(
-      (a, b) =>
-        SEVERITY_ORDER.indexOf(a.severity) - SEVERITY_ORDER.indexOf(b.severity) ||
-        b.instances - a.instances ||
-        b.exposure - a.exposure,
-    );
-
-    /* Options from the whole set, with counts, so the reader can see what a
-       filter would leave before they apply it. */
-    const countBy = (pick) => {
-      const out = new Map();
-      for (const path of all) {
-        const value = pick(path);
-        if (value) out.set(value, (out.get(value) ?? 0) + 1);
-      }
-      return out;
-    };
-    const accountCounts = countBy((path) => path.targetAccountId);
-    const accountNames = new Map(all.map((path) => [path.targetAccountId, path.targetAccountName]));
-    const vectorCounts = countBy((path) => path.entryVector);
-
-    return {
-      findings,
-      matched: matches.length,
-      total: all.length,
-      options: {
-        severity: SEVERITY_ORDER.map((key) => ({
-          value: key,
-          count: all.filter((path) => path.severity === key).length,
-        })).filter((row) => row.count > 0),
-        account: [...accountCounts.entries()]
-          .map(([value, count]) => ({ value, label: accountNames.get(value) || value, count }))
-          .sort((a, b) => b.count - a.count),
-        vector: [...vectorCounts.entries()]
-          .map(([value, count]) => ({ value, count }))
-          .sort((a, b) => b.count - a.count),
-        reach: [
-          { value: 'admin', count: all.filter((path) => path.reachesAdmin).length },
-          { value: 'crown', count: all.filter((path) => path.targetCrownJewel).length },
-          { value: 'cross-account', count: all.filter((path) => path.crossAccountCount > 0).length },
-        ].filter((row) => row.count > 0),
-      },
-    };
-  }, { signal, latency: [180, 400] });
 }

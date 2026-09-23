@@ -7,6 +7,7 @@ import { useQuery } from '../../lib/hooks';
 import {
   CLASSIFICATION_ORDER,
   classificationMeta,
+  credentialKindMeta,
   severityMeta,
 } from '../../lib/domain';
 import {
@@ -14,7 +15,6 @@ import {
   formatNumber,
   humanizeToken,
   percentValue,
-  titleCaseEnum,
 } from '../../lib/format';
 import { PageHeader } from '../../shell/PageHeader';
 import { BarList } from '../../charts/BarList';
@@ -72,7 +72,7 @@ export default function PosturePage() {
   const credentialItems = useMemo(() => {
     const breakdown = summary?.credentials_breakdown || {};
     return Object.entries(breakdown)
-      .map(([key, value]) => ({ key, label: titleCaseEnum(key), value: Number(value) || 0 }))
+      .map(([key, value]) => ({ key, label: credentialKindMeta(key).label, value: Number(value) || 0 }))
       .filter((item) => item.value > 0)
       .sort((a, b) => b.value - a.value);
   }, [summary]);
@@ -88,7 +88,7 @@ export default function PosturePage() {
           subtitle: scan.target_name || scan.account_id || scan.scan_id,
           identities: Number(scan.total_identities) || 0,
           events: Number(scan.total_events) || 0,
-          secrets: Number(scan.total_secrets) || 0,
+          credentials: Number(scan.total_credentials) || 0,
         })),
     [scans],
   );
@@ -361,7 +361,7 @@ export default function PosturePage() {
                 {[
                   { key: 'identities', label: 'Identities', color: 'var(--t-series-1)' },
                   { key: 'events', label: 'CloudTrail events', color: 'var(--t-series-5)' },
-                  { key: 'secrets', label: 'Secret-backed identities', color: 'var(--t-series-2)' },
+                  { key: 'credentials', label: 'Credentials', color: 'var(--t-series-2)' },
                 ].map((series, index, list) => (
                   <div key={series.key}>
                     <div className="flex items-baseline justify-between gap-3">

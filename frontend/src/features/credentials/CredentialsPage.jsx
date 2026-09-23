@@ -4,7 +4,7 @@ import { KeyRound, SearchX } from 'lucide-react';
 import { countCredentials, fetchCredentials, fetchSummary } from '../../lib/api/endpoints';
 import { useDebouncedValue, useQuery } from '../../lib/hooks';
 import { useScanContext } from '../../app/ScanContext';
-import { SEVERITY_ORDER, severityMeta } from '../../lib/domain';
+import { actorTypeMeta, credentialKindMeta, SEVERITY_ORDER, severityMeta } from '../../lib/domain';
 import {
   arnResource,
   daysSince,
@@ -37,6 +37,19 @@ import { EmptyState, ErrorState } from '../../ui/States';
  * Flattened credential register: one row per credential rather than per
  * identity, which is the shape an operator needs when the question is
  * "what needs rotating" rather than "who owns what".
+ *
+ * ── What is in here that did not used to be ─────────────────────────────────
+ * The IAM roles. A role is not an actor - it is a set of permissions that an
+ * actor assumes - so it belongs in the register of things identities hold,
+ * beside the access keys and the store entries, rather than in the inventory
+ * of things that act. Every non-human actor contributes one `ASSUMED_ROLE`
+ * row here for the role it holds, and the Identities screen now lists the
+ * EC2 instance, Lambda function or pipeline that assumes it.
+ *
+ * The consequence for this screen is that "age" means two different things
+ * depending on the row, so the type is stated on every one: a key's age is
+ * how overdue a rotation is, and a role's age is just how long it has
+ * existed, because a role has nothing to rotate.
  */
 const DENSITY_KEY = 'dna.grid.density';
 
@@ -121,7 +134,7 @@ export default function CredentialsPage() {
       .sort((a, b) => b[1] - a[1])
       .map(([key, count]) => ({
         value: key,
-        label: titleCaseEnum(key),
+        label: credentialKindMeta(key).label,
         count: Number(count),
         active: searchParams.get('type') === key,
       }));
@@ -169,6 +182,7 @@ export default function CredentialsPage() {
       label: 'Credential type',
       options: typeOptions,
       onToggle: (value) => toggleParam('type', value),
+      note: 'An assumed role is a credential, not an identity: the actor that assumes it - a function, a task, a pipeline - is on the Identities screen.',
     },
     {
       key: 'severity',
@@ -197,12 +211,17 @@ export default function CredentialsPage() {
     exportRowsToCsv({
       filename: timestampedName(`credentials-${activeScan?.target_name || 'scan'}`),
       columns: [
-        { header: 'Credential type', value: (row) => row.type },
+        { header: 'Credential type', value: (row) => credentialKindMeta(row.type).label },
+        { header: 'Long-lived', value: (row) => (credentialKindMeta(row.type).longLived ? 'yes' : 'no') },
         { header: 'Credential id', value: (row) => row.cred_id },
         { header: 'Severity', value: (row) => row.severity },
         { header: 'Status', value: (row) => row.status },
-        { header: 'Identity', value: (row) => row.identity_name },
-        { header: 'Identity ARN', value: (row) => row.identity_arn },
+        { header: 'Held by', value: (row) => row.identity_name },
+        { header: 'Held by ARN', value: (row) => row.identity_arn },
+        { header: 'Actor type', value: (row) => actorTypeMeta(row.identity_type).label },
+        { header: 'Managed store', value: (row) => row.store || '' },
+        { header: 'Store entry', value: (row) => row.store_name || '' },
+        { header: 'Rotation', value: (row) => (row.store ? (row.rotation_enabled ? `every ${row.rotation_days} days` : 'not enabled') : '') },
         { header: 'Created', value: (row) => row.created_at },
         { header: 'Expires', value: (row) => row.expires_at },
         { header: 'Last used', value: (row) => row.last_used_date },
@@ -226,7 +245,7 @@ export default function CredentialsPage() {
       cell: (row) => (
         <CellStack
           icon={KeyRound}
-          title={row.type ? titleCaseEnum(row.type) : 'Credential'}
+          title={credentialKindMeta(row.type).label}
           meta={row.cred_id || '-'}
           mono
         />
@@ -241,8 +260,10 @@ export default function CredentialsPage() {
           <span className="block truncate text-[12.5px] font-medium text-ink" title={row.identity_name}>
             {row.identity_name || arnResource(row.identity_arn)}
           </span>
-          <span className="block truncate font-mono text-[11px] text-ink-3" title={row.identity_arn}>
-            {arnResource(row.identity_arn)}
+          {/* The actor that holds it, not the ARN's resource part - which for
+              an assumed role is the same string as the name directly above. */}
+          <span className="block truncate text-[11px] text-ink-3" title={row.identity_arn}>
+            {actorTypeMeta(row.identity_type).label}
           </span>
         </span>
       ),
@@ -276,7 +297,19 @@ export default function CredentialsPage() {
         const age = daysSince(row.created_at);
         if (age === null) return <span className="text-[12.5px] text-ink-3">-</span>;
         const share = maxAge > 0 ? Math.max(2, (age / maxAge) * 100) : 0;
-        const tone = age > 365 ? 'bg-critical' : age > 180 ? 'bg-high' : age > 90 ? 'bg-medium' : 'bg-brand';
+        /* Only a long-lived credential's age is overdue-ness. A role that has
+           existed for two years is not two years overdue for anything, so its
+           bar stays neutral rather than turning red on the same threshold. */
+        const longLived = credentialKindMeta(row.type).longLived;
+        const tone = !longLived
+          ? 'bg-brand'
+          : age > 365
+            ? 'bg-critical'
+            : age > 180
+              ? 'bg-high'
+              : age > 90
+                ? 'bg-medium'
+                : 'bg-brand';
         return (
           <span className="block min-w-0" title={`Created ${formatDateTime(row.created_at)}`}>
             <span data-numeric="" className="block text-[12.5px] whitespace-nowrap text-ink-2">
@@ -321,7 +354,7 @@ export default function CredentialsPage() {
             label="Credentials in scope"
             value={summaryQuery.data?.total_credentials}
             tone="brand"
-            caption="Keys, passwords and certificates held by identities"
+            caption="Assumed roles, keys, store entries and federation trusts"
             className="animate-rise"
           />
           <MetricTile
@@ -522,7 +555,7 @@ function CredentialDrawer({ credential, onClose }) {
       open
       onClose={onClose}
       width="md"
-      eyebrow={credential.type ? titleCaseEnum(credential.type) : 'Credential'}
+      eyebrow={credentialKindMeta(credential.type).label}
       title={credential.cred_id || credential.identity_name || 'Credential'}
       subtitle={
         <span className="flex flex-wrap items-center gap-1.5">
@@ -541,7 +574,7 @@ function CredentialDrawer({ credential, onClose }) {
         <div>
           <SectionLabel>Credential</SectionLabel>
           <DetailList className="mt-1">
-            <DetailRow label="Type">{credential.type ? titleCaseEnum(credential.type) : '-'}</DetailRow>
+            <DetailRow label="Type">{credentialKindMeta(credential.type).label}</DetailRow>
             <DetailRow label="Identifier" mono>
               <CopyableValue value={credential.cred_id} />
             </DetailRow>
@@ -550,7 +583,13 @@ function CredentialDrawer({ credential, onClose }) {
             </DetailRow>
             <DetailRow label="Severity">{meta.label}</DetailRow>
             <DetailRow label="Created">{formatDateTime(credential.created_at)}</DetailRow>
-            <DetailRow label="Expires">{formatDateTime(credential.expires_at)}</DetailRow>
+            <DetailRow label="Expires">
+              {credential.expires_at
+                ? formatDateTime(credential.expires_at)
+                : credentialKindMeta(credential.type).longLived
+                  ? 'Never - this kind does not expire on its own'
+                  : 'Not applicable - credentials are issued per session'}
+            </DetailRow>
             <DetailRow label="Last used">
               {formatRelative(credential.last_used_date)}
               {credential.last_used_service && (
@@ -567,10 +606,41 @@ function CredentialDrawer({ credential, onClose }) {
             <DetailRow label="ARN" mono>
               <CopyableValue value={credential.identity_arn} />
             </DetailRow>
-            <DetailRow label="Resource type">
-              {credential.identity_type ? titleCaseEnum(credential.identity_type) : '-'}
+            <DetailRow label="Actor type">
+              {actorTypeMeta(credential.identity_type).label}
             </DetailRow>
           </DetailList>
+        </div>
+
+        {/* Where it is kept, for the two kinds that are kept anywhere. A
+            credential in a managed store with a rotation schedule is a
+            different proposition from the same credential in an environment
+            variable, and this is the screen that can say which. */}
+        {credential.store && (
+          <div>
+            <SectionLabel>Storage</SectionLabel>
+            <DetailList className="mt-1">
+              <DetailRow label="Store">{credential.store}</DetailRow>
+              <DetailRow label="Entry" mono>
+                <CopyableValue value={credential.store_name} />
+              </DetailRow>
+              <DetailRow label="Store ARN" mono>
+                <CopyableValue value={credential.store_arn} />
+              </DetailRow>
+              <DetailRow label="Rotation">
+                {credential.rotation_enabled
+                  ? `Scheduled every ${credential.rotation_days} days`
+                  : 'No rotation schedule attached'}
+              </DetailRow>
+            </DetailList>
+          </div>
+        )}
+
+        <div>
+          <SectionLabel>What this kind is</SectionLabel>
+          <p className="mt-2 rounded-[var(--radius-control)] border border-line bg-surface-2 p-3.5 text-[12.5px] leading-relaxed text-ink-2">
+            {credentialKindMeta(credential.type).what}
+          </p>
         </div>
 
         {credential.description && (

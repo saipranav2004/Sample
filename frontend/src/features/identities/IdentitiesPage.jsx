@@ -4,7 +4,7 @@ import { Copy, Fingerprint, SearchX } from 'lucide-react';
 import { fetchIdentities, fetchSummary } from '../../lib/api/endpoints';
 import { useDebouncedValue, useQuery } from '../../lib/hooks';
 import { useScanContext } from '../../app/ScanContext';
-import { classificationMeta, ownerTypeMeta } from '../../lib/domain';
+import { actorCategoryMeta, actorTypeMeta, classificationMeta, ownerTypeMeta } from '../../lib/domain';
 import { arnResource, formatNumber, titleCaseEnum } from '../../lib/format';
 import { exportRowsToCsv, timestampedName } from '../../lib/csv';
 import { PageHeader } from '../../shell/PageHeader';
@@ -21,7 +21,14 @@ import { EmptyState, ErrorState } from '../../ui/States';
 import { useToast } from '../../ui/Toast';
 import { IdentityDrawer } from './IdentityDrawer';
 import { ActivityCell, StatusCell } from './status';
-import { FACETS, FILTER_PARAMS, OWNER_TYPE_OPTIONS, describeFilters, readFilters } from './filters';
+import {
+  ACTOR_CATEGORY_OPTIONS,
+  FACETS,
+  FILTER_PARAMS,
+  OWNER_TYPE_OPTIONS,
+  describeFilters,
+  readFilters,
+} from './filters';
 
 /**
  * Identity explorer - the workbench every posture signal leads into.
@@ -39,7 +46,11 @@ const VIEW_PRESETS = [
   { key: 'admin', label: 'Admin access', params: { is_admin: 'true' }, countField: 'total_admin' },
   { key: 'stale', label: 'Stale 90+', params: { is_stale: 'true' }, countField: 'total_stale_90plus' },
   { key: 'orphaned', label: 'Orphaned', params: { owner_type: 'ORPHANED' }, countField: 'total_orphaned' },
-  { key: 'secret', label: 'Secret-backed', params: { is_secret: 'true' }, countField: 'total_secrets' },
+  /* There is no "secret-backed" preset here any more. Whether a credential is
+     held in a managed store is a property of the credential, so it is a filter
+     on the Credentials screen - listing identities by it put the same fact in
+     two places and invited the reader to treat a storage decision as a kind of
+     identity. */
 ];
 
 const DENSITY_KEY = 'dna.grid.density';
@@ -165,6 +176,20 @@ export default function IdentitiesPage() {
       }));
   }, [summary, searchParams]);
 
+  /* Ordered by the canonical category order rather than by count, so the list
+     does not reshuffle under the reader as a filter narrows it. */
+  const actorCategoryOptions = useMemo(() => {
+    const breakdown = summary?.actor_category_breakdown || {};
+    return ACTOR_CATEGORY_OPTIONS.filter((option) => Number(breakdown[option.value]) > 0).map(
+      (option) => ({
+        value: option.value,
+        label: option.label,
+        count: Number(breakdown[option.value]),
+        active: searchParams.get('actor_category') === option.value,
+      }),
+    );
+  }, [summary, searchParams]);
+
   const facetGroups = useMemo(
     () => [
       {
@@ -185,6 +210,13 @@ export default function IdentitiesPage() {
         onToggle: (value) => toggleParam(value, 'true'),
       },
       {
+        key: 'actor',
+        label: 'Actor category',
+        options: actorCategoryOptions,
+        onToggle: (value) => toggleParam('actor_category', value),
+        note: 'What the identity is: the compute, pipeline, agent or vendor platform that acts. The IAM role it assumes is a credential, and lives on the Credentials screen.',
+      },
+      {
         key: 'ownership',
         label: 'Ownership',
         options: OWNER_TYPE_OPTIONS.map((option) => ({
@@ -196,7 +228,7 @@ export default function IdentitiesPage() {
         onToggle: (value) => toggleParam('owner_type', value),
       },
     ],
-    [classificationOptions, summary, searchParams, toggleParam],
+    [classificationOptions, actorCategoryOptions, summary, searchParams, toggleParam],
   );
 
   const rows = query.data?.rows ?? [];
@@ -216,14 +248,17 @@ export default function IdentitiesPage() {
       columns: [
         { header: 'Name', value: (row) => row.name },
         { header: 'ARN', value: (row) => row.arn },
-        { header: 'Resource type', value: (row) => row.identity_type },
+        { header: 'Actor type', value: (row) => actorTypeMeta(row.identity_type).label },
+        { header: 'Actor id', value: (row) => row.actor_id },
+        { header: 'Actor category', value: (row) => actorCategoryMeta(row.actor_category).label },
+        { header: 'Discovered by', value: (row) => row.discovery_api },
+        { header: 'Holds', value: (row) => (row.principal_type === 'IAM_USER' ? 'IAM user' : 'IAM role') },
         { header: 'Classification', value: (row) => row.classification },
         { header: 'Owner', value: (row) => row.owner_name || row.primary_owner },
         { header: 'Owner type', value: (row) => row.owner_type },
         { header: 'Trust type', value: (row) => row.trust_type },
         { header: 'Admin', value: (row) => (row.is_admin ? 'yes' : 'no') },
         { header: 'MFA enabled', value: (row) => (row.mfa_enabled ? 'yes' : 'no') },
-        { header: 'Secret-backed', value: (row) => (row.is_secret ? 'yes' : 'no') },
         { header: 'Last active', value: (row) => row.last_active },
         { header: 'Events', value: (row) => row.total_events },
       ],
@@ -262,13 +297,25 @@ export default function IdentitiesPage() {
               <span className="block truncate text-[13px] font-semibold text-ink" title={row.name || row.arn}>
                 {row.name || arnResource(row.arn)}
               </span>
+              {/* The actor, not a second printing of the name. The line used
+                  to repeat the ARN's resource part, which for every row in
+                  this estate is the name directly above it. What the reader
+                  cannot see from the name is what kind of thing this is and
+                  which instance of it. */}
               <span className="mt-0.5 flex min-w-0 items-center gap-1.5">
-                <span
-                  className="truncate font-mono text-[11px] text-ink-3"
-                  title={row.arn}
-                >
-                  {arnResource(row.arn)}
+                <span className="truncate text-[11px] text-ink-3" title={actorTypeMeta(row.identity_type).label}>
+                  {actorTypeMeta(row.identity_type).label}
                 </span>
+                {row.actor_id && row.actor_id !== row.name && (
+                  <>
+                    <span aria-hidden="true" className="text-ink-3">
+                      ·
+                    </span>
+                    <span className="truncate font-mono text-[11px] text-ink-3" title={row.actor_id}>
+                      {row.actor_id}
+                    </span>
+                  </>
+                )}
               </span>
             </span>
           </span>
@@ -332,8 +379,11 @@ export default function IdentitiesPage() {
           <span className="block truncate text-[12.5px] text-ink-2">
             {row.trust_type ? titleCaseEnum(row.trust_type) : '-'}
           </span>
-          <span className="block truncate text-[11px] text-ink-3" title={row.identity_type}>
-            {row.identity_type ? titleCaseEnum(row.identity_type) : '-'}
+          {/* What the actor holds. This line used to print the identity's
+              "type", which was IAM_ROLE for every machine in the estate -
+              a credential kind presented as a kind of identity. */}
+          <span className="block truncate text-[11px] text-ink-3">
+            Holds {row.principal_type === 'IAM_USER' ? 'an IAM user' : 'an IAM role'}
           </span>
         </span>
       ),

@@ -22,7 +22,7 @@ import { cn, TONE_BG, TONE_FG } from '../../ui/cn';
  * the API supplies none, and inventing a weighting would be fabricated
  * analytics that people then act on.
  */
-const CHECK_ORDER = ['mfa', 'privilege', 'ownership', 'activity', 'secret'];
+const CHECK_ORDER = ['mfa', 'privilege', 'ownership', 'activity', 'credential'];
 
 export function evaluatePosture(identity) {
   const isHuman = classificationMeta(identity.classification).kind === 'human';
@@ -55,9 +55,25 @@ export function evaluatePosture(identity) {
             ? { state: 'warn', label: `Dormant ${formatNumber(age)} days` }
             : { state: 'pass', label: 'Recently active' },
 
-    secret: identity.is_secret
-      ? { state: 'warn', label: 'Credentials in secret store' }
-      : { state: 'pass', label: 'No secret store entry' },
+    /* The credential the actor holds, not where it is stored.
+       This check used to flag "credentials in secret store" as a warning,
+       which had it backwards: a credential in a managed store with a rotation
+       schedule is the good case, and a raw long-lived access key is the bad
+       one. It also put a fact about a credential into a judgement about an
+       identity. What matters here is what this actor holds - an unrotated
+       long-lived key is the thing an attacker wants, and federation is the
+       thing that removes it. */
+    credential:
+      identity.access_key_count > 0 && identity.access_key_age_days > 365
+        ? {
+            state: 'fail',
+            label: `Access key unrotated for ${formatNumber(identity.access_key_age_days)} days`,
+          }
+        : identity.access_key_count > 0
+          ? { state: 'warn', label: `Holds ${formatNumber(identity.access_key_count)} long-lived key${identity.access_key_count === 1 ? '' : 's'}` }
+          : identity.is_federated
+            ? { state: 'pass', label: 'Federated - no long-lived key' }
+            : { state: 'pass', label: 'No long-lived key' },
   };
 
   const failing = CHECK_ORDER.filter((key) => checks[key].state === 'fail');

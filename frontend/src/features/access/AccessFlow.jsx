@@ -9,12 +9,12 @@ import {
   useReactFlow,
 } from '@xyflow/react';
 import '@xyflow/react/dist/base.css';
-import { ListTree, Maximize2, Minimize2, PanelRight, RotateCcw } from 'lucide-react';
+import { Maximize2, Minimize2, PanelRight, RotateCcw } from 'lucide-react';
 import { EDGE_KINDS } from '../../lib/demo/accessGraph';
 import { EDGE_STYLE, toneFor } from './graphTheme';
 import { HOP_METRICS, hopLabels, layoutHops } from './hopLayout';
 import { nodeTypes } from './GraphNodes';
-import { Button, IconButton } from '../../ui/Button';
+import { IconButton } from '../../ui/Button';
 import { cn } from '../../ui/cn';
 
 /* Below this the 12px node labels stop being readable, so the fit stops
@@ -55,17 +55,13 @@ export function AccessFlow(props) {
 function FlowInner({
   data,
   selectedId,
-  tracedNodeIds,
-  tracedEdgeIds,
   onSelect,
   onToggleExpand,
   onReveal,
   onFullscreenChange,
-  /* Rendered as docks inside the full-screen shell. In the normal layout the
-     page renders these itself, beside and below the graph. */
+  /* Rendered as a dock inside the full-screen shell. In the normal layout the
+     page renders it itself, beside the graph. */
   inspector,
-  findings,
-  findingCount = 0,
   className,
   height = 560,
 }) {
@@ -76,10 +72,9 @@ function FlowInner({
   const [nativeFullscreen, setNativeFullscreen] = useState(false);
   const [hoverId, setHoverId] = useState('');
   /* Full screen has to contain everything, or it is a dead end you must leave
-     to do anything. The details panel and the attack paths dock inside it -
-     collapsible, because the point of full screen is the graph. */
+     to do anything. The details panel docks inside it - collapsible, because
+     the point of full screen is the graph. */
   const [sideDock, setSideDock] = useState(true);
-  const [bottomDock, setBottomDock] = useState(false);
   /* Where the reader has dragged things.
      React Flow is controlled here - the nodes come from `layoutHops` on every
      render - and a controlled graph with no `onNodesChange` silently discards
@@ -119,18 +114,12 @@ function FlowInner({
       layout.nodes.map((node) => ({
         ...node,
         selected: node.id === selectedId,
-        data:
-          node.type === 'more'
-            ? node.data
-            : {
-                ...node.data,
-                traced: tracedNodeIds?.has(node.id) ?? false,
-              },
+        data: node.data,
         className: cn(
           hoverSets && !hoverSets.nodes.has(node.id) && 'access-node-dim',
         ),
       })),
-    [layout.nodes, selectedId, tracedNodeIds, hoverSets],
+    [layout.nodes, selectedId, hoverSets],
   );
 
   /* The layout's position, unless the reader has moved that node. */
@@ -143,9 +132,8 @@ function FlowInner({
     const byId = new Map((data?.nodes ?? []).map((node) => [node.id, node]));
     return (data?.edges ?? []).map((edge) => {
       const meta = EDGE_KINDS[edge.kind];
-      const traced = tracedEdgeIds?.has(edge.id) ?? false;
       const escalation = Boolean(meta?.escalation);
-      const style = traced ? EDGE_STYLE.traced : escalation ? EDGE_STYLE.escalation : EDGE_STYLE.base;
+      const style = escalation ? EDGE_STYLE.escalation : EDGE_STYLE.base;
 
       /* The label is on the edge only where the relationship is not obvious
          from the two nodes it joins. "Authenticates" between a key and a role
@@ -173,10 +161,7 @@ function FlowInner({
           strokeWidth: style.strokeWidth,
           strokeDasharray: style.dash,
         },
-        className: cn(
-          traced && 'access-edge-traced',
-          hoverSets && !hoverSets.edges.has(edge.id) && 'access-edge-dimmed',
-        ),
+        className: cn(hoverSets && !hoverSets.edges.has(edge.id) && 'access-edge-dimmed'),
         data: {
           kind: edge.kind,
           fromName: byId.get(edge.from)?.name,
@@ -184,7 +169,7 @@ function FlowInner({
         },
       };
     });
-  }, [data, tracedEdgeIds, hoverSets]);
+  }, [data, hoverSets]);
 
   /* Refit whenever the drawn graph changes shape, so an expansion brings the
      new nodes into view instead of leaving them off the right edge.
@@ -297,10 +282,7 @@ function FlowInner({
     onFullscreenChange?.(expanded);
     /* Back to the default arrangement on the way out, so entering full screen
        twice does not give two different layouts. */
-    if (!expanded) {
-      setSideDock(true);
-      setBottomDock(false);
-    }
+    if (!expanded) setSideDock(true);
   }, [expanded, onFullscreenChange]);
 
   /* Escape leaves the fallback overlay. The native API already handles it. */
@@ -397,16 +379,6 @@ function FlowInner({
             onClick={() => setSideDock((open) => !open)}
           />
         )}
-        {expanded && findings && (
-          <Button
-            variant={bottomDock ? 'primary' : 'secondary'}
-            icon={ListTree}
-            onClick={() => setBottomDock((open) => !open)}
-          >
-            {bottomDock ? 'Hide paths' : `Attack paths${findingCount ? ` ${findingCount}` : ''}`}
-          </Button>
-        )}
-
         {/* Full size, not `sm`. These two are the only controls on the header
             and they were 32px glyphs in a 17px-tall strip - small enough that
             the fullscreen button, the one people look for first, read as
@@ -491,18 +463,6 @@ function FlowInner({
         )}
       </div>
 
-      {/* Attack paths, docked to the foot of the screen.
-          Full width rather than a second side panel: a findings list is a
-          column of rows, and the graph is what needs the horizontal span. */}
-      {expanded && findings && bottomDock && (
-        <section
-          aria-label="Attack paths"
-          className="animate-rise max-h-[46vh] min-h-0 shrink-0 overflow-y-auto overscroll-contain border-t border-line bg-surface p-3"
-        >
-          {findings}
-        </section>
-      )}
-
       {/* The legend and the gestures, on one strip.
           A directional graph with two line styles needs to say which is which:
           the reader can see that some edges are red and dashed, and nothing on
@@ -512,7 +472,6 @@ function FlowInner({
         <span className="flex items-center gap-3">
           <LegendKey label="Grants access" tone="base" />
           <LegendKey label="Privilege escalation" tone="escalation" />
-          <LegendKey label="Traced path" tone="traced" />
         </span>
         <span aria-hidden="true" className="hidden text-line-strong @min-[44rem]:inline">
           |

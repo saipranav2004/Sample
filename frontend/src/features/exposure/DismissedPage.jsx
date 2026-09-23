@@ -25,6 +25,7 @@ import { DetailList, DetailRow, Panel } from '../../ui/Panel';
 import { SearchInput } from '../../ui/Field';
 import { AppliedFilters, FacetRail, useFacetRail } from '../../ui/FacetRail';
 import { RecordBar, ResultCount, ShowFiltersButton, WorkArea } from '../../ui/WorkArea';
+import { Pagination } from '../../ui/Pagination';
 import { SegmentedControl } from '../../ui/Tabs';
 import { RefreshButton, TableSettings, TableToolbar } from '../../ui/TableTools';
 import { CellStack, DataGrid } from '../../ui/DataGrid';
@@ -50,6 +51,15 @@ const VIEWS = [
   { value: 'timeline', label: 'Review timeline', icon: CalendarClock },
 ];
 
+/**
+ * Rows per page.
+ *
+ * `GET /api/allowlist` returns every entry in one response, so paging happens
+ * here. An allowlist only grows - every accepted exposure stays on it until
+ * somebody restores it - so this is the screen that gets long first.
+ */
+const DEFAULT_PAGE_SIZE = 25;
+
 const entryKey = (entry) =>
   [entry.client_id, entry.file_path, entry.detector, entry.redacted].join('|');
 
@@ -65,6 +75,8 @@ export default function DismissedPage() {
   const [view, setView] = useState('table');
   const { railOpen, toggleRail } = useFacetRail();
   const [density, setDensity] = useState('comfortable');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [pendingRestore, setPendingRestore] = useState(null);
   const [restored, setRestored] = useState(() => new Set());
 
@@ -112,17 +124,30 @@ export default function DismissedPage() {
     });
   }, [all, search, detector, reviewer, reasonState]);
 
-  /* Grouped by the day it was accepted - the order an auditor walks it in. */
+  /* Clamped, not trusted: restoring the last entry on the last page, or a
+     filter that shrinks the set, would otherwise leave the reader on a page
+     past the end looking at an empty table. */
+  const safePage = Math.min(page, Math.max(1, Math.ceil(entries.length / pageSize)));
+  const pageStart = (safePage - 1) * pageSize;
+  const pageEntries = useMemo(
+    () => entries.slice(pageStart, pageStart + pageSize),
+    [entries, pageStart, pageSize],
+  );
+
+  /* Grouped by the day it was accepted - the order an auditor walks it in.
+     Grouped from the current page, so the dates on screen and the rows under
+     them are the same set: a day heading counting entries the reader cannot
+     see on this page would be a lie about the page. */
   const timeline = useMemo(() => {
     const groups = new Map();
-    for (const entry of entries) {
+    for (const entry of pageEntries) {
       const when = parseDate(entry.dismissed_at);
       const key = when ? when.toISOString().slice(0, 10) : 'unknown';
       if (!groups.has(key)) groups.set(key, { key, when, entries: [] });
       groups.get(key).entries.push(entry);
     }
     return [...groups.values()].sort((a, b) => (b.when?.getTime() || 0) - (a.when?.getTime() || 0));
-  }, [entries]);
+  }, [pageEntries]);
 
   const chips = useMemo(() => {
     const list = [];
@@ -164,7 +189,10 @@ export default function DismissedPage() {
           count,
           active: detector === key,
         })),
-        onToggle: (value) => setDetector((current) => (current === value ? '' : value)),
+        onToggle: (value) => {
+          setPage(1);
+          setDetector((current) => (current === value ? '' : value));
+        },
       },
       {
         key: 'reviewer',
@@ -175,7 +203,10 @@ export default function DismissedPage() {
           count,
           active: reviewer === key,
         })),
-        onToggle: (value) => setReviewer((current) => (current === value ? '' : value)),
+        onToggle: (value) => {
+          setPage(1);
+          setReviewer((current) => (current === value ? '' : value));
+        },
       },
       {
         key: 'reason',
@@ -194,7 +225,10 @@ export default function DismissedPage() {
             active: reasonState === 'without',
           },
         ],
-        onToggle: (value) => setReasonState((current) => (current === value ? '' : value)),
+        onToggle: (value) => {
+          setPage(1);
+          setReasonState((current) => (current === value ? '' : value));
+        },
         note: 'An entry accepted with no stated reason is the one an auditor will ask about.',
       },
     ],
@@ -406,7 +440,15 @@ export default function DismissedPage() {
           <RecordBar
             trailing={
               <TableToolbar>
-                <SegmentedControl label="View mode" options={VIEWS} value={view} onChange={setView} />
+                <SegmentedControl
+                  label="View mode"
+                  options={VIEWS}
+                  value={view}
+                  onChange={(next) => {
+                    setPage(1);
+                    setView(next);
+                  }}
+                />
                 {!railOpen && (
                   <ShowFiltersButton onClick={toggleRail} appliedCount={chips.length} />
                 )}
@@ -421,7 +463,10 @@ export default function DismissedPage() {
             <SearchInput
               size="sm"
               value={search}
-              onChange={setSearch}
+              onChange={(next) => {
+                setPage(1);
+                setSearch(next);
+              }}
               placeholder="Search file, detector, reason or reviewer…"
               className="w-full min-w-0 sm:max-w-sm"
             />
@@ -440,7 +485,7 @@ export default function DismissedPage() {
             <DataGrid
               caption="Accepted exposures"
               columns={columns}
-              rows={entries}
+              rows={pageEntries}
               rowKey={(row, index) => `${entryKey(row)}-${index}`}
               loading={loading}
               refreshing={query.isRefreshing}
@@ -508,6 +553,20 @@ export default function DismissedPage() {
                 </li>
               ))}
             </ol>
+          )}
+
+          {!loading && entries.length > pageSize && (
+            <Pagination
+              page={safePage}
+              pageSize={pageSize}
+              total={entries.length}
+              unit="accepted exposures"
+              onPageChange={setPage}
+              onPageSizeChange={(next) => {
+                setPage(1);
+                setPageSize(next);
+              }}
+            />
           )}
         </Panel>
       </WorkArea>

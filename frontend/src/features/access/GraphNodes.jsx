@@ -56,7 +56,6 @@ export const AccessNode = memo(function AccessNode({ data, selected }) {
         tone === 'critical' ? 'access-node-critical' : 'access-node-neutral',
         selected && 'access-node-selected',
         data.isFocus && 'access-node-focus',
-        data.traced && 'access-node-traced',
       )}
       /* The whole node is the target. React Flow handles the click, so this is
          a div rather than a button - but it still has to announce itself. */
