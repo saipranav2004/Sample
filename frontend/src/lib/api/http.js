@@ -5,12 +5,16 @@ export const USER_KEY = 'dna.user';
 
 /** Normalised error surfaced to every screen so states stay consistent. */
 export class ApiError extends Error {
-  constructor({ message, status, code, retryable }) {
+  constructor({ message, status, code, retryable, keyAttached }) {
     super(message);
     this.name = 'ApiError';
     this.status = status ?? null;
     this.code = code ?? null;
     this.retryable = retryable ?? false;
+    /* Only ever set on Secret Scanner responses: whether the server-side proxy
+       attached the dashboard key ('yes' | 'no'), read from the
+       `X-Scanner-Key-Attached` header the proxy adds. Never the key itself. */
+    this.keyAttached = keyAttached ?? null;
   }
 }
 
@@ -48,6 +52,7 @@ function describe(error) {
     status,
     code: payload?.error || null,
     retryable: status >= 500 || status === 429,
+    keyAttached: error?.response?.headers?.['x-scanner-key-attached'] ?? null,
   });
 }
 

@@ -94,7 +94,7 @@ export const PLATFORMS = [
       'Repository history for the credential-exposure scanner, and the OIDC subject claims that say which workflow may assume which role.',
     provides: [
       { label: 'Exposed credentials', to: '/exposure' },
-      { label: 'Deep scan', to: '/exposure/deep-scan' },
+      { label: 'Deep scan', to: '/exposure?deep-scan=open' },
     ],
   },
   {
@@ -103,7 +103,7 @@ export const PLATFORMS = [
     short: 'CodeCommit',
     category: 'scm',
     summary:
-      'The same scanner against repositories inside the AWS account. Onboarded through the AWS connector rather than separately.',
+      'The same scanner against repositories inside the AWS account. Onboarded by the credential scanner service, not from this screen.',
     provides: [{ label: 'Exposed credentials', to: '/exposure' }],
   },
   {
@@ -236,24 +236,57 @@ export const AWS_PERMISSION_GROUPS = [
     why: 'Who is actually using each role. An IAM role is a credential; the EC2 instance, Lambda function, ECS task or Bedrock agent holding it is the identity.',
     without: 'Roles with nothing attached to them - a credential list presented as an identity list.',
     feeds: 'Identities, NHI Genome',
+    /* Every List call here is paired with the Describe or Get call that
+       actually carries the role. Several List responses do not: an EKS pod
+       identity summary, a Step Functions list entry, a SageMaker notebook
+       summary and an ECS task all have to be described before the role they
+       hold is known. A list of List permissions alone would discover the
+       actors and never learn what any of them can do. */
     actions: [
       'ec2:DescribeInstances',
+      'iam:ListInstanceProfiles',
+      'iam:GetInstanceProfile',
       'lambda:ListFunctions',
+      'ecs:ListClusters',
       'ecs:ListTasks',
       'ecs:DescribeTasks',
       'ecs:ListServices',
+      'ecs:DescribeServices',
+      'ecs:DescribeTaskDefinition',
+      'eks:ListClusters',
       'eks:ListNodegroups',
+      'eks:DescribeNodegroup',
       'eks:ListPodIdentityAssociations',
+      'eks:DescribePodIdentityAssociation',
+      'apprunner:ListServices',
+      'apprunner:DescribeService',
+      'batch:ListJobs',
+      'batch:DescribeJobs',
+      'batch:DescribeJobDefinitions',
       'states:ListStateMachines',
+      'states:DescribeStateMachine',
+      'events:ListRules',
+      'events:ListTargetsByRule',
       'codebuild:ListProjects',
+      'codebuild:BatchGetProjects',
       'codepipeline:ListPipelines',
+      'codepipeline:GetPipeline',
       'bedrock:ListAgents',
+      'bedrock:GetAgent',
+      'bedrock:ListKnowledgeBases',
+      'bedrock:GetKnowledgeBase',
       'sagemaker:ListNotebookInstances',
+      'sagemaker:DescribeNotebookInstance',
+      'sagemaker:ListEndpoints',
+      'sagemaker:DescribeEndpointConfig',
+      'sagemaker:DescribeModel',
       'glue:GetJobs',
       'glue:GetCrawlers',
+      'elasticmapreduce:ListClusters',
+      'elasticmapreduce:DescribeCluster',
+      'apigateway:GET',
       'iot:ListThings',
-      'apprunner:ListServices',
-      'batch:DescribeComputeEnvironments',
+      'iot:ListThingPrincipals',
       'rolesanywhere:ListProfiles',
       'rolesanywhere:ListTrustAnchors',
     ],
@@ -282,8 +315,9 @@ export const AWS_PERMISSION_GROUPS = [
     label: 'Observed behaviour',
     icon: Eye,
     required: false,
-    why: 'What each identity has actually called, from the management-event trail.',
+    why: 'What each identity has actually called. CloudTrail keeps 90 days of management events in every region with no trail configured at all, so this works on day one; a trail is what extends it past 90 days.',
     without: 'No behavioural baselines and no drift detection. Entitlement is still read, so the graph stays correct - it just cannot say whether anything is used.',
+    note: 'LookupEvents is read per region and rate-limited by AWS to two requests a second per account per region, which is why the first full read of a large estate takes minutes rather than seconds.',
     feeds: 'NHI Genome, Activity',
     actions: [
       'cloudtrail:LookupEvents',
@@ -300,12 +334,19 @@ export const AWS_PERMISSION_GROUPS = [
     why: 'Service control policies and permission boundaries - the cap on what a granted permission can actually do.',
     without: 'Edges the organisation would already deny are drawn as real. The graph over-reports rather than under-reports, which is the safer direction but still wrong.',
     feeds: 'Access graph',
+    /* DescribePolicy, not DescribeEffectivePolicy. The effective-policy call
+       covers management policies only - backup, tag, AI opt-out, declarative -
+       and does not return service control policies at all. SCP content is
+       read policy by policy, and the targets say which accounts it applies to. */
     actions: [
       'organizations:DescribeOrganization',
       'organizations:ListAccounts',
+      'organizations:ListRoots',
+      'organizations:ListOrganizationalUnitsForParent',
       'organizations:ListPolicies',
+      'organizations:DescribePolicy',
+      'organizations:ListTargetsForPolicy',
       'organizations:ListPoliciesForTarget',
-      'organizations:DescribeEffectivePolicy',
     ],
   },
   {
@@ -341,8 +382,11 @@ export const AWS_PERMISSION_GROUPS = [
       'dynamodb:DescribeTable',
       'rds:DescribeDBInstances',
       'kms:ListKeys',
+      'kms:GetKeyPolicy',
       'sqs:ListQueues',
+      'sqs:GetQueueAttributes',
       'sns:ListTopics',
+      'sns:GetTopicAttributes',
       'access-analyzer:ListAnalyzers',
       'access-analyzer:ListFindings',
     ],
@@ -428,7 +472,7 @@ export const AWS_RULE_CATEGORIES = [
         label: 'Deny reading secret values outright',
         severity: 'HIGH',
         detail:
-          'This console reads which secrets exist and when they were rotated. It never needs a secret value, so an explicit Deny on secretsmanager:GetSecretValue and ssm:GetParameter with decryption costs you nothing and removes the worst thing the role could be used for. An explicit Deny cannot be overridden by a later Allow.',
+          'This console reads which secrets exist and when they were rotated. It never needs a secret value, so an explicit Deny on every value-returning call - GetSecretValue, BatchGetSecretValue, the SSM GetParameter family and kms:Decrypt - costs you nothing and removes the worst thing the role could be used for. An explicit Deny cannot be overridden by a later Allow.',
         check: 'The role policy contains an explicit Deny on secret-value reads.',
       },
       {
@@ -444,8 +488,8 @@ export const AWS_RULE_CATEGORIES = [
         label: 'Scope to the regions you actually use',
         severity: 'LOW',
         detail:
-          'An aws:RequestedRegion condition listing your regions stops the role being usable in one you have never deployed to - which is where an unnoticed resource would be created.',
-        check: 'An aws:RequestedRegion condition is present.',
+          'An aws:RequestedRegion condition listing your regions stops the role being usable in one you have never deployed to. Include us-east-1 even if you run nothing there: IAM, Organizations and other global services are called through us-east-1, so a region list without it blocks the identity inventory itself.',
+        check: 'An aws:RequestedRegion condition is present and includes us-east-1.',
       },
     ],
   },
@@ -459,15 +503,15 @@ export const AWS_RULE_CATEGORIES = [
         label: 'Deploy the role to every account',
         severity: 'HIGH',
         detail:
-          'Use a CloudFormation StackSet from the management account so the role exists in every member account, including ones created later. An identity in an account nobody connected is an identity nobody is watching.',
+          'Use a service-managed CloudFormation StackSet with automatic deployment turned on, targeted at the organisation root, so the role reaches every member account including ones created later. Service-managed StackSets never deploy to the management account itself, so create the role there separately if you want it covered. An identity in an account nobody connected is an identity nobody is watching.',
         check: 'The role exists in every account the organisation lists.',
       },
       {
         key: 'org-trail',
         label: 'Turn on an organisation-wide CloudTrail trail',
-        severity: 'HIGH',
+        severity: 'MEDIUM',
         detail:
-          'Behaviour comes from management events. Without a multi-region organisation trail, the genome has no history for the accounts the trail does not cover, and those identities show as never used rather than as unknown.',
+          'CloudTrail keeps 90 days of management events in every region without any trail, which is enough to start. It is not enough to judge a quarterly batch job, a yearly key rotation or anything dormant for longer than a season: past 90 days the event history is gone, and an identity idle for 100 days reads as never used. A multi-region organisation trail keeps the history for as long as you retain it.',
         check: 'A multi-region organisation trail is logging.',
       },
       {
@@ -512,9 +556,9 @@ export const AWS_HEALTH_CHECKS = [
   },
   {
     key: 'cloudtrail',
-    label: 'CloudTrail is readable and logging',
-    detail: 'A trail exists, is multi-region, and cloudtrail:LookupEvents returns events.',
-    fix: 'Create a multi-region trail, or decline the behaviour permissions if you do not want baselines.',
+    label: 'CloudTrail is readable',
+    detail: 'cloudtrail:LookupEvents returns events in every region in range, and whether an organisation trail extends history past 90 days.',
+    fix: 'Grant the behaviour permissions. For history past 90 days, turn on a multi-region organisation trail.',
   },
   {
     key: 'organisation',
@@ -572,11 +616,17 @@ export function denySecretValuesDocument() {
         {
           Sid: 'DenyReadingSecretValues',
           Effect: 'Deny',
+          /* Every call that returns a value rather than metadata, including
+             the two that are easy to miss: BatchGetSecretValue reads many
+             secrets in one call, and GetParameterHistory returns previous
+             values of a parameter. */
           Action: [
             'secretsmanager:GetSecretValue',
+            'secretsmanager:BatchGetSecretValue',
             'ssm:GetParameter',
             'ssm:GetParameters',
             'ssm:GetParametersByPath',
+            'ssm:GetParameterHistory',
             'kms:Decrypt',
           ],
           Resource: '*',
@@ -608,4 +658,234 @@ export function permissionPolicyDocument(selectedKeys) {
     null,
     2,
   );
+}
+
+/* ── AWS: deployable artefacts ───────────────────────────────────────────── */
+
+export const ROLE_NAME = 'DeepAlgorithmsNhiDiscovery';
+const READ_POLICY_NAME = 'NhiConsoleReadOnlyDiscovery';
+const DENY_POLICY_NAME = 'DenyReadingSecretValues';
+
+function selectedActions(selectedKeys) {
+  return [
+    ...new Set(
+      AWS_PERMISSION_GROUPS.filter((group) => selectedKeys.includes(group.key)).flatMap(
+        (group) => group.actions,
+      ),
+    ),
+  ].sort();
+}
+
+function trustStatement(consoleAccountId, externalId) {
+  return {
+    Sid: 'AllowNhiConsoleToAssumeWithExternalId',
+    Effect: 'Allow',
+    Principal: { AWS: `arn:aws:iam::${consoleAccountId}:root` },
+    Action: 'sts:AssumeRole',
+    Condition: { StringEquals: { 'sts:ExternalId': externalId } },
+  };
+}
+
+function denyStatement() {
+  return JSON.parse(denySecretValuesDocument()).Statement[0];
+}
+
+/**
+ * A CloudFormation template, in JSON.
+ *
+ * JSON rather than YAML on purpose: CloudFormation accepts both, and a JSON
+ * template is produced by `JSON.stringify` with no hand-written serialiser in
+ * between that could emit an unquoted colon or a tab and break the stack on
+ * deploy. The external id is a parameter with the tenant's value as its
+ * default, so the same file works as a single stack or as a StackSet.
+ */
+export function cloudFormationTemplate({ consoleAccountId, externalId, selectedKeys }) {
+  const template = {
+    AWSTemplateFormatVersion: '2010-09-09',
+    Description: 'Read-only cross-account discovery role for the NHI console. No access keys; secret values explicitly denied.',
+    Parameters: {
+      ExternalId: {
+        Type: 'String',
+        Default: externalId,
+        Description: 'Issued per tenant by the NHI console. Required on every AssumeRole call.',
+      },
+    },
+    Resources: {
+      DiscoveryRole: {
+        Type: 'AWS::IAM::Role',
+        Properties: {
+          RoleName: ROLE_NAME,
+          MaxSessionDuration: 3600,
+          AssumeRolePolicyDocument: {
+            Version: '2012-10-17',
+            Statement: [
+              {
+                ...trustStatement(consoleAccountId, externalId),
+                Condition: { StringEquals: { 'sts:ExternalId': { Ref: 'ExternalId' } } },
+              },
+            ],
+          },
+          Policies: [
+            {
+              PolicyName: READ_POLICY_NAME,
+              PolicyDocument: {
+                Version: '2012-10-17',
+                Statement: [
+                  {
+                    Sid: 'NhiConsoleReadOnlyDiscovery',
+                    Effect: 'Allow',
+                    Action: selectedActions(selectedKeys),
+                    Resource: '*',
+                  },
+                ],
+              },
+            },
+            {
+              PolicyName: DENY_POLICY_NAME,
+              PolicyDocument: { Version: '2012-10-17', Statement: [denyStatement()] },
+            },
+          ],
+        },
+      },
+    },
+    Outputs: {
+      RoleArn: {
+        Description: 'Give this ARN to the NHI console.',
+        Value: { 'Fn::GetAtt': ['DiscoveryRole', 'Arn'] },
+      },
+    },
+  };
+  return JSON.stringify(template, null, 2);
+}
+
+/**
+ * The same role as Terraform.
+ *
+ * Policies are passed as heredoc JSON rather than HCL maps, so the documents
+ * are byte-for-byte the ones on the Permissions tab - there is no second
+ * rendering of them that could drift.
+ */
+export function terraformModule({ consoleAccountId, externalId, selectedKeys }) {
+  const trust = JSON.stringify(
+    { Version: '2012-10-17', Statement: [trustStatement(consoleAccountId, externalId)] },
+    null,
+    2,
+  );
+  const read = permissionPolicyDocument(selectedKeys);
+  const deny = denySecretValuesDocument();
+  const indent = (text) =>
+    text
+      .split('\n')
+      .map((line) => `    ${line}`)
+      .join('\n');
+  return `# Read-only cross-account discovery role for the NHI console.
+# terraform init && terraform apply, then give the role_arn output to the console.
+
+resource "aws_iam_role" "nhi_discovery" {
+  name                 = "${ROLE_NAME}"
+  max_session_duration = 3600
+
+  assume_role_policy = <<-EOT
+${indent(trust)}
+  EOT
+}
+
+resource "aws_iam_role_policy" "read_only_discovery" {
+  name = "${READ_POLICY_NAME}"
+  role = aws_iam_role.nhi_discovery.id
+
+  policy = <<-EOT
+${indent(read)}
+  EOT
+}
+
+resource "aws_iam_role_policy" "deny_secret_values" {
+  name = "${DENY_POLICY_NAME}"
+  role = aws_iam_role.nhi_discovery.id
+
+  policy = <<-EOT
+${indent(deny)}
+  EOT
+}
+
+output "role_arn" {
+  value = aws_iam_role.nhi_discovery.arn
+}
+`;
+}
+
+/** The same role with the AWS CLI, one account at a time. */
+export function awsCliScript({ consoleAccountId, externalId, selectedKeys }) {
+  const trust = JSON.stringify(
+    { Version: '2012-10-17', Statement: [trustStatement(consoleAccountId, externalId)] },
+    null,
+    2,
+  );
+  return `#!/usr/bin/env sh
+# Read-only cross-account discovery role for the NHI console.
+# Run with credentials for the account you are connecting. IAM is global,
+# so this runs once per account, not once per region.
+set -e
+
+cat > nhi-trust.json <<'EOF'
+${trust}
+EOF
+
+cat > nhi-read-only.json <<'EOF'
+${permissionPolicyDocument(selectedKeys)}
+EOF
+
+cat > nhi-deny-secret-values.json <<'EOF'
+${denySecretValuesDocument()}
+EOF
+
+aws iam create-role \\
+  --role-name ${ROLE_NAME} \\
+  --max-session-duration 3600 \\
+  --assume-role-policy-document file://nhi-trust.json
+
+aws iam put-role-policy \\
+  --role-name ${ROLE_NAME} \\
+  --policy-name ${READ_POLICY_NAME} \\
+  --policy-document file://nhi-read-only.json
+
+aws iam put-role-policy \\
+  --role-name ${ROLE_NAME} \\
+  --policy-name ${DENY_POLICY_NAME} \\
+  --policy-document file://nhi-deny-secret-values.json
+
+# The ARN to give the console:
+aws iam get-role --role-name ${ROLE_NAME} --query Role.Arn --output text
+`;
+}
+
+/**
+ * Rolling the CloudFormation template out to a whole organisation.
+ *
+ * Service-managed, with automatic deployment, so accounts created later get
+ * the role without anybody remembering to add them. One region only: an IAM
+ * role is global, and a second stack instance in another region would fail
+ * on the duplicate role name.
+ */
+export function stackSetCommands() {
+  return `# From the management account (or a CloudFormation delegated administrator).
+# Save the CloudFormation template above as nhi-discovery-role.json first.
+
+aws cloudformation create-stack-set \\
+  --stack-set-name nhi-discovery-role \\
+  --template-body file://nhi-discovery-role.json \\
+  --permission-model SERVICE_MANAGED \\
+  --auto-deployment Enabled=true,RetainStacksOnAccountRemoval=false \\
+  --capabilities CAPABILITY_NAMED_IAM
+
+# Target the organisation root to cover every account. One region only:
+# the role is global, and a second region would collide on its name.
+aws cloudformation create-stack-instances \\
+  --stack-set-name nhi-discovery-role \\
+  --deployment-targets OrganizationalUnitIds=<your-root-id> \\
+  --regions us-east-1
+
+# Service-managed StackSets never deploy to the management account itself.
+# If it should be covered, deploy the template there as an ordinary stack.
+`;
 }

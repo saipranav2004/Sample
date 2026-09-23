@@ -348,6 +348,14 @@
     border-radius: var(--radius-control);
     overflow: hidden;
   }
+  /* On a phone the minimap covers a third of a 360px canvas, and it sat on
+     exactly the column an expansion had just opened. Pan and the zoom
+     buttons do its job there. */
+  @media (max-width: 639px) {
+    .access-canvas .react-flow__minimap {
+      display: none;
+    }
+  }
   .access-canvas .react-flow__minimap-mask {
     fill: color-mix(in oklab, var(--t-ink) 12%, transparent);
   }
@@ -557,12 +565,18 @@
      the eye has to follow. A slow drift along the whole edge states it
      continuously, and it is the difference between a diagram that looks static
      and one that reads as a system with things moving through it.
-     Slow and low-contrast on purpose: this runs on every edge at rest, so
-     anything faster competes with the reader rather than helping them. */
+     Slow on purpose: this runs on every edge at rest, so anything faster
+     competes with the reader rather than helping them. It is visible because
+     of the colour, not the speed - the edges are drawn in --t-graph-flow,
+     over 3:1 against the canvas; the old grey was 1.36:1 and the motion could
+     not be seen at all. Long dashes, short gaps, so an edge still reads as
+     one line while it moves. `--dash-period` is dash plus gap, and escalation
+     edges use the same rhythm, so neither jumps at the loop boundary. */
   .access-canvas .react-flow__edge-path {
     --dash-period: 14px;
-    stroke-dasharray: 5 9;
-    animation: dna-edge-dash 2.6s linear infinite;
+    stroke-dasharray: 8 6;
+    stroke-linecap: round;
+    animation: dna-edge-dash 2.4s linear infinite;
   }
 
   /* An edge under the cursor's neighbourhood speeds up: the hover already dims

@@ -1,5 +1,6 @@
 import {
   Activity,
+  BellRing,
   Dna,
   Waypoints,
   FileText,
@@ -24,7 +25,12 @@ export const NAV_GROUPS = [
   {
     key: 'overview',
     label: 'Posture',
-    items: [{ to: '/posture', label: 'Overview', icon: Gauge, end: true }],
+    /* Alerts sits beside the overview: the overview says how exposed the
+       estate is, and the alert queue is what somebody does about it. */
+    items: [
+      { to: '/posture', label: 'Overview', icon: Gauge, end: true },
+      { to: '/alerts', label: 'Alerts', icon: BellRing },
+    ],
   },
   {
     key: 'inventory',
@@ -90,6 +96,7 @@ export const ALL_NAV_ITEMS = NAV_GROUPS.flatMap((group) =>
  */
 export const BREADCRUMBS = {
   '/posture': ['Posture'],
+  '/alerts': ['Posture', 'Alerts'],
   '/identities': ['Inventory', 'Identities'],
   '/credentials': ['Inventory', 'Credentials'],
   '/exposure': ['Credential exposure', 'Exposed credentials'],

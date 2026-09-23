@@ -1,4 +1,5 @@
 import scannerClient from './scannerClient';
+import { ApiError } from './http';
 import * as demo from '../demo/api';
 
 /**
@@ -45,6 +46,11 @@ export const fetchEvents = (query, signal) => demo.fetchEvents(query, signal);
 export const fetchIntegrations = (signal) => demo.fetchIntegrations(signal);
 export const fetchIntegrationHealth = (platform, signal) => demo.fetchIntegrationHealth(platform, signal);
 
+/* ── Alerts ──────────────────────────────────────────────────────────────── */
+
+export const fetchAlerts = (signal) => demo.fetchAlerts(signal);
+export const updateAlerts = (input) => demo.updateAlerts(input);
+
 /* ── Exact counts ────────────────────────────────────────────────────────── */
 
 export const countIdentities = (query, signal) => demo.countIdentities(query, signal);
@@ -59,17 +65,42 @@ export const countCredentials = (query, signal) => demo.countCredentials(query, 
    attaching `X-Dashboard-Key` server-side from SCANNER_DASHBOARD_KEY - which
    is the pattern the guide requires: browser -> our own server -> their API. */
 
+/**
+ * The body has to be the scanner's JSON, not merely a 200.
+ *
+ * When nothing proxies `/secret-scanner` - the built app served by a plain
+ * static server, a missing nginx location - the request falls through to the
+ * single-page app's `index.html` fallback, which answers 200 with HTML. Read as
+ * JSON that is an object with no `findings`, which used to become an empty
+ * list: the screen reported "no secrets exposed" when it had never reached the
+ * scanner at all. That is the worst failure a security screen can have, so it
+ * is an error here instead.
+ */
+function scannerBody(res, field) {
+  const body = res?.data;
+  if (!body || typeof body !== 'object' || !Array.isArray(body[field])) {
+    throw new ApiError({
+      message:
+        'The scanner path answered, but not with scanner data. Nothing is proxying /secret-scanner to the Secret Scanner API.',
+      status: res?.status ?? null,
+      code: 'NOT_PROXIED',
+      retryable: false,
+      keyAttached: res?.headers?.['x-scanner-key-attached'] ?? null,
+    });
+  }
+  return body;
+}
+
 export async function fetchFindings(signal) {
   const res = await scannerClient.get('/api/findings', { signal });
-  const body = res?.data ?? {};
-  const findings = Array.isArray(body.findings) ? body.findings : [];
+  const body = scannerBody(res, 'findings');
+  const findings = body.findings;
   return { findings, count: Number.isFinite(body.count) ? body.count : findings.length };
 }
 
 export async function fetchAllowlist(signal) {
   const res = await scannerClient.get('/api/allowlist', { signal });
-  const body = res?.data ?? {};
-  return Array.isArray(body.entries) ? body.entries : [];
+  return scannerBody(res, 'entries').entries;
 }
 
 /** All four identifying fields are required by the service. */

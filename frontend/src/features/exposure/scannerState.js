@@ -26,20 +26,52 @@ export function findingKey(finding) {
   return [finding?.client_id, finding?.file_path, finding?.detector, finding?.redacted].join('|');
 }
 
+/**
+ * What went wrong reaching the scanner, in terms of what to do about it.
+ *
+ * Every case here used to collapse into "not configured", including the one
+ * where a key WAS configured and the scanner rejected it - so an operator who
+ * had set the key correctly was told to set it. The proxy now reports whether
+ * it attached a key (`X-Scanner-Key-Attached`, yes or no, never the value),
+ * which separates the cases that need different fixes:
+ *
+ *   no key attached        the server has no SCANNER_DASHBOARD_KEY
+ *   key attached, 401      the value is wrong, expired, or has stray spaces
+ *   5xx / no response      the proxy is up and the scanner host is not
+ *   HTML instead of JSON   nothing is proxying the path at all
+ */
 export function describeScannerError(error) {
   if (error?.status === 401) {
+    if (error?.keyAttached === 'yes') {
+      return {
+        title: 'The scanner rejected the dashboard key',
+        message:
+          'A key was attached server-side and the Secret Scanner answered 401. The value of SCANNER_DASHBOARD_KEY is wrong or has been revoked - check it against the key the scanner issued, then restart the dev server or the container.',
+        configuration: true,
+      };
+    }
     return {
       title: 'Credential exposure service is not configured',
       message:
-        'The scanner rejected the request as unauthorized. The dashboard key is attached by the server-side proxy, not the browser - set SCANNER_DASHBOARD_KEY for the proxy and reload.',
+        error?.keyAttached === 'no'
+          ? 'The proxy has no SCANNER_DASHBOARD_KEY. Set it in frontend/.env (without a VITE_ prefix) for local development, or pass it to the container at run time, then restart.'
+          : 'The scanner rejected the request as unauthorized. The dashboard key is attached by the server-side proxy, not the browser - set SCANNER_DASHBOARD_KEY for the proxy and restart.',
       configuration: true,
     };
   }
-  if (error?.code === 'NETWORK') {
+  if (error?.code === 'NOT_PROXIED') {
     return {
-      title: 'Cannot reach the code exposure service',
+      title: 'Nothing is proxying the scanner',
       message:
-        'No response from the scanner proxy. Confirm the proxy path is served and that the upstream scanner is reachable.',
+        'The /secret-scanner path returned the app itself rather than the scanner. Run the app with `npm run dev` (which proxies it) or behind the provided nginx configuration - a plain static file server cannot attach the key.',
+      configuration: true,
+    };
+  }
+  if (error?.code === 'NETWORK' || [500, 502, 503, 504].includes(error?.status)) {
+    return {
+      title: 'Cannot reach the credential exposure service',
+      message:
+        'The proxy is running but the Secret Scanner did not answer. Check that SCANNER_UPSTREAM is reachable from the machine running the proxy - a corporate proxy or VPN is the usual cause - and try again.',
       configuration: true,
     };
   }

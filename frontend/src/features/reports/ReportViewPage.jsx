@@ -1,8 +1,11 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Download, RotateCcw } from 'lucide-react';
 import { REPORT_FORMATS, RUN_STATUSES, fetchRun, generateReport } from '../../lib/demo/reports';
 import { useDemoQuery } from '../../lib/demo/useDemoQuery';
+import { fetchAllowlist, fetchFindings } from '../../lib/api/endpoints';
+import { useQuery } from '../../lib/hooks';
+import { describeScannerError, summariseFindings } from '../exposure/scannerState';
 import { exportRowsToCsv, timestampedName } from '../../lib/csv';
 import { formatDateTime, formatNumber, formatRelative } from '../../lib/format';
 import { PageHeader } from '../../shell/PageHeader';
@@ -31,7 +34,36 @@ export default function ReportViewPage() {
   const { notify } = useToast();
 
   const query = useDemoQuery((signal) => fetchRun(id, signal), [id]);
-  const run = query.data;
+  const baseRun = query.data;
+
+  /* Exposure sections are read from the scanner when the report is opened -
+     the only source those figures have - and only for reports that have them. */
+  const needsScanner = Boolean(baseRun?.preview.sections.some((section) => section.live === 'exposure'));
+  const scanner = useQuery(
+    async (signal) => {
+      const [findings, allowlist] = await Promise.all([fetchFindings(signal), fetchAllowlist(signal)]);
+      return { findings: findings.findings, allowlist };
+    },
+    [needsScanner],
+    { enabled: needsScanner },
+  );
+
+  const run = useMemo(() => {
+    if (!baseRun) return baseRun;
+    const scannerError = scanner.isError && !scanner.data ? describeScannerError(scanner.error) : null;
+    return {
+      ...baseRun,
+      preview: {
+        ...baseRun.preview,
+        sections: baseRun.preview.sections.map((section) => {
+          if (section.live !== 'exposure') return section;
+          if (scannerError) return { ...section, metrics: [], unavailable: scannerError.title };
+          if (!scanner.data) return { ...section, metrics: [], loading: true };
+          return { ...section, metrics: exposureMeasures(section.key, scanner.data) };
+        }),
+      },
+    };
+  }, [baseRun, scanner.data, scanner.isError, scanner.error]);
 
   const onExport = useCallback(() => {
     if (!run) return;
@@ -42,7 +74,6 @@ export default function ReportViewPage() {
         section: section.title,
         measure: metric.label,
         value: metric.value,
-        change: metric.delta,
       })),
     );
     exportRowsToCsv({
@@ -51,7 +82,6 @@ export default function ReportViewPage() {
         { header: 'Section', value: (row) => row.section },
         { header: 'Measure', value: (row) => row.measure },
         { header: 'Value', value: (row) => row.value },
-        { header: 'Change', value: (row) => row.change },
       ],
       rows,
     });
@@ -176,26 +206,28 @@ export default function ReportViewPage() {
                 }
               />
 
+              {section.loading && <p className="mt-3 text-[12.5px] text-ink-3">Reading the Secret Scanner…</p>}
+              {section.unavailable && (
+                <p className="mt-3 rounded-[var(--radius-control)] border border-medium/40 bg-medium-soft px-3 py-2 text-[12.5px] text-ink-2">
+                  {section.unavailable}. This section is read from the scanner when the report is opened, so it is
+                  empty until the scanner answers.
+                </p>
+              )}
               <dl className="mt-3 grid gap-3 @min-[26rem]:grid-cols-2 @min-[46rem]:grid-cols-4">
                 {section.metrics.map((metric) => (
                   <div
                     key={metric.key}
                     className="rounded-[var(--radius-control)] border border-line bg-surface-2 p-3"
                   >
-                    <dt className="truncate text-[11px] font-semibold tracking-[0.06em] text-ink-3 uppercase" title={metric.label}>
+                    {/* Wraps rather than truncating: the measures are sentences
+                        ("Administrators unused 90+ days"), and a clipped one
+                        changes what the number means. */}
+                    <dt className="text-[11px] leading-snug font-semibold tracking-[0.06em] text-ink-3 uppercase">
                       {metric.label}
                     </dt>
-                    <dd className="mt-1 flex items-baseline gap-2">
+                    <dd className="mt-1.5">
                       <span data-numeric="" className="font-display text-[22px] leading-none font-extrabold text-ink">
                         {formatNumber(metric.value)}
-                      </span>
-                      <span
-                        data-numeric=""
-                        className={`text-[11.5px] font-semibold ${metric.delta > 0 ? 'text-ink-2' : 'text-ink-3'}`}
-                        title="Change against the previous report"
-                      >
-                        {metric.delta > 0 ? '+' : ''}
-                        {metric.delta}
                       </span>
                     </dd>
                   </div>
@@ -225,4 +257,44 @@ function Fact({ label, value }) {
       </dd>
     </div>
   );
+}
+
+/**
+ * The exposure sections, from the scanner's own findings and allowlist - the
+ * same figures the Exposed credentials and Accepted screens show.
+ */
+function exposureMeasures(key, { findings, allowlist }) {
+  const summary = summariseFindings(findings);
+  switch (key) {
+    case 'by-platform':
+      return [
+        { key: 'github', label: 'GitHub', value: summary.byPlatform.github },
+        { key: 'codecommit', label: 'CodeCommit', value: summary.byPlatform.codecommit },
+        { key: 'repos', label: 'Repositories affected', value: summary.repositoryCount },
+      ];
+    case 'by-tier':
+      return [
+        { key: 'high', label: 'High', value: summary.byTier.HIGH + summary.byTier.CRITICAL },
+        { key: 'medium', label: 'Medium', value: summary.byTier.MEDIUM },
+        { key: 'low', label: 'Low', value: summary.byTier.LOW },
+      ];
+    case 'review':
+      return [
+        { key: 'open', label: 'Still open', value: summary.total },
+        { key: 'accepted', label: 'Accepted', value: allowlist.length },
+        {
+          key: 'reason',
+          label: 'Accepted with a reason',
+          value: allowlist.filter((entry) => String(entry.reason ?? '').trim()).length,
+        },
+      ];
+    case 'detail':
+      return [
+        { key: 'total', label: 'Exposed credentials', value: summary.total },
+        { key: 'repos', label: 'Repositories', value: summary.repositoryCount },
+        { key: 'detectors', label: 'Detector types', value: summary.detectors.length },
+      ];
+    default:
+      return [];
+  }
 }

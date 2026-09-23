@@ -77,6 +77,19 @@ export const Input = forwardRef(function Input(
   );
 });
 
+/** Multi-line text, styled as the single-line input so the two sit together. */
+export const Textarea = forwardRef(function Textarea({ invalid, rows = 3, className, ...rest }, ref) {
+  return (
+    <textarea
+      ref={ref}
+      rows={rows}
+      aria-invalid={invalid || undefined}
+      className={cn(CONTROL, 'resize-y px-3 py-2 text-[13px] leading-relaxed', stateClasses(invalid), className)}
+      {...rest}
+    />
+  );
+});
+
 export const PasswordInput = forwardRef(function PasswordInput(
   { size = 'md', invalid, className, ...rest },
   ref,

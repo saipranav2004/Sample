@@ -487,6 +487,17 @@ export function setPolicyApplied(policyId, applied) {
 
 const WINDOW_HOURS = { '24h': 24, '7d': 168, '30d': 720 };
 
+/**
+ * Every anomaly with any decision already recorded against it.
+ *
+ * Exported for the Alerts screen, which raises one alert per anomaly and has
+ * to agree with this screen about which are still open - so it reads these
+ * records rather than a copy of them.
+ */
+export function genomeAnomalies() {
+  return allAnomalies();
+}
+
 function allAnomalies() {
   const overlay = anomalyOverlay();
   return buildFleet()

@@ -109,8 +109,8 @@ const ACTOR_TYPES = {
   'AWS::EC2::Instance': {
     label: 'EC2 instance',
     category: 'COMPUTE',
-    discoveryApi: 'ec2:DescribeInstances',
-    boundVia: 'IamInstanceProfile in the same response',
+    discoveryApi: 'ec2:DescribeInstances -> iam:GetInstanceProfile',
+    boundVia: 'IamInstanceProfile in the same response, resolved to its role',
   },
   'AWS::Lambda::Function': {
     label: 'Lambda function',
@@ -121,20 +121,21 @@ const ACTOR_TYPES = {
   'AWS::ECS::Task': {
     label: 'ECS task',
     category: 'COMPUTE',
-    discoveryApi: 'ecs:ListTasks -> DescribeTasks',
-    boundVia: 'DescribeTaskDefinition.taskRoleArn',
+    discoveryApi: 'ecs:ListTasks -> DescribeTasks -> DescribeTaskDefinition',
+    boundVia: 'taskRoleArn on the task definition',
   },
   'AWS::ECS::FargateTask': {
     label: 'Fargate task',
     category: 'COMPUTE',
-    discoveryApi: 'ecs:ListTasks, launchType=FARGATE',
-    boundVia: 'DescribeTaskDefinition.taskRoleArn',
+    discoveryApi: 'ecs:ListTasks (launchType FARGATE) -> DescribeTaskDefinition',
+    boundVia: 'taskRoleArn on the task definition',
   },
   'AWS::EKS::Pod': {
     label: 'EKS pod',
     category: 'COMPUTE',
-    discoveryApi: 'eks:ListPodIdentityAssociations',
-    boundVia: 'RoleArn on the association, or the IRSA service-account annotation',
+    discoveryApi: 'eks:ListPodIdentityAssociations -> DescribePodIdentityAssociation',
+    /* The list call's summaries carry no role - only the describe call does. */
+    boundVia: 'roleArn on the described association, or the IRSA service-account annotation',
   },
   'AWS::AppRunner::Service': {
     label: 'App Runner service',
@@ -145,19 +146,19 @@ const ACTOR_TYPES = {
   'AWS::Batch::Job': {
     label: 'Batch job',
     category: 'COMPUTE',
-    discoveryApi: 'batch:ListJobs -> DescribeJobs',
-    boundVia: 'jobDefinition -> jobRoleArn',
+    discoveryApi: 'batch:ListJobs -> DescribeJobs -> DescribeJobDefinitions',
+    boundVia: 'jobRoleArn on the job definition',
   },
   'AWS::StepFunctions::StateMachine': {
     label: 'Step Functions state machine',
     category: 'ORCHESTRATION',
-    discoveryApi: 'states:ListStateMachines',
-    boundVia: 'roleArn on the state machine',
+    discoveryApi: 'states:ListStateMachines -> DescribeStateMachine',
+    boundVia: 'roleArn on the described state machine',
   },
   'AWS::Events::Rule': {
     label: 'EventBridge rule',
     category: 'ORCHESTRATION',
-    discoveryApi: 'events:ListRules -> ListTargets',
+    discoveryApi: 'events:ListRules -> ListTargetsByRule',
     boundVia: 'RoleArn on the target',
   },
   'AWS::CodeBuild::Project': {
@@ -205,14 +206,14 @@ const ACTOR_TYPES = {
   'AWS::SageMaker::Endpoint': {
     label: 'SageMaker endpoint',
     category: 'AI_AGENT',
-    discoveryApi: 'sagemaker:ListEndpoints -> DescribeEndpointConfig',
+    discoveryApi: 'sagemaker:ListEndpoints -> DescribeEndpointConfig -> DescribeModel',
     boundVia: "The model's ExecutionRoleArn",
   },
   'AWS::SageMaker::NotebookInstance': {
     label: 'SageMaker notebook',
     category: 'AI_AGENT',
-    discoveryApi: 'sagemaker:ListNotebookInstances',
-    boundVia: 'RoleArn',
+    discoveryApi: 'sagemaker:ListNotebookInstances -> DescribeNotebookInstance',
+    boundVia: 'RoleArn on the described instance',
   },
   'AWS::Glue::JobRun': {
     label: 'Glue job run',
@@ -223,13 +224,17 @@ const ACTOR_TYPES = {
   'AWS::EMR::Step': {
     label: 'EMR step',
     category: 'DATA',
-    discoveryApi: 'emr:ListClusters -> DescribeCluster',
+    /* The IAM prefix for EMR is `elasticmapreduce`, not `emr`. */
+    discoveryApi: 'elasticmapreduce:ListClusters -> DescribeCluster',
     boundVia: 'ServiceRole, and the EC2 fleet instance profile - two actors, not one',
   },
   'AWS::ApiGateway::Integration': {
     label: 'API Gateway integration',
     category: 'NETWORK',
-    discoveryApi: 'apigateway:GetRestApis -> GetIntegration',
+    /* API Gateway's IAM actions are HTTP verbs on resource paths, so the
+       permission is `apigateway:GET`; GetRestApis and GetIntegration are the
+       API operations it covers. */
+    discoveryApi: 'apigateway:GET (GetRestApis -> GetIntegration)',
     boundVia: 'credentials field, per integration',
   },
   'External::SaaSVendor': {

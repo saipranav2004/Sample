@@ -24,6 +24,15 @@
 
 import { demoRequest, hashSeed, intBetween, rng } from './runtime';
 import { estate, ESTATE_META, OPERATOR } from './estate';
+import {
+  AWS_VERIFIED_AT,
+  CONSOLE_ACCOUNT_ID,
+  TENANT_EXTERNAL_ID,
+  awsCheckResults,
+  connectorRows,
+  organisationAccounts,
+  uncoveredAccounts,
+} from './integrations';
 
 /** The list envelope every screen expects from `unwrapList`. */
 function paginate(rows, page = 1, pageSize = 25) {
@@ -410,114 +419,45 @@ export async function countCredentials(query = {}, signal) {
 
 /* ── Integrations ─────────────────────────────────────────────────────────── */
 
-/**
- * Connector state.
- *
- * The one genuinely new surface in this build with no counterpart on the Go
- * API, so it is shaped the way the endpoint would be: one row per platform the
- * tenant has connected, plus the tenant-level values the AWS setup screen has
- * to display (our own account id, and the external id issued for this tenant).
- *
- * Coverage is counted, not written: `accountsConnected` is derived from the
- * estate's own account list, so the number on this screen and the number of
- * accounts the identities actually come from are the same fact.
- */
-const CONNECTED_PLATFORMS = [
-  {
-    key: 'aws',
-    status: 'attention',
-    /* Not 'connected': five of the six accounts have the role. A screen that
-       only ever draws the healthy state is a screen nobody has seen fail, and
-       partial coverage is the commonest real state of this connector. */
-    detail: 'Reading five of six accounts. One member account has no discovery role deployed yet.',
-    roleName: 'DeepAlgorithmsNhiDiscovery',
-    configurable: true,
-  },
-  /* Source control is onboarded by the credential scanner rather than here, so
-     these two are stated as connected - the Exposed credentials screen is
-     visibly reading them - but they carry no Configure control, because there
-     is nothing on this side to configure. Leaving them off the screen instead
-     would contradict a screen two clicks away that is full of their findings. */
-  {
-    key: 'github',
-    status: 'connected',
-    detail: 'Repository history feeding the credential scanner. Onboarded by the scanner service, not from this screen.',
-    configurable: false,
-    managedBy: 'the credential scanner',
-  },
-  {
-    key: 'codecommit',
-    status: 'connected',
-    detail: 'The same scanner against repositories inside the AWS account.',
-    configurable: false,
-    managedBy: 'the credential scanner',
-  },
-];
+/* Connector state lives in `./integrations`, because the Alerts screen raises
+   alerts from the same checks this screen shows. */
 
 export function fetchIntegrations(signal) {
   return demoRequest(
     () => {
-      const accounts = estate().accounts;
+      const org = organisationAccounts();
       return {
         tenant: {
           /* The console's own AWS account id, which is what a customer's trust
              policy has to name. Not the customer's - that is the one thing a
              setup screen must never get the wrong way round. */
-          consoleAccountId: '905418327764',
+          consoleAccountId: CONSOLE_ACCOUNT_ID,
           /* Per tenant, never shared. This is what closes the confused-deputy
              hole: our account id alone in a trust policy would let any
              principal inside our account assume the customer's role. */
-          externalId: 'da-nhi-7f3c1a94-2b6e-4d52-9c18-a0e5f7d31b46',
+          externalId: TENANT_EXTERNAL_ID,
           regions: [...new Set(estate().identities.map((row) => row.region))].sort(),
         },
+        /* Counted, not written: the covered accounts are the estate's own, so
+           this number and the accounts the identities come from agree. */
         coverage: {
-          accountsTotal: accounts.length,
-          /* Five of six, which is why the AWS row reads "attention" on its
-             coverage check rather than a clean pass. */
-          accountsConnected: accounts.length - 1,
-          unconnected: accounts.slice(-1).map((account) => ({ id: account.id, name: account.name })),
+          accountsTotal: org.length,
+          accountsConnected: estate().accounts.length,
+          unconnected: uncoveredAccounts().map((account) => ({ id: account.id, name: account.name })),
         },
-        rows: CONNECTED_PLATFORMS.map((row) => ({
-          ...row,
-          lastSyncedAt: new Date(ESTATE_META.NOW - intBetween(rng(hashSeed(row.key)), 4, 190) * 60_000).toISOString(),
-        })),
+        rows: connectorRows(),
       };
     },
     { signal, latency: [200, 380] },
   );
 }
 
-/**
- * The verification results for one platform.
- *
- * Shaped as one row per check rather than one overall verdict, because "the
- * connector is unhealthy" is not actionable and "organisation policies are not
- * readable, so the graph over-reports" is.
- */
-const AWS_CHECK_RESULTS = {
-  assume: { state: 'pass', note: 'Assumed in 240ms, session capped at one hour.' },
-  'external-id': { state: 'pass', note: 'The condition is present and the id matches the one issued for this tenant.' },
-  'iam-read': { state: 'pass', note: 'Authorization details returned for all six accounts that have the role.' },
-  cloudtrail: {
-    state: 'warn',
-    note: 'A multi-region trail is logging, but it was created 41 days ago - so no identity has more than 41 days of history and the oldest baselines are still learning.',
-  },
-  organisation: {
-    state: 'fail',
-    note: 'organizations:ListPolicies returned AccessDenied. Service control policies cannot be read, so the access graph draws edges the organisation may already deny.',
-  },
-  accounts: {
-    state: 'warn',
-    note: 'The role resolves in five of six accounts. sandbox-04 has no role deployed, so nothing in it is discovered at all.',
-  },
-};
-
 export function fetchIntegrationHealth(platformKey, signal) {
   return demoRequest(
     () => {
       if (platformKey !== 'aws') {
-        /* One check, honestly: a platform this build does not verify should say
-           so rather than draw six green rows it has not run. */
+        /* A platform this build does not verify says so, rather than drawing
+           six green rows it has not run. */
         return {
           platform: platformKey,
           verifiedAt: new Date(ESTATE_META.NOW - 6 * 60_000).toISOString(),
@@ -525,13 +465,38 @@ export function fetchIntegrationHealth(platformKey, signal) {
           unverified: true,
         };
       }
-      return {
-        platform: 'aws',
-        verifiedAt: new Date(ESTATE_META.NOW - 11 * 60_000).toISOString(),
-        unverified: false,
-        checks: AWS_CHECK_RESULTS,
-      };
+      return { platform: 'aws', verifiedAt: AWS_VERIFIED_AT, unverified: false, checks: awsCheckResults() };
     },
     { signal, latency: [260, 520] },
   );
+}
+
+/* ── Alerts ───────────────────────────────────────────────────────────────── */
+
+/**
+ * The alert queue, as `GET /api/alerts` would return it.
+ *
+ * `alerts` are the ones raised from the estate, triage applied. `triage` is
+ * the raw store, which the page needs for the exposure alerts it raises itself
+ * from the live scanner feed. `policy` and `people` are who alerts can go to.
+ */
+export async function fetchAlerts(signal) {
+  /* Loaded on demand: alerts read the genome model, and a static import here
+     would put it in the first-load bundle of every screen. */
+  const alerts = await import('./alerts');
+  return demoRequest(
+    () => ({
+      alerts: alerts.estateAlerts(),
+      triage: alerts.alertTriageStore(),
+      policy: alerts.escalationPolicy(),
+      people: alerts.alertPeople(),
+    }),
+    { signal, latency: [260, 480] },
+  );
+}
+
+/** `PATCH /api/alerts` - one action applied to one or more alerts. */
+export async function updateAlerts(input) {
+  const alerts = await import('./alerts');
+  return demoRequest(() => ({ changed: alerts.applyAlertAction(input) }), { latency: [180, 320] });
 }

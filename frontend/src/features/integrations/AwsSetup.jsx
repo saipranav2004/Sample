@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   AlertTriangle,
   ArrowLeft,
@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   ChevronRight,
   CircleDashed,
+  Download,
   Info,
   MinusCircle,
   ShieldCheck,
@@ -29,13 +30,19 @@ import {
   AWS_MANAGED_POLICY_OPTION,
   AWS_PERMISSION_GROUPS,
   AWS_RULE_CATEGORIES,
+  ROLE_NAME,
+  awsCliScript,
+  cloudFormationTemplate,
   denySecretValuesDocument,
   permissionPolicyDocument,
+  stackSetCommands,
+  terraformModule,
   trustPolicyDocument,
 } from './catalog';
 
 const TABS = [
   { value: 'configured', label: 'What is configured' },
+  { value: 'deploy', label: 'Deploy' },
   { value: 'permissions', label: 'Permissions' },
   { value: 'rules', label: 'Rules' },
   { value: 'health', label: 'Health' },
@@ -60,7 +67,18 @@ const TABS = [
  * reading the inventory.
  */
 export function AwsSetup({ data, onBack }) {
-  const [tab, setTab] = useState('configured');
+  /* The tab lives in the URL with the rest of this screen's state, so a link
+     to "the Health tab of the AWS setup" is a link somebody can send. */
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = TABS.some((entry) => entry.value === searchParams.get('tab'))
+    ? searchParams.get('tab')
+    : 'configured';
+  const setTab = (value) => {
+    const next = new URLSearchParams(searchParams);
+    if (value === 'configured') next.delete('tab');
+    else next.set('tab', value);
+    setSearchParams(next, { replace: true });
+  };
   /* The required groups are not togglable, because declining one leaves a
      connector that returns nothing - which is not a configuration, it is a
      disconnection with extra steps. */
@@ -92,7 +110,11 @@ export function AwsSetup({ data, onBack }) {
      customer's accounts, one per account, and there is no single id to print
      here. Printing ours would be exactly the confusion this screen exists to
      prevent. */
-  const roleArn = 'arn:aws:iam::<your-account-id>:role/DeepAlgorithmsNhiDiscovery';
+  const roleArn = `arn:aws:iam::<your-account-id>:role/${ROLE_NAME}`;
+
+  const partial = data.coverage.accountsConnected < data.coverage.accountsTotal;
+  const checks = health.data?.checks ?? {};
+  const passing = AWS_HEALTH_CHECKS.filter((check) => checks[check.key]?.state === 'pass').length;
 
   return (
     <div className="flex flex-col gap-6">
@@ -106,9 +128,17 @@ export function AwsSetup({ data, onBack }) {
         }
         meta={
           <div className="flex flex-wrap items-center gap-2">
-            <Tag tone="low" size="sm" icon={CheckCircle2}>
-              Connected
-            </Tag>
+            {/* The same words as the row on the integrations list, so the two
+                screens never describe one connector two ways. */}
+            {partial ? (
+              <Tag tone="medium" size="sm" icon={AlertTriangle}>
+                Partial coverage
+              </Tag>
+            ) : (
+              <Tag tone="low" size="sm" icon={CheckCircle2}>
+                Collecting
+              </Tag>
+            )}
             <Tag tone="neutral" size="sm">
               {formatNumber(data.coverage.accountsConnected)} of{' '}
               {formatNumber(data.coverage.accountsTotal)} accounts
@@ -120,6 +150,41 @@ export function AwsSetup({ data, onBack }) {
         }
         tabs={<Tabs size="sm" value={tab} onChange={setTab} tabs={TABS} />}
       />
+
+      <SetupProgress
+        steps={[
+          {
+            key: 'deploy',
+            label: 'Role deployed',
+            value: `${formatNumber(data.coverage.accountsConnected)} of ${formatNumber(data.coverage.accountsTotal)} accounts`,
+            state: partial ? 'warn' : 'pass',
+            tab: 'deploy',
+          },
+          {
+            key: 'permissions',
+            label: 'Permissions granted',
+            value: `${formatNumber(selectedKeys.length)} of ${formatNumber(AWS_PERMISSION_GROUPS.length)} groups`,
+            state: selectedKeys.length === AWS_PERMISSION_GROUPS.length ? 'pass' : 'warn',
+            tab: 'permissions',
+          },
+          {
+            key: 'verified',
+            label: 'Verified',
+            value: health.data ? `${formatNumber(passing)} of ${formatNumber(AWS_HEALTH_CHECKS.length)} checks passing` : 'Checking…',
+            state: !health.data
+              ? 'unknown'
+              : AWS_HEALTH_CHECKS.some((check) => checks[check.key]?.state === 'fail')
+                ? 'fail'
+                : passing === AWS_HEALTH_CHECKS.length
+                  ? 'pass'
+                  : 'warn',
+            tab: 'health',
+          },
+        ]}
+        onOpen={setTab}
+      />
+
+      {tab === 'deploy' && <DeployTab data={data} selectedKeys={selectedKeys} />}
 
       {tab === 'configured' && (
         <ConfiguredTab
@@ -146,6 +211,169 @@ export function AwsSetup({ data, onBack }) {
 
       {tab === 'health' && <HealthTab health={health} />}
     </div>
+  );
+}
+
+/* ── Setup progress ──────────────────────────────────────────────────────── */
+
+const STEP_STATE = {
+  pass: { tone: 'low', icon: CheckCircle2, label: 'Done' },
+  warn: { tone: 'medium', icon: AlertTriangle, label: 'Incomplete' },
+  fail: { tone: 'critical', icon: AlertTriangle, label: 'Failing' },
+  unknown: { tone: 'neutral', icon: CircleDashed, label: 'Checking' },
+};
+
+/**
+ * Three steps, each one a button to the tab that fixes it.
+ *
+ * Setting up a cross-account role is deploy, grant, verify - in that order,
+ * and each depends on the one before. Showing all three at the top answers
+ * "is this finished" before the reader has picked a tab, and a step that is
+ * not done takes them straight to where it gets done.
+ */
+function SetupProgress({ steps, onOpen }) {
+  return (
+    <ol className="grid gap-2 @min-[48rem]:grid-cols-3">
+      {steps.map((step, index) => {
+        const meta = STEP_STATE[step.state] ?? STEP_STATE.unknown;
+        const Icon = meta.icon;
+        return (
+          <li key={step.key}>
+            <button
+              type="button"
+              onClick={() => onOpen(step.tab)}
+              className="flex w-full items-center gap-3 rounded-[var(--radius-panel)] border border-line bg-surface px-3.5 py-3 text-left transition-colors hover:border-line-strong"
+            >
+              <span
+                aria-hidden="true"
+                className="grid size-7 shrink-0 place-items-center rounded-full border border-line bg-surface-2 text-[12px] font-semibold text-ink-2"
+                data-numeric=""
+              >
+                {index + 1}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[12.5px] font-semibold text-ink">{step.label}</span>
+                <span className="block truncate text-[11.5px] text-ink-3">{step.value}</span>
+              </span>
+              <Tag tone={meta.tone} size="sm" icon={Icon}>
+                {meta.label}
+              </Tag>
+            </button>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+/* ── Tab: deploy ─────────────────────────────────────────────────────────── */
+
+const DEPLOY_FORMATS = [
+  {
+    value: 'cloudformation',
+    label: 'CloudFormation',
+    filename: 'nhi-discovery-role.json',
+    type: 'application/json',
+    how: 'Create a stack from this template in the account you are connecting: CloudFormation console, Create stack, Upload a template file. It needs the CAPABILITY_NAMED_IAM acknowledgement because it names the role.',
+    build: cloudFormationTemplate,
+  },
+  {
+    value: 'terraform',
+    label: 'Terraform',
+    filename: 'nhi-discovery-role.tf',
+    type: 'text/plain',
+    how: 'Add this file to a Terraform configuration whose AWS provider points at the account you are connecting, then terraform apply. The role_arn output is the value to give this console.',
+    build: terraformModule,
+  },
+  {
+    value: 'cli',
+    label: 'AWS CLI',
+    filename: 'nhi-discovery-role.sh',
+    type: 'text/x-shellscript',
+    how: 'Run with credentials for the account you are connecting. IAM is global, so it runs once per account, not once per region.',
+    build: awsCliScript,
+  },
+];
+
+/**
+ * The role, as something you can deploy rather than something you retype.
+ *
+ * Generated from the same catalogue the other tabs read, and from the
+ * permission groups currently kept on the Permissions tab - declining a group
+ * there removes its actions here. The trust policy, the one-hour session cap
+ * and the explicit Deny on secret values are in every format.
+ */
+function DeployTab({ data, selectedKeys }) {
+  const [format, setFormat] = useState('cloudformation');
+  const active = DEPLOY_FORMATS.find((entry) => entry.value === format) ?? DEPLOY_FORMATS[0];
+  const text = useMemo(
+    () =>
+      active.build({
+        consoleAccountId: data.tenant.consoleAccountId,
+        externalId: data.tenant.externalId,
+        selectedKeys,
+      }),
+    [active, data.tenant, selectedKeys],
+  );
+  const declined = AWS_PERMISSION_GROUPS.filter((group) => !selectedKeys.includes(group.key));
+
+  const download = () => {
+    const url = URL.createObjectURL(new Blob([text], { type: active.type }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = active.filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <>
+      <Panel prominence="lead">
+        <PanelHeader
+          prominence="lead"
+          title="Deploy the role"
+          subtitle="The same role in three forms. Each one contains the trust policy with your external id, the read-only permissions you have kept, the one-hour session cap, and the explicit Deny on secret values."
+          actions={
+            <div className="flex items-center gap-1.5">
+              <CopyButton value={text} label={`Copy the ${active.label} version`} />
+              <Button variant="secondary" size="sm" icon={Download} onClick={download}>
+                {active.filename}
+              </Button>
+            </div>
+          }
+        />
+        <div className="mt-3">
+          <Tabs size="sm" value={format} onChange={setFormat} tabs={DEPLOY_FORMATS} />
+        </div>
+        <p className="mt-3 text-[12.5px] leading-relaxed text-ink-2">{active.how}</p>
+        {declined.length > 0 && (
+          <p className="mt-2 flex items-start gap-1.5 text-[11.5px] leading-relaxed text-ink-3">
+            <Info aria-hidden="true" className="mt-px size-3.5 shrink-0" />
+            <span>
+              Leaves out {declined.map((group) => group.label.toLowerCase()).join(', ')}, declined on
+              the Permissions tab.
+            </span>
+          </p>
+        )}
+        <pre className="mt-3 max-h-[28rem] overflow-auto rounded-[var(--radius-control)] border border-line bg-inset p-3 font-mono text-[11.5px] leading-relaxed text-ink-2">
+          {text}
+        </pre>
+      </Panel>
+
+      <Panel prominence="quiet">
+        <PanelHeader
+          prominence="quiet"
+          title="Every account in an organisation"
+          subtitle="Deploy the CloudFormation template as a service-managed StackSet, so accounts created later get the role automatically."
+          actions={<CopyButton value={stackSetCommands()} label="Copy the StackSet commands" />}
+        />
+        <pre className="mt-3 max-h-72 overflow-auto rounded-[var(--radius-control)] border border-line bg-inset p-3 font-mono text-[11.5px] leading-relaxed text-ink-2">
+          {stackSetCommands()}
+        </pre>
+      </Panel>
+    </>
   );
 }
 
@@ -194,7 +422,7 @@ const DATA_FLOW = [
     groups: ['behaviour'],
     count: (s) => s?.total_nhis,
     unit: 'machine identities baselined',
-    how: 'CloudTrail management events, per principal, over the trail\'s retention. A baseline needs history - an identity the trail does not cover reads as unknown rather than as unused.',
+    how: 'CloudTrail management events, per principal: the 90 days of event history CloudTrail keeps in every region, or longer where an organisation trail is retained. Past that window an idle identity reads as unknown, not as unused.',
   },
   {
     key: 'activity',
@@ -222,8 +450,12 @@ function ConfiguredTab({ data, summary, trustPolicy, roleArn }) {
           title="The role this console assumes"
           subtitle="A cross-account role with a per-tenant external id. No access key exists for this integration, and none should be created."
         />
+        {/* `min-w-0` on both columns: a grid item's minimum width is its
+            content by default, and an ARN or an external id is one unbreakable
+            word - so on a phone the column grew to fit it and pushed the page
+            170px wider than the screen. */}
         <div className="mt-4 grid gap-3 @min-[52rem]:grid-cols-2">
-          <dl className="flex flex-col gap-2.5">
+          <dl className="flex min-w-0 flex-col gap-2.5">
             <SetupValue
               label="This console's AWS account id"
               value={data.tenant.consoleAccountId}
@@ -241,7 +473,7 @@ function ConfiguredTab({ data, summary, trustPolicy, roleArn }) {
             />
           </dl>
 
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center justify-between gap-2">
               <SectionLabel>The trust policy to attach</SectionLabel>
               <CopyButton value={trustPolicy} label="Copy the trust policy" />
@@ -336,7 +568,7 @@ function ConfiguredTab({ data, summary, trustPolicy, roleArn }) {
 
 function SetupValue({ label, value, note }) {
   return (
-    <div className="rounded-[var(--radius-control)] border border-line bg-surface-2 px-3 py-2.5">
+    <div className="min-w-0 rounded-[var(--radius-control)] border border-line bg-surface-2 px-3 py-2.5">
       <dt className="text-[11px] font-semibold tracking-wide text-ink-3 uppercase">{label}</dt>
       <dd className="mt-1">
         <CopyableValue value={value} />
@@ -478,7 +710,7 @@ function PermissionsTab({ optional, onToggle, selectedKeys }) {
       </Panel>
 
       <div className="grid gap-4 @min-[60rem]:grid-cols-2">
-        <Panel>
+        <Panel className="min-w-0">
           <PanelHeader
             title="The policy to attach"
             subtitle="Generated from the groups you have kept, so it changes as you change them."
@@ -489,7 +721,7 @@ function PermissionsTab({ optional, onToggle, selectedKeys }) {
           </pre>
         </Panel>
 
-        <div className="flex flex-col gap-4">
+        <div className="flex min-w-0 flex-col gap-4">
           <Panel prominence="quiet">
             <PanelHeader
               prominence="quiet"

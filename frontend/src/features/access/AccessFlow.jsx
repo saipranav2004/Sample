@@ -20,6 +20,16 @@ import { cn } from '../../ui/cn';
 /* Below this the 12px node labels stop being readable, so the fit stops
    shrinking and starts cropping instead. */
 const MIN_FIT_ZOOM = 0.7;
+/* The Fit button's floor, and the canvas's. Low enough that five hops fit a
+   phone; the reader zooms back in on the part they want. */
+const FIT_ALL_MIN_ZOOM = 0.15;
+/* Module-level on purpose. React Flow copies this prop into its store every
+   time its identity changes, and `fitView()` from `useReactFlow` is queued
+   through that same store slot - so an inline object, re-created on every
+   render, overwrote a pending Fit or post-expansion refit with these defaults
+   whenever anything re-rendered first (a hover was enough). The Fit button
+   then stopped at 0.7 with half the graph off screen. */
+const INITIAL_FIT = { padding: 0.18, minZoom: MIN_FIT_ZOOM, maxZoom: 1.15 };
 
 /* Breathing room between the graph and the frame, in screen pixels. */
 const EDGE_PAD = 14;
@@ -161,7 +171,10 @@ function FlowInner({
           strokeWidth: style.strokeWidth,
           strokeDasharray: style.dash,
         },
-        className: cn(hoverSets && !hoverSets.edges.has(edge.id) && 'access-edge-dimmed'),
+        className: cn(
+          hoverSets && !hoverSets.edges.has(edge.id) && 'access-edge-dimmed',
+          hoverSets?.edges.has(edge.id) && 'access-edge-active',
+        ),
         data: {
           kind: edge.kind,
           fromName: byId.get(edge.from)?.name,
@@ -181,12 +194,86 @@ function FlowInner({
      node they asked for and pans right for the rest, which is the correct
      trade when the alternative is a graph nobody can read. */
   const shape = `${layout.nodes.length}-${layout.columnCount}`;
+  const translateExtent = useMemo(
+    () => [
+      [-600, -600],
+      [layout.width + 600, layout.height + 600],
+    ],
+    [layout.width, layout.height],
+  );
+  /* The node the reader just opened, or asked to reveal more of. The refit
+     after an expansion used to fall through to "fit the first two columns",
+     which snapped the view back to the first card and left the hop that had
+     just opened off the right edge - so every expansion cost a manual pan.
+     With an anchor, the refit brings that node and its neighbours into view
+     instead. Consumed by the next refit. */
+  const anchorRef = useRef(null);
   const refit = useCallback(
-    (duration) => {
+    (duration, { all = false } = {}) => {
       const frame = shellRef.current?.querySelector('.access-canvas');
       const available = frame?.clientWidth ?? 0;
       const height = frame?.clientHeight ?? 0;
+      const anchor = anchorRef.current;
+      anchorRef.current = null;
       if (available === 0 || layout.nodes.length === 0) return;
+
+      /* The Fit button: the whole graph, however small that makes it. The
+         reader asked to see everything, so the readability floor gives way. */
+      if (all) {
+        fitView({ padding: 0.12, duration, minZoom: FIT_ALL_MIN_ZOOM, maxZoom: 1.15 });
+        return;
+      }
+
+      /* Everything fits at a readable zoom: show it all. */
+      if (layout.width * MIN_FIT_ZOOM <= available - 2 * EDGE_PAD) {
+        fitView({ padding: 0.18, duration, minZoom: MIN_FIT_ZOOM, maxZoom: 1.15 });
+        return;
+      }
+
+      /* It does not, and this refit follows an expansion: frame the node that
+         was opened together with everything joined to it, which is exactly
+         the hop that just appeared. */
+      if (anchor && layout.nodes.some((node) => node.id === anchor)) {
+        const ids = new Set([anchor]);
+        for (const edge of data?.edges ?? []) {
+          if (edge.from === anchor) ids.add(edge.to);
+          if (edge.to === anchor) ids.add(edge.from);
+        }
+        for (const node of layout.nodes) {
+          if (node.type === 'more' && node.data?.parentId === anchor) ids.add(node.id);
+        }
+        /* On a phone even the opened node and its new hop are wider than the
+           frame at a readable zoom, and fitView centres the pair - which cut
+           the new hop in half. Right-align the new hop instead: it is what
+           the reader asked to see, and the opened node peeks in from the
+           left so the edge between them still reads. */
+        const anchorNode = layout.nodes.find((node) => node.id === anchor);
+        const opened = layout.nodes.filter(
+          (node) => ids.has(node.id) && node.position.x > anchorNode.position.x,
+        );
+        const right = Math.max(...opened.map((node) => node.position.x), anchorNode.position.x) + HOP_METRICS.NODE_WIDTH;
+        if ((right - anchorNode.position.x) * MIN_FIT_ZOOM > available - 2 * EDGE_PAD && opened.length > 0) {
+          const ys = opened.map((node) => node.position.y);
+          const middle = (Math.min(...ys) + Math.max(...ys)) / 2;
+          setViewport(
+            {
+              x: available - EDGE_PAD - right * MIN_FIT_ZOOM,
+              y: height / 2 - middle * MIN_FIT_ZOOM,
+              zoom: MIN_FIT_ZOOM,
+            },
+            { duration },
+          );
+          return;
+        }
+        fitView({
+          padding: 0.16,
+          duration,
+          minZoom: MIN_FIT_ZOOM,
+          maxZoom: 1.15,
+          nodes: layout.nodes.filter((node) => ids.has(node.id)).map((node) => ({ id: node.id })),
+        });
+        return;
+      }
 
       /* Does the focus and its first hop fit at a readable zoom? Two columns
          need two node widths and the gap between them. */
@@ -227,7 +314,7 @@ function FlowInner({
 
       fitView({ padding: 0.18, duration, minZoom: MIN_FIT_ZOOM, maxZoom: 1.15 });
     },
-    [fitView, setViewport, layout.nodes, layout.width, layout.columnCount],
+    [fitView, setViewport, layout.nodes, layout.width, layout.columnCount, data],
   );
 
   useEffect(() => {
@@ -303,10 +390,12 @@ function FlowInner({
   const onNodeClick = useCallback(
     (event, node) => {
       if (node.type === 'more') {
+        anchorRef.current = node.data.parentId;
         onReveal?.(node.data.parentId);
         return;
       }
       if (event.target instanceof Element && event.target.closest('[data-expand]')) {
+        anchorRef.current = node.id;
         onToggleExpand?.(node.data);
         return;
       }
@@ -385,9 +474,9 @@ function FlowInner({
             decoration. */}
         <IconButton
           icon={RotateCcw}
-          label="Fit the graph to the view"
+          label="Fit the whole graph to the view"
           variant="secondary"
-          onClick={() => refit(420)}
+          onClick={() => refit(420, { all: true })}
         />
         <IconButton
           icon={expanded ? Minimize2 : Maximize2}
@@ -412,11 +501,11 @@ function FlowInner({
           nodesConnectable={false}
           edgesFocusable={false}
           elevateEdgesOnSelect={false}
-          minZoom={0.3}
+          minZoom={FIT_ALL_MIN_ZOOM}
           maxZoom={2}
           proOptions={{ hideAttribution: false }}
           fitView
-          fitViewOptions={{ padding: 0.18, minZoom: MIN_FIT_ZOOM, maxZoom: 1.15 }}
+          fitViewOptions={INITIAL_FIT}
           /* Two-finger and wheel zoom without a modifier: an analyst reaches
              for the wheel before they reach for a button. */
           zoomOnScroll
@@ -424,10 +513,7 @@ function FlowInner({
           panOnDrag
           selectionOnDrag={false}
           nodeOrigin={[0, 0.5]}
-          translateExtent={[
-            [-600, -600],
-            [layout.width + 600, layout.height + 600],
-          ]}
+          translateExtent={translateExtent}
         >
           <Background variant={BackgroundVariant.Dots} gap={22} size={1} />
           <Controls showInteractive={false} position="bottom-left" />

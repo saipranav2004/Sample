@@ -8,9 +8,10 @@ function systemTheme() {
 }
 
 /**
- * Appearance is a three-way preference - light, dark, or follow the system -
- * exposed from the account menu. `theme` is the resolved value the tokens use;
- * `preference` is what the operator chose.
+ * Appearance: follows the operating system until the operator picks a theme
+ * with the top-bar toggle, and remembers that choice from then on. `theme` is
+ * the resolved value the tokens use; `preference` is what was chosen
+ * ('system' until the first press).
  */
 export function ThemeProvider({ children }) {
   const [preference, setPreference] = useState(() => {

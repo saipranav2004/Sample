@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { LogOut, Menu, Monitor, Moon, Search, Sun } from 'lucide-react';
+import { LogOut, Menu, Moon, Search, Sun } from 'lucide-react';
 import { useAuth } from '../app/AuthContext';
 import { useThemeMode } from '../app/ThemeContext';
 import { usePopover } from '../lib/hooks';
@@ -8,12 +8,6 @@ import { BrandLockup } from './Brand';
 // import { ScanSwitcher } from './ScanSwitcher';
 import { initialsOf, titleCaseEnum } from '../lib/format';
 import { cn } from '../ui/cn';
-
-const APPEARANCE = [
-  { value: 'light', label: 'Light', icon: Sun },
-  { value: 'dark', label: 'Dark', icon: Moon },
-  { value: 'system', label: 'System', icon: Monitor },
-];
 
 /**
  * Global top bar - full viewport width, follows the theme.
@@ -25,12 +19,18 @@ const APPEARANCE = [
  *
  * Scan scope is here, not in the context row, because it is global state - it
  * rescopes every screen at once, and a console keeps global state in its global
- * chrome. Appearance lives in the account menu: a permanent slot in the chrome
- * is too expensive for a setting people change twice a year.
+ * chrome.
+ *
+ * Appearance is one button in the bar, not a section of the account menu. It
+ * used to be a three-way light / dark / system control two clicks deep, which
+ * is a lot of ceremony for flipping one thing. Until somebody presses it the
+ * theme still follows the operating system; the first press makes the choice
+ * explicit and it is remembered from then on.
  */
 export function TopBar({ onOpenNav, onOpenCommand }) {
   const { user, logout } = useAuth();
-  const { preference, setPreference } = useThemeMode();
+  const { theme, setPreference } = useThemeMode();
+  const nextTheme = theme === 'dark' ? 'light' : 'dark';
   const [menuOpen, setMenuOpen] = useState(false);
   const { wrapperRef: menuRef, triggerRef, panelProps } = usePopover(menuOpen, () =>
     setMenuOpen(false),
@@ -96,6 +96,22 @@ export function TopBar({ onOpenNav, onOpenCommand }) {
         <Search aria-hidden="true" className="size-5" />
       </button>
 
+      {/* Shows the theme it switches TO - a sun in dark mode, a moon in light -
+          which is the convention people already know from every other app. */}
+      <button
+        type="button"
+        onClick={() => setPreference(nextTheme)}
+        aria-label={`Switch to ${nextTheme} theme`}
+        title={`Switch to ${nextTheme} theme`}
+        className={iconButton}
+      >
+        {nextTheme === 'light' ? (
+          <Sun aria-hidden="true" className="size-5" />
+        ) : (
+          <Moon aria-hidden="true" className="size-5" />
+        )}
+      </button>
+
       {/* Account - the avatar only. Identity details belong in the menu. */}
       <div ref={menuRef} className="relative shrink-0">
         <button
@@ -151,37 +167,6 @@ export function TopBar({ onOpenNav, onOpenCommand }) {
                   )}
                 </span>
               </span>
-            </div>
-
-            <div className="border-b border-line px-3.5 py-3">
-              <p className="text-[10.5px] font-semibold tracking-[0.12em] text-ink-3 uppercase">
-                Appearance
-              </p>
-              <div
-                role="radiogroup"
-                aria-label="Appearance"
-                className="mt-2 grid grid-cols-3 gap-1 rounded-[var(--radius-control)] border border-line bg-surface-2 p-1"
-              >
-                {APPEARANCE.map((option) => {
-                  const active = preference === option.value;
-                  return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      role="radio"
-                      aria-checked={active}
-                      onClick={() => setPreference(option.value)}
-                      className={cn(
-                        'flex h-8 flex-col items-center justify-center gap-0.5 rounded-[7px] text-[11px] font-medium transition-colors duration-150',
-                        active ? 'bg-surface text-ink shadow-sm' : 'text-ink-3 hover:text-ink-2',
-                      )}
-                    >
-                      <option.icon aria-hidden="true" className="size-3.5" />
-                      {option.label}
-                    </button>
-                  );
-                })}
-              </div>
             </div>
 
             <div className="p-1">

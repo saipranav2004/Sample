@@ -1,4 +1,9 @@
 import { OVERLAY_KEYS, demoRequest, hashSeed, intBetween, pick, readOverlay, rng, writeOverlay } from './runtime';
+import { ACTOR_CATEGORIES, ACTOR_CATEGORY_ORDER, credentialKindMeta } from '../domain';
+import { isOpen, responseState } from '../alerts';
+import { estate, OPERATOR } from './estate';
+import { estateAlerts } from './alerts';
+import { ANOMALY_TYPES, genomeAnomalies, genomeFleet } from './genome';
 
 /**
  * Reports demo dataset.
@@ -48,25 +53,25 @@ export const REPORT_TEMPLATES = [
     id: 'executive-summary',
     name: 'Executive summary',
     audience: 'Leadership',
-    purpose: 'Posture, trend and the top risks, in one page.',
+    purpose: 'The posture signals, the alerts that matter most, and what needs a decision.',
     cadenceHint: 'monthly',
     formats: ['pdf'],
     sections: [
-      { key: 'posture', title: 'Posture score and trend' },
-      { key: 'top-risks', title: 'Top five risks by blast radius' },
-      { key: 'movement', title: 'What changed since the last report' },
-      { key: 'asks', title: 'Decisions needed from leadership' },
+      { key: 'posture', title: 'Posture signals' },
+      { key: 'top-risks', title: 'Top risks in the alert queue' },
+      { key: 'movement', title: 'What changed this week' },
+      { key: 'asks', title: 'Decisions waiting on leadership' },
     ],
   },
   {
     id: 'identity-inventory',
     name: 'Identity inventory',
     audience: 'Platform owners',
-    purpose: 'Every non-human identity by category, account and owner.',
+    purpose: 'Every identity by what it is, which account it lives in, and who owns it.',
     cadenceHint: 'weekly',
     formats: ['csv', 'json', 'pdf'],
     sections: [
-      { key: 'by-category', title: 'Identities by category' },
+      { key: 'by-category', title: 'Identities by actor category' },
       { key: 'by-account', title: 'Identities by account' },
       { key: 'ownerless', title: 'Identities with no resolved owner' },
       { key: 'full', title: 'Full record listing' },
@@ -76,12 +81,12 @@ export const REPORT_TEMPLATES = [
     id: 'credential-hygiene',
     name: 'Credential hygiene',
     audience: 'Security operations',
-    purpose: 'Key age, rotation history, dormant and never-rotated credentials.',
+    purpose: 'Credential age, long-lived credentials, dormant ones, and the order to rotate them in.',
     cadenceHint: 'weekly',
     formats: ['csv', 'pdf'],
     sections: [
       { key: 'age', title: 'Credential age distribution' },
-      { key: 'never-rotated', title: 'Never rotated' },
+      { key: 'long-lived', title: 'Long-lived credentials' },
       { key: 'dormant', title: 'Dormant beyond 90 days' },
       { key: 'plan', title: 'Suggested rotation order' },
     ],
@@ -90,56 +95,58 @@ export const REPORT_TEMPLATES = [
     id: 'credential-exposure',
     name: 'Credential exposure',
     audience: 'Security operations',
-    purpose: 'Committed credentials by source, validity and remediation state.',
+    purpose: 'Secrets committed to repositories, by platform, risk tier and review state.',
     cadenceHint: 'daily',
     formats: ['csv', 'pdf', 'json'],
+    /* Every section here is read from the Secret Scanner when the report is
+       opened, because the scanner is the only place these figures exist. */
     sections: [
-      { key: 'by-source', title: 'Exposure by source' },
-      { key: 'validity', title: 'Still-valid versus revoked' },
-      { key: 'sla', title: 'Remediation against SLA' },
-      { key: 'detail', title: 'Credential-level detail' },
+      { key: 'by-platform', title: 'Exposure by platform', live: 'exposure' },
+      { key: 'by-tier', title: 'Exposure by risk tier', live: 'exposure' },
+      { key: 'review', title: 'Reviewed and accepted', live: 'exposure' },
+      { key: 'detail', title: 'Finding-level detail', live: 'exposure' },
     ],
   },
   {
     id: 'behavioural-anomalies',
     name: 'Behavioural anomalies',
     audience: 'Detection engineering',
-    purpose: 'Genome anomalies by type, confidence and disposition.',
+    purpose: 'Genome anomalies by type and disposition, and how much of the fleet has a baseline.',
     cadenceHint: 'weekly',
     formats: ['csv', 'json'],
     sections: [
       { key: 'by-type', title: 'Anomalies by type' },
       { key: 'disposition', title: 'How anomalies were dispositioned' },
-      { key: 'baselines', title: 'Baseline coverage and drift' },
-      { key: 'outliers', title: 'Peer-group outliers' },
+      { key: 'baselines', title: 'Baseline coverage' },
+      { key: 'outliers', title: 'Identities with open anomalies' },
     ],
   },
   {
     id: 'over-permissioned',
     name: 'Over-permissioned access',
     audience: 'Platform owners',
-    purpose: 'Granted versus used, with least-privilege recommendations.',
+    purpose: 'Administrator-equivalent access, and where it is standing but unused.',
     cadenceHint: 'monthly',
     formats: ['csv', 'pdf'],
     sections: [
-      { key: 'gap', title: 'Granted-versus-used gap' },
       { key: 'admin', title: 'Administrator-equivalent identities' },
-      { key: 'unused', title: 'Permissions never exercised' },
-      { key: 'recommend', title: 'Recommended policy reductions' },
+      { key: 'standing', title: 'Standing access nobody is using' },
+      { key: 'admin-keys', title: 'Administrator access through long-lived keys' },
+      { key: 'recommend', title: 'Where to reduce first' },
     ],
   },
   {
-    id: 'compliance-audit',
-    name: 'Compliance and audit',
+    id: 'audit-evidence',
+    name: 'Audit evidence',
     audience: 'Audit and GRC',
-    purpose: 'Control-by-control mapping with evidence references.',
+    purpose: 'How alerts were handled against their response targets, and every risk accepted with its reason.',
     cadenceHint: 'quarterly',
     formats: ['pdf'],
     sections: [
-      { key: 'summary', title: 'Control summary by framework' },
-      { key: 'failing', title: 'Failing controls with evidence' },
-      { key: 'exceptions', title: 'Accepted exceptions' },
-      { key: 'attestation', title: 'Attestation page' },
+      { key: 'response', title: 'Alerts against response targets' },
+      { key: 'accepted', title: 'Accepted risks' },
+      { key: 'ownership', title: 'Ownership coverage' },
+      { key: 'attestation', title: 'Scope of this attestation' },
     ],
   },
 ];
@@ -185,18 +192,26 @@ function seedRuns() {
     'executive-summary',
     'identity-inventory',
     'credential-hygiene',
-    'compliance-audit',
+    'audit-evidence',
     'over-permissioned',
     'behavioural-anomalies',
   ];
   const picks = Array.from({ length: 46 }, (_, index) => ROTATION[index % ROTATION.length]);
 
+  /* Inside the discovery window. Discovery has run daily for fourteen days,
+     so a report from six weeks ago - which the previous seed produced - would
+     be a report about data that did not exist yet. Forty-six runs over
+     thirteen days is three or four a day, which is what a team using this
+     looks like. */
+  let hoursBack = 2;
   const seeded = picks.map((templateId, index) => {
     const template = templateById(templateId);
     /* Roughly one run in nine fails, decided by the seed rather than by
        position, so the outcome column varies down the list. */
     const failed = next() < 0.11;
-    const rowCount = intBetween(next, 60, 1400);
+    const rowCount = rowsFor(templateId, next);
+    const startedAt = hoursAgoIso(hoursBack);
+    hoursBack += intBetween(next, 4, 9);
     return {
       id: `run-seed-${index + 1}`,
       templateId,
@@ -206,16 +221,14 @@ function seedRuns() {
       /* All manual: the Scheduled tab starts empty, so a seeded run claiming a
          schedule produced it would contradict the screen next to it. */
       trigger: 'manual',
-      requestedBy: 'das_admin',
-      /* Cumulative, so the list is strictly newest-first and the gaps between
-         runs vary the way a person's requests do. */
-      startedAt: hoursAgoIso(3 + index * intBetween(next, 14, 30)),
+      requestedBy: OPERATOR.name,
+      startedAt,
       durationMs: intBetween(next, 1400, 9200),
-      rows: rowCount,
-      sizeKb: fileSize(rowCount, template.formats[0]),
+      rows: failed ? null : rowCount,
+      sizeKb: failed ? null : fileSize(rowCount, template.formats[0]),
       error: failed
         ? pick(next, [
-            'The compliance mapping service did not respond in time.',
+            'The Secret Scanner did not respond in time, so the exposure sections could not be filled.',
             'The identity inventory query exceeded the read timeout.',
             'Rendering failed: a section returned no rows and the template requires one.',
             'The delivery target rejected the attachment as too large.',
@@ -225,6 +238,31 @@ function seedRuns() {
   });
   writeOverlay(OVERLAY_KEYS.runs, seeded);
   return seeded;
+}
+
+/**
+ * How many records a report of this kind contains - the count of what it
+ * covers, so an identity inventory has as many rows as there are identities.
+ * An exposure report counts scanner findings, which only the scanner knows at
+ * the time it ran; those carry a plausible historical figure.
+ */
+function rowsFor(templateId, next) {
+  const { identities, credentials } = estate();
+  switch (templateId) {
+    case 'identity-inventory':
+      return identities.length;
+    case 'credential-hygiene':
+      return credentials.length;
+    case 'behavioural-anomalies':
+      return genomeAnomalies().length;
+    case 'over-permissioned':
+      return identities.filter((row) => row.is_admin).length;
+    case 'executive-summary':
+    case 'audit-evidence':
+      return estateAlerts().length;
+    default:
+      return intBetween(next, 2, 40);
+  }
 }
 
 /* ── Selectors ────────────────────────────────────────────────────────────── */
@@ -248,6 +286,7 @@ export function fetchReportLibrary(signal) {
       totals: {
         templates: REPORT_TEMPLATES.length,
         generated30d: runs.filter((run) => withinDays(run.startedAt, 30)).length,
+        ready30d: runs.filter((run) => run.status === 'ready' && withinDays(run.startedAt, 30)).length,
         schedules: schedules.filter((schedule) => schedule.enabled).length,
         failed30d: runs.filter((run) => run.status === 'failed' && withinDays(run.startedAt, 30)).length,
       },
@@ -298,13 +337,13 @@ export function fetchRun(id, signal) {
  * timers so the screen shows queued, running and ready in turn - the states a
  * reporting screen actually has to render.
  */
-export function generateReport({ templateId, format, trigger = 'manual', requestedBy = 'das_admin' }) {
+export function generateReport({ templateId, format, trigger = 'manual', requestedBy = OPERATOR.name }) {
   const template = templateById(templateId);
   if (!template) throw new Error(`Unknown report template: ${templateId}`);
 
   const id = `run-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
   const next = rng(hashSeed(id));
-  const readyRows = intBetween(next, 60, 1400);
+  const readyRows = rowsFor(templateId, next);
   const run = {
     id,
     templateId,
@@ -376,91 +415,233 @@ export function deleteRun(id) {
 /* ── Preview ──────────────────────────────────────────────────────────────── */
 
 /**
- * A report preview built from the template's own declared sections, so adding a
- * section to the catalogue adds it to the preview. Figures are seeded from the
- * run id: the same run always previews identically.
+ * A report preview built from the template's declared sections, with every
+ * figure read from the same estate, alert queue and genome the other screens
+ * show.
+ *
+ * They used to be drawn from ranges - a coverage line of 980 to 1,520
+ * identities across two to four accounts, accounts called prod-main and
+ * prod-eu, credentials "still valid" or "revoked" - none of which matched the
+ * console around them: the estate has 228 identities in six named accounts,
+ * and the scanner cannot verify a secret at all. A report is read next to the
+ * screens it summarises, so it has to agree with them.
+ *
+ * Sections marked `live` are read from the Secret Scanner when the report is
+ * opened, because the scanner is the only place those figures exist.
  */
 function buildPreview(run, template) {
-  const next = rng(hashSeed(run.id));
+  const { identities, accounts } = estate();
   return {
     title: template.name,
     audience: template.audience,
     generatedAt: run.startedAt,
-    /* Kept in the same order of magnitude as the per-account and per-category
-       measures below, so a reader adding up the sections does not land a
-       thousand identities away from the coverage line. */
-    coverage: { accounts: intBetween(next, 2, 4), identities: intBetween(next, 980, 1520), window: '30 days' },
+    coverage: { accounts: accounts.length, identities: identities.length, window: '14 daily discovery runs' },
     sections: template.sections.map((section) => ({
       ...section,
-      metrics: sectionMeasures(section.key).map(([label, min, max], index) => {
-        const value = intBetween(next, min, max);
-        /* The change is a share of the measure, not a fixed span: +34 against a
-           posture score of 62 would be a different report. */
-        const swing = Math.max(1, Math.round(value * 0.12));
-        return {
-          key: `${section.key}-m${index}`,
-          label,
-          value,
-          delta: intBetween(next, -swing, swing),
-        };
-      }),
+      metrics: section.live
+        ? []
+        : measuresFor(section.key).map(([label, value], index) => ({
+            key: `${section.key}-m${index}`,
+            label,
+            value,
+          })),
       note: sectionNote(section.key),
     })),
   };
 }
 
-/**
- * Every measure a section reports, with the range its value is drawn from.
- *
- * The range is declared per measure rather than shared, because a median in
- * days and a count of repositories are not the same kind of number: one generic
- * `intBetween` produced reports claiming a median remediation time of 1,647
- * days, which is the fastest way to teach a reader that the figures are
- * decoration. A section emits exactly the measures listed here - there is no
- * fallback label, so a report can never show "Measure 4".
- */
-const SECTION_MEASURES = {
-  posture: [['Posture score', 58, 82], ['Controls passing', 96, 128], ['Controls failing', 6, 28], ['Accounts assessed', 2, 4]],
-  'top-risks': [['Critical risks', 2, 9], ['High risks', 8, 24], ['Identities affected', 14, 90], ['Accounts affected', 1, 4]],
-  movement: [['New identities', 12, 74], ['Retired identities', 4, 38], ['New exposures', 3, 22], ['Exposures closed', 2, 19]],
-  asks: [['Decisions open', 2, 7], ['Overdue decisions', 0, 3], ['Owners to notify', 3, 14]],
-  'by-category': [['Compute', 180, 460], ['Serverless', 120, 380], ['CI/CD', 40, 130], ['AI agents', 6, 34]],
-  'by-account': [['prod-main', 320, 620], ['prod-eu', 140, 300], ['staging', 90, 240], ['data-platform', 60, 190]],
-  ownerless: [['No owner', 18, 120], ['No team tag', 30, 180], ['Creator unresolved', 8, 60]],
-  full: [['Records', 900, 3200], ['Columns', 14, 26], ['Accounts', 2, 4]],
-  age: [['Under 30 days', 120, 420], ['30 to 90 days', 80, 260], ['Over 90 days', 40, 190], ['Over 365 days', 6, 70]],
-  'never-rotated': [['Never rotated', 24, 140], ['Still valid', 18, 120], ['Admin-equivalent', 1, 12]],
-  dormant: [['Dormant 90 days', 30, 160], ['Dormant 180 days', 12, 90], ['Dormant with admin', 0, 9]],
-  plan: [['Rotate first', 3, 18], ['Rotate this week', 8, 40], ['Needs owner', 4, 26]],
-  'by-source': [['Repository', 14, 68], ['Build logs', 4, 26], ['Object storage', 1, 12], ['Container images', 2, 18]],
-  validity: [['Still valid', 12, 58], ['Revoked', 8, 44], ['Unverifiable', 1, 11]],
-  sla: [['Within SLA', 14, 62], ['Breached', 2, 17], ['Median days', 2, 21]],
-  detail: [['Exposed credentials', 18, 96], ['Repositories', 6, 34], ['Identities', 9, 52]],
-  'by-type': [['New API', 2, 14], ['New resource', 2, 12], ['Volume spike', 0, 8], ['Off-hours', 1, 11]],
-  disposition: [['Acknowledged', 4, 26], ['Expected', 6, 38], ['Suppressed', 1, 14], ['Resolved', 8, 44]],
-  baselines: [['Established', 96, 148], ['Learning', 8, 40], ['Drifting', 12, 60]],
-  outliers: [['Peer groups', 9, 22], ['Outliers', 3, 15], ['Single-member groups', 1, 7]],
-  gap: [['Granted actions', 420, 1900], ['Used actions', 90, 460], ['Unused actions', 280, 1500]],
-  admin: [['Admin-equivalent', 2, 16], ['With static keys', 1, 11], ['Without MFA', 0, 8]],
-  unused: [['Never used', 40, 260], ['Unused 90 days', 20, 140], ['Services untouched', 5, 28]],
-  recommend: [['Policies to reduce', 6, 34], ['Actions to remove', 60, 420], ['Identities affected', 12, 78]],
-  summary: [['Controls passing', 96, 128], ['Controls failing', 6, 28], ['Not applicable', 2, 14]],
-  failing: [['Failing controls', 6, 28], ['With evidence', 3, 20], ['Awaiting evidence', 1, 12]],
-  exceptions: [['Accepted', 4, 24], ['Expiring 30 days', 0, 6], ['Expired', 0, 4]],
-  attestation: [['Signatories', 2, 6], ['Frameworks', 2, 5]],
-};
+const HOUR = 3_600_000;
+const DAY = 24 * HOUR;
 
-function sectionMeasures(sectionKey) {
-  return SECTION_MEASURES[sectionKey] ?? [['Records', 90, 1200]];
+function measuresFor(key) {
+  const { identities, credentials, accounts } = estate();
+  const nhis = identities.filter((row) => row.classification !== 'HUMAN');
+  const alerts = estateAlerts();
+  const open = alerts.filter(isOpen);
+  const anomalies = genomeAnomalies();
+  const fleet = genomeFleet();
+  const longLived = credentials.filter((row) => credentialKindMeta(row.type).longLived);
+  const count = (list, test) => list.filter(test).length;
+
+  switch (key) {
+    case 'posture':
+      return [
+        ['Humans without MFA', count(identities, (row) => row.classification === 'HUMAN' && !row.mfa_enabled)],
+        ['Admin-level access', count(identities, (row) => row.is_admin)],
+        ['Orphaned identities', count(identities, (row) => row.owner_type === 'ORPHANED')],
+        ['Stale for 90+ days', count(identities, (row) => row.last_active_days > 90)],
+      ];
+    case 'top-risks': {
+      const serious = open.filter((alert) => alert.severity === 'CRITICAL' || alert.severity === 'HIGH');
+      return [
+        ['Critical alerts open', count(open, (alert) => alert.severity === 'CRITICAL')],
+        ['High alerts open', count(open, (alert) => alert.severity === 'HIGH')],
+        ['Identities affected', new Set(serious.map((alert) => alert.identityId).filter(Boolean)).size],
+        ['Accounts affected', new Set(serious.map((alert) => alert.account).filter(Boolean)).size],
+      ];
+    }
+    case 'movement': {
+      const week = Date.now() - 7 * DAY;
+      return [
+        ['Identities discovered', count(identities, (row) => Date.parse(row.discovered_at) >= week)],
+        ['Credentials created', count(credentials, (row) => Date.parse(row.created_at) >= week)],
+        ['Alerts raised', count(alerts, (alert) => Date.parse(alert.createdAt) >= week)],
+        ['Alerts closed', count(alerts, (alert) => !isOpen(alert) && Date.parse(alert.closedAt ?? 0) >= week)],
+      ];
+    }
+    case 'asks':
+      return [
+        ['Escalated to the administrator', count(open, (alert) => (alert.escalationLevel ?? 1) >= 3)],
+        ['Escalated to the lead', count(open, (alert) => (alert.escalationLevel ?? 1) === 2)],
+        ['Risks accepted', count(alerts, (alert) => alert.status === 'dismissed' && alert.dismissReason === 'accepted_risk')],
+      ];
+    case 'by-category': {
+      const tally = new Map();
+      for (const row of identities) tally.set(row.actor_category, (tally.get(row.actor_category) ?? 0) + 1);
+      return ACTOR_CATEGORY_ORDER.filter((category) => tally.has(category))
+        .map((category) => [ACTOR_CATEGORIES[category], tally.get(category)])
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 6);
+    }
+    case 'by-account':
+      return accounts.map((account) => [account.name, count(identities, (row) => row.account_id === account.id)]);
+    case 'ownerless':
+      return [
+        ['No owner resolved', count(identities, (row) => row.owner_type === 'ORPHANED')],
+        ['No team recorded', count(nhis, (row) => !row.team)],
+        ['Machine identities in total', nhis.length],
+      ];
+    case 'full':
+      return [
+        ['Records', identities.length],
+        ['Accounts', accounts.length],
+        ['Machine identities', nhis.length],
+      ];
+    case 'age':
+      return [
+        ['Under 30 days', count(credentials, (row) => row.age_days < 30)],
+        ['30 to 90 days', count(credentials, (row) => row.age_days >= 30 && row.age_days < 90)],
+        ['90 to 365 days', count(credentials, (row) => row.age_days >= 90 && row.age_days <= 365)],
+        ['Over 365 days', count(credentials, (row) => row.age_days > 365)],
+      ];
+    case 'long-lived':
+      return [
+        ['Long-lived credentials', longLived.length],
+        ['Access keys', count(credentials, (row) => row.type === 'ACCESS_KEY')],
+        ['Store entries with no rotation', count(credentials, (row) => row.store && !row.rotation_enabled)],
+        ['Keys over a year old', count(credentials, (row) => row.type === 'ACCESS_KEY' && row.age_days > 365)],
+      ];
+    case 'dormant':
+      return [
+        ['Unused 90+ days', count(credentials, (row) => row.last_used_days > 90)],
+        ['Unused 180+ days', count(credentials, (row) => row.last_used_days > 180)],
+        ['Of those, on an administrator', count(credentials, (row) => row.last_used_days > 90 && identities.find((identity) => identity.arn === row.identity_arn)?.is_admin)],
+      ];
+    case 'plan':
+      return [
+        ['Act on first (critical)', count(credentials, (row) => row.severity === 'CRITICAL')],
+        ['This week (high)', count(credentials, (row) => row.severity === 'HIGH')],
+        ['Held by an orphaned identity', count(credentials, (row) => identities.find((identity) => identity.arn === row.identity_arn)?.owner_type === 'ORPHANED')],
+      ];
+    case 'by-type': {
+      const tally = new Map();
+      for (const anomaly of anomalies) tally.set(anomaly.type, (tally.get(anomaly.type) ?? 0) + 1);
+      return [...tally.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 4)
+        .map(([type, value]) => [ANOMALY_TYPES[type]?.label ?? type, value]);
+    }
+    case 'disposition':
+      return [
+        ['Open', count(anomalies, (anomaly) => anomaly.status === 'open')],
+        ['Acknowledged', count(anomalies, (anomaly) => anomaly.status === 'acknowledged')],
+        ['Expected or suppressed', count(anomalies, (anomaly) => anomaly.status === 'expected' || anomaly.status === 'suppressed')],
+        ['Resolved', count(anomalies, (anomaly) => anomaly.status === 'resolved')],
+      ];
+    case 'baselines':
+      return [
+        ['Established', count(fleet, (row) => row.baselineState === 'established')],
+        ['Learning', count(fleet, (row) => row.baselineState === 'learning')],
+        ['Machine identities', fleet.length],
+      ];
+    case 'outliers': {
+      const withOpen = new Set(anomalies.filter((anomaly) => anomaly.status === 'open').map((anomaly) => anomaly.identityId));
+      return [
+        ['Identities with open anomalies', withOpen.size],
+        ['Peer groups', new Set(fleet.map((row) => row.peerGroup)).size],
+        ['Anomalies in total', anomalies.length],
+      ];
+    }
+    case 'admin':
+      return [
+        ['Administrator-equivalent', count(identities, (row) => row.is_admin)],
+        ['Of those, machine identities', count(nhis, (row) => row.is_admin)],
+        ['Of those, humans without MFA', count(identities, (row) => row.is_admin && row.classification === 'HUMAN' && !row.mfa_enabled)],
+      ];
+    case 'standing':
+      return [
+        ['Administrators unused 90+ days', count(identities, (row) => row.is_admin && row.last_active_days > 90)],
+        ['Administrator roles unused 90+ days', count(credentials, (row) => row.type === 'ASSUMED_ROLE' && row.severity === 'CRITICAL')],
+        ['Administrators with no owner', count(identities, (row) => row.is_admin && row.owner_type === 'ORPHANED')],
+      ];
+    case 'admin-keys':
+      return [
+        ['Administrators holding access keys', count(identities, (row) => row.is_admin && row.access_key_count > 0)],
+        ['Of those, a key over a year old', count(identities, (row) => row.is_admin && row.access_key_age_days > 365)],
+      ];
+    case 'recommend':
+      return [
+        ['AdministratorAccess attached', count(identities, (row) => (row.attached_policies ?? []).includes('AdministratorAccess'))],
+        ['Could move to a role (dual identities)', count(identities, (row) => row.classification === 'DUAL_IDENTITY')],
+        ['Critical credentials', count(credentials, (row) => row.severity === 'CRITICAL')],
+      ];
+    case 'response':
+      return [
+        ['Open alerts', open.length],
+        ['Within response targets', count(open, (alert) => ['on_track', 'due_soon'].includes(responseState(alert).state))],
+        ['Past a response target', count(open, (alert) => ['overdue', 'ack_overdue'].includes(responseState(alert).state))],
+        ['Closed', count(alerts, (alert) => !isOpen(alert))],
+      ];
+    case 'accepted':
+      return [
+        ['Risks accepted', count(alerts, (alert) => alert.status === 'dismissed' && alert.dismissReason === 'accepted_risk')],
+        ['Dismissed as false positive', count(alerts, (alert) => alert.status === 'dismissed' && alert.dismissReason === 'false_positive')],
+        ['Dismissed as expected', count(alerts, (alert) => alert.status === 'dismissed' && alert.dismissReason === 'expected')],
+      ];
+    case 'ownership':
+      return [
+        ['Identities with an owner', count(identities, (row) => row.owner_type !== 'ORPHANED')],
+        ['Without one', count(identities, (row) => row.owner_type === 'ORPHANED')],
+        ['Open alerts with an assignee', count(open, (alert) => alert.assignee)],
+      ];
+    case 'attestation':
+      return [
+        ['Accounts in scope', accounts.length],
+        ['Identities in scope', identities.length],
+      ];
+    default:
+      return [];
+  }
 }
 
 function sectionNote(key) {
   switch (key) {
-    case 'sla': return 'Measured from first detection to a recorded remediation, not to acknowledgement.';
-    case 'validity': return 'Validity is established by the scanner, so a revoked credential is still listed with its original detection date.';
-    case 'gap': return 'Granted-versus-used compares policy to observed calls over the window, so an action used once still counts as used.';
-    case 'baselines': return 'A drifting baseline is not an anomaly; it is a signal that the model needs retraining.';
-    default: return null;
+    case 'posture':
+      return 'The same four signals, with the same counts, as the Posture overview.';
+    case 'top-risks':
+      return 'Read from the alert queue: open Critical and High alerts, and the identities and accounts they name.';
+    case 'by-tier':
+      return 'The scanner cannot check whether a secret still works - verification is unsupported on this deployment - so exposure is reported by risk tier, not by validity.';
+    case 'review':
+      return 'Accepted findings are the scanner allowlist: reviewed, marked safe, and removed from the live set.';
+    case 'response':
+      return "Measured against this console's default response targets, which the Alerts screen lists.";
+    case 'baselines':
+      return 'A baseline is learned per machine identity. Humans are not baselined.';
+    case 'accepted':
+      return 'Every dismissal records a reason. These are the counts by reason, from the alert queue.';
+    default:
+      return null;
   }
 }
 

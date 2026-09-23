@@ -12,6 +12,7 @@ import LoginPage from '../features/auth/LoginPage';
 /* Routes are split per screen. The charting library only ships with the
    screens that draw charts, so first paint after sign-in stays small. */
 const PosturePage = lazy(() => import('../features/posture/PosturePage'));
+const AlertsPage = lazy(() => import('../features/alerts/AlertsPage'));
 const IdentitiesPage = lazy(() => import('../features/identities/IdentitiesPage'));
 const CredentialsPage = lazy(() => import('../features/credentials/CredentialsPage'));
 const FindingsPage = lazy(() => import('../features/exposure/FindingsPage'));
@@ -51,6 +52,14 @@ export default function App() {
                   element={
                     <Suspense fallback={<RouteFallback />}>
                       <PosturePage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/alerts"
+                  element={
+                    <Suspense fallback={<RouteFallback />}>
+                      <AlertsPage />
                     </Suspense>
                   }
                 />

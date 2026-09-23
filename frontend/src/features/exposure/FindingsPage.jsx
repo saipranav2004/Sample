@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   ExternalLink,
   FileWarning,
@@ -85,7 +85,10 @@ export default function FindingsPage() {
   const [tier, setTier] = useState('');
   const [detector, setDetector] = useState('');
   const [repository, setRepository] = useState('');
-  const [search, setSearch] = useState('');
+  /* Seeded from `?search=` so a link from an alert lands on the finding it
+     names. Only the starting value: the box is local state from then on. */
+  const [searchParams] = useSearchParams();
+  const [search, setSearch] = useState(() => searchParams.get('search') || '');
   const { railOpen, toggleRail } = useFacetRail();
   const [density, setDensity] = useState('comfortable');
   const [view, setView] = useState('findings');
@@ -96,7 +99,9 @@ export default function FindingsPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [selected, setSelected] = useState(null);
-  const [deepScanOpen, setDeepScanOpen] = useState(false);
+  /* `?deep-scan=open` opens the drawer on arrival (the Integrations catalog
+     links here). Only the starting value, like `?search=`. */
+  const [deepScanOpen, setDeepScanOpen] = useState(() => searchParams.get('deep-scan') === 'open');
   /* Locally dismissed ids, so a row leaves the list the moment the write
      succeeds rather than after a full refetch. */
   const [dismissed, setDismissed] = useState(() => new Set());

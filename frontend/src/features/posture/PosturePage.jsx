@@ -109,7 +109,7 @@ export default function PosturePage() {
       <div className="flex flex-col gap-6">
         <PageHeader
           title="Identity posture"
-          lede="Discovery results for the selected scan could not be loaded."
+          lede="Discovery results could not be loaded."
         />
         <Panel>
           <ErrorState error={summaryQuery.error} onRetry={summaryQuery.refetch} />
@@ -169,7 +169,7 @@ export default function PosturePage() {
             value={summary?.total_nhis}
             icon={Bot}
             tone="info"
-            caption="Roles, services, agents and pipelines"
+            caption="Workloads, pipelines, agents and vendor platforms"
             meter={percentValue(summary?.total_nhis, totalIdentities)}
             meterLabel="Share of all identities"
           />

@@ -15,7 +15,7 @@ import { cn } from '../../ui/cn';
  * filter looked broken.
  *
  * So the ARN is chosen, not typed. The list comes from `/api/identities` -
- * already part of the API, already scoped to the selected scan - and the search
+ * already part of the API - and the search
  * runs over the loaded page client-side, on name and ARN. What leaves this
  * component is always an exact ARN, which is the only thing the events endpoint
  * accepts.

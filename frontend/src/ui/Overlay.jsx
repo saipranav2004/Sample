@@ -113,9 +113,13 @@ export function Modal({ open, onClose, title, description, icon: Icon, tone = 'b
         aria-modal="true"
         aria-label={title}
         tabIndex={-1}
-        className="animate-pop relative w-full max-w-lg rounded-t-[18px] border border-line bg-surface shadow-lg sm:rounded-[18px]"
+        /* Capped to the viewport, with the body scrolling between a fixed
+           header and footer. Without the cap a long dialog - the list of what
+           the access graph is built from, for one - ran off the bottom of the
+           screen with no way to reach the rest of it or the Close button. */
+        className="animate-pop relative flex max-h-[calc(100dvh-1rem)] w-full max-w-lg flex-col rounded-t-[18px] border border-line bg-surface shadow-lg sm:max-h-[calc(100dvh-3rem)] sm:rounded-[18px]"
       >
-        <div className="flex items-start gap-3 p-5 pb-3">
+        <div className="flex shrink-0 items-start gap-3 p-5 pb-3">
           {Icon && (
             <span className={cn('grid size-9 shrink-0 place-items-center rounded-full border', tones[tone])}>
               <Icon aria-hidden="true" className="size-4.5" />
@@ -127,9 +131,11 @@ export function Modal({ open, onClose, title, description, icon: Icon, tone = 'b
           </div>
           <IconButton icon={X} label="Close dialog" size="sm" onClick={onClose} />
         </div>
-        {children && <div className="px-5 pb-4">{children}</div>}
+        {children && (
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-4">{children}</div>
+        )}
         {footer && (
-          <div className="flex flex-wrap items-center justify-end gap-2 border-t border-line bg-surface-2 px-5 py-3.5">
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t sm:rounded-b-[18px] border-line bg-surface-2 px-5 py-3.5">
             {footer}
           </div>
         )}

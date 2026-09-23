@@ -112,7 +112,7 @@ export function DeepScanDrawer({ open, onClose, findings = [] }) {
     );
   }, [targets, search]);
 
-  const { statuses, refresh, request, pending } = useDeepScanStatuses(targets);
+  const { statuses, refresh, request, pending } = useDeepScanStatuses(targets, open);
 
   const onRequest = useCallback(
     async (row) => {
@@ -512,8 +512,15 @@ function FailureNote({ status }) {
  * apart instead of one burst every five, and each row then re-renders on its
  * own schedule. The interval is torn down the moment nothing is running, so an
  * idle page makes no requests at all.
+ *
+ * Nothing happens while the drawer is closed. It is mounted all the time on the
+ * findings screen, and an earlier version read a status for every repository
+ * the moment that screen loaded - and kept polling any running scan in the
+ * background - whether or not anybody ever opened the drawer. Every opening
+ * re-reads every row, because a scan requested elsewhere, or one that finished
+ * while the drawer was shut, would otherwise show its old state.
  */
-function useDeepScanStatuses(targets) {
+function useDeepScanStatuses(targets, open) {
   const [statuses, setStatuses] = useState({});
   const [pending, setPending] = useState('');
   const targetsRef = useRef(targets);
@@ -542,12 +549,16 @@ function useDeepScanStatuses(targets) {
      rather than a column of "not started" that turns out to be wrong. */
   const loadedRef = useRef(new Set());
   useEffect(() => {
+    if (!open) {
+      loadedRef.current = new Set();
+      return;
+    }
     for (const row of targets) {
       if (loadedRef.current.has(row.key)) continue;
       loadedRef.current.add(row.key);
       load(row);
     }
-  }, [targets, load]);
+  }, [targets, load, open]);
 
   const runningKeys = targets
     .filter((row) => String(statuses[row.key]?.data?.status).toLowerCase() === 'running')
@@ -555,7 +566,7 @@ function useDeepScanStatuses(targets) {
     .join(',');
 
   useEffect(() => {
-    if (!runningKeys) return undefined;
+    if (!open || !runningKeys) return undefined;
     const interval = setInterval(() => {
       const keys = new Set(runningKeys.split(','));
       for (const row of targetsRef.current) {
@@ -563,7 +574,7 @@ function useDeepScanStatuses(targets) {
       }
     }, DEEP_SCAN_POLL_MS);
     return () => clearInterval(interval);
-  }, [runningKeys, load]);
+  }, [runningKeys, load, open]);
 
   /* Requesting a scan sets the row running immediately from the 202 body
      rather than waiting for the next poll, so the button's state changes on

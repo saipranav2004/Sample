@@ -39,6 +39,12 @@
      risk vs accent, delta-E 23.5 under deuteranopia, 30.2 with normal vision. */
   --t-graph-accent: #0c6eb4;
   --t-graph-risk: #b42318;
+  /* Edges at rest. They used to be drawn in line-strong, which sits at 1.36:1
+     against this canvas - the flowing dashes were running, and nobody could
+     see them. The accent family, one step lighter than the accent itself so
+     a selected node's border still reads above its edges: 4.02:1 here, over
+     the 3:1 a visible mark needs. */
+  --t-graph-flow: #2f7cc0;
   /* Meter and bar tracks. A wash rather than a fixed surface, so a track keeps
      the same contrast whether it sits on a white panel or a recessed one -
      `surface-3` on `surface-2` was only 10/255 apart and the bars looked like
@@ -144,6 +150,8 @@
      31.2 normal vision, both above 3:1 contrast. */
   --t-graph-accent: #2f92d8;
   --t-graph-risk: #d03b3b;
+  /* 6.53:1 against the dark canvas; the old edge colour was 1.36:1. */
+  --t-graph-flow: #4f9fe0;
   --t-track: color-mix(in srgb, var(--t-ink-3) 30%, transparent);
   --t-line: #1e2e46;
   --t-line-strong: #2b3f5c;

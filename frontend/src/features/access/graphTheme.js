@@ -116,8 +116,12 @@ export function riskReason(node) {
   return null;
 }
 
-/** Edge styling. Neutral unless the relationship is a documented escalation. */
+/**
+ * Edge styling. Blue flow for every relationship, red and dashed for a
+ * documented escalation - the same two hues the palette above validates, and
+ * the accent is free for edges now that tracing (its old edge role) is gone.
+ */
 export const EDGE_STYLE = {
-  base: { stroke: 'var(--t-line-strong)', strokeWidth: 1.4 },
-  escalation: { stroke: 'var(--t-graph-risk)', strokeWidth: 1.8, dash: '5 4' },
+  base: { stroke: 'var(--t-graph-flow)', strokeWidth: 1.7, dash: '8 6' },
+  escalation: { stroke: 'var(--t-graph-risk)', strokeWidth: 1.9, dash: '8 6' },
 };

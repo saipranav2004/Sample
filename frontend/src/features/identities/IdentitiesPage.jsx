@@ -520,8 +520,8 @@ export default function IdentitiesPage() {
                   ) : (
                     <EmptyState
                       icon={Fingerprint}
-                      title="No identities in this scan"
-                      description="This discovery scan recorded no IAM principals. Pick another scan from the switcher, or run a new discovery."
+                      title="No identities discovered"
+                      description="Discovery found nothing to list. Check that the AWS connector is collecting on the Integrations screen."
                     />
                   )
                 }

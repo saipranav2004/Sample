@@ -79,6 +79,22 @@ server {
         # placed after it never executes and proxy_pass receives an empty
         # variable - a 500 on every scanner call. Verified by running it.
         set $scanner_upstream "${SCANNER_UPSTREAM}";
+
+        # Whether a key is configured - yes or no, never the value - returned
+        # to the browser on every scanner response. A 401 from the scanner means
+        # either "no key configured here" or "key configured and rejected", and
+        # the two have different fixes; this is how the screen tells them
+        # apart. The key goes through a variable first because an `if` can only
+        # test a variable - a literal on the left is a startup error, found by
+        # running it. `set` inside `if` is one of the two directives that is
+        # safe there, and all of this runs before the rewrite below ends the
+        # phase.
+        set $scanner_key "${SCANNER_DASHBOARD_KEY}";
+        set $scanner_key_attached "yes";
+        if ($scanner_key = "") {
+            set $scanner_key_attached "no";
+        }
+
         rewrite ^/secret-scanner/(.*)$ /$1 break;
         proxy_pass $scanner_upstream;
 
@@ -110,6 +126,7 @@ server {
         proxy_buffering off;
         include /etc/nginx/snippets/security-headers.conf;
         add_header Cache-Control "no-store" always;
+        add_header X-Scanner-Key-Attached $scanner_key_attached always;
     }
 
     # ── 2. NHI Discovery API ────────────────────────────────────────────────

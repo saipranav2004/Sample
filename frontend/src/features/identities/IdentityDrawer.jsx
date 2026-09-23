@@ -283,7 +283,7 @@ export function IdentityDrawer({ identity, open, onClose }) {
               compact
               icon={KeyRound}
               title="No credentials on this identity"
-              description="This identity holds no access key, password or certificate in the selected scan."
+              description="This identity holds no credential on record - no role, access key, password or certificate."
             />
           ) : (
             <ul className="flex flex-col gap-3">
@@ -452,12 +452,12 @@ export function IdentityDrawer({ identity, open, onClose }) {
               compact
               icon={Users}
               title="No role assumptions observed"
-              description="Consumers are derived from AssumeRole calls in CloudTrail. Nothing assumed this identity during the selected scan."
+              description="Consumers are derived from AssumeRole calls in CloudTrail. Nothing has assumed the role this identity holds in the events this console has read."
             />
           ) : (
             <>
               <p className="mb-3 text-[12px] text-ink-3">
-                Principals observed assuming this role, grouped by caller, source address and region.
+                Callers observed assuming the role this identity holds, grouped by caller, source address and region.
               </p>
               <DataGrid
                 caption="Role consumers"
@@ -532,7 +532,7 @@ export function IdentityDrawer({ identity, open, onClose }) {
             loading={eventsQuery.isLoading && !eventsQuery.data}
             error={eventsQuery.error}
             onRetry={eventsQuery.refetch}
-            emptyHint="No CloudTrail events were attributed to this identity in the selected scan."
+            emptyHint="No CloudTrail events were attributed to this identity in the events this console has read."
           />
         </TabPanel>
       </div>

@@ -109,8 +109,9 @@ export default function LoginPage() {
             style={{ '--step': 3 }}
             className="animate-auth mt-[clamp(1.25rem,2vw,2.5rem)] max-w-[46ch] text-[clamp(14px,1.21vw,23px)] leading-[1.6] text-[var(--t-auth-ink-2)]"
           >
-            Inventory every role, service principal and key across your AWS accounts, trace what
-            they can reach, and catch credentials the moment they leak into source control.
+            Inventory every workload, pipeline and agent acting in your AWS accounts and the roles
+            and keys they hold, trace what they can reach, and catch secrets the moment they leak
+            into source control.
           </p>
 
           <ul

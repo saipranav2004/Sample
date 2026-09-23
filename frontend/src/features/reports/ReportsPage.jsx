@@ -332,10 +332,10 @@ export default function ReportsPage() {
         <div className="grid gap-3 @min-[30rem]:grid-cols-2 @min-[54rem]:grid-cols-4">
           <MetricTile label="Report types" value={totals.templates} tone="info" caption="Available in the catalogue" className="animate-rise" />
           <MetricTile
-            label="Produced, last 30 days"
+            label="Runs, last 30 days"
             value={totals.generated30d}
             tone="brand"
-            caption="Manual and scheduled runs"
+            caption={`${formatNumber(totals.ready30d ?? 0)} produced a report`}
             className="animate-rise"
             data-stagger=""
             style={{ '--stagger': 1 }}

@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Download, Info } from 'lucide-react';
+import { Info } from 'lucide-react';
 import {
-  EDGE_KINDS,
   GRAPH_INPUTS,
   REVEAL_STEP,
   fetchFocusOptions,
@@ -10,7 +9,6 @@ import {
   fetchNode,
 } from '../../lib/demo/accessGraph';
 import { useDemoQuery } from '../../lib/demo/useDemoQuery';
-import { exportRowsToCsv, timestampedName } from '../../lib/csv';
 import { PageHeader } from '../../shell/PageHeader';
 import { Button, IconButton } from '../../ui/Button';
 import { Modal } from '../../ui/Overlay';
@@ -132,41 +130,6 @@ export default function AccessGraphPage() {
     [revealed, setParams],
   );
 
-  /* One row per drawn relationship.
-     The export is the graph on screen, written down: whoever opens the file
-     gets the same edges in the same words, with the sentence that explains
-     each one. Exporting the node list instead would hand the reader an
-     inventory they already have on the Identities screen - the edges are what
-     only this screen knows. */
-  const exportRows = useMemo(() => {
-    const nodes = new Map((graph.data?.nodes ?? []).map((node) => [node.id, node]));
-    return (graph.data?.edges ?? []).map((edge) => ({
-      edge,
-      from: nodes.get(edge.from),
-      to: nodes.get(edge.to),
-    }));
-  }, [graph.data]);
-
-  const onExport = useCallback(() => {
-    exportRowsToCsv({
-      filename: timestampedName('access-graph-relationships'),
-      columns: [
-        { header: 'Relationship', value: (row) => EDGE_KINDS[row.edge.kind]?.label ?? row.edge.kind },
-        { header: 'From', value: (row) => row.from?.name ?? row.edge.from },
-        { header: 'From kind', value: (row) => row.from?.kind ?? '' },
-        { header: 'From account', value: (row) => row.from?.accountName ?? '' },
-        { header: 'To', value: (row) => row.to?.name ?? row.edge.to },
-        { header: 'To kind', value: (row) => row.to?.kind ?? '' },
-        { header: 'To account', value: (row) => row.to?.accountName ?? '' },
-        { header: 'Cross-account', value: (row) => (row.edge.crossAccount ? 'yes' : 'no') },
-        { header: 'Privilege escalation', value: (row) => (row.edge.kind === 'ESCALATES_TO' ? 'yes' : 'no') },
-        { header: 'Wildcard grant', value: (row) => (row.edge.wildcard ? 'yes' : 'no') },
-        { header: 'What it means', value: (row) => row.edge.detail ?? '' },
-      ],
-      rows: exportRows,
-    });
-  }, [exportRows]);
-
   const missingInputs = GRAPH_INPUTS.filter((input) => !input.covered);
 
   /* Declared once and rendered in one of two places - the grid, or a dock
@@ -200,9 +163,6 @@ export default function AccessGraphPage() {
               label="What this graph is built from"
               onClick={() => setInputsOpen(true)}
             />
-            <Button variant="secondary" icon={Download} onClick={onExport} disabled={exportRows.length === 0}>
-              Export
-            </Button>
           </>
         }
       />

@@ -359,22 +359,22 @@ export default function CredentialsPage() {
           />
           <MetricTile
             as={Link}
-            to="?severity=HIGH"
-            label="High severity"
-            value={severityCounts.HIGH}
-            tone="high"
-            caption="Rotate these first"
-            meter={percentValue(severityCounts.HIGH, summaryQuery.data?.total_credentials)}
-            meterLabel="Share of all credentials"
-            className="animate-rise"
-          />
-          <MetricTile
-            as={Link}
             to="?severity=CRITICAL"
             label="Critical severity"
             value={severityCounts.CRITICAL}
             tone="critical"
-            caption="Highest-impact credentials on record"
+            caption="Remediate these first"
+            className="animate-rise"
+          />
+          <MetricTile
+            as={Link}
+            to="?severity=HIGH"
+            label="High severity"
+            value={severityCounts.HIGH}
+            tone="high"
+            caption="Next in line after critical"
+            meter={percentValue(severityCounts.HIGH, summaryQuery.data?.total_credentials)}
+            meterLabel="Share of all credentials"
             className="animate-rise"
           />
           <MetricTile

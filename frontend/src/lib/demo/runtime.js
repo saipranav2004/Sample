@@ -100,7 +100,19 @@ function readNumber(key, fallback) {
  * throttled browser.
  */
 export function demoRequest(producer, { signal, latency } = {}) {
-  const delay = latency ?? readNumber(LATENCY_KEY, 320);
+  /* `latency` is a [min, max] range in milliseconds. It used to be handed to
+     setTimeout as it was, which coerces an array to NaN and fires immediately -
+     so every demo request resolved in under a millisecond and no loading state
+     in the app was ever actually drawn. The localStorage override wins, so a
+     slow network can still be simulated on purpose. */
+  const override = readNumber(LATENCY_KEY, null);
+  const delay =
+    override ??
+    (Array.isArray(latency)
+      ? latency[0] + Math.random() * Math.max(0, latency[1] - latency[0])
+      : Number.isFinite(latency)
+        ? latency
+        : 320);
 
   return new Promise((resolve, reject) => {
     if (signal?.aborted) {
@@ -190,8 +202,11 @@ function notifyOverlay(key) {
 }
 
 export const OVERLAY_KEYS = {
+  alerts: 'dna.demo.alertState',
   anomalies: 'dna.demo.anomalyState',
   policies: 'dna.demo.policyState',
   schedules: 'dna.demo.reportSchedules',
-  runs: 'dna.demo.reportRuns',
+  /* v2: the templates were rebuilt on real figures. Runs saved under the old
+     catalogue name templates that no longer exist, so they start afresh. */
+  runs: 'dna.demo.reportRuns.v2',
 };
