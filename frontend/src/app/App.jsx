@@ -28,6 +28,7 @@ const ReportsPage = lazy(() => import('../features/reports/ReportsPage'));
 const ReportViewPage = lazy(() => import('../features/reports/ReportViewPage'));
 const IntegrationsPage = lazy(() => import('../features/integrations/IntegrationsPage'));
 const UsersPage = lazy(() => import('../features/users/UsersPage'));
+const AcceptInvitePage = lazy(() => import('../features/auth/AcceptInvitePage'));
 const NotFoundPage = lazy(() => import('../features/NotFoundPage'));
 
 export default function App() {
@@ -38,6 +39,15 @@ export default function App() {
           <AuthProvider>
             <Routes>
               <Route path="/login" element={<LoginPage />} />
+              {/* Public, like sign-in: the person opening it has no account yet. */}
+              <Route
+                path="/accept-invite"
+                element={
+                  <Suspense fallback={<div className="auth-canvas" />}>
+                    <AcceptInvitePage />
+                  </Suspense>
+                }
+              />
               <Route
                 element={
                   <RequireAuth>

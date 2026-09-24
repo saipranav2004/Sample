@@ -17,13 +17,21 @@ import { TOKEN_KEY } from '../api/http';
 import { forbidden, roleCan, ROLES } from '../roles';
 import { ESTATE_META, OPERATOR } from './estate';
 import { OVERLAY_KEYS, readOverlay, writeOverlay } from './runtime';
+import { randomHex, sha256Hex } from './sha256';
 
 const { NOW, DAY } = ESTATE_META;
 const HOUR = 3_600_000;
 const ago = (ms) => new Date(NOW - ms).toISOString();
 
-/** The one password every demo account accepts. */
+/**
+ * The password every seeded account accepts. People invited from the Users
+ * screen choose their own when they accept, and this one does not work for
+ * them.
+ */
 export const DEMO_PASSWORD = 'admin@123';
+
+/** How long an invitation link works. */
+export const INVITE_TTL_HOURS = 72;
 
 const SEED = [
   {
@@ -107,6 +115,20 @@ export const USER_STATUSES = {
   deactivated: { label: 'Deactivated', tone: 'neutral' },
 };
 
+/* The seeded invitation was sent three days ago with a 72-hour link, so it
+   has just run out - the state an administrator most often has to deal with,
+   and the one that shows what Resend is for. */
+const SEED_INVITES = [
+  {
+    token: 'seed-priya-raghavan-7c1e0a',
+    userId: 'user-priya-raghavan',
+    createdAt: ago(3 * DAY),
+    expiresAt: ago(3 * DAY - INVITE_TTL_HOURS * HOUR),
+    createdBy: OPERATOR.name,
+    status: 'pending',
+  },
+];
+
 /* ── Store ────────────────────────────────────────────────────────────────── */
 
 function readStore() {
@@ -115,6 +137,9 @@ function readStore() {
     added: Array.isArray(raw?.added) ? raw.added : [],
     changes: raw?.changes && typeof raw.changes === 'object' ? raw.changes : {},
     activity: Array.isArray(raw?.activity) ? raw.activity : [],
+    invites: Array.isArray(raw?.invites) ? raw.invites : SEED_INVITES.map((invite) => ({ ...invite })),
+    /* userId -> { salt, hash }. Only people who accepted an invitation. */
+    passwords: raw?.passwords && typeof raw.passwords === 'object' ? raw.passwords : {},
   };
 }
 
@@ -122,10 +147,35 @@ function writeStore(store) {
   writeOverlay(OVERLAY_KEYS.users, store);
 }
 
-/** Every console user with the stored changes applied, seeded order first. */
+function pendingInviteOf(store, userId) {
+  return (
+    store.invites
+      .filter((invite) => invite.userId === userId && invite.status === 'pending')
+      .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))[0] ?? null
+  );
+}
+
+const isExpired = (invite, now = Date.now()) => Date.parse(invite.expiresAt) <= now;
+
+/**
+ * Every console user with the stored changes applied, seeded order first.
+ * An invited user carries `invite`: whether their link still works, and until
+ * when. The token itself is never in the directory - like a real API, it is
+ * shown once, when the link is created.
+ */
 export function directory() {
-  const { added, changes } = readStore();
-  return [...SEED, ...added].map((row) => ({ ...row, ...(changes[row.id] ?? {}) }));
+  const store = readStore();
+  return [...SEED, ...store.added].map((seed) => {
+    const row = { ...seed, ...(store.changes[seed.id] ?? {}) };
+    if (row.status !== 'invited') return row;
+    const invite = pendingInviteOf(store, row.id);
+    return {
+      ...row,
+      invite: invite
+        ? { state: isExpired(invite) ? 'expired' : 'pending', expiresAt: invite.expiresAt, sentAt: invite.createdAt }
+        : { state: 'none', expiresAt: null, sentAt: null },
+    };
+  });
 }
 
 export function directoryActivity() {
@@ -204,33 +254,191 @@ function unauthorised(message) {
   return error;
 }
 
+/* ── Passwords ────────────────────────────────────────────────────────────── */
+
+/** The rules a chosen password has to meet, as the accept screen lists them. */
+export const PASSWORD_RULES = [
+  { key: 'length', label: 'At least 10 characters', test: (value) => value.length >= 10 },
+  { key: 'letter', label: 'A letter', test: (value) => /[A-Za-z]/.test(value) },
+  { key: 'number', label: 'A number', test: (value) => /\d/.test(value) },
+  {
+    key: 'distinct',
+    label: 'Not your username, and not the shared demo password',
+    test: (value, username = '') =>
+      value !== DEMO_PASSWORD && (!username || !value.toLowerCase().includes(String(username).toLowerCase())),
+  },
+];
+
+function hashPassword(password, salt) {
+  return sha256Hex(`${salt}:${password}`);
+}
+
+function passwordMatches(store, row, password) {
+  const record = store.passwords[row.id];
+  if (!record) return password === DEMO_PASSWORD;
+  return hashPassword(password, record.salt) === record.hash;
+}
+
 /**
- * Sign-in. Accepts the username or the email, case-insensitively. An invited
- * account becomes active on its first sign-in; a deactivated one is refused
- * with a reason, because "wrong password" would send its owner hunting for a
- * password that is not the problem.
+ * Sign-in. Accepts the username or the email, case-insensitively.
+ *
+ * Seeded accounts use the demo password; anyone who accepted an invitation
+ * uses the password they chose. An account that has not accepted yet, or has
+ * been deactivated, is refused with the reason - "wrong password" would send
+ * its owner hunting for a password that is not the problem.
  */
 export function verifySignIn(identifier, password) {
   const row = findByIdentifier(identifier);
-  if (!row || password !== DEMO_PASSWORD) {
+  const store = readStore();
+  if (row?.status === 'invited') {
+    throw unauthorised('This account has not been set up yet. Open the invitation link you were sent to choose a password.');
+  }
+  if (!row || !passwordMatches(store, row, password)) {
     throw unauthorised('That username and password do not match an account.');
   }
   if (row.status === 'deactivated') {
     throw unauthorised('This account has been deactivated. Ask a super admin to reactivate it.');
   }
-  const store = readStore();
   const change = { ...(store.changes[row.id] ?? {}), lastSignInAt: new Date().toISOString() };
-  if (row.status === 'invited') {
-    change.status = 'active';
-    store.activity = [
-      { at: change.lastSignInAt, actor: row.name, text: `${row.name} accepted the invitation and signed in for the first time.` },
-      ...store.activity,
-    ].slice(0, 50);
-  }
   store.changes = { ...store.changes, [row.id]: change };
   writeStore(store);
   const next = { ...row, ...change };
   return { token: tokenFor(next), user: sessionUser(next) };
+}
+
+/* ── Invitations ──────────────────────────────────────────────────────────── */
+
+function issueInvite(store, row, actor) {
+  const now = Date.now();
+  /* One live link per person: issuing a new one retires the old, so a link
+     forwarded by mistake can be killed by sending a fresh one. */
+  store.invites = store.invites.map((invite) =>
+    invite.userId === row.id && invite.status === 'pending' ? { ...invite, status: 'superseded' } : invite,
+  );
+  const invite = {
+    token: randomHex(24),
+    userId: row.id,
+    createdAt: new Date(now).toISOString(),
+    expiresAt: new Date(now + INVITE_TTL_HOURS * HOUR).toISOString(),
+    createdBy: actor.name,
+    status: 'pending',
+  };
+  store.invites = [...store.invites, invite].slice(-200);
+  return { token: invite.token, expiresAt: invite.expiresAt };
+}
+
+function revokePending(store, userId) {
+  store.invites = store.invites.map((invite) =>
+    invite.userId === userId && invite.status === 'pending' ? { ...invite, status: 'revoked' } : invite,
+  );
+}
+
+/**
+ * What an invitation link resolves to, for the accept screen. Public: the
+ * person opening it is not signed in. Every way a link can fail has its own
+ * state, so the screen can say which one and what to do about it.
+ *
+ *   valid     can be accepted now
+ *   expired   past its 72 hours
+ *   used      already accepted
+ *   replaced  a newer link was sent to the same person
+ *   revoked   withdrawn, or the account was deactivated
+ *   invalid   no such link (mistyped, or created in another browser)
+ */
+export function lookupInvite(token) {
+  const store = readStore();
+  const invite = store.invites.find((entry) => entry.token === String(token ?? '').trim());
+  if (!invite) return { state: 'invalid' };
+  const row = directory().find((entry) => entry.id === invite.userId);
+  const base = row
+    ? {
+        name: row.name,
+        email: row.email,
+        username: row.user,
+        role: row.role,
+        roleLabel: ROLES[row.role]?.label ?? row.role,
+        invitedBy: invite.createdBy,
+        expiresAt: invite.expiresAt,
+      }
+    : { invitedBy: invite.createdBy, expiresAt: invite.expiresAt };
+  if (invite.status === 'accepted' || row?.status === 'active') return { state: 'used', ...base };
+  if (invite.status === 'revoked' || !row || row.status === 'deactivated') return { state: 'revoked', ...base };
+  if (invite.status === 'superseded') return { state: 'replaced', ...base };
+  if (isExpired(invite)) return { state: 'expired', ...base };
+  return { state: 'valid', ...base };
+}
+
+/**
+ * Accept an invitation: check the link, set the password, activate the
+ * account. Signing in is a separate step, done with the new password, so the
+ * first sign-in proves the password works.
+ */
+export function acceptInvite({ token, password, confirm }) {
+  const found = lookupInvite(token);
+  if (found.state !== 'valid') {
+    const error = new Error(INVITE_PROBLEMS[found.state]?.title ?? 'This invitation cannot be used.');
+    error.code = `INVITE_${found.state.toUpperCase()}`;
+    throw error;
+  }
+  const value = String(password ?? '');
+  const failed = PASSWORD_RULES.find((rule) => !rule.test(value, found.username));
+  if (failed) throw new Error(`The password needs: ${failed.label.toLowerCase()}.`);
+  if (value !== confirm) throw new Error('The two passwords do not match.');
+
+  const store = readStore();
+  const invite = store.invites.find((entry) => entry.token === token);
+  const salt = randomHex(16);
+  store.passwords = { ...store.passwords, [invite.userId]: { salt, hash: hashPassword(value, salt) } };
+  store.invites = store.invites.map((entry) =>
+    entry.token === token ? { ...entry, status: 'accepted', acceptedAt: new Date().toISOString() } : entry,
+  );
+  store.changes = {
+    ...store.changes,
+    [invite.userId]: { ...(store.changes[invite.userId] ?? {}), status: 'active' },
+  };
+  store.activity = [
+    { at: new Date().toISOString(), actor: found.name, text: `${found.name} accepted the invitation and set a password.` },
+    ...store.activity,
+  ].slice(0, 50);
+  writeStore(store);
+  return { username: found.username };
+}
+
+/** Why a link cannot be used, in the words the accept screen shows. */
+export const INVITE_PROBLEMS = {
+  expired: {
+    title: 'This invitation has expired',
+    detail: `Invitation links work for ${INVITE_TTL_HOURS} hours. Ask the person who invited you to send a new one.`,
+  },
+  used: {
+    title: 'This invitation has already been used',
+    detail: 'The account is set up. Sign in with the password chosen when it was accepted.',
+  },
+  replaced: {
+    title: 'A newer invitation was sent',
+    detail: 'Only the most recent link works. Use the newest one you received.',
+  },
+  revoked: {
+    title: 'This invitation was withdrawn',
+    detail: 'An administrator cancelled it. Ask them if you still need access.',
+  },
+  invalid: {
+    title: 'This invitation link is not valid',
+    detail: 'Check that the whole link was copied. In this demo a link also only works in the browser it was created in.',
+  },
+};
+
+/** Send a new link to someone who has not accepted yet. Retires the old one. */
+export function resendInvite(id) {
+  const actor = assertCan('users.manage');
+  const store = readStore();
+  const row = directory().find((entry) => entry.id === id);
+  if (!row) throw new Error('That user no longer exists.');
+  if (row.status !== 'invited') throw new Error('Only someone who has not accepted yet can be sent a new link.');
+  const invite = issueInvite(store, row, actor);
+  log(store, actor, `Sent ${row.name} a new invitation link.`);
+  writeStore(store);
+  return { user: row, invite };
 }
 
 /* ── Administration ───────────────────────────────────────────────────────── */
@@ -276,9 +484,10 @@ export function inviteUser({ name, email, role, title = '', team = '' }) {
     lastSignInAt: null,
   };
   store.added = [...store.added, row];
+  const invite = issueInvite(store, row, actor);
   log(store, actor, `Invited ${cleanName} as ${ROLES[role].label}.`);
   writeStore(store);
-  return row;
+  return { user: row, invite };
 }
 
 /**
@@ -322,6 +531,8 @@ export function updateUser(id, patch) {
     log(store, actor, `Changed ${row.name} from ${ROLES[row.role].label} to ${ROLES[next.role].label}.`);
   }
   if (next.status !== row.status) {
+    /* A deactivated account's outstanding link must stop working too. */
+    if (next.status === 'deactivated') revokePending(store, id);
     log(store, actor, next.status === 'deactivated' ? `Deactivated ${row.name}.` : `Reactivated ${row.name}.`);
   }
   writeStore(store);
@@ -335,6 +546,7 @@ export function revokeInvite(id) {
   if (!row) throw new Error('That user no longer exists.');
   if (row.status !== 'invited') throw new Error('Only a pending invitation can be withdrawn.');
   const store = readStore();
+  revokePending(store, id);
   if (store.added.some((entry) => entry.id === id)) {
     store.added = store.added.filter((entry) => entry.id !== id);
     const { [id]: _removed, ...rest } = store.changes;

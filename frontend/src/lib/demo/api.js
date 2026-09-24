@@ -523,3 +523,17 @@ export function updateUser(id, patch) {
 export function revokeInvite(id) {
   return demoRequest(() => users.revokeInvite(id), { latency: [300, 520] });
 }
+
+export function resendInvite(id) {
+  return demoRequest(() => users.resendInvite(id), { latency: [300, 520] });
+}
+
+/** Public: resolves an invitation link for the accept screen. */
+export function lookupInvite(token, signal) {
+  return demoRequest(() => users.lookupInvite(token), { signal, latency: [240, 420] });
+}
+
+/** Public: sets the invitee's password and activates the account. */
+export function acceptInvite(input) {
+  return demoRequest(() => users.acceptInvite(input), { latency: [500, 800] });
+}

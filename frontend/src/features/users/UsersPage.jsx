@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react';
-import { Check, Minus, RotateCcw, ShieldCheck, UserMinus, UserPlus, UsersRound, X } from 'lucide-react';
+import { Check, Link2, Minus, RotateCcw, Send, ShieldCheck, UserMinus, UserPlus, UsersRound, X } from 'lucide-react';
 import { RequirePermission } from '../../app/RequirePermission';
-import { fetchUsers, inviteUser, revokeInvite, updateUser } from '../../lib/api/endpoints';
-import { USER_STATUSES } from '../../lib/demo/users';
+import { fetchUsers, inviteUser, resendInvite, revokeInvite, updateUser } from '../../lib/api/endpoints';
+import { INVITE_TTL_HOURS, USER_STATUSES } from '../../lib/demo/users';
 import { useDemoQuery } from '../../lib/demo/useDemoQuery';
 import { formatDateTime, formatNumber, formatRelative, initialsOf } from '../../lib/format';
 import { PERMISSIONS, ROLE_ORDER, ROLES } from '../../lib/roles';
 import { PageHeader } from '../../shell/PageHeader';
 import { Button } from '../../ui/Button';
+import { CopyButton } from '../../ui/Copyable';
 import { Field, Input, SearchInput, Select } from '../../ui/Field';
 import { Modal } from '../../ui/Overlay';
 import { Panel, PanelHeader } from '../../ui/Panel';
@@ -50,6 +51,8 @@ function UsersScreen() {
   const [tab, setTab] = useState('users');
   const [search, setSearch] = useState('');
   const [inviting, setInviting] = useState(false);
+  /* The link just created, shown once - the directory never carries it. */
+  const [issued, setIssued] = useState(null);
   const [confirm, setConfirm] = useState(null);
   const [busyId, setBusyId] = useState('');
 
@@ -60,11 +63,13 @@ function UsersScreen() {
   const counts = useMemo(() => {
     const byStatus = { active: 0, invited: 0, deactivated: 0 };
     const byRole = Object.fromEntries(ROLE_ORDER.map((key) => [key, 0]));
+    let staleInvites = 0;
     for (const user of users) {
       byStatus[user.status] += 1;
+      if (user.status === 'invited' && user.invite?.state !== 'pending') staleInvites += 1;
       if (user.status !== 'deactivated') byRole[user.role] += 1;
     }
-    return { byStatus, byRole };
+    return { byStatus, byRole, staleInvites };
   }, [users]);
 
   const rows = useMemo(() => {
@@ -141,7 +146,11 @@ function UsersScreen() {
             label="Pending invitations"
             value={counts.byStatus.invited}
             tone={counts.byStatus.invited > 0 ? 'medium' : 'neutral'}
-            caption="Become active at first sign-in"
+            caption={
+              counts.staleInvites > 0
+                ? `${formatNumber(counts.staleInvites)} with no working link - resend`
+                : 'Active once they accept'
+            }
             className="animate-rise"
           />
           <MetricTile
@@ -262,11 +271,7 @@ function UsersScreen() {
                           <Tag tone={status.tone} size="sm" dot>
                             {status.label}
                           </Tag>
-                          {user.status === 'invited' && user.invitedBy && (
-                            <span className="mt-1 block text-[11px] text-ink-3">
-                              By {user.invitedBy}, {formatRelative(user.createdAt)}
-                            </span>
-                          )}
+                          {user.status === 'invited' && <InviteState invite={user.invite} />}
                         </td>
                         <td className="px-3 py-3 text-[12px] text-ink-2">
                           {user.lastSignInAt ? (
@@ -277,15 +282,36 @@ function UsersScreen() {
                         </td>
                         <td className="px-4 py-3 text-right">
                           {self ? null : user.status === 'invited' ? (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              icon={X}
-                              loading={busy}
-                              onClick={() => setConfirm({ kind: 'revoke', user })}
-                            >
-                              Withdraw
-                            </Button>
+                            <span className="inline-flex flex-wrap justify-end gap-1.5">
+                              <Button
+                                variant={user.invite?.state === 'pending' ? 'ghost' : 'secondary'}
+                                size="sm"
+                                icon={Send}
+                                loading={busy}
+                                onClick={async () => {
+                                  setBusyId(user.id);
+                                  try {
+                                    const result = await resendInvite(user.id);
+                                    setIssued({ ...result, resent: true });
+                                  } catch (error) {
+                                    notify({ variant: 'error', title: 'No new link', description: error?.message });
+                                  } finally {
+                                    setBusyId('');
+                                  }
+                                }}
+                              >
+                                Resend
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                icon={X}
+                                disabled={busy}
+                                onClick={() => setConfirm({ kind: 'revoke', user })}
+                              >
+                                Withdraw
+                              </Button>
+                            </span>
                           ) : user.status === 'deactivated' ? (
                             <Button
                               variant="secondary"
@@ -297,7 +323,7 @@ function UsersScreen() {
                                   title: `${user.name} reactivated`,
                                   description: user.lastSignInAt
                                     ? 'They can sign in again with their existing role.'
-                                    : 'They never signed in, so they are back to invited.',
+                                    : 'They never accepted, so they are back to invited. Send them a new link.',
                                 })
                               }
                             >
@@ -356,7 +382,17 @@ function UsersScreen() {
         </Panel>
       )}
 
-      {inviting && <InviteModal onClose={() => setInviting(false)} />}
+      {inviting && (
+        <InviteModal
+          onClose={() => setInviting(false)}
+          onInvited={(result) => {
+            setInviting(false);
+            setIssued(result);
+          }}
+        />
+      )}
+
+      {issued && <InviteLinkModal issued={issued} onClose={() => setIssued(null)} />}
 
       <Modal
         open={Boolean(confirm)}
@@ -368,7 +404,7 @@ function UsersScreen() {
         }
         description={
           confirm?.kind === 'revoke'
-            ? 'They will not be able to sign in. You can invite them again later.'
+            ? 'Their link stops working straight away. You can invite them again later.'
             : 'They are signed out and cannot sign in again until reactivated. Their alerts stay assigned to them, so reassign anything urgent first.'
         }
         icon={UserMinus}
@@ -494,8 +530,7 @@ function RolesTab({ counts }) {
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function InviteModal({ onClose }) {
-  const { notify } = useToast();
+function InviteModal({ onClose, onInvited }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('analyst');
@@ -514,13 +549,8 @@ function InviteModal({ onClose }) {
     if (nameError || emailError) return;
     setSaving(true);
     try {
-      const user = await inviteUser({ name, email, role, title });
-      notify({
-        variant: 'success',
-        title: `${user.name} invited as ${ROLES[role].label}`,
-        description: `They sign in as ${user.user} or ${user.email}.`,
-      });
-      onClose();
+      const result = await inviteUser({ name, email, role, title });
+      onInvited(result);
     } catch (failure) {
       setError(failure?.message ?? 'The invitation was not sent.');
     } finally {
@@ -533,7 +563,7 @@ function InviteModal({ onClose }) {
       open
       onClose={saving ? () => {} : onClose}
       title="Invite a user"
-      description="They can sign in once invited, and become active at their first sign-in."
+      description={`Creates a one-time link that works for ${INVITE_TTL_HOURS} hours. They open it to choose a password.`}
       icon={UserPlus}
       footer={
         <>
@@ -541,7 +571,7 @@ function InviteModal({ onClose }) {
             Cancel
           </Button>
           <Button variant="primary" icon={UserPlus} loading={saving} type="submit" form="invite-user-form">
-            Send invitation
+            Create invitation
           </Button>
         </>
       }
@@ -573,6 +603,75 @@ function InviteModal({ onClose }) {
           </p>
         )}
       </form>
+    </Modal>
+  );
+}
+
+/** Where an invited user's link stands: working until when, expired, or none. */
+function InviteState({ invite }) {
+  if (!invite || invite.state === 'none') {
+    return <span className="mt-1 block text-[11px] text-ink-3">No working link - resend</span>;
+  }
+  if (invite.state === 'expired') {
+    return (
+      <span className="mt-1 block text-[11px] font-medium text-medium" title={formatDateTime(invite.expiresAt)}>
+        Link expired {formatRelative(invite.expiresAt)}
+      </span>
+    );
+  }
+  return (
+    <span className="mt-1 block text-[11px] text-ink-3" title={formatDateTime(invite.expiresAt)}>
+      Link expires {formatRelative(invite.expiresAt)}
+    </span>
+  );
+}
+
+/**
+ * The invitation link, shown once.
+ *
+ * There is no mail service behind this console yet, so the link is handed to
+ * the administrator to pass on. Like a real API, it is only ever shown here:
+ * lose it and the answer is Resend, which also retires this one.
+ */
+function InviteLinkModal({ issued, onClose }) {
+  const url = `${window.location.origin}/accept-invite?token=${encodeURIComponent(issued.invite.token)}`;
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={issued.resent ? `New link for ${issued.user.name}` : `${issued.user.name} is invited`}
+      description={
+        issued.resent
+          ? 'The previous link has stopped working. Send them this one.'
+          : `As ${ROLES[issued.user.role].label}. Send them this link to choose a password.`
+      }
+      icon={Link2}
+      footer={
+        <Button variant="primary" onClick={onClose}>
+          Done
+        </Button>
+      }
+    >
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center gap-2 rounded-[var(--radius-control)] border border-line bg-inset p-2 pl-3">
+          <code className="min-w-0 flex-1 truncate font-mono text-[12px] text-ink-2" title={url} data-invite-link={url}>
+            {url}
+          </code>
+          <CopyButton value={url} label="Copy invitation link" />
+        </div>
+        <ul className="flex flex-col gap-1.5 text-[12.5px] leading-relaxed text-ink-2">
+          <li>
+            Works once, until <span className="font-medium text-ink">{formatDateTime(issued.invite.expiresAt)}</span>{' '}
+            ({formatRelative(issued.invite.expiresAt)}).
+          </li>
+          <li>
+            They will sign in as <span className="font-mono text-ink">{issued.user.user}</span> or {issued.user.email}.
+          </li>
+          <li className="text-ink-3">
+            Email delivery needs the backend, so share it yourself. In this demo the link only works in this browser.
+          </li>
+        </ul>
+      </div>
     </Modal>
   );
 }

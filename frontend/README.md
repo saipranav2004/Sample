@@ -58,7 +58,7 @@ Environment variables:
 
 ## Demo accounts and roles
 
-Until the backend exists, sign-in, users and roles run in the browser (`src/lib/demo/users.js`). Every account uses the password `admin@123`, and signs in with its username or email.
+Until the backend exists, sign-in, users and roles run in the browser (`src/lib/demo/users.js`). The seeded accounts use the password `admin@123` and sign in with their username or email. People invited from the Users page choose their own password instead.
 
 | Username | Email | Role | State |
 |---|---|---|---|
@@ -66,8 +66,10 @@ Until the backend exists, sign-in, users and roles run in the browser (`src/lib/
 | `marcus.oyelaran` | `marcus.oyelaran@example.com` | Admin | Active |
 | `helena.brandt` | `helena.brandt@example.com` | Analyst | Active |
 | `sofia.marchetti` | `sofia.marchetti@example.com` | Viewer | Active |
-| `priya.raghavan` | `priya.raghavan@example.com` | Analyst | Invited (active after first sign-in) |
+| `priya.raghavan` | `priya.raghavan@example.com` | Analyst | Invited, link expired (use Resend) |
 | `liam.donnelly` | `liam.donnelly@example.com` | Analyst | Deactivated (sign-in refused) |
+
+**Invitations.** Invite user creates a one-time link (`/accept-invite?token=...`, valid 72 hours) that is shown once, to copy and send - there is no mail service yet. The invitee opens it, chooses a password (stored salted and SHA-256 hashed, never in plain text) and is signed in. Resend issues a new link and retires the old one; Withdraw and deactivation kill it. An expired, used, replaced, withdrawn or unknown link each gets its own message. In the demo a link only works in the browser that created it. The backend needs three calls to replace this: create invite, look up a token, accept.
 
 What each role may do is one table, `src/lib/roles.js`, shown as a matrix on **Settings > Users & roles**. The screens read it to lock controls (`useAccess`, `<Button locked>`), and the demo data layer reads it to refuse the same requests. **A check in the browser is not security: the backend must enforce this table on the server.**
 

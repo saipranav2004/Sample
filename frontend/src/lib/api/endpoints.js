@@ -52,6 +52,9 @@ export const fetchUsers = (signal) => demo.fetchUsers(signal);
 export const inviteUser = (input) => demo.inviteUser(input);
 export const updateUser = (id, patch) => demo.updateUser(id, patch);
 export const revokeInvite = (id) => demo.revokeInvite(id);
+export const resendInvite = (id) => demo.resendInvite(id);
+export const lookupInvite = (token, signal) => demo.lookupInvite(token, signal);
+export const acceptInvite = (input) => demo.acceptInvite(input);
 
 /* ── Alerts ──────────────────────────────────────────────────────────────── */
 
