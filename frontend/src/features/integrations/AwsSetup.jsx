@@ -674,7 +674,7 @@ function OrgDeploySection({ data, selectedKeys, onConnectOne }) {
       <PanelHeader
         prominence="lead"
         title="Deploy across the organisation"
-        subtitle="A service-managed StackSet puts the role in every account under the OUs you target, and in accounts created there later. For one account, use Connect an account instead - it hands out the same template and verifies the result."
+        subtitle="One StackSet adds the read-only role to every account, including new ones. For a single account, use Connect one account."
       />
       {/* A row of its own rather than header actions: two buttons beside the
           title pushed a phone-width page sideways. */}
@@ -729,7 +729,7 @@ const DATA_FLOW = [
     groups: ['actor-discovery', 'identity-inventory'],
     count: (s) => s?.total_identities,
     unit: 'actors',
-    how: 'Each compute, serverless, CI, agent and data actor is discovered by its own List/Describe call, then resolved to the IAM role it assumes. The actor is the identity; the role is what it holds.',
+    how: 'Each workload is found by its own List/Describe call and linked to the IAM role it uses.',
   },
   {
     key: 'credentials',
@@ -738,7 +738,7 @@ const DATA_FLOW = [
     groups: ['credential-state', 'identity-inventory'],
     count: (s) => s?.total_credentials,
     unit: 'credentials',
-    how: 'Assumed roles, instance profiles, access keys, certificates and federation trusts, each with its age and last use from the credential report and iam:GetAccessKeyLastUsed.',
+    how: 'Roles, access keys, secrets and tokens, with their age and last use.',
   },
   {
     key: 'graph',
@@ -747,7 +747,7 @@ const DATA_FLOW = [
     groups: ['identity-inventory', 'resource-reach', 'guardrails'],
     count: (s) => s?.total_accounts,
     unit: 'accounts',
-    how: 'Trust policies give the edges between principals; resource policies give the edges to data. Organisation policies are what stop an edge being drawn that the estate would already deny.',
+    how: 'Trust and resource policies, minus anything organisation policies deny.',
   },
   {
     key: 'genome',
@@ -756,7 +756,7 @@ const DATA_FLOW = [
     groups: ['behaviour'],
     count: (s) => s?.total_nhis,
     unit: 'machine identities baselined',
-    how: 'CloudTrail management events, per principal: the 90 days of event history CloudTrail keeps in every region, or longer where an organisation trail is retained. Past that window an idle identity reads as unknown, not as unused.',
+    how: 'CloudTrail activity per identity: 90 days, or longer with an organisation trail.',
   },
   {
     key: 'activity',
@@ -765,7 +765,7 @@ const DATA_FLOW = [
     groups: ['behaviour'],
     count: (s) => s?.total_events,
     unit: 'events read',
-    how: 'The same trail, unaggregated, so a finding can be traced back to the call that produced it.',
+    how: 'The raw CloudTrail events behind every finding.',
   },
 ];
 
@@ -782,7 +782,7 @@ function CollectionSection({ data, summary, trustPolicy, roleArn }) {
         <PanelHeader
           prominence="lead"
           title="The role this console assumes"
-          subtitle="A cross-account role with a per-tenant external id. No access key exists for this integration, and none should be created."
+          subtitle="The console signs in to your accounts with this role. No access keys are used."
         />
         {/* `min-w-0` on both columns: a grid item's minimum width is its
             content by default, and an ARN or an external id is one unbreakable
@@ -793,17 +793,17 @@ function CollectionSection({ data, summary, trustPolicy, roleArn }) {
             <SetupValue
               label="This console's AWS account id"
               value={data.tenant.consoleAccountId}
-              note="Ours, not yours. This is the principal your trust policy names."
+              note="Our account. Your trust policy names it."
             />
             <SetupValue
               label="External id issued for your tenant"
               value={data.tenant.externalId}
-              note="Unique to you. It is what stops another tenant of ours assuming your role, which is the confused-deputy problem AWS documents by that name."
+              note="Unique to you, so no one else can use your role."
             />
             <SetupValue
               label="Role to create in each of your accounts"
               value={roleArn}
-              note="One role per account, deployed by StackSet from the management account so accounts created later get it too."
+              note="Created in each account by the StackSet."
             />
           </dl>
 
@@ -816,8 +816,7 @@ function CollectionSection({ data, summary, trustPolicy, roleArn }) {
               {trustPolicy}
             </pre>
             <p className="mt-1.5 text-[11.5px] leading-relaxed text-ink-3">
-              The condition is the load-bearing line. Without it, naming our account alone would
-              let any principal inside our account assume your role.
+              Keep the external ID condition - without it the role is not safe.
             </p>
           </div>
         </div>
@@ -829,7 +828,7 @@ function CollectionSection({ data, summary, trustPolicy, roleArn }) {
       <Panel>
         <PanelHeader
           title="How each screen gets its data"
-          subtitle="One row per screen: what it shows, the permissions that produce it, and how those permissions become that."
+          subtitle="Where each screen's numbers come from."
         />
         {summary.isLoading && !summary.data ? (
           <div className="mt-4">
@@ -880,7 +879,7 @@ function CollectionSection({ data, summary, trustPolicy, roleArn }) {
           <PanelHeader
             prominence="quiet"
             title="Accounts with no role yet"
-            subtitle="An account without the role is absent from every figure above, rather than reported as empty."
+            subtitle="Nothing in these accounts appears anywhere until the role is added."
           />
           <ul className="mt-3 flex flex-col gap-2">
             {data.coverage.unconnected.map((account) => (
@@ -959,7 +958,7 @@ function PermissionsSection({ onToggle, selectedKeys, pendingKey }) {
         <PanelHeader
           prominence="lead"
           title="What the role is allowed to read"
-          subtitle="Every action below is a read. Switching a group off changes the template and the policy generated below; the role already deployed keeps what it was granted until the template is deployed again."
+          subtitle="Every action is read-only. Switching a group off updates the template; redeploy it to apply."
           actions={
             <Tag tone="neutral" size="sm">
               {formatNumber(actionCount)} actions
@@ -1031,18 +1030,21 @@ function PermissionsSection({ onToggle, selectedKeys, pendingKey }) {
                         <span className="text-[11px] text-ink-3">Feeds {group.feeds}</span>
                       </div>
                       <p className="mt-1 text-[12px] leading-relaxed text-ink-2">{group.why}</p>
-                      <p className="mt-1 flex items-start gap-1.5 text-[11.5px] leading-relaxed text-ink-3">
-                        <MinusCircle aria-hidden="true" className="mt-px size-3.5 shrink-0" />
-                        <span>
-                          <span className="font-medium">Without it:</span> {group.without}
-                        </span>
-                      </p>
-                      {group.note && (
+                      <details className="mt-1">
+                        <summary className="cursor-pointer text-[11.5px] font-medium text-brand hover:underline">
+                          What happens without it
+                        </summary>
                         <p className="mt-1 flex items-start gap-1.5 text-[11.5px] leading-relaxed text-ink-3">
-                          <Info aria-hidden="true" className="mt-px size-3.5 shrink-0" />
-                          <span>{group.note}</span>
+                          <MinusCircle aria-hidden="true" className="mt-px size-3.5 shrink-0" />
+                          <span>{group.without}</span>
                         </p>
-                      )}
+                        {group.note && (
+                          <p className="mt-1 flex items-start gap-1.5 text-[11.5px] leading-relaxed text-ink-3">
+                            <Info aria-hidden="true" className="mt-px size-3.5 shrink-0" />
+                            <span>{group.note}</span>
+                          </p>
+                        )}
+                      </details>
                     </div>
                   </div>
 
@@ -1112,7 +1114,7 @@ function PermissionsSection({ onToggle, selectedKeys, pendingKey }) {
         <Panel className="min-w-0">
           <PanelHeader
             title="The policy to attach"
-            subtitle="Generated from the groups you have kept, so it changes as you change them."
+            subtitle="Built from the groups above."
             actions={<CopyButton value={policy} label="Copy the policy" />}
           />
           <pre className="mt-3 max-h-80 overflow-auto rounded-[var(--radius-control)] border border-line bg-inset p-3 font-mono text-[11.5px] leading-relaxed text-ink-2">
@@ -1125,7 +1127,7 @@ function PermissionsSection({ onToggle, selectedKeys, pendingKey }) {
             <PanelHeader
               prominence="quiet"
               title="Or use AWS's own read-only policies"
-              subtitle="Two managed policies cover most of the above. Broader than this console uses, and AWS can widen a managed policy without asking you."
+              subtitle="Simpler, but broader than needed, and AWS can change them."
             />
             <ul className="mt-3 flex flex-col gap-2">
               {AWS_MANAGED_POLICY_OPTION.policies.map((entry) => (
@@ -1151,7 +1153,7 @@ function PermissionsSection({ onToggle, selectedKeys, pendingKey }) {
             <PanelHeader
               prominence="quiet"
               title="The one Deny worth adding"
-              subtitle="This console reads which secrets exist and when they rotated, never a value. An explicit Deny costs nothing and removes the worst thing the role could be used for."
+              subtitle="The console never reads secret values. This Deny makes sure the role cannot either."
               actions={
                 <CopyButton value={denySecretValuesDocument()} label="Copy the deny statement" />
               }
@@ -1177,7 +1179,7 @@ function PermissionsSection({ onToggle, selectedKeys, pendingKey }) {
  * is to apply: the two critical ones are each a single condition block.
  */
 function RulesSection() {
-  const [open, setOpen] = useState(() => AWS_RULE_CATEGORIES[0]?.rules[0]?.key ?? '');
+  const [open, setOpen] = useState('');
 
   return (
     <>
@@ -1185,7 +1187,7 @@ function RulesSection() {
         <PanelHeader
           prominence="lead"
           title="Rules to apply to the role you are granting"
-          subtitle="A read-only role is still a role that can read everything, in every account, forever. These are the nine constraints worth putting on it - the first two are not optional in any estate."
+          subtitle="Limits worth putting on the role. The first two are essential."
         />
       </Panel>
 
@@ -1409,92 +1411,97 @@ function HealthTab({ health, accounts, onConnect, onRerun }) {
           }
         />
 
-        <ul className="mt-4 flex flex-col gap-2.5">
-          {AWS_HEALTH_CHECKS.map((check) => {
-            const result = results[check.key];
-            const state = CHECK_STATE[result?.state ?? 'unknown'];
-            const StateIcon = state.icon;
-            const ok = result?.state === 'pass';
-            const fix = !ok ? AWS_CHECK_FIXES[check.key] : null;
-            return (
-              <li
-                key={check.key}
-                className={cn(
-                  'rounded-[var(--radius-control)] border p-3.5',
-                  ok ? 'border-line bg-surface-2' : 'border-line-strong bg-surface-2',
-                )}
-              >
-                <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1.5">
-                  <div className="min-w-0">
-                    <p className="flex flex-wrap items-center gap-2 text-[13px] font-semibold text-ink">
+        {/* Problems first, one line each, with the fix one click away;
+            passing checks collapse to a single line, since there is nothing
+            to read about a check that works. */}
+        {failing.length > 0 && (
+          <ul className="mt-4 flex flex-col gap-2.5">
+            {failing.map((check) => {
+              const result = results[check.key];
+              const state = CHECK_STATE[result?.state ?? 'unknown'];
+              const fix = AWS_CHECK_FIXES[check.key];
+              return (
+                <li key={check.key} className="rounded-[var(--radius-control)] border border-line-strong bg-surface-2 p-3.5">
+                  <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1.5">
+                    <p className="text-[13px] font-semibold text-ink" title={check.detail}>
                       {check.label}
-                      <span className="text-[11px] font-normal text-ink-3">
-                        {check.scope === 'account' ? `Every account` : 'Organisation'}
-                      </span>
                     </p>
-                    <p className="mt-0.5 font-mono text-[11px] text-ink-3">{check.detail}</p>
+                    <Tag tone={state.tone} size="sm" icon={state.icon}>
+                      {state.label}
+                    </Tag>
                   </div>
-                  <Tag tone={state.tone} size="sm" icon={StateIcon}>
-                    {state.label}
-                  </Tag>
-                </div>
-
-                {result?.note && <p className="mt-2 text-[12px] leading-relaxed text-ink-2">{result.note}</p>}
-
-                {!ok && (
-                  <p className="mt-1.5 flex items-start gap-1.5 text-[11.5px] leading-relaxed text-ink-3">
-                    <ArrowRight aria-hidden="true" className="mt-px size-3.5 shrink-0" />
+                  {result?.note && <p className="mt-1 text-[12.5px] leading-relaxed text-ink-2">{result.note}</p>}
+                  <p className="mt-1.5 flex items-start gap-1.5 text-[12px] leading-relaxed text-ink-2">
+                    <ArrowRight aria-hidden="true" className="mt-0.5 size-3.5 shrink-0 text-brand" />
                     <span>
-                      <span className="font-medium">To fix:</span> {check.fix}
+                      <span className="font-semibold">Fix:</span> {check.fix}
                     </span>
                   </p>
-                )}
 
-                {fix && (
-                  <div className="mt-2.5">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-[11.5px] text-ink-3">{fix.where}</p>
-                      <span className="flex items-center gap-1.5">
-                        <CopyButton value={fix.code} label={`Copy the fix for ${check.label.toLowerCase()}`} />
-                        <Button variant="ghost" size="sm" icon={Download} onClick={() => downloadText(fix.code, fix.filename)}>
-                          {fix.filename}
+                  {check.key === 'accounts' && missing.length > 0 && (
+                    <div className="mt-2.5 flex flex-wrap gap-2">
+                      {missing.map((account) => (
+                        <Button
+                          key={account.id}
+                          variant="secondary"
+                          size="sm"
+                          icon={Plus}
+                          locked={lock('integrations.manage')}
+                          onClick={() => onConnect(account)}
+                        >
+                          Connect {account.name}
                         </Button>
-                      </span>
+                      ))}
                     </div>
-                    <pre className="mt-1.5 max-h-60 overflow-auto rounded-[var(--radius-control)] border border-line bg-inset p-3 font-mono text-[11px] leading-relaxed text-ink-2">
-                      {fix.code}
-                    </pre>
-                  </div>
-                )}
+                  )}
 
-                {check.key === 'accounts' && !ok && missing.length > 0 && (
-                  <div className="mt-2.5 flex flex-wrap gap-2">
-                    {missing.map((account) => (
-                      <Button
-                        key={account.id}
-                        variant="secondary"
-                        size="sm"
-                        icon={Plus}
-                        locked={lock('integrations.manage')}
-                        onClick={() => onConnect(account)}
-                      >
-                        Connect {account.name}
-                      </Button>
-                    ))}
-                  </div>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+                  {fix && (
+                    <details className="group mt-2">
+                      <summary className="cursor-pointer text-[12px] font-medium text-brand hover:underline">
+                        Show how to fix
+                      </summary>
+                      <div className="mt-2">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className="text-[11.5px] text-ink-3">{fix.where}</p>
+                          <span className="flex items-center gap-1.5">
+                            <CopyButton value={fix.code} label={`Copy the fix for ${check.label.toLowerCase()}`} />
+                            <Button variant="ghost" size="sm" icon={Download} onClick={() => downloadText(fix.code, fix.filename)}>
+                              {fix.filename}
+                            </Button>
+                          </span>
+                        </div>
+                        <pre className="mt-1.5 max-h-60 overflow-auto rounded-[var(--radius-control)] border border-line bg-inset p-3 font-mono text-[11px] leading-relaxed text-ink-2">
+                          {fix.code}
+                        </pre>
+                      </div>
+                    </details>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+
+        {AWS_HEALTH_CHECKS.length > failing.length && (
+          <div className="mt-4">
+            <p className="text-[10.5px] font-semibold tracking-[0.1em] text-ink-3 uppercase">Passing</p>
+            <ul className="mt-2 flex flex-wrap gap-2">
+              {AWS_HEALTH_CHECKS.filter((check) => !failing.includes(check)).map((check) => (
+                <li key={check.key}>
+                  <Tag tone="low" size="sm" icon={CHECK_STATE.pass.icon}>
+                    <span title={results[check.key]?.note}>{check.label}</span>
+                  </Tag>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </Panel>
 
       <Panel flush className="overflow-hidden">
         <div className="border-b border-line px-4 py-3">
           <h2 className="text-[13.5px] font-semibold text-ink">Per account</h2>
-          <p className="mt-0.5 text-[12px] text-ink-3">
-            The checks that run inside each account, so a failure names the account it is in.
-          </p>
+          <p className="mt-0.5 text-[12px] text-ink-3">Where each per-account check passes or fails.</p>
         </div>
         <div className="relative overflow-x-auto">
           <table className="w-full min-w-[40rem] text-left">

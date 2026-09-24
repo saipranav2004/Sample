@@ -165,7 +165,7 @@ Grouped by the question an operator is answering, not by the API surface.
 | `/posture` | Posture (ISPM) - fleet score and trend, distribution, quick wins with bulk fix, pillars, category and account breakdowns | demo estate, access graph, genome, alerts |
 | `/alerts` | Alert queue, as a list or grouped by identity | demo estate, Secret Scanner |
 | `/identities` | Identity explorer + record drawer | demo estate |
-| `/identities/:id` | Identity page - overview, posture (checks, remediate, roll back, history), credentials, service access, consumers, activity, alerts. `/posture/:id` redirects here | demo estate, posture, alerts |
+| `/identities/:id` | Identity page. Overview answers what it is, where, who owns it, the IAM role or user it acts as, its permissions, what it authenticates with, who uses it and when it was last used. Tabs: Posture (checks, remediate, roll back, history), Credentials, Role use (who assumes its role, and which roles it assumes, from CloudTrail AssumeRole events), Activity, Alerts. `/posture/:id` redirects here | demo estate, posture, alerts |
 | `/credentials` | Credential register | demo estate |
 | `/exposure`, `/exposure/dismissed` | Exposed credentials and the accepted (allowlisted) set | Secret Scanner (live) |
 | `/access-graph`, `/access-graph/:id` | Access graph and blast radius | demo graph |
@@ -174,6 +174,8 @@ Grouped by the question an operator is answering, not by the API surface.
 | `/reports`, `/reports/:id` | Reports and schedules | demo reports |
 | `/integrations` | Connectors, AWS coverage and health | demo connector state |
 | `/users` | User management (super admin) | demo users |
+
+The top-bar search (Ctrl/Cmd K) finds sections, identities by name or ARN, and credentials by key id, secret or parameter name, role or IAM user.
 
 The sidebar groups open and close on click (not hover); the group holding the current page always opens, and the rest remember how they were left.
 

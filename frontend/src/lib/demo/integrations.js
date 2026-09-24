@@ -531,30 +531,30 @@ export function awsCheckResults() {
   const uncovered = uncoveredAccounts();
   const missing = listNames(uncovered);
   return {
-    assume: { state: 'pass', note: 'Assumed in 240ms, session capped at one hour.' },
+    assume: { state: 'pass', note: 'The console signs in to the role in every connected account.' },
     'external-id': {
       state: 'pass',
-      note: 'The condition is present and the id matches the one issued for this tenant.',
+      note: 'The trust policy requires your external ID.',
     },
     'iam-read': {
       state: 'pass',
-      note: `Authorization details returned for all ${covered} accounts that have the role.`,
+      note: `IAM is read in all ${covered} connected accounts.`,
     },
     cloudtrail: {
       state: 'warn',
-      note: `LookupEvents answers in all ${regions} regions in range, so the last 90 days are covered. No organisation trail is logging, so nothing older survives: an identity idle for longer than 90 days cannot be told apart from one that was never used.`,
+      note: `Only the last 90 days of activity can be read, across ${regions} regions. Anything idle for longer looks never used.`,
       alert: 'No organisation CloudTrail trail: behaviour history stops at 90 days',
     },
     organisation: {
       state: 'fail',
-      note: 'organizations:ListPolicies returned AccessDenied. The account list still reads, because the StackSets delegated administrator may list accounts and OUs - but reading policies needs the Organizations delegation policy, which is not in place. Service control policies cannot be read, so the access graph draws edges the organisation may already deny.',
+      note: 'Organisation policies (SCPs) cannot be read, so the access graph may show access that an SCP already blocks.',
       alert: 'Service control policies cannot be read: the access graph may over-report',
     },
     accounts:
       uncovered.length > 0
         ? {
             state: 'warn',
-            note: `The role resolves in ${covered} of ${total} accounts. ${missing} ${uncovered.length === 1 ? 'has' : 'have'} no role deployed, so nothing in ${uncovered.length === 1 ? 'it' : 'them'} is discovered at all.`,
+            note: `${missing} ${uncovered.length === 1 ? 'has' : 'have'} no discovery role, so nothing in ${uncovered.length === 1 ? 'it' : 'them'} is discovered.`,
             alert: `${missing} ${uncovered.length === 1 ? 'has' : 'have'} no discovery role: nothing in ${uncovered.length === 1 ? 'it' : 'them'} is discovered`,
           }
         : { state: 'pass', note: `The role resolves in all ${total} accounts in the organisation.` },

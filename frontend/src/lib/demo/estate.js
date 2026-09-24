@@ -476,7 +476,15 @@ function buildIdentities() {
     const ownerType = pick(next, OWNER_TYPES);
     const orphaned = ownerType === 'ORPHANED';
     const creator = pick(next, humans);
-    const owner = orphaned ? null : pick(next, PEOPLE);
+    const drawnOwner = pick(next, PEOPLE);
+    /* Where the owner came from decides who it is: an owner resolved from
+       the CloudTrail creator IS the creator. The draw stays, so the rest of
+       the seeded sequence is unchanged. */
+    const owner = orphaned
+      ? null
+      : ownerType === 'CLOUDTRAIL_CREATOR'
+        ? PEOPLE.find((person) => person.user === creator.person) ?? drawnOwner
+        : drawnOwner;
 
     /* Ephemeral identities are young and busy; SaaS integrations are old and
        quiet; CI/CD runs in bursts. The age and activity profile is what makes
@@ -615,7 +623,13 @@ export function classificationEvidence(identity) {
       'naming-convention',
     ],
     evidence: `No console sign-in in CloudTrail. ${
-      identity.trust_service ? `Trust policy names ${identity.trust_service}.` : 'Assumed by another principal in the same account.'
+      identity.trust_service
+        ? `Trust policy names ${identity.trust_service}.`
+        : SERVICE_PRINCIPALS[identity.identity_type]
+          ? `Its role is assumed by ${SERVICE_PRINCIPALS[identity.identity_type]}.`
+          : identity.is_external
+            ? 'Its role is assumed from an account outside the organisation.'
+            : 'Its role is assumed by other principals in the same account.'
     } ${identity.is_secret ? 'Credentials held in Secrets Manager.' : keyText}`,
   };
 }
@@ -779,51 +793,111 @@ function buildCredentials(identities) {
   return credentials;
 }
 
+/* The AWS service that assumes a workload's role. For a Lambda function,
+   an ECS task or an App Runner service it is AWS itself that calls
+   sts:AssumeRole, through the service principal named in the role's trust
+   policy - CloudTrail records that principal, with the service name as the
+   source address. */
+const SERVICE_PRINCIPALS = {
+  'AWS::EC2::Instance': 'ec2.amazonaws.com',
+  'AWS::Lambda::Function': 'lambda.amazonaws.com',
+  'AWS::ECS::Task': 'ecs-tasks.amazonaws.com',
+  'AWS::ECS::FargateTask': 'ecs-tasks.amazonaws.com',
+  'AWS::EKS::Pod': 'pods.eks.amazonaws.com',
+  'AWS::AppRunner::Service': 'tasks.apprunner.amazonaws.com',
+  'AWS::Batch::Job': 'ecs-tasks.amazonaws.com',
+  'AWS::StepFunctions::StateMachine': 'states.amazonaws.com',
+  'AWS::Events::Rule': 'events.amazonaws.com',
+  'AWS::CodeBuild::Project': 'codebuild.amazonaws.com',
+  'AWS::CodePipeline::Pipeline': 'codepipeline.amazonaws.com',
+  'AWS::Bedrock::Agent': 'bedrock.amazonaws.com',
+  'AWS::Bedrock::KnowledgeBase': 'bedrock.amazonaws.com',
+  'AWS::SageMaker::Endpoint': 'sagemaker.amazonaws.com',
+  'AWS::SageMaker::NotebookInstance': 'sagemaker.amazonaws.com',
+  'AWS::Glue::JobRun': 'glue.amazonaws.com',
+  'AWS::EMR::Step': 'elasticmapreduce.amazonaws.com',
+  'AWS::ApiGateway::Integration': 'apigateway.amazonaws.com',
+};
+
 function buildRelationships(identities) {
   const edges = [];
-  const machines = identities.filter((row) => row.classification !== 'HUMAN');
+  /* Only a role is assumed. An IAM user - a person, or one shared with a
+     workload - signs in with its own password or keys; nothing assumes it. */
+  const roles = identities.filter((row) => row.principal_type === 'IAM_ROLE');
 
-  for (const identity of machines) {
+  for (const identity of roles) {
     const own = rng(hashSeed(`rel:${identity.arn}`));
-    /* Who assumes this role. A CI/CD role is assumed by its provider, a
-       service role by another service role in the same account, and a SaaS
-       role by an external principal. */
-    const callerCount = intBetween(own, 1, 3);
-    const candidates =
-      identity.classification === 'NHI_CICD' || identity.classification === 'NHI_SAAS'
-        ? []
-        : sample(
-            own,
-            identities.filter((row) => row.arn !== identity.arn && row.account_id === identity.account_id),
-            callerCount,
-          );
+    const window = {
+      first_assumed: daysAgo(Math.max(identity.last_active_days + 1, intBetween(own, 30, 700))),
+      last_assumed: daysAgo(identity.last_active_days),
+    };
 
-    if (identity.trust_service) {
+    /* Federated: an OIDC provider or a vendor, from outside the network. */
+    if (identity.trust_service && identity.trust_type !== 'ASSUME_ROLE') {
       edges.push({
         target_arn: identity.arn,
         caller_arn: identity.trust_service,
         caller_name: identity.trust_service,
         caller_type: 'EXTERNAL_PRINCIPAL',
         rel_type: identity.trust_type === 'OIDC' ? 'ASSUME_ROLE_WITH_WEB_IDENTITY' : 'ASSUME_ROLE_SAML',
-        /* What the trust was exercised through. The drawer has a "Via" column
-           for exactly this, and it was empty on every row. */
         via:
           identity.trust_type === 'OIDC'
             ? `${identity.trust_service}:sub`
             : `${identity.trust_service} SAML assertion`,
         is_external: true,
-        /* An external caller comes from a public address; an internal one from
-           the VPC. The consumers table prints this, and a machine identity
-           assumed from a routable address is a different fact from one
-           assumed inside the network. */
         source_ip: `${intBetween(own, 13, 209)}.${intBetween(own, 1, 254)}.${intBetween(own, 1, 254)}.${intBetween(own, 1, 254)}`,
-        first_assumed: daysAgo(intBetween(own, 60, 700)),
-        last_assumed: daysAgo(Math.max(0, identity.last_active_days - intBetween(own, 0, 3))),
+        ...window,
         assume_count: intBetween(own, 40, 9000),
       });
+      continue;
     }
 
-    for (const caller of candidates) {
+    /* A vendor role with no federation trust: the vendor's AWS account. */
+    if (identity.is_external) {
+      edges.push({
+        target_arn: identity.arn,
+        caller_arn: identity.trust_service ?? 'external-account',
+        caller_name: identity.trust_service ?? 'External AWS account',
+        caller_type: 'EXTERNAL_PRINCIPAL',
+        rel_type: 'ASSUME_ROLE',
+        via: 'sts:AssumeRole from the vendor account',
+        is_external: true,
+        source_ip: `${intBetween(own, 13, 209)}.${intBetween(own, 1, 254)}.${intBetween(own, 1, 254)}.${intBetween(own, 1, 254)}`,
+        ...window,
+        assume_count: intBetween(own, 40, 9000),
+      });
+      continue;
+    }
+
+    /* A workload: the AWS service it runs on assumes its role. */
+    const service = SERVICE_PRINCIPALS[identity.identity_type] ?? identity.trust_service;
+    if (service) {
+      edges.push({
+        target_arn: identity.arn,
+        caller_arn: service,
+        caller_name: service,
+        caller_type: 'AWS_SERVICE',
+        rel_type: 'ASSUME_ROLE',
+        via: `Trust policy names ${service}`,
+        is_external: false,
+        source_ip: service,
+        ...window,
+        assume_count: intBetween(own, 200, 40000),
+      });
+      continue;
+    }
+
+    /* Anything else - a Terraform run, an unresolved actor - is a role that
+       people or other roles in the account assume directly. */
+    const callers = sample(
+      own,
+      identities.filter((row) => row.arn !== identity.arn && row.account_id === identity.account_id),
+      intBetween(own, 1, 3),
+    );
+    for (const caller of callers) {
+      /* A call happens when both ends are alive: never after the caller's
+         own last activity, nor after the role's. */
+      const lastDays = Math.max(identity.last_active_days, caller.last_active_days);
       edges.push({
         target_arn: identity.arn,
         caller_arn: caller.arn,
@@ -833,8 +907,8 @@ function buildRelationships(identities) {
         via: `sts:AssumeRole from ${caller.name}`,
         is_external: false,
         source_ip: `10.${intBetween(own, 0, 60)}.${intBetween(own, 0, 254)}.${intBetween(own, 1, 254)}`,
-        first_assumed: daysAgo(intBetween(own, 30, 600)),
-        last_assumed: daysAgo(Math.max(0, identity.last_active_days + intBetween(own, 0, 10))),
+        first_assumed: daysAgo(Math.max(lastDays + 1, intBetween(own, 30, 700))),
+        last_assumed: daysAgo(lastDays),
         assume_count: intBetween(own, 5, 4000),
       });
     }

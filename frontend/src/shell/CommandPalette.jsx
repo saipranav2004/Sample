@@ -1,21 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { CornerDownLeft, Fingerprint, Search } from 'lucide-react';
-import { fetchIdentities } from '../lib/api/endpoints';
+import { CornerDownLeft, Fingerprint, KeyRound, Search } from 'lucide-react';
+import { fetchCredentials, fetchIdentities } from '../lib/api/endpoints';
 import { useDebouncedValue, useQuery, useScrollLock } from '../lib/hooks';
 import { useScanContext } from '../app/ScanContext';
 import { useAccess } from '../app/useAccess';
 import { ALL_NAV_ITEMS } from './navigation';
 import { arnResource } from '../lib/format';
-import { classificationMeta } from '../lib/domain';
+import { classificationMeta, credentialKindMeta } from '../lib/domain';
 import { Skeleton } from '../ui/Skeleton';
 import { cn } from '../ui/cn';
 
 /**
- * Command palette. Two jobs only, both backed by real endpoints: jump to a
- * section, or find an identity by name/ARN/evidence (the same `search`
- * parameter the explorer uses).
+ * Command palette: jump to a section, find an identity by name or ARN, or
+ * find a credential by its id - an access key id, a secret or parameter name,
+ * a role - using the same `search` the Identities and Credentials screens use.
  */
 export function CommandPalette({ open, onClose }) {
   const navigate = useNavigate();
@@ -42,6 +42,12 @@ export function CommandPalette({ open, onClose }) {
     { enabled: open && debounced.length >= 2 },
   );
 
+  const credentialQuery = useQuery(
+    (signal) => fetchCredentials({ search: debounced, page: 1, pageSize: 50 }, signal),
+    [debounced],
+    { enabled: open && debounced.length >= 2 },
+  );
+
   const { can } = useAccess();
   const navMatches = useMemo(() => {
     const needle = term.trim().toLowerCase();
@@ -54,6 +60,15 @@ export function CommandPalette({ open, onClose }) {
   }, [term, can]);
 
   const identityMatches = useMemo(() => identityQuery.data?.rows ?? [], [identityQuery.data]);
+  /* Credentials matched on their own id or the IAM user holding them. A
+     credential that only matched on its identity's name is already reachable
+     through that identity above, and would bury the ones asked for. */
+  const credentialMatches = useMemo(() => {
+    const needle = debounced.toLowerCase();
+    return (credentialQuery.data?.rows ?? [])
+      .filter((row) => [row.cred_id, row.iam_user].filter(Boolean).some((field) => field.toLowerCase().includes(needle)))
+      .slice(0, 6);
+  }, [credentialQuery.data, debounced]);
 
   const options = useMemo(
     () => [
@@ -79,13 +94,22 @@ export function CommandPalette({ open, onClose }) {
               : `/identities?search=${encodeURIComponent(identity.name || identity.arn)}`,
           ),
       })),
+      ...credentialMatches.map((credential) => ({
+        id: `credential:${credential.id}`,
+        kind: 'credential',
+        label: credential.cred_id,
+        hint: credentialKindMeta(credential.type).label,
+        sub: `Held by ${credential.identity_name} · ${credential.account_name}`,
+        icon: KeyRound,
+        run: () => navigate(`/credentials?search=${encodeURIComponent(credential.cred_id)}`),
+      })),
     ],
-    [navMatches, identityMatches, navigate],
+    [navMatches, identityMatches, credentialMatches, navigate],
   );
 
   useEffect(() => {
     setActiveIndex(0);
-  }, [term, identityMatches.length]);
+  }, [term, identityMatches.length, credentialMatches.length]);
 
   if (!open) return null;
 
@@ -114,7 +138,7 @@ export function CommandPalette({ open, onClose }) {
     }
   };
 
-  const searching = identityQuery.isLoading && debounced.length >= 2;
+  const searching = (identityQuery.isLoading || credentialQuery.isLoading) && debounced.length >= 2;
 
   return createPortal(
     <div className="fixed inset-0 z-[85] flex items-start justify-center px-4 pt-[12vh]">
@@ -137,8 +161,8 @@ export function CommandPalette({ open, onClose }) {
             value={term}
             onChange={(event) => setTerm(event.target.value)}
             onKeyDown={onKeyDown}
-            placeholder="Jump to a section, or search identities by name or ARN…"
-            aria-label="Search sections and identities"
+            placeholder="Search sections, identities or credentials…"
+            aria-label="Search sections, identities and credentials"
             aria-controls="command-results"
             className="h-13 min-w-0 flex-1 bg-transparent text-[14px] text-ink outline-none placeholder:text-ink-3"
           />
@@ -150,7 +174,7 @@ export function CommandPalette({ open, onClose }) {
         <div id="command-results" role="listbox" className="max-h-[52vh] overflow-y-auto p-1.5">
           {options.length === 0 && !searching && (
             <p className="px-3 py-8 text-center text-[12.5px] text-ink-3">
-              Nothing matches “{term}”. Identity search needs at least two characters.
+              Nothing matches “{term}”. Searching identities and credentials needs at least two characters.
             </p>
           )}
 
@@ -192,9 +216,9 @@ export function CommandPalette({ open, onClose }) {
             </div>
           )}
 
-          {identityQuery.isError && debounced.length >= 2 && (
+          {(identityQuery.isError || credentialQuery.isError) && debounced.length >= 2 && (
             <p className="px-3 py-3 text-[12px] text-critical">
-              Identity search failed: {identityQuery.error?.message}
+              Search failed: {(identityQuery.error ?? credentialQuery.error)?.message}
             </p>
           )}
         </div>

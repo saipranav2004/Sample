@@ -4,23 +4,19 @@ import {
   ArrowLeftRight,
   Info,
   KeyRound,
-  Users,
   Wrench,
 } from 'lucide-react';
-import { fetchConsumers, fetchEvents, fetchLineage } from '../../lib/api/endpoints';
+import { fetchEvents, fetchLineage } from '../../lib/api/endpoints';
 import { useQuery } from '../../lib/hooks';
 import { useScanContext } from '../../app/ScanContext';
 import {
-  actorCategoryMeta,
   actorTypeMeta,
   classificationMeta,
   credentialKindMeta,
-  lineageDirectionMeta,
   ownerTypeMeta,
   severityMeta,
 } from '../../lib/domain';
 import {
-  arnAccount,
   formatDateTime,
   formatNumber,
   formatRelative,
@@ -31,7 +27,8 @@ import { DetailList, DetailRow, SectionLabel } from '../../ui/Panel';
 import { Code, Tag } from '../../ui/Tag';
 import { CopyableValue } from '../../ui/Copyable';
 import { DataGrid } from '../../ui/DataGrid';
-import { DetailSkeleton, ListSkeleton } from '../../ui/Skeleton';
+import { DetailSkeleton, Skeleton } from '../../ui/Skeleton';
+import { cn } from '../../ui/cn';
 import { EmptyState, InlineError } from '../../ui/States';
 import { ActivityFeed } from '../activity/ActivityFeed';
 import { StatusBreakdown } from './status';
@@ -39,26 +36,50 @@ import { StatusBreakdown } from './status';
 export const RECORD_TABS = [
   { value: 'overview', label: 'Overview', icon: Info },
   { value: 'credentials', label: 'Credentials', icon: KeyRound },
-  { value: 'access', label: 'Service access', icon: ArrowLeftRight },
-  { value: 'consumers', label: 'Consumers', icon: Users },
+  { value: 'roles', label: 'Role use', icon: ArrowLeftRight },
   { value: 'activity', label: 'Activity', icon: Activity },
 ];
 
 /** The record tabs with their counts, for whichever surface shows them. */
 export function recordTabs(identity) {
   const credentials = Array.isArray(identity.owned_credentials) ? identity.owned_credentials : [];
-  return RECORD_TABS.map((entry) => {
-    if (entry.value === 'credentials') return { ...entry, count: credentials.length };
-    if (entry.value === 'consumers') return { ...entry, count: identity.consumer_count ?? null };
-    return entry;
-  });
+  return RECORD_TABS.map((entry) => (entry.value === 'credentials' ? { ...entry, count: credentials.length } : entry));
+}
+
+const REL_LABELS = {
+  ASSUME_ROLE: 'sts:AssumeRole',
+  ASSUME_ROLE_WITH_WEB_IDENTITY: 'OIDC web identity',
+  ASSUME_ROLE_SAML: 'SAML federation',
+};
+
+function callerTypeLabel(type) {
+  if (type === 'AWS_SERVICE') return 'AWS service';
+  if (type === 'EXTERNAL_PRINCIPAL') return 'Outside the organisation';
+  return actorTypeMeta(type).label;
+}
+
+function TabIntro({ children }) {
+  return <p className="mb-4 max-w-3xl text-[12.5px] leading-relaxed text-ink-3">{children}</p>;
+}
+
+function Fact({ label, children, wide = false }) {
+  return (
+    <div className={cn('min-w-0', wide && 'sm:col-span-2')}>
+      <dt className="text-[10.5px] font-semibold tracking-[0.1em] text-ink-3 uppercase">{label}</dt>
+      <dd className="mt-1 min-w-0 text-[13px] leading-snug text-ink">{children}</dd>
+    </div>
+  );
 }
 
 /**
- * The inventory record of one identity: what it is, who owns it, what it
- * holds, what it talks to and what it did. Shared by the Identities drawer
- * and the identity page, so both say exactly the same thing. Each tab fetches
- * only when it is first shown.
+ * The inventory record of one identity, shared by the Identities drawer and
+ * the identity page so both say the same thing.
+ *
+ * Laid out on what a reviewer has to answer before approving an identity:
+ * what it is and where, who owns it, what it acts as and with which
+ * permissions, what it authenticates with, who uses it and when it was last
+ * used. The first screen answers all of them in one block; the tabs are the
+ * evidence behind each answer. Each tab fetches only when first shown.
  */
 export function IdentityRecordPanels({ identity, tab, active = true }) {
   const { selectedScanId } = useScanContext();
@@ -67,13 +88,7 @@ export function IdentityRecordPanels({ identity, tab, active = true }) {
   const lineageQuery = useQuery(
     (signal) => fetchLineage({ arn, scanId: selectedScanId, page: 1, pageSize: 100 }, signal),
     [arn, selectedScanId],
-    { enabled: Boolean(active && arn && tab === 'access') },
-  );
-
-  const consumersQuery = useQuery(
-    (signal) => fetchConsumers({ arn, scanId: selectedScanId, page: 1, pageSize: 50 }, signal),
-    [arn, selectedScanId],
-    { enabled: Boolean(active && arn && tab === 'consumers') },
+    { enabled: Boolean(active && arn && (tab === 'roles' || tab === 'overview')) },
   );
 
   const eventsQuery = useQuery(
@@ -86,169 +101,101 @@ export function IdentityRecordPanels({ identity, tab, active = true }) {
   if (!identity) return null;
 
   const meta = classificationMeta(identity.classification);
+  const actor = actorTypeMeta(identity.identity_type);
   const credentials = Array.isArray(identity.owned_credentials) ? identity.owned_credentials : [];
   const policies = Array.isArray(identity.attached_policies) ? identity.attached_policies : [];
   const keys = credentials.filter((credential) => credential.type === 'ACCESS_KEY');
+  const isUser = identity.principal_type === 'IAM_USER';
+  const principalName = String(identity.principal_arn || identity.arn).split('/').pop();
+  const lineage = lineageQuery.data?.rows ?? [];
+  const assumedBy = lineage.filter((row) => row.direction === 'INBOUND');
+  const assumes = lineage.filter((row) => row.direction === 'OUTBOUND');
+  const kinds = [...new Set(credentials.map((credential) => credentialKindMeta(credential.type).label))];
+  const owner = identity.owner_type === 'ORPHANED' ? null : identity.owner_name || identity.primary_owner;
 
   return (
     <>
-        <TabPanel tabValue="overview" value={tab} className="flex flex-col gap-5">
-          <div>
-            <SectionLabel>Identity</SectionLabel>
-            <DetailList className="mt-1">
-              <DetailRow label="Name">{identity.name || '-'}</DetailRow>
-              <DetailRow label="ARN" mono>
-                <CopyableValue value={identity.arn} />
-              </DetailRow>
-              <DetailRow label="AWS account" mono>
-                {arnAccount(identity.arn)}
-              </DetailRow>
-              {/* What this identity IS. The row used to read "Resource type:
-                  IAM role", which named the credential rather than the actor -
-                  and an IAM role is not a thing that acts, it is a set of
-                  permissions that something else assumes. The four rows below
-                  say what acts, which instance of it, how it was found, and
-                  what it holds. */}
-              <DetailRow label="Actor type">
-                {actorTypeMeta(identity.identity_type).label}
-              </DetailRow>
-              {identity.actor_id && identity.actor_id !== identity.name && (
-                <DetailRow label="Actor id" mono>
-                  <CopyableValue value={identity.actor_id} />
-                </DetailRow>
-              )}
-              <DetailRow label="Actor category">
-                {actorCategoryMeta(identity.actor_category).label}
-              </DetailRow>
-              {identity.discovery_api && (
-                <DetailRow label="Discovered by" mono>
-                  {identity.discovery_api}
-                </DetailRow>
-              )}
-              <DetailRow label="Holds">
-                {identity.principal_type === 'IAM_USER'
-                  ? 'An IAM user - this actor is both the thing that acts and the credential holder.'
-                  : 'An IAM role, listed on the Credentials screen as the credential it assumes.'}
-              </DetailRow>
-              {identity.bound_via && identity.principal_type === 'IAM_ROLE' && (
-                <DetailRow label="Role resolved from">{identity.bound_via}</DetailRow>
-              )}
-              <DetailRow label="Classification">{meta.label}</DetailRow>
-              <DetailRow label="Created">{formatDateTime(identity.created_at)}</DetailRow>
-              <DetailRow label="Discovered">{formatDateTime(identity.discovered_at)}</DetailRow>
-            </DetailList>
-          </div>
-
-          <div>
-            <SectionLabel>Ownership</SectionLabel>
-            <DetailList className="mt-1">
-              <DetailRow label="Owner">{identity.owner_name || '-'}</DetailRow>
-              <DetailRow label="Owner type">{ownerTypeMeta(identity.owner_type).label}</DetailRow>
-              <DetailRow label="Primary owner">{identity.primary_owner || '-'}</DetailRow>
-              <DetailRow label="Created by">{identity.created_by_name || '-'}</DetailRow>
-              <DetailRow label="Groups">
-                {Array.isArray(identity.groups) && identity.groups.length > 0 ? identity.groups.join(', ') : '-'}
-              </DetailRow>
-            </DetailList>
-          </div>
-
-          <div>
-            <SectionLabel>Status checks</SectionLabel>
-            <div className="mt-1">
-              <StatusBreakdown identity={identity} />
-            </div>
-            <p className="mt-2 text-[11.5px] leading-relaxed text-ink-3">
-              The five checks behind this record's status.
-              {identity.id && (
-                <>
-                  {' '}The scored evaluation, with fixes, is on the{' '}
-                  <Link
-                    to={`/identities/${encodeURIComponent(identity.id)}?tab=posture`}
-                    className="font-medium text-brand hover:underline"
-                  >
-                    Posture tab of the full record
-                  </Link>
-                  .
-                </>
-              )}
-            </p>
-          </div>
-
-          <div>
-            <SectionLabel>Access detail</SectionLabel>
-            <DetailList className="mt-1">
-              <DetailRow label="Trust type">
-                {identity.trust_type ? titleCaseEnum(identity.trust_type) : '-'}
-              </DetailRow>
-              <DetailRow label="Trust service" mono>
-                {identity.trust_service || '-'}
-              </DetailRow>
-              <DetailRow label="Console access">
-                {identity.console_access ? 'Yes' : 'No'}
-                {identity.console_access && (
-                  <span className="ml-1.5 text-ink-3">
-                    {identity.mfa_enabled ? '(MFA enabled)' : identity.mfa_enforced ? '(MFA enforced by policy, device not yet enrolled)' : '(no MFA)'}
-                  </span>
+        <TabPanel tabValue="overview" value={tab} className="flex flex-col gap-6">
+          <section aria-label="At a glance" className="rounded-[var(--radius-control)] border border-line bg-surface-2 p-4">
+            <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2 xl:grid-cols-3">
+              <Fact label="What it is">
+                {actor.label}
+                <span className="block text-[12px] text-ink-3">{meta.label}</span>
+              </Fact>
+              <Fact label="Where">
+                {identity.account_name} <span className="font-mono text-[12px] text-ink-3">{identity.account_id}</span>
+                <span className="block text-[12px] text-ink-3">
+                  {identity.region}
+                  {identity.env ? ` · ${identity.env}` : ''}
+                </span>
+              </Fact>
+              <Fact label="Owner">
+                {owner ? owner : <span className="font-semibold text-high">No owner</span>}
+                <span className="block text-[12px] text-ink-3">{ownerTypeMeta(identity.owner_type).label}</span>
+              </Fact>
+              <Fact label={isUser ? 'Signs in as (IAM user)' : 'Acts as (IAM role)'} wide>
+                <span className="font-mono text-[12.5px]">{principalName}</span>
+                <span className="mt-0.5 block text-[11.5px] text-ink-3">
+                  <CopyableValue value={identity.principal_arn || identity.arn} />
+                </span>
+                {!isUser && identity.bound_via && (
+                  <span className="block text-[11.5px] text-ink-3">Linked by: {identity.bound_via}</span>
                 )}
-              </DetailRow>
-              <DetailRow label="Last console sign-in">
-                {formatDateTime(identity.console_last_signin)}
-              </DetailRow>
-              <DetailRow label="Password age">
-                {identity.password_age_days === null || identity.password_age_days === undefined
-                  ? '-'
-                  : `${formatNumber(identity.password_age_days)} days`}
-              </DetailRow>
-              <DetailRow label="Access keys">
-                {keys.length === 0 ? (
-                  'None'
+              </Fact>
+              <Fact label="Permissions">
+                {identity.is_admin ? (
+                  <span className="font-semibold text-critical">Administrator access</span>
+                ) : policies.length || identity.group_policies?.length ? (
+                  `${policies.length + (identity.group_policies?.length ?? 0)} ${policies.length + (identity.group_policies?.length ?? 0) === 1 ? 'policy' : 'policies'}`
                 ) : (
-                  <span className="flex flex-col gap-1.5">
-                    {keys.map((key) => (
-                      <span key={key.cred_id} className="flex flex-col gap-0.5">
-                        <CopyableValue value={key.cred_id} />
-                        <span className="text-[11.5px] text-ink-3" data-numeric="">
-                          IAM user {key.iam_user} · {formatNumber(key.age_days)} days old · last used{' '}
-                          {formatRelative(key.last_used_date)}
-                        </span>
-                      </span>
-                    ))}
+                  'No policies recorded'
+                )}
+                {identity.permissions_boundary && (
+                  <span className="block text-[12px] text-ink-3">Capped by a permission boundary</span>
+                )}
+              </Fact>
+              <Fact label="Authenticates with">
+                {credentials.length === 0 ? 'Nothing on record' : kinds.join(', ')}
+                {keys.length > 0 && (
+                  <span className="block text-[12px] text-high">
+                    {keys.length} long-lived {keys.length === 1 ? 'key' : 'keys'}, oldest {formatNumber(Math.max(...keys.map((key) => key.age_days)))} days
                   </span>
                 )}
-              </DetailRow>
-              {identity.permissions_boundary && (
-                <DetailRow label="Permission boundary" mono>
-                  {identity.permissions_boundary}
-                </DetailRow>
-              )}
-              {identity.external_id_required && <DetailRow label="External trust">Requires an ExternalId</DetailRow>}
-              {identity.workload_role && (
-                <DetailRow label="Workload role" mono>
-                  {identity.workload_role}
-                </DetailRow>
-              )}
-              <DetailRow label="Last active">
+              </Fact>
+              <Fact label="Used by">
+                {isUser ? (
+                  identity.classification === 'HUMAN' ? 'The person it belongs to' : 'A person and a workload, sharing it'
+                ) : lineageQuery.isLoading && !lineageQuery.data ? (
+                  <Skeleton className="h-4 w-32 rounded" />
+                ) : assumedBy.length === 0 ? (
+                  'Nothing seen assuming it'
+                ) : (
+                  <>
+                    {assumedBy[0].target_name}
+                    <span className="block text-[12px] text-ink-3">
+                      {callerTypeLabel(assumedBy[0].target_type)}
+                      {assumedBy.length > 1 ? ` and ${assumedBy.length - 1} more` : ''}
+                    </span>
+                  </>
+                )}
+              </Fact>
+              <Fact label="Last used">
                 {formatRelative(identity.last_active)}
-                <span className="ml-1.5 text-ink-3">({formatDateTime(identity.last_active)})</span>
-              </DetailRow>
-              <DetailRow label="Recorded events">
-                <span data-numeric="">{formatNumber(identity.total_events)}</span>
-              </DetailRow>
-            </DetailList>
-          </div>
+                <span className="block text-[12px] text-ink-3">{formatDateTime(identity.last_active)}</span>
+              </Fact>
+            </dl>
+          </section>
 
           <div>
-            <SectionLabel>Attached policies</SectionLabel>
-            {Array.isArray(identity.group_policies) && identity.group_policies.length > 0 && (
+            <SectionLabel>Permissions</SectionLabel>
+            {identity.group_policies?.length > 0 && (
               <p className="mt-2 text-[12px] text-ink-3">
-                Granted through the group {identity.groups?.[identity.groups.length - 1]}:{' '}
+                Through the group {identity.groups?.[identity.groups.length - 1]}:{' '}
                 <span className="font-mono text-ink-2">{identity.group_policies.join(', ')}</span>
               </p>
             )}
-            {policies.length === 0 ? (
-              <p className="mt-2 text-[12.5px] text-ink-3">
-                No managed policies were recorded for this identity in this scan.
-              </p>
+            {policies.length === 0 && !identity.group_policies?.length ? (
+              <p className="mt-2 text-[12.5px] text-ink-3">No managed policies were recorded for this identity.</p>
             ) : (
               <ul className="mt-2 flex flex-wrap gap-1.5">
                 {policies.map((policy) => (
@@ -257,6 +204,72 @@ export function IdentityRecordPanels({ identity, tab, active = true }) {
                   </li>
                 ))}
               </ul>
+            )}
+            {identity.permissions_boundary && (
+              <p className="mt-2 text-[12px] text-ink-3">
+                Permission boundary: <span className="font-mono text-ink-2">{identity.permissions_boundary}</span>
+              </p>
+            )}
+          </div>
+
+          {isUser && (
+            <div>
+              <SectionLabel>Sign-in</SectionLabel>
+              <DetailList className="mt-1">
+                <DetailRow label="Console access">
+                  {identity.console_access ? 'Yes' : 'No'}
+                  {identity.console_access && (
+                    <span className="ml-1.5 text-ink-3">
+                      {identity.mfa_enabled
+                        ? '(MFA enabled)'
+                        : identity.mfa_enforced
+                          ? '(MFA enforced by policy, device not yet enrolled)'
+                          : '(no MFA)'}
+                    </span>
+                  )}
+                </DetailRow>
+                {identity.console_access && (
+                  <DetailRow label="Last console sign-in">{formatDateTime(identity.console_last_signin)}</DetailRow>
+                )}
+                {identity.password_age_days !== null && identity.password_age_days !== undefined && (
+                  <DetailRow label="Password age">{`${formatNumber(identity.password_age_days)} days`}</DetailRow>
+                )}
+                <DetailRow label="Access keys">
+                  {keys.length === 0 ? (
+                    'None'
+                  ) : (
+                    <span className="flex flex-col gap-1.5">
+                      {keys.map((key) => (
+                        <span key={key.cred_id} className="flex flex-col gap-0.5">
+                          <CopyableValue value={key.cred_id} />
+                          <span className="text-[11.5px] text-ink-3" data-numeric="">
+                            {formatNumber(key.age_days)} days old · last used {formatRelative(key.last_used_date)}
+                          </span>
+                        </span>
+                      ))}
+                    </span>
+                  )}
+                </DetailRow>
+                <DetailRow label="Groups">
+                  {Array.isArray(identity.groups) && identity.groups.length > 0 ? identity.groups.join(', ') : 'None'}
+                </DetailRow>
+              </DetailList>
+            </div>
+          )}
+
+          <div>
+            <SectionLabel>Status checks</SectionLabel>
+            <div className="mt-1">
+              <StatusBreakdown identity={identity} />
+            </div>
+            {identity.id && (
+              <p className="mt-2 text-[11.5px] leading-relaxed text-ink-3">
+                The scored evaluation, with fixes, is on the{' '}
+                <Link to={`/identities/${encodeURIComponent(identity.id)}?tab=posture`} className="font-medium text-brand hover:underline">
+                  Posture tab
+                </Link>
+                .
+              </p>
             )}
           </div>
 
@@ -276,24 +289,39 @@ export function IdentityRecordPanels({ identity, tab, active = true }) {
             </div>
           )}
 
-          {(identity.evidence || identity.matched_rules) && (
-            <div>
-              <SectionLabel>Why it was classified this way</SectionLabel>
-              <div className="mt-2 rounded-[var(--radius-control)] border border-line bg-surface-2 p-3.5">
-                {identity.matched_rules && (
-                  <p className="font-mono text-[12px] leading-relaxed text-ink-2">
-                    {Array.isArray(identity.matched_rules) ? identity.matched_rules.join(' · ') : identity.matched_rules}
-                  </p>
+          <div>
+            <SectionLabel>How it was found</SectionLabel>
+            <DetailList className="mt-1">
+              {identity.actor_id && identity.actor_id !== identity.name && (
+                <DetailRow label="Actor id" mono>
+                  <CopyableValue value={identity.actor_id} />
+                </DetailRow>
+              )}
+              {identity.discovery_api && (
+                <DetailRow label="Discovered by" mono>
+                  {identity.discovery_api}
+                </DetailRow>
+              )}
+              <DetailRow label="Why this classification">
+                {identity.evidence}
+                {Array.isArray(identity.matched_rules) && (
+                  <span className="mt-0.5 block font-mono text-[11.5px] text-ink-3">{identity.matched_rules.join(' · ')}</span>
                 )}
-                {identity.evidence && (
-                  <p className="mt-2 text-[12.5px] leading-relaxed text-ink-2">{identity.evidence}</p>
-                )}
-              </div>
-            </div>
-          )}
+              </DetailRow>
+              <DetailRow label="Created">
+                {formatDateTime(identity.created_at)}
+                {identity.created_by_name && <span className="ml-1.5 text-ink-3">by {identity.created_by_name}</span>}
+              </DetailRow>
+              <DetailRow label="First discovered">{formatDateTime(identity.discovered_at)}</DetailRow>
+            </DetailList>
+          </div>
         </TabPanel>
 
         <TabPanel tabValue="credentials" value={tab}>
+          <TabIntro>
+            What this identity authenticates with: the IAM role it assumes, long-lived access keys, and the secrets or tokens it
+            reads. A role gives short-lived credentials; a key does not expire until someone rotates it.
+          </TabIntro>
           {credentials.length === 0 ? (
             <EmptyState
               compact
@@ -373,176 +401,145 @@ export function IdentityRecordPanels({ identity, tab, active = true }) {
           )}
         </TabPanel>
 
-        <TabPanel tabValue="access" value={tab}>
-          {lineageQuery.isLoading && !lineageQuery.data ? (
-            <DetailSkeleton rows={6} />
-          ) : lineageQuery.isError ? (
-            <InlineError
-              error={lineageQuery.error}
-              onRetry={lineageQuery.refetch}
-              label="Service access unavailable"
-            />
-          ) : (lineageQuery.data?.rows?.length ?? 0) === 0 ? (
-            <EmptyState
-              compact
-              icon={ArrowLeftRight}
-              title="No access relationships recorded"
-              description="Nothing was observed calling this identity, and it was not observed reaching another service in this scan."
-            />
-          ) : (
-            <DataGrid
-              caption="Service access lineage"
-              rows={lineageQuery.data.rows}
-              rowKey={(row, index) => `${row.target_name}-${row.rel_type}-${index}`}
-              columns={[
-                {
-                  key: 'target',
-                  header: 'Target',
-                  primary: true,
-                  cell: (row) => (
-                    <span className="block min-w-0">
-                      <span className="block truncate text-[13px] font-medium text-ink" title={row.target_name}>
-                        {row.target_name || '-'}
-                      </span>
-                      <span className="block truncate text-[11px] text-ink-3">
-                        {row.target_type ? actorTypeMeta(row.target_type).label : '-'}
-                      </span>
-                    </span>
-                  ),
-                },
-                {
-                  key: 'direction',
-                  header: 'Direction',
-                  cell: (row) => {
-                    const direction = lineageDirectionMeta(row.direction);
-                    return (
-                      <Tag tone={direction.tone} size="sm">
-                        {direction.label}
-                      </Tag>
-                    );
-                  },
-                },
-                {
-                  key: 'rel',
-                  header: 'Relationship',
-                  cell: (row) => (
-                    <span className="text-[12.5px] text-ink-2">
-                      {row.rel_type ? titleCaseEnum(row.rel_type) : '-'}
-                    </span>
-                  ),
-                },
-                {
-                  key: 'via',
-                  header: 'Via',
-                  priority: 'wide',
-                  cell: (row) =>
-                    row.via ? <Code title={row.via}>{row.via}</Code> : <span className="text-ink-3">-</span>,
-                },
-                {
-                  key: 'scope',
-                  header: 'Scope',
-                  priority: 'wide',
-                  cell: (row) => (
-                    <Tag tone={row.is_external ? 'high' : 'neutral'} size="sm">
-                      {row.is_external ? 'External' : 'Internal'}
-                    </Tag>
-                  ),
-                },
-              ]}
-              emptyState={null}
-            />
-          )}
-        </TabPanel>
 
-        <TabPanel tabValue="consumers" value={tab}>
-          {consumersQuery.isLoading && !consumersQuery.data ? (
-            <ListSkeleton rows={4} />
-          ) : consumersQuery.isError ? (
-            <InlineError
-              error={consumersQuery.error}
-              onRetry={consumersQuery.refetch}
-              label="Consumers unavailable"
-            />
-          ) : (consumersQuery.data?.rows?.length ?? 0) === 0 ? (
-            <EmptyState
-              compact
-              icon={Users}
-              title="No role assumptions observed"
-              description="Consumers are derived from AssumeRole calls in CloudTrail. Nothing has assumed the role this identity holds in the events this console has read."
-            />
+        <TabPanel tabValue="roles" value={tab} className="flex flex-col gap-6">
+          <TabIntro>
+            Who takes on this identity's role, and which roles it takes on in turn - each one is an sts:AssumeRole call
+            recorded in CloudTrail.
+          </TabIntro>
+          {lineageQuery.isLoading && !lineageQuery.data ? (
+            <DetailSkeleton rows={5} />
+          ) : lineageQuery.isError ? (
+            <InlineError error={lineageQuery.error} onRetry={lineageQuery.refetch} label="Role use unavailable" />
           ) : (
             <>
-              <p className="mb-3 text-[12px] text-ink-3">
-                Callers observed assuming the role this identity holds, grouped by caller, source address and region.
-              </p>
-              <DataGrid
-                caption="Role consumers"
-                rows={consumersQuery.data.rows}
-                rowKey={(row, index) => `${row.caller_arn}-${row.source_ip}-${index}`}
-                columns={[
-                  {
-                    key: 'caller',
-                    header: 'Caller',
-                    primary: true,
-                    cell: (row) => (
-                      <span className="block min-w-0">
-                        <span
-                          className="block truncate font-mono text-[12px] text-ink"
-                          title={row.caller_arn}
-                        >
-                          {row.caller_arn || '-'}
-                        </span>
-                        <span className="block truncate text-[11px] text-ink-3">
-                          {row.caller_type ? actorTypeMeta(row.caller_type).label : '-'}
-                        </span>
-                      </span>
-                    ),
-                  },
-                  {
-                    key: 'sessions',
-                    header: 'Sessions',
-                    align: 'right',
-                    cell: (row) => (
-                      <span data-numeric="" className="text-[13px] font-semibold text-ink">
-                        {formatNumber(row.session_count)}
-                      </span>
-                    ),
-                  },
-                  {
-                    key: 'source',
-                    header: 'Source',
-                    priority: 'wide',
-                    cell: (row) => (
-                      <span className="block min-w-0">
-                        <span className="block truncate font-mono text-[12px] text-ink-2">
-                          {row.source_ip || '-'}
-                        </span>
-                        <span className="block truncate text-[11px] text-ink-3">{row.region || '-'}</span>
-                      </span>
-                    ),
-                  },
-                  {
-                    key: 'window',
-                    header: 'Window',
-                    cell: (row) => (
-                      <span className="block min-w-0">
-                        <span className="block text-[12px] text-ink-2">
-                          {formatRelative(row.last_assumed)}
-                        </span>
-                        <span className="block text-[11px] text-ink-3">
-                          first {formatDateTime(row.first_assumed)}
-                        </span>
-                      </span>
-                    ),
-                  },
-                ]}
-                emptyState={null}
-              />
+              <section>
+                <SectionLabel>Assumed by</SectionLabel>
+                {isUser ? (
+                  <p className="mt-2 text-[12.5px] text-ink-3">
+                    Nothing. An IAM user cannot be assumed - it signs in with its own password or access keys.
+                  </p>
+                ) : assumedBy.length === 0 ? (
+                  <p className="mt-2 text-[12.5px] text-ink-3">Nothing was seen assuming this role in the events read so far.</p>
+                ) : (
+                  <DataGrid
+                    className="mt-2"
+                    caption="Who assumes this role"
+                    rows={assumedBy}
+                    rowKey={(row) => row.id}
+                    columns={[
+                      {
+                        key: 'caller',
+                        header: 'Caller',
+                        primary: true,
+                        cell: (row) => (
+                          <span className="block min-w-0">
+                            <span className="block truncate font-mono text-[12.5px] text-ink" title={row.target_arn}>
+                              {row.target_name}
+                            </span>
+                            <span className="block truncate text-[11px] text-ink-3">{callerTypeLabel(row.target_type)}</span>
+                          </span>
+                        ),
+                      },
+                      {
+                        key: 'how',
+                        header: 'How',
+                        cell: (row) => <span className="text-[12.5px] text-ink-2">{REL_LABELS[row.rel_type] ?? titleCaseEnum(row.rel_type)}</span>,
+                      },
+                      {
+                        key: 'from',
+                        header: 'From',
+                        priority: 'wide',
+                        cell: (row) => (
+                          <span className="block min-w-0">
+                            <span className="block truncate font-mono text-[12px] text-ink-2">{row.source_ip || '-'}</span>
+                            {row.is_external && (
+                              <Tag tone="high" size="sm" className="mt-0.5">
+                                External
+                              </Tag>
+                            )}
+                          </span>
+                        ),
+                      },
+                      {
+                        key: 'sessions',
+                        header: 'Sessions',
+                        align: 'right',
+                        cell: (row) => (
+                          <span data-numeric="" className="text-[13px] font-semibold text-ink">
+                            {formatNumber(row.assume_count)}
+                          </span>
+                        ),
+                      },
+                      {
+                        key: 'last',
+                        header: 'Last assumed',
+                        cell: (row) => (
+                          <span className="block text-[12px] text-ink-2" title={formatDateTime(row.last_assumed)}>
+                            {formatRelative(row.last_assumed)}
+                          </span>
+                        ),
+                      },
+                    ]}
+                    emptyState={null}
+                  />
+                )}
+              </section>
+
+              <section>
+                <SectionLabel>Roles it assumes</SectionLabel>
+                {assumes.length === 0 ? (
+                  <p className="mt-2 text-[12.5px] text-ink-3">It was not seen assuming any other role.</p>
+                ) : (
+                  <DataGrid
+                    className="mt-2"
+                    caption="Roles this identity assumes"
+                    rows={assumes}
+                    rowKey={(row) => row.id}
+                    columns={[
+                      {
+                        key: 'role',
+                        header: 'Role',
+                        primary: true,
+                        cell: (row) => (
+                          <span className="block min-w-0">
+                            <span className="block truncate font-mono text-[12.5px] text-ink" title={row.target_arn}>
+                              {row.target_name}
+                            </span>
+                            <span className="block truncate text-[11px] text-ink-3">{actorTypeMeta(row.target_type).label}</span>
+                          </span>
+                        ),
+                      },
+                      {
+                        key: 'sessions',
+                        header: 'Sessions',
+                        align: 'right',
+                        cell: (row) => (
+                          <span data-numeric="" className="text-[13px] font-semibold text-ink">
+                            {formatNumber(row.assume_count)}
+                          </span>
+                        ),
+                      },
+                      {
+                        key: 'last',
+                        header: 'Last assumed',
+                        cell: (row) => (
+                          <span className="block text-[12px] text-ink-2" title={formatDateTime(row.last_assumed)}>
+                            {formatRelative(row.last_assumed)}
+                          </span>
+                        ),
+                      },
+                    ]}
+                    emptyState={null}
+                  />
+                )}
+              </section>
             </>
           )}
         </TabPanel>
 
         <TabPanel tabValue="activity" value={tab}>
+          <TabIntro>The API calls this identity made, as CloudTrail recorded them - newest first.</TabIntro>
           <ActivityFeed
             events={eventsQuery.data?.rows}
             loading={eventsQuery.isLoading && !eventsQuery.data}

@@ -272,6 +272,7 @@ export function fetchLineage({ arn, page = 1, pageSize = 50 } = {}, signal) {
             rel_type: edge.rel_type,
             via: edge.via ?? null,
             is_external: edge.is_external,
+            source_ip: edge.source_ip ?? null,
             first_assumed: edge.first_assumed,
             last_assumed: edge.last_assumed,
             assume_count: edge.assume_count,
@@ -288,6 +289,7 @@ export function fetchLineage({ arn, page = 1, pageSize = 50 } = {}, signal) {
             rel_type: edge.rel_type,
             via: edge.via ?? null,
             is_external: Boolean(target?.is_external),
+            source_ip: edge.source_ip ?? null,
             first_assumed: edge.first_assumed,
             last_assumed: edge.last_assumed,
             assume_count: edge.assume_count,
@@ -299,31 +301,6 @@ export function fetchLineage({ arn, page = 1, pageSize = 50 } = {}, signal) {
       return paginate(rows, page, pageSize);
     },
     { signal, latency: [200, 360] },
-  );
-}
-
-export function fetchConsumers({ arn, page = 1, pageSize = 25 } = {}, signal) {
-  return demoRequest(
-    () => {
-      const { consumersOf } = effectiveEstate();
-      const rows = (consumersOf.get(arn) ?? []).map((edge) => ({
-        id: `consumer-${edge.caller_arn}`,
-        caller_arn: edge.caller_arn,
-        caller_name: edge.caller_name,
-        caller_type: edge.caller_type,
-        rel_type: edge.rel_type,
-        is_external: edge.is_external,
-        first_assumed: edge.first_assumed,
-        last_assumed: edge.last_assumed,
-        /* The consumers table has its own two columns the lineage table does
-           not: where the caller came from and how often. */
-        session_count: edge.assume_count,
-        source_ip: edge.source_ip,
-      }));
-      rows.sort((a, b) => b.session_count - a.session_count);
-      return paginate(rows, page, pageSize);
-    },
-    { signal, latency: [180, 340] },
   );
 }
 
@@ -339,6 +316,7 @@ export function fetchCredentials({ page = 1, pageSize = 25, search, type, severi
         if (!needle) return true;
         return [
           row.cred_id,
+          row.iam_user,
           row.identity_name,
           row.identity_arn,
           row.account_name,

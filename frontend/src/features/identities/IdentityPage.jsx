@@ -20,7 +20,7 @@ import { BandTag, ScoreRing } from '../posture/parts';
 import { IdentityTags } from './IdentityDrawer';
 import { IdentityRecordPanels, recordTabs } from './IdentityRecord';
 
-const RECORD_KEYS = new Set(['overview', 'credentials', 'access', 'consumers', 'activity']);
+const RECORD_KEYS = new Set(['overview', 'credentials', 'roles', 'activity']);
 
 /**
  * One identity, in one place.

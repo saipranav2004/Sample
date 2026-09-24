@@ -228,7 +228,7 @@ export const AWS_PERMISSION_GROUPS = [
     label: 'Actor discovery',
     icon: Boxes,
     required: true,
-    why: 'Who is actually using each role. An IAM role is a credential; the EC2 instance, Lambda function, ECS task or Bedrock agent holding it is the identity.',
+    why: 'Which workload - EC2, Lambda, ECS, Bedrock and so on - uses each role.',
     without: 'Roles with nothing attached to them - a credential list presented as an identity list.',
     feeds: 'Identities, NHI Genome',
     /* Every List call here is paired with the Describe or Get call that
@@ -310,7 +310,7 @@ export const AWS_PERMISSION_GROUPS = [
     label: 'Observed behaviour',
     icon: Eye,
     required: false,
-    why: 'What each identity has actually called. CloudTrail keeps 90 days of management events in every region with no trail configured at all, so this works on day one; a trail is what extends it past 90 days.',
+    why: 'What each identity has actually done, from CloudTrail (90 days, longer with a trail).',
     without: 'No behavioural baselines and no drift detection. Entitlement is still read, so the graph stays correct - it just cannot say whether anything is used.',
     note: 'LookupEvents is read per region and rate-limited by AWS to two requests a second per account per region, which is why the first full read of a large estate takes minutes rather than seconds.',
     feeds: 'NHI Genome, Activity',
@@ -326,7 +326,7 @@ export const AWS_PERMISSION_GROUPS = [
     label: 'Organisation guardrails',
     icon: ShieldCheck,
     required: false,
-    why: 'Service control policies and permission boundaries - the cap on what a granted permission can actually do.',
+    why: 'Organisation policies and permission boundaries, which cap what a permission allows.',
     without: 'Edges the organisation would already deny are drawn as real. The graph over-reports rather than under-reports, which is the safer direction but still wrong.',
     feeds: 'Access graph',
     /* DescribePolicy, not DescribeEffectivePolicy. The effective-policy call
@@ -366,7 +366,7 @@ export const AWS_PERMISSION_GROUPS = [
     label: 'Resource reach',
     icon: Network,
     required: false,
-    why: 'What the reachable identities can act on, so a blast radius has resources in it rather than only principals.',
+    why: 'Which data and resources each identity can reach.',
     without: 'The access graph can show who can become whom, but not what they end up able to touch.',
     feeds: 'Access graph',
     actions: [
@@ -427,7 +427,7 @@ export const AWS_RULE_CATEGORIES = [
   {
     key: 'trust',
     label: 'How the role is trusted',
-    lede: 'Who may assume it, and under what condition. This is the part that gets skipped, and it is the part that matters most.',
+    lede: 'Who may use the role, and on what condition.',
     rules: [
       {
         key: 'external-id',
@@ -460,7 +460,7 @@ export const AWS_RULE_CATEGORIES = [
   {
     key: 'scope',
     label: 'How far the role reaches',
-    lede: 'A read-only role is still a role that can read everything. Bound it.',
+    lede: 'Limit what the role can read.',
     rules: [
       {
         key: 'deny-secret-values',
@@ -491,7 +491,7 @@ export const AWS_RULE_CATEGORIES = [
   {
     key: 'coverage',
     label: 'How much of the estate it sees',
-    lede: 'A connector that reads one account in an organisation of nine reports a posture that is mostly missing.',
+    lede: 'Make sure every account is covered.',
     rules: [
       {
         key: 'all-accounts',
@@ -534,44 +534,44 @@ export const AWS_HEALTH_CHECKS = [
   {
     key: 'assume',
     scope: 'account',
-    label: 'The role can be assumed',
+    label: 'Role can be assumed',
     detail: 'sts:AssumeRole against the role ARN, with the external id.',
-    fix: 'Check the role ARN and that the trust policy names this console\'s account id.',
+    fix: 'Check the role ARN, and that the trust policy names this console\'s account.',
   },
   {
     key: 'external-id',
     scope: 'account',
-    label: 'The external id matches',
+    label: 'External ID is required',
     detail: 'An assume-role that succeeds without the external id means the condition is missing.',
     fix: 'Add the StringEquals condition on sts:ExternalId to the trust policy.',
   },
   {
     key: 'iam-read',
     scope: 'account',
-    label: 'IAM can be enumerated',
+    label: 'IAM can be read',
     detail: 'iam:GetAccountAuthorizationDetails returns without an AccessDenied.',
-    fix: 'Attach the identity-inventory permissions, or the SecurityAudit managed policy.',
+    fix: 'Attach the identity-inventory permissions or the SecurityAudit policy.',
   },
   {
     key: 'cloudtrail',
     scope: 'organisation',
-    label: 'CloudTrail is readable',
+    label: 'CloudTrail history',
     detail: 'cloudtrail:LookupEvents returns events in every region in range, and whether an organisation trail extends history past 90 days.',
-    fix: 'Turn on a multi-region organisation trail from the management account, writing to a bucket in log-archive. The console reads the extra history automatically.',
+    fix: 'Turn on a multi-region organisation trail from the management account.',
   },
   {
     key: 'organisation',
     scope: 'organisation',
-    label: 'Organisation policies are readable',
+    label: 'Organisation policies can be read',
     detail: 'organizations:ListPolicies returns, so denies can be applied before an edge is drawn.',
-    fix: 'Organisation policies can only be read from the management account or a delegated administrator. Delegate read access with the policy below.',
+    fix: 'Give the console read access to AWS Organizations with the policy below.',
   },
   {
     key: 'accounts',
     scope: 'organisation',
     label: 'Every account has the role',
     detail: 'The role resolves in each account the organisation lists.',
-    fix: 'Connect the account from the Accounts tab, or add its OU to the StackSet targets.',
+    fix: 'Connect the account, or add its OU to the StackSet.',
   },
 ];
 

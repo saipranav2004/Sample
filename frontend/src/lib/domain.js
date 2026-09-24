@@ -305,6 +305,10 @@ export function severityMeta(value) {
 /* ── Ownership ───────────────────────────────────────────────────────────── */
 
 export const OWNER_TYPES = {
+  /* Where the owner was resolved from, as discovery reports it. */
+  TAG_OWNER: { label: 'Owner tag', tone: 'info' },
+  TEAM_TAG: { label: 'Team tag', tone: 'info' },
+  CLOUDTRAIL_CREATOR: { label: 'Creator, from CloudTrail', tone: 'info' },
   HUMAN: { label: 'Human owner', tone: 'info' },
   NHI_CICD: { label: 'CI/CD managed', tone: 'brand' },
   NHI_IAC: { label: 'IaC managed', tone: 'brand' },
@@ -644,10 +648,3 @@ export function scanStatusMeta(value) {
 }
 
 /* ── Lineage ─────────────────────────────────────────────────────────────── */
-
-export function lineageDirectionMeta(direction) {
-  const key = String(direction || '').toUpperCase();
-  if (key === 'OUTBOUND') return { label: 'Accesses', tone: 'brand' };
-  if (key === 'INBOUND') return { label: 'Accessed by', tone: 'info' };
-  return { label: direction ? String(direction) : 'Related', tone: 'neutral' };
-}

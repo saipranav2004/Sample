@@ -853,12 +853,18 @@ function buildGraph() {
     }
   }
 
+  /* Only a role can be assumed or passed; an access key can only be minted
+     for a user. The graph holds both kinds of principal now that it covers
+     the whole estate, so every edge picks its target by what AWS allows. */
+  const isUser = (node) => node.identityType === 'AWS::IAM::User';
+  const roles = identities.filter((node) => !isUser(node));
+
   /* Assume-role chains, biased so that some identities converge - a graph
      where every identity reaches exactly one other teaches nothing. */
   for (const identity of identities) {
     const hops = next() < 0.5 ? 0 : next() < 0.85 ? 1 : 2;
     if (hops === 0) continue;
-    const candidates = identities.filter(
+    const candidates = roles.filter(
       (other) => other.id !== identity.id && (other.accountId !== identity.accountId || next() < 0.6),
     );
     for (const target of sample(next, candidates, hops)) {
@@ -878,7 +884,7 @@ function buildGraph() {
   /* Pass-role and the escalation edges built on top of it. */
   for (const identity of identities) {
     if (next() > 0.18) continue;
-    const targets = sample(next, identities.filter((other) => other.id !== identity.id && other.accountId === identity.accountId), 1);
+    const targets = sample(next, roles.filter((other) => other.id !== identity.id && other.accountId === identity.accountId), 1);
     for (const target of targets) {
       addEdge({ from: identity.id, to: target.id, kind: 'CAN_PASS_ROLE' });
       const method = pick(next, ESCALATIONS.filter((entry) => entry.permissions.includes('iam:PassRole')));
@@ -894,8 +900,9 @@ function buildGraph() {
   /* Escalations that need no PassRole at all, which are the ones teams miss. */
   for (const identity of sample(next, identities, 5)) {
     const method = pick(next, ESCALATIONS.filter((entry) => !entry.permissions.includes('iam:PassRole')));
-    const target = pick(next, identities.filter((other) => other.isAdmin && other.id !== identity.id))
-      ?? pick(next, identities.filter((other) => other.id !== identity.id));
+    const pool = method.key === 'iam-create-access-key' ? identities.filter(isUser) : roles;
+    const target = pick(next, pool.filter((other) => other.isAdmin && other.id !== identity.id))
+      ?? pick(next, pool.filter((other) => other.id !== identity.id));
     if (!target) continue;
     addEdge({
       from: identity.id,

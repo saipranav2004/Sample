@@ -31,7 +31,6 @@ export const fetchSummary = (query, signal) => demo.fetchSummary(query, signal);
 export const fetchIdentities = (query, signal) => demo.fetchIdentities(query, signal);
 export const fetchIdentity = (id, signal) => demo.fetchIdentity(id, signal);
 export const fetchLineage = (query, signal) => demo.fetchLineage(query, signal);
-export const fetchConsumers = (query, signal) => demo.fetchConsumers(query, signal);
 
 /* ── Credentials ─────────────────────────────────────────────────────────── */
 

@@ -801,7 +801,14 @@ function evaluateIdentity(row, ctx, remediations, extra = null) {
   const results = [];
   for (const check of CHECKS) {
     if (!check.applies(row, ctx)) continue;
-    const failure = check.evaluate(row, ctx);
+    /* A fix can remove the condition it fixed - resolving an anomaly closes
+       it - so a check with a fix in force falls back to the failure recorded
+       when the fix was applied. Without this it would read as a plain pass,
+       losing its history and its rollback. */
+    const inForce = [check.key, ...(check.supersededBy ?? [])]
+      .map((key) => cyclesOf(key))
+      .find((cycles) => cycles.length && !cycles[cycles.length - 1].rolledBackAt);
+    const failure = check.evaluate(row, ctx) ?? (inForce ? cyclesOf(check.key).at(-1)?.failure ?? null : null);
     if (!failure) {
       results.push({ check, state: 'pass', failure: null, fixedAt: null, fix: null, intervals: [], cycles: [] });
       continue;
@@ -1253,7 +1260,7 @@ function applyFix({ identityIds, checkKey, owner = null }) {
       if (!ownerPerson) throw new Error('Choose who owns this identity.');
     }
     const toResolve = alerts.filter((alert) => alert.identityId === row.id && isOpen(alert) && check.resolves(alert, result.failure));
-    return { row, plan, ownerPerson, toResolve, before: scoreOf(results) };
+    return { row, plan, ownerPerson, toResolve, failure: result.failure, before: scoreOf(results) };
   });
 
   /* Alerts first: if that write is refused, nothing is recorded. */
@@ -1267,7 +1274,7 @@ function applyFix({ identityIds, checkKey, owner = null }) {
   }
 
   const next = { ...remediations };
-  for (const { row, plan, ownerPerson, toResolve } of plans) {
+  for (const { row, plan, ownerPerson, toResolve, failure } of plans) {
     const entries = { ...(next[row.id] ?? {}) };
     const cycles = [...(entries[checkKey]?.cycles ?? [])];
     cycles.push({
@@ -1277,17 +1284,19 @@ function applyFix({ identityIds, checkKey, owner = null }) {
       action: plan.action,
       ...(ownerPerson ? { owner: ownerPerson.name } : {}),
       alertIds: toResolve.map((alert) => alert.id),
+      failure,
     });
     entries[checkKey] = { cycles };
     next[row.id] = entries;
   }
   writeRemediationStore(next);
 
+  const fresh = context();
   return plans.map(({ row, plan, toResolve, before }) => ({
     identityId: row.id,
     name: row.name,
     before,
-    after: scoreOf(evaluateIdentity(row, ctx, next)),
+    after: scoreOf(evaluateIdentity(row, fresh, next)),
     resolvedAlerts: toResolve.length,
     action: plan.action,
   }));
@@ -1335,7 +1344,8 @@ export function rollBack({ identityId, checkKey }) {
   );
   const next = { ...remediations, [row.id]: { ...remediations[row.id], [checkKey]: { cycles } } };
   writeRemediationStore(next);
-  return { before, after: scoreOf(evaluateIdentity(row, ctx, next)), reopenedAlerts: reopen.length, action: cycle.action };
+  /* Read afresh: reopening the alerts reopened their anomalies too. */
+  return { before, after: scoreOf(evaluateIdentity(row, context(), next)), reopenedAlerts: reopen.length, action: cycle.action };
 }
 
 /* ── Transport ───────────────────────────────────────────────────────────── */
