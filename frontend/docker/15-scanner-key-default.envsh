@@ -1,0 +1,12 @@
+#!/bin/sh
+# Sourced (not executed) by the nginx image's entrypoint before it renders the
+# templates, so the export below reaches the template step.
+#
+# The template references ${SCANNER_DASHBOARD_KEY}. The entrypoint only
+# substitutes variables that exist, so an unset key would leave the literal
+# text in nginx.conf and nginx would refuse to start. Defaulting it here -
+# rather than with `ENV SCANNER_DASHBOARD_KEY=""` in the Dockerfile - keeps
+# every secret-named variable out of the image metadata: the value only ever
+# comes from `docker run -e` / the orchestrator at start time. With no key,
+# the proxy answers scanner calls with "no key configured" instead of failing.
+export SCANNER_DASHBOARD_KEY="${SCANNER_DASHBOARD_KEY-}"

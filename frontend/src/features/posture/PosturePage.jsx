@@ -414,7 +414,7 @@ export default function PosturePage() {
             title="Credential exposure"
             actions={
               <Button as={Link} to="/exposure" variant="secondary" size="sm" iconRight={ArrowRight}>
-                Triage
+                Review findings
               </Button>
             }
           />

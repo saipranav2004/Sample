@@ -641,7 +641,7 @@ function emptyState({ chips, clearAll, search }) {
     <EmptyState
       icon={ShieldOff}
       title="Nothing has been dismissed"
-      description="Findings you accept as safe from the triage view appear here, and can be restored at any time."
+      description="Findings you accept as safe on Exposed credentials appear here, and can be restored at any time."
       action={
         <Button as={Link} to="/exposure" variant="secondary" size="sm">
           Go to findings

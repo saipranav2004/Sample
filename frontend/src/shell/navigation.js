@@ -11,7 +11,6 @@ import {
   KeyRound,
   Plug,
   ShieldOff,
-  UsersRound,
 } from 'lucide-react';
 
 /**
@@ -82,13 +81,9 @@ export const NAV_GROUPS = [
     label: 'Settings',
     /* Last in the rail on purpose. Everything above reads the estate; this is
        the one group that changes how the estate is collected. */
-    items: [
-      { to: '/integrations', label: 'Integrations', icon: Plug },
-      /* `permission` hides an item from roles that cannot use the screen at
-         all. The route refuses them too; this only stops the rail offering
-         a door that is locked. */
-      { to: '/users', label: 'Users & roles', icon: UsersRound, permission: 'users.manage' },
-    ],
+    /* User management is reached from the account menu, not from here: it
+       administers the console, not the estate. */
+    items: [{ to: '/integrations', label: 'Integrations', icon: Plug }],
   },
 ];
 
@@ -122,7 +117,7 @@ export const BREADCRUMBS = {
   // '/scans': ['Operations', 'Scans'],
   '/reports': ['Operations', 'Reports'],
   '/integrations': ['Settings', 'Integrations'],
-  '/users': ['Settings', 'Users & roles'],
+  '/users': ['Account', 'User management'],
 };
 
 /**

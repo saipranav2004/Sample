@@ -169,16 +169,13 @@ function AcceptForm({ token, invite }) {
 
       <form onSubmit={submit} noValidate className="mt-6 flex flex-col gap-4">
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Name" htmlFor="accept-name">
+          <Field label="Full name" htmlFor="accept-name">
             <Input id="accept-name" value={invite.name} readOnly />
           </Field>
-          <Field label="Username" htmlFor="accept-username" hint="Or sign in with your email.">
+          <Field label="Username" htmlFor="accept-username" hint="What you sign in with.">
             <Input id="accept-username" value={invite.username} readOnly autoComplete="username" className="font-mono" />
           </Field>
         </div>
-        <Field label="Email" htmlFor="accept-email">
-          <Input id="accept-email" value={invite.email} readOnly />
-        </Field>
         <Field
           label={
             <span className="inline-flex items-center gap-2">

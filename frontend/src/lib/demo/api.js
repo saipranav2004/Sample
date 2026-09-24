@@ -72,7 +72,7 @@ const isTrue = (value) => value === true || value === 'true';
 export function login({ email, password } = {}, signal) {
   return demoRequest(
     () => {
-      /* Each account signs in with its username or its email, so the
+      /* Each account signs in with its username, so the
          password field is a real control rather than decoration. The login
          form pre-fills nothing. */
       const { token, user } = verifySignIn(email, password);

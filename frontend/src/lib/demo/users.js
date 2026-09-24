@@ -3,9 +3,9 @@
  * super admin makes to them.
  *
  * The seeded directory is one account per role plus one invited and one
- * deactivated account, so every state the Users screen can show is on it from
+ * deactivated account, so every state the User management screen can show is on it from
  * the first load. The people are the estate's own - the alert escalation
- * policy already names Helena Brandt (on-call) and Marcus Oyelaran (security
+ * policy already names Kavya Reddy (on-call) and Rahul Sharma (security
  * engineering lead), so their console roles match the jobs they do there.
  *
  * Changes persist in localStorage like every other demo write. That makes the
@@ -37,7 +37,9 @@ const SEED = [
   {
     id: 'user-das-admin',
     user: OPERATOR.user,
-    email: OPERATOR.email,
+    /* The earlier sign-in by email keeps working for this one account, but
+       emails are no longer shown or asked for anywhere. */
+    aliases: [OPERATOR.email],
     name: OPERATOR.name,
     title: 'Security administrator',
     team: 'Security Engineering',
@@ -47,10 +49,9 @@ const SEED = [
     lastSignInAt: ago(2 * HOUR),
   },
   {
-    id: 'user-marcus-oyelaran',
-    user: 'marcus.oyelaran',
-    email: 'marcus.oyelaran@example.com',
-    name: 'Marcus Oyelaran',
+    id: 'user-rahul-sharma',
+    user: 'rahul.sharma',
+    name: 'Rahul Sharma',
     title: 'Security engineering lead',
     team: 'Security Engineering',
     role: 'admin',
@@ -59,10 +60,9 @@ const SEED = [
     lastSignInAt: ago(26 * HOUR),
   },
   {
-    id: 'user-helena-brandt',
-    user: 'helena.brandt',
-    email: 'helena.brandt@example.com',
-    name: 'Helena Brandt',
+    id: 'user-kavya-reddy',
+    user: 'kavya.reddy',
+    name: 'Kavya Reddy',
     title: 'Security on-call analyst',
     team: 'Security Engineering',
     role: 'analyst',
@@ -71,10 +71,9 @@ const SEED = [
     lastSignInAt: ago(5 * HOUR),
   },
   {
-    id: 'user-sofia-marchetti',
-    user: 'sofia.marchetti',
-    email: 'sofia.marchetti@example.com',
-    name: 'Sofia Marchetti',
+    id: 'user-sneha-kulkarni',
+    user: 'sneha.kulkarni',
+    name: 'Sneha Kulkarni',
     title: 'Compliance auditor',
     team: 'Compliance',
     role: 'viewer',
@@ -85,7 +84,6 @@ const SEED = [
   {
     id: 'user-priya-raghavan',
     user: 'priya.raghavan',
-    email: 'priya.raghavan@example.com',
     name: 'Priya Raghavan',
     title: 'Platform engineer',
     team: 'Platform Engineering',
@@ -96,10 +94,9 @@ const SEED = [
     lastSignInAt: null,
   },
   {
-    id: 'user-liam-donnelly',
-    user: 'liam.donnelly',
-    email: 'liam.donnelly@example.com',
-    name: 'Liam Donnelly',
+    id: 'user-karthik-rao',
+    user: 'karthik.rao',
+    name: 'Karthik Rao',
     title: 'Identity engineer',
     team: 'Identity',
     role: 'analyst',
@@ -166,7 +163,9 @@ const isExpired = (invite, now = Date.now()) => Date.parse(invite.expiresAt) <= 
 export function directory() {
   const store = readStore();
   return [...SEED, ...store.added].map((seed) => {
-    const row = { ...seed, ...(store.changes[seed.id] ?? {}) };
+    /* Whether they chose their own password (by accepting an invitation) -
+       never the password or its hash. The sign-in download reads this. */
+    const row = { ...seed, ...(store.changes[seed.id] ?? {}), ownPassword: Boolean(store.passwords[seed.id]) };
     if (row.status !== 'invited') return row;
     const invite = pendingInviteOf(store, row.id);
     return {
@@ -187,7 +186,11 @@ const lower = (value) => String(value ?? '').trim().toLowerCase();
 function findByIdentifier(identifier) {
   const needle = lower(identifier);
   if (!needle) return null;
-  return directory().find((row) => lower(row.user) === needle || lower(row.email) === needle) ?? null;
+  return (
+    directory().find(
+      (row) => lower(row.user) === needle || (row.aliases ?? []).some((alias) => lower(alias) === needle),
+    ) ?? null
+  );
 }
 
 /* ── Session ──────────────────────────────────────────────────────────────── */
@@ -197,7 +200,6 @@ export function sessionUser(row) {
   return {
     id: row.id,
     username: row.user,
-    email: row.email,
     name: row.name,
     title: row.title,
     team: row.team,
@@ -280,7 +282,7 @@ function passwordMatches(store, row, password) {
 }
 
 /**
- * Sign-in. Accepts the username or the email, case-insensitively.
+ * Sign-in by username, case-insensitively.
  *
  * Seeded accounts use the demo password; anyone who accepted an invitation
  * uses the password they chose. An account that has not accepted yet, or has
@@ -353,7 +355,6 @@ export function lookupInvite(token) {
   const base = row
     ? {
         name: row.name,
-        email: row.email,
         username: row.user,
         role: row.role,
         roleLabel: ROLES[row.role]?.label ?? row.role,
@@ -443,37 +444,32 @@ export function resendInvite(id) {
 
 /* ── Administration ───────────────────────────────────────────────────────── */
 
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function activeSuperAdmins(rows) {
-  return rows.filter((row) => row.role === 'super_admin' && row.status !== 'deactivated');
-}
-
-function log(store, actor, text) {
-  store.activity = [{ at: new Date().toISOString(), actor: actor.name, text }, ...store.activity].slice(0, 50);
-}
+/** Usernames: lowercase, starting with a letter, like `kavya.reddy`. */
+export const USERNAME = /^[a-z][a-z0-9._-]{2,31}$/;
 
 /**
- * Invite a user. The username is the part of the email before the `@`, which
- * is what the seeded accounts use, and has to be unique like the email.
+ * Invite a user by full name and username. Emails are not collected: the
+ * console identifies people by username, and the invitation is a link the
+ * administrator hands over.
  */
-export function inviteUser({ name, email, role, title = '', team = '' }) {
+export function inviteUser({ name, username, role, title = '', team = '' }) {
   const actor = assertCan('users.manage');
   const cleanName = String(name ?? '').trim();
-  const cleanEmail = lower(email);
-  if (!cleanName) throw new Error("Enter the person's name.");
-  if (!EMAIL.test(cleanEmail)) throw new Error('Enter a valid email address.');
+  const user = lower(username);
+  if (!cleanName) throw new Error("Enter the person's full name.");
+  if (!USERNAME.test(user)) {
+    throw new Error('A username is 3 to 32 characters: lowercase letters, numbers, dots, dashes or underscores, starting with a letter.');
+  }
   if (!ROLES[role]) throw new Error('Choose a role.');
   const rows = directory();
-  const user = cleanEmail.split('@')[0];
-  if (rows.some((row) => lower(row.email) === cleanEmail)) throw new Error('Someone with that email is already a user.');
-  if (rows.some((row) => lower(row.user) === user)) throw new Error(`The username ${user} is already taken.`);
+  if (rows.some((row) => lower(row.user) === user || (row.aliases ?? []).some((alias) => lower(alias) === user))) {
+    throw new Error(`The username ${user} is already taken.`);
+  }
 
   const store = readStore();
   const row = {
     id: `user-${user.replace(/[^a-z0-9]+/g, '-')}-${Date.now().toString(36)}`,
     user,
-    email: cleanEmail,
     name: cleanName,
     title: String(title).trim() || null,
     team: String(team).trim() || null,

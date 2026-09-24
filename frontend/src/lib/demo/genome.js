@@ -319,9 +319,14 @@ function buildAnomalies(next, identity) {
   const roll = next();
   const count = roll < 0.66 ? 0 : roll < 0.9 ? 1 : intBetween(next, 2, 3);
   const out = [];
+  /* One anomaly per kind of departure. Drawing each type independently let
+     an identity get "first access to the same resource" twice - two alerts
+     with the same title for the same identity, which is a duplicate, not two
+     findings. */
+  const remaining = [...ANOMALY_TYPE_ORDER];
 
   for (let index = 0; index < count; index += 1) {
-    const type = pick(next, ANOMALY_TYPE_ORDER);
+    const type = remaining.splice(Math.floor(next() * remaining.length), 1)[0];
     const confidence = intBetween(next, 71, 99);
     /* Uppercase to match `SEVERITIES` in `lib/domain`, so `severityMeta` and
        any future real endpoint speak the same vocabulary as this generator. */

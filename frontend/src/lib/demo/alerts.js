@@ -88,8 +88,8 @@ export function escalationPolicy() {
       .find(Boolean) ?? people[0];
   const at = (user) => byUser.get(user) ?? fallback;
   return {
-    1: { ...at('helena.brandt'), role: 'Security on-call' },
-    2: { ...at('marcus.oyelaran'), role: 'Security engineering lead' },
+    1: { ...at('kavya.reddy'), role: 'Security on-call' },
+    2: { ...at('rahul.sharma'), role: 'Security engineering lead' },
     3: { ...at(OPERATOR.user), role: 'Security administrator' },
   };
 }
@@ -323,7 +323,7 @@ function genomeAlerts() {
       evidence: [
         { label: 'Baseline', value: `${anomaly.baseline.headline} (${anomaly.baseline.detail})` },
         { label: 'Observed', value: `${anomaly.observed.headline} (${anomaly.observed.detail})` },
-        { label: 'Confidence', value: `${Math.round((anomaly.confidence ?? 0) * 100)}%` },
+        { label: 'Confidence', value: `${anomaly.confidence ?? 0}%` },
       ],
       entity: {
         kind: 'Identity',
@@ -494,7 +494,19 @@ export function estateAlerts(now = Date.now()) {
   const policy = escalationPolicy();
   const raised = [...identityAlerts(), ...credentialAlerts(), ...genomeAlerts(), ...connectorAlerts()];
 
-  return raised.map((raw) => {
+  /* What each alert is ultimately about: the identity, even when the alert
+     names one of its credentials. The Alerts page groups by this, so an
+     identity's credential alerts sit with its other alerts. */
+  const identities = new Map(estate().identities.map((row) => [row.id, row]));
+  const subjectOf = (raw) => {
+    const row = raw.identityId ? identities.get(raw.identityId) : null;
+    return row
+      ? { key: `identity:${row.id}`, kind: 'Identity', name: row.name, detail: `${actorTypeMeta(row.identity_type).label} · ${row.account_name}` }
+      : { key: `${raw.entity.kind}:${raw.entity.name}`, kind: raw.entity.kind, name: raw.entity.name, detail: raw.entity.detail };
+  };
+
+  return raised.map((unsubjected) => {
+    const raw = { ...unsubjected, subject: subjectOf(unsubjected) };
     const id = `${raw.rule}:${raw.anomalyId ?? raw.checkKey ?? raw.identityId ?? raw.entity.name}${
       raw.source === 'credentials' ? `:${raw.entity.name}` : ''
     }`;
@@ -585,9 +597,9 @@ export function applyAlertAction({ alerts, action, assignee = null, reason = nul
   for (const alert of alerts) {
     const entry = { ...(store[alert.id] ?? {}) };
     const log = [...(entry.activity ?? [])];
-    /* `target` is who an assignment or escalation lands on, which is what
-       the notification bell reads; the title travels with it so the bell
-       needs nothing but this store. */
+    /* `target` records who an assignment or escalation landed on - the
+       audit answer to "who was this handed to", and what a notification
+       service would deliver on once the backend has one. */
     const push = (kind, text, target = null) =>
       log.push({
         at: nowIso,
@@ -595,7 +607,7 @@ export function applyAlertAction({ alerts, action, assignee = null, reason = nul
         actorUser: me.user,
         kind,
         text: trimmed && kind !== 'comment' ? `${text} Note: ${trimmed}` : text,
-        ...(target ? { target, alertTitle: alert.title, severity: alert.severity } : {}),
+        ...(target ? { target } : {}),
       });
     /* A closed alert takes only a reopen or a note. Everything else would be a
        change to something that is no longer being worked. */

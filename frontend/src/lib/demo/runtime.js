@@ -211,8 +211,6 @@ export const OVERLAY_KEYS = {
   runs: 'dna.demo.reportRuns.v2',
   /* Console users: invitations, role and status changes, sign-in times. */
   users: 'dna.demo.users',
-  /* Per-user "read up to" marks for the notification bell. */
-  notifications: 'dna.demo.notificationsSeen',
   /* AWS accounts connected from the Integrations wizard. */
   awsAccounts: 'dna.demo.awsAccounts',
   /* AWS connector: template settings, check runs, discovery runs, history. */

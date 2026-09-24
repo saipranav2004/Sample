@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { LogOut, Menu, Moon, Search, Sun } from 'lucide-react';
+import { LogOut, Menu, Moon, Search, Sun, UsersRound } from 'lucide-react';
 import { useAuth } from '../app/AuthContext';
+import { useAccess } from '../app/useAccess';
 import { useThemeMode } from '../app/ThemeContext';
 import { usePopover } from '../lib/hooks';
 import { BrandLockup } from './Brand';
-import { NotificationBell } from './NotificationBell';
 // import { ScanSwitcher } from './ScanSwitcher';
 import { initialsOf } from '../lib/format';
 import { roleMeta } from '../lib/roles';
@@ -31,6 +31,7 @@ import { cn } from '../ui/cn';
  */
 export function TopBar({ onOpenNav, onOpenCommand }) {
   const { user, logout } = useAuth();
+  const { can } = useAccess();
   const { theme, setPreference } = useThemeMode();
   const nextTheme = theme === 'dark' ? 'light' : 'dark';
   const [menuOpen, setMenuOpen] = useState(false);
@@ -98,8 +99,6 @@ export function TopBar({ onOpenNav, onOpenCommand }) {
         <Search aria-hidden="true" className="size-5" />
       </button>
 
-      <NotificationBell />
-
       {/* Shows the theme it switches TO - a sun in dark mode, a moon in light -
           which is the convention people already know from every other app. */}
       <button
@@ -124,7 +123,7 @@ export function TopBar({ onOpenNav, onOpenCommand }) {
           onClick={() => setMenuOpen((value) => !value)}
           aria-haspopup="menu"
           aria-expanded={menuOpen}
-          aria-label={`Account menu for ${user?.name || user?.email || 'signed-in user'}`}
+          aria-label={`Account menu for ${user?.name || user?.username || 'signed-in user'}`}
           className={cn(
             'grid size-10 shrink-0 place-items-center rounded-full transition-[box-shadow,transform] duration-150',
             menuOpen ? 'ring-2 ring-brand/45' : 'hover:ring-2 hover:ring-line-strong',
@@ -134,7 +133,7 @@ export function TopBar({ onOpenNav, onOpenCommand }) {
             aria-hidden="true"
             className="grid size-9 place-items-center rounded-full bg-[linear-gradient(135deg,var(--t-brand)_0%,var(--t-accent)_100%)] text-[13px] font-bold text-white"
           >
-            {initialsOf(user?.name || user?.email)}
+            {initialsOf(user?.name || user?.username)}
           </span>
         </button>
 
@@ -149,14 +148,14 @@ export function TopBar({ onOpenNav, onOpenCommand }) {
                 aria-hidden="true"
                 className="grid size-10 shrink-0 place-items-center rounded-full bg-[linear-gradient(135deg,var(--t-brand)_0%,var(--t-accent)_100%)] text-[13px] font-bold text-white"
               >
-                {initialsOf(user?.name || user?.email)}
+                {initialsOf(user?.name || user?.username)}
               </span>
               <span className="min-w-0">
                 <span className="block truncate text-[13.5px] font-semibold text-ink">
                   {user?.name || 'Signed in'}
                 </span>
-                {user?.email && (
-                  <span className="mt-0.5 block truncate text-[12px] text-ink-3">{user.email}</span>
+                {user?.username && (
+                  <span className="mt-0.5 block truncate font-mono text-[12px] text-ink-3">{user.username}</span>
                 )}
                 <span className="mt-1.5 flex flex-wrap gap-1.5">
                   {user?.role && (
@@ -174,6 +173,19 @@ export function TopBar({ onOpenNav, onOpenCommand }) {
             </div>
 
             <div className="p-1">
+              {/* Administration of the console itself lives with the account,
+                  not in the navigation of the estate. Super admins only. */}
+              {can('users.manage') && (
+                <Link
+                  role="menuitem"
+                  to="/users"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-[13px] text-ink-2 transition-colors duration-150 hover:bg-surface-2 hover:text-ink focus-visible:bg-surface-2 focus-visible:text-ink"
+                >
+                  <UsersRound aria-hidden="true" className="size-4" />
+                  User management
+                </Link>
+              )}
               <button
                 role="menuitem"
                 type="button"

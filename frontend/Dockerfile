@@ -75,10 +75,17 @@ ENV NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx/conf.d \
 
 # Defaults that make `docker run` work with nothing but a key. Docker's
 # embedded DNS lives at 127.0.0.11; override DNS_RESOLVER on Kubernetes.
+# SCANNER_DASHBOARD_KEY is deliberately NOT given a default here: a secret-named
+# ENV is recorded in the image config (and flagged by BuildKit's
+# SecretsUsedInArgOrEnv check) even when empty. The entrypoint script below
+# defaults it at start instead.
 ENV SCANNER_UPSTREAM="https://js-dev.adapid.link" \
-    SCANNER_DASHBOARD_KEY="" \
     API_UPSTREAM="http://nhi-api:8080" \
     DNS_RESOLVER="127.0.0.11"
+
+# Sourced by the image's entrypoint (a .envsh file) before the templates are
+# rendered: defaults SCANNER_DASHBOARD_KEY to empty when it is not supplied.
+COPY --chmod=0755 docker/15-scanner-key-default.envsh /docker-entrypoint.d/15-scanner-key-default.envsh
 
 # The default site would otherwise be served alongside ours on the same port.
 RUN rm -f /etc/nginx/conf.d/default.conf

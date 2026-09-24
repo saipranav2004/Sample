@@ -546,7 +546,7 @@ export function awsCheckResults() {
     },
     organisation: {
       state: 'fail',
-      note: 'organizations:ListPolicies returned AccessDenied. Service control policies cannot be read, so the access graph draws edges the organisation may already deny.',
+      note: 'organizations:ListPolicies returned AccessDenied. The account list still reads, because the StackSets delegated administrator may list accounts and OUs - but reading policies needs the Organizations delegation policy, which is not in place. Service control policies cannot be read, so the access graph draws edges the organisation may already deny.',
       alert: 'Service control policies cannot be read: the access graph may over-report',
     },
     accounts:

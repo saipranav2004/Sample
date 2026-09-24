@@ -46,7 +46,7 @@ export const ROLE_ORDER = ['super_admin', 'admin', 'analyst', 'viewer'];
 
 /**
  * Every permission the console checks, grouped the way the matrix on the
- * Users screen shows them. `roles` lists who holds it.
+ * User management screen shows them. `roles` lists who holds it.
  */
 export const PERMISSIONS = [
   { key: 'data.view', group: 'Visibility', label: 'View every screen and record', roles: ['super_admin', 'admin', 'analyst', 'viewer'] },

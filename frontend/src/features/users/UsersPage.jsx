@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react';
-import { Check, Link2, Minus, RotateCcw, Send, ShieldCheck, UserMinus, UserPlus, UsersRound, X } from 'lucide-react';
+import { Check, Download, Link2, Minus, RotateCcw, Send, ShieldCheck, UserMinus, UserPlus, UsersRound, X } from 'lucide-react';
 import { RequirePermission } from '../../app/RequirePermission';
 import { fetchUsers, inviteUser, resendInvite, revokeInvite, updateUser } from '../../lib/api/endpoints';
-import { INVITE_TTL_HOURS, USER_STATUSES } from '../../lib/demo/users';
+import { DEMO_PASSWORD, INVITE_TTL_HOURS, USERNAME, USER_STATUSES } from '../../lib/demo/users';
 import { useDemoQuery } from '../../lib/demo/useDemoQuery';
 import { formatDateTime, formatNumber, formatRelative, initialsOf } from '../../lib/format';
 import { PERMISSIONS, ROLE_ORDER, ROLES } from '../../lib/roles';
 import { PageHeader } from '../../shell/PageHeader';
-import { Button } from '../../ui/Button';
+import { Button, IconButton } from '../../ui/Button';
+import { downloadText } from '../../lib/csv';
 import { CopyButton } from '../../ui/Copyable';
 import { Field, Input, SearchInput, Select } from '../../ui/Field';
 import { Modal } from '../../ui/Overlay';
@@ -31,7 +32,7 @@ const ROLE_OPTIONS = ROLE_ORDER.map((key) => ({ value: key, label: ROLES[key].la
 const ROLE_TONE = { super_admin: 'brand', admin: 'info', analyst: 'neutral', viewer: 'neutral' };
 
 /**
- * Users & roles.
+ * User management.
  *
  * Who can sign in, with which role, and what each role may do - the three
  * questions an administrator comes here with, one tab each. The permission
@@ -79,7 +80,7 @@ function UsersScreen() {
       .filter(
         (user) =>
           !needle ||
-          [user.name, user.email, user.user, ROLES[user.role]?.label, user.team, user.title]
+          [user.name, user.user, ROLES[user.role]?.label, user.team, user.title]
             .filter(Boolean)
             .some((text) => text.toLowerCase().includes(needle)),
       )
@@ -114,7 +115,7 @@ function UsersScreen() {
   if (query.isError && !query.data) {
     return (
       <div className="flex flex-col gap-6">
-        <PageHeader title="Users & roles" lede="The user directory could not be loaded." />
+        <PageHeader title="User management" lede="The user directory could not be loaded." />
         <Panel>
           <ErrorState error={query.error} onRetry={query.refetch} />
         </Panel>
@@ -127,12 +128,22 @@ function UsersScreen() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Users & roles"
+        title="User management"
         lede="Who can sign in to this console, and what each role is allowed to do."
         actions={
-          <Button variant="primary" icon={UserPlus} onClick={() => setInviting(true)}>
-            Invite user
-          </Button>
+          <>
+            <Button
+              variant="secondary"
+              icon={Download}
+              disabled={users.length === 0}
+              onClick={() => downloadSignIns(users)}
+            >
+              Download sign-ins
+            </Button>
+            <Button variant="primary" icon={UserPlus} onClick={() => setInviting(true)}>
+              Invite user
+            </Button>
+          </>
         }
         tabs={<Tabs size="sm" tabs={TABS} value={tab} onChange={setTab} />}
       />
@@ -183,7 +194,7 @@ function UsersScreen() {
             <SearchInput
               value={search}
               onChange={setSearch}
-              placeholder="Search name, email or role"
+              placeholder="Search name, username or role"
               size="sm"
               className="w-full sm:w-64"
               aria-label="Search users"
@@ -197,7 +208,7 @@ function UsersScreen() {
             <EmptyState
               icon={UsersRound}
               title="No user matches that search"
-              description={`Nobody's name, email or role contains "${search.trim()}".`}
+              description={`Nobody's name, username or role contains "${search.trim()}".`}
               action={
                 <Button variant="secondary" size="sm" onClick={() => setSearch('')}>
                   Clear search
@@ -244,7 +255,7 @@ function UsersScreen() {
                                 )}
                               </span>
                               <span className="block truncate text-[11.5px] text-ink-3">
-                                {user.email}
+                                <span className="font-mono">{user.user}</span>
                                 {user.title ? ` · ${user.title}` : ''}
                               </span>
                             </span>
@@ -281,6 +292,13 @@ function UsersScreen() {
                           )}
                         </td>
                         <td className="px-4 py-3 text-right">
+                          <span className="inline-flex flex-wrap items-center justify-end gap-1.5">
+                          <IconButton
+                            icon={Download}
+                            size="sm"
+                            label={`Download sign-in details for ${user.name}`}
+                            onClick={() => downloadSignIns([user], user.user)}
+                          />
                           {self ? null : user.status === 'invited' ? (
                             <span className="inline-flex flex-wrap justify-end gap-1.5">
                               <Button
@@ -340,6 +358,7 @@ function UsersScreen() {
                               Deactivate
                             </Button>
                           )}
+                          </span>
                         </td>
                       </tr>
                     );
@@ -528,28 +547,44 @@ function RolesTab({ counts }) {
   );
 }
 
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+/* A suggested username from a full name: "Kavya Reddy" -> "kavya.reddy". */
+function suggestUsername(name) {
+  return String(name)
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[^a-z0-9\s.-]/g, '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .join('.')
+    .slice(0, 32);
+}
 
 function InviteModal({ onClose, onInvited }) {
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
+  /* The username follows the name until someone edits it by hand. */
+  const [usernameEdited, setUsernameEdited] = useState(false);
   const [role, setRole] = useState('analyst');
   const [title, setTitle] = useState('');
   const [touched, setTouched] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  const nameError = !name.trim() ? "Enter the person's name." : '';
-  const emailError = !EMAIL.test(email.trim()) ? 'Enter a valid email address.' : '';
+  const effectiveUsername = usernameEdited ? username : suggestUsername(name);
+  const nameError = !name.trim() ? "Enter the person's full name." : '';
+  const usernameError = !USERNAME.test(effectiveUsername.trim())
+    ? '3 to 32 characters: lowercase letters, numbers, dots, dashes or underscores, starting with a letter.'
+    : '';
 
   const submit = async (event) => {
     event.preventDefault();
     setTouched(true);
     setError('');
-    if (nameError || emailError) return;
+    if (nameError || usernameError) return;
     setSaving(true);
     try {
-      const result = await inviteUser({ name, email, role, title });
+      const result = await inviteUser({ name, username: effectiveUsername.trim(), role, title });
       onInvited(result);
     } catch (failure) {
       setError(failure?.message ?? 'The invitation was not sent.');
@@ -580,15 +615,25 @@ function InviteModal({ onClose, onInvited }) {
         <Field label="Full name" htmlFor="invite-name" required error={touched ? nameError || undefined : undefined}>
           <Input id="invite-name" value={name} maxLength={80} onChange={(event) => setName(event.target.value)} invalid={touched && Boolean(nameError)} />
         </Field>
-        <Field label="Work email" htmlFor="invite-email" required error={touched ? emailError || undefined : undefined}>
+        <Field
+          label="Username"
+          htmlFor="invite-username"
+          required
+          error={touched ? usernameError || undefined : undefined}
+          hint="What they sign in with. Suggested from the name - change it if needed."
+        >
           <Input
-            id="invite-email"
-            type="email"
+            id="invite-username"
             autoComplete="off"
-            value={email}
-            maxLength={120}
-            onChange={(event) => setEmail(event.target.value)}
-            invalid={touched && Boolean(emailError)}
+            spellCheck={false}
+            value={effectiveUsername}
+            maxLength={32}
+            className="font-mono"
+            onChange={(event) => {
+              setUsernameEdited(true);
+              setUsername(event.target.value.toLowerCase());
+            }}
+            invalid={touched && Boolean(usernameError)}
           />
         </Field>
         <Field label="Job title" htmlFor="invite-title" hint="Optional. Shown next to their name.">
@@ -665,7 +710,7 @@ function InviteLinkModal({ issued, onClose }) {
             ({formatRelative(issued.invite.expiresAt)}).
           </li>
           <li>
-            They will sign in as <span className="font-mono text-ink">{issued.user.user}</span> or {issued.user.email}.
+            They will sign in as <span className="font-mono text-ink">{issued.user.user}</span>.
           </li>
           <li className="text-ink-3">
             Email delivery needs the backend, so share it yourself. In this demo the link only works in this browser.
@@ -674,4 +719,41 @@ function InviteLinkModal({ issued, onClose }) {
       </div>
     </Modal>
   );
+}
+
+/**
+ * Sign-in details as a text file, for one user or everyone.
+ *
+ * What a person needs to sign in, and nothing that is not known: seeded
+ * accounts use the demo password, anyone who accepted an invitation chose
+ * their own (which the console never kept, so it cannot be downloaded), and
+ * an invited account has no password until its link is used.
+ */
+function downloadSignIns(rows, single = '') {
+  const url = `${window.location.origin}/login`;
+  const lines = [
+    'NHI Console - sign-in details',
+    `Sign in at: ${url}`,
+    `Generated: ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC`,
+    '',
+  ];
+  for (const row of rows) {
+    const password =
+      row.status === 'deactivated'
+        ? 'Sign-in disabled - the account is deactivated'
+        : row.status === 'invited'
+          ? 'Not set yet - they choose one from their invitation link'
+          : row.ownPassword
+            ? 'Chosen by the user - not stored by the console'
+            : `${DEMO_PASSWORD} (shared demo password)`;
+    lines.push(
+      `Full name: ${row.name}`,
+      `Username:  ${row.user}`,
+      `Role:      ${ROLES[row.role]?.label ?? row.role}`,
+      `Status:    ${USER_STATUSES[row.status]?.label ?? row.status}`,
+      `Password:  ${password}`,
+      '',
+    );
+  }
+  downloadText(lines.join('\n'), single ? `sign-in-${single}.txt` : 'console-sign-ins.txt');
 }

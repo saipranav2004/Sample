@@ -1,5 +1,6 @@
-import { NavLink } from 'react-router-dom';
-import { PanelLeftClose, PanelLeftOpen, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
+import { ChevronDown, PanelLeftClose, PanelLeftOpen, X } from 'lucide-react';
 import { useAccess } from '../app/useAccess';
 import { navGroupsFor } from './navigation';
 import { IconButton } from '../ui/Button';
@@ -49,8 +50,52 @@ function SidebarLink({ item, collapsed, onNavigate, badge }) {
   );
 }
 
+const OPEN_KEY = 'dna.nav.openGroups';
+
+function readOpenGroups() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(OPEN_KEY) ?? 'null');
+    return Array.isArray(raw) ? new Set(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function isActiveItem(item, pathname) {
+  return pathname === item.to || (!item.end && pathname.startsWith(`${item.to}/`));
+}
+
 export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseMobile, badges }) {
   const { can } = useAccess();
+  const { pathname } = useLocation();
+  const groups = navGroupsFor(can);
+  const activeGroup = groups.find((group) => group.items.some((item) => isActiveItem(item, pathname)))?.key ?? null;
+
+  /* Groups open and close on click, not hover: hover menus open by accident,
+     do nothing on touch screens and are hard to reach by keyboard. The group
+     holding the current screen is always opened when you arrive on it, and
+     the rest remember how you left them. */
+  const [openGroups, setOpenGroups] = useState(() => readOpenGroups() ?? new Set(activeGroup ? [activeGroup] : []));
+  const [lastActive, setLastActive] = useState(activeGroup);
+  if (activeGroup !== lastActive) {
+    setLastActive(activeGroup);
+    if (activeGroup && !openGroups.has(activeGroup)) setOpenGroups(new Set([...openGroups, activeGroup]));
+  }
+  useEffect(() => {
+    try {
+      localStorage.setItem(OPEN_KEY, JSON.stringify([...openGroups]));
+    } catch {
+      /* A remembered layout is a convenience; losing it costs nothing. */
+    }
+  }, [openGroups]);
+  const toggleGroup = (key) =>
+    setOpenGroups((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+
   const content = (
     <>
       {/* Module header. The collapse control belongs at the top, where an
@@ -88,32 +133,70 @@ export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseMobile
       </div>
 
       <nav aria-label="Primary" className="min-h-0 flex-1 overflow-y-auto px-2.5 py-2">
-        {navGroupsFor(can).map((group, groupIndex) => (
-          <div key={group.key} className="mb-3.5 last:mb-0">
-            {group.label && !collapsed && (
-              <p className="mb-1.5 px-2.5 text-[10px] font-semibold tracking-[0.14em] text-ink-3 uppercase">
-                {group.label}
-              </p>
-            )}
-            {/* Collapsed, a rule stands in for the group label - but never
-                above the first group, where it would read as a divider under
-                the module name. */}
-            {group.label && collapsed && groupIndex > 0 && (
-              <div aria-hidden="true" className="mx-3 mb-2 border-t border-line" />
-            )}
-            <div className="flex flex-col gap-0.5">
-              {group.items.map((item) => (
-                <SidebarLink
-                  key={item.to}
-                  item={item}
-                  collapsed={collapsed}
-                  onNavigate={onCloseMobile}
-                  badge={badges?.[item.to]}
+        {groups.map((group, groupIndex) => {
+          /* Collapsed to an icon rail there are no headings to click, so every
+             item shows; a rule stands in for the group label, but never above
+             the first group. */
+          if (collapsed) {
+            return (
+              <div key={group.key} className="mb-3.5 last:mb-0">
+                {groupIndex > 0 && <div aria-hidden="true" className="mx-3 mb-2 border-t border-line" />}
+                <div className="flex flex-col gap-0.5">
+                  {group.items.map((item) => (
+                    <SidebarLink key={item.to} item={item} collapsed onNavigate={onCloseMobile} badge={badges?.[item.to]} />
+                  ))}
+                </div>
+              </div>
+            );
+          }
+          const open = openGroups.has(group.key);
+          const panelId = `nav-group-${group.key}`;
+          const holdsActive = group.key === activeGroup;
+          return (
+            <div key={group.key} className="mb-1 last:mb-0">
+              <button
+                type="button"
+                onClick={() => toggleGroup(group.key)}
+                aria-expanded={open}
+                aria-controls={panelId}
+                className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-[10px] font-semibold tracking-[0.14em] text-ink-3 uppercase transition-colors hover:bg-surface-3 hover:text-ink-2"
+              >
+                <span className="min-w-0 flex-1 truncate">{group.label}</span>
+                {/* A closed group that holds the current screen says so. */}
+                {holdsActive && !open && <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-brand" />}
+                <ChevronDown
+                  aria-hidden="true"
+                  className={cn('size-3.5 shrink-0 transition-transform duration-200', open ? 'rotate-0' : '-rotate-90')}
                 />
-              ))}
+              </button>
+              {/* Height animates through grid rows, which needs no measured
+                  height. `inert` keeps the links of a closed group out of the
+                  tab order and away from screen readers. */}
+              <div
+                id={panelId}
+                inert={!open}
+                className={cn(
+                  'grid transition-[grid-template-rows,opacity] duration-250 ease-[var(--ease-out-quint)]',
+                  open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0',
+                )}
+              >
+                <div className="min-h-0 overflow-hidden">
+                  <div className="flex flex-col gap-0.5 pt-0.5 pb-2">
+                    {group.items.map((item) => (
+                      <SidebarLink
+                        key={item.to}
+                        item={item}
+                        collapsed={false}
+                        onNavigate={onCloseMobile}
+                        badge={badges?.[item.to]}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </nav>
 
     </>

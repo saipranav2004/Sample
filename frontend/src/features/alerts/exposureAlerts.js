@@ -1,7 +1,6 @@
 import { applyTriage, isOpen } from '../../lib/alerts';
 import { findingLink, normalisePlatform, platformMeta, repoVisibilityMeta } from '../../lib/domain';
 import { humanizeToken, shortBranch, shortCommit } from '../../lib/format';
-import { findingKey } from '../exposure/scannerState';
 
 /**
  * Alerts raised from the Secret Scanner's live findings.
@@ -23,11 +22,24 @@ const RAISING_TIERS = new Set(['CRITICAL', 'HIGH', 'MEDIUM']);
 
 export const EXPOSURE_ALERT_PREFIX = 'secret-exposed:';
 
-export function exposureAlertId(finding) {
-  return `${EXPOSURE_ALERT_PREFIX}${findingKey(finding)}`;
+/* The scanner's allowlist key: the same secret (masked value) found by the
+   same detector in the same file for the same client. */
+function secretKey(finding) {
+  return [finding?.client_id, finding?.file_path, finding?.detector, finding?.redacted].join('|');
 }
 
-function raise(finding) {
+/**
+ * One alert per exposed secret, not per commit. The scanner reports each
+ * commit a secret appears in as its own finding, and accepting one on the
+ * allowlist accepts all of them - so an alert per finding showed the same
+ * alert several times and closed them all at once. The alert id is the
+ * allowlist key; `findingKey` is kept for the Exposed credentials screen.
+ */
+export function exposureAlertId(finding) {
+  return `${EXPOSURE_ALERT_PREFIX}${secretKey(finding)}`;
+}
+
+function raise(finding, occurrences = 1) {
   const tier = String(finding.risk_tier || '').toUpperCase();
   const platform = platformMeta(finding.platform);
   const visibility = repoVisibilityMeta(finding.repo_visibility);
@@ -53,6 +65,7 @@ function raise(finding) {
       { label: 'Platform', value: platform.label },
       { label: 'Repository', value: finding.repository || '-' },
       { label: 'Committed by', value: finding.committer || finding.author || '-' },
+      ...(occurrences > 1 ? [{ label: 'Occurrences', value: `${occurrences} commits - the newest is shown` }] : []),
       ...(visibility ? [{ label: 'Visibility', value: visibility.label }] : []),
     ],
     entity: {
@@ -86,13 +99,24 @@ function raise(finding) {
  * been restored from the Accepted view, and is open again here too.
  */
 export function exposureAlerts(findings, triage, policy, now = Date.now()) {
-  const live = (findings ?? []).filter((finding) =>
+  const raising = (findings ?? []).filter((finding) =>
     RAISING_TIERS.has(String(finding.risk_tier || '').toUpperCase()),
   );
+  /* Group repeat sightings of one secret; the newest commit represents it. */
+  const groups = new Map();
+  for (const finding of raising) {
+    const key = secretKey(finding);
+    const group = groups.get(key);
+    if (!group) groups.set(key, { finding, count: 1 });
+    else {
+      group.count += 1;
+      if (Date.parse(finding.created_at) > Date.parse(group.finding.created_at)) group.finding = finding;
+    }
+  }
   const liveIds = new Set();
 
-  const open = live.map((finding) => {
-    const base = raise(finding);
+  const open = [...groups.values()].map(({ finding, count }) => {
+    const base = raise(finding, count);
     liveIds.add(base.id);
     const entry = triage?.[base.id];
     /* Live means open, whatever the store remembers. */

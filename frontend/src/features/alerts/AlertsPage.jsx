@@ -54,6 +54,7 @@ import { cn } from '../../ui/cn';
 import { describeScannerError } from '../exposure/scannerState';
 import { AlertDrawer, Avatar } from './AlertDrawer';
 import { exposureAlerts } from './exposureAlerts';
+import { IdentityGroups, groupByEntity } from './IdentityGroups';
 
 const DEFAULT_PAGE_SIZE = 25;
 const SEVERITY_WEIGHT = Object.fromEntries(SEVERITY_ORDER.map((key, index) => [key, SEVERITY_ORDER.length - index]));
@@ -192,7 +193,12 @@ export default function AlertsPage() {
 
   /* Clamped: a filter that shrinks the set, or closing the last alert on the
      last page, must not leave the reader on a page past the end. */
-  const safePage = Math.min(page, Math.max(1, Math.ceil(sorted.length / pageSize)));
+  /* `?group=entity` shows the same alerts grouped per identity, paged by
+     identity rather than by alert. */
+  const grouped = searchParams.get('group') === 'entity';
+  const groups = useMemo(() => (grouped ? groupByEntity(sorted) : []), [grouped, sorted]);
+  const unitCount = grouped ? groups.length : sorted.length;
+  const safePage = Math.min(page, Math.max(1, Math.ceil(unitCount / pageSize)));
   const pageRows = useMemo(
     () => sorted.slice((safePage - 1) * pageSize, safePage * pageSize),
     [sorted, safePage, pageSize],
@@ -655,10 +661,10 @@ export default function AlertsPage() {
           <MetricTile
             as={Link}
             to="/alerts?view=triage"
-            label="Needs triage"
+            label="Needs an owner"
             value={counts.triage}
             tone={counts.triage > 0 ? 'high' : 'low'}
-            caption="New, and nobody has it yet"
+            caption="New, and nobody has picked it up"
           />
           <MetricTile
             as={Link}
@@ -743,11 +749,33 @@ export default function AlertsPage() {
               placeholder="Search alert, identity, credential, repository…"
               className="w-full min-w-0 sm:max-w-sm"
             />
+            <div role="group" aria-label="Show alerts as" className="flex shrink-0 rounded-[var(--radius-control)] border border-line bg-surface-2 p-0.5">
+              {[
+                { value: '', label: 'List' },
+                { value: 'entity', label: 'By identity' },
+              ].map((option) => {
+                const active = (option.value === 'entity') === grouped;
+                return (
+                  <button
+                    key={option.label}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => setParams({ group: option.value })}
+                    className={cn(
+                      'rounded-[calc(var(--radius-control)-2px)] px-2.5 py-1 text-[12px] font-medium transition-colors',
+                      active ? 'bg-surface text-ink shadow-sm' : 'text-ink-3 hover:text-ink',
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
             <ResultCount
-              shown={formatNumber(sorted.length)}
+              shown={formatNumber(grouped ? groups.length : sorted.length)}
               total={formatNumber(inView.length)}
-              unit="alerts"
-              filtered={chips.length > 0}
+              unit={grouped ? `identities (${formatNumber(sorted.length)} alerts)` : 'alerts'}
+              filtered={!grouped && chips.length > 0}
               loading={loading}
             />
           </RecordBar>
@@ -761,7 +789,7 @@ export default function AlertsPage() {
             onClearAll={clearAll}
           />
 
-          {canBulk && selected.length > 0 && (
+          {canBulk && !grouped && selected.length > 0 && (
             <BulkBar
               count={selected.length}
               people={people}
@@ -777,6 +805,35 @@ export default function AlertsPage() {
             />
           )}
 
+          {grouped && !loading ? (
+            groups.length === 0 ? (
+              chips.length > 0 ? (
+                <EmptyState
+                  icon={SearchX}
+                  title="No alerts match these filters"
+                  description="Nothing in this view matches the current severity, source, status and search combination."
+                  action={
+                    <Button variant="secondary" size="sm" onClick={clearAll}>
+                      Clear filters
+                    </Button>
+                  }
+                />
+              ) : (
+                <ClearState
+                  title={VIEWS.find((entry) => entry.value === view)?.empty ?? 'Nothing here'}
+                  description={VIEWS.find((entry) => entry.value === view)?.emptyDetail}
+                />
+              )
+            ) : (
+              <IdentityGroups
+                key={`${view}-${safePage}-${search}-${chips.length}`}
+                groups={groups.slice((safePage - 1) * pageSize, safePage * pageSize)}
+                peopleByUser={peopleByUser}
+                operatorUser={operatorUser}
+                onOpen={(alert) => setParams({ alert: alert.id }, { resetPage: false })}
+              />
+            )
+          ) : (
           <DataGrid
             caption="Alerts"
             columns={canBulk ? columns : columns.filter((column) => column.key !== 'select')}
@@ -809,13 +866,14 @@ export default function AlertsPage() {
               )
             }
           />
+          )}
 
-          {!loading && sorted.length > pageSize && (
+          {!loading && unitCount > pageSize && (
             <Pagination
               page={safePage}
               pageSize={pageSize}
-              total={sorted.length}
-              unit="alerts"
+              total={unitCount}
+              unit={grouped ? 'identities' : 'alerts'}
               onPageChange={(next) => setParams({ page: next > 1 ? next : '' }, { resetPage: false })}
               onPageSizeChange={(next) => setParams({ size: next === DEFAULT_PAGE_SIZE ? '' : next })}
             />
@@ -896,9 +954,9 @@ const VIEWS = [
   },
   {
     value: 'triage',
-    label: 'Needs triage',
+    label: 'Needs an owner',
     test: (alert) => alert.status === 'new' && !alert.assignee,
-    empty: 'Nothing waiting for triage',
+    empty: 'Every new alert has an owner',
     emptyDetail: 'Every new alert has somebody assigned to it.',
   },
   {
