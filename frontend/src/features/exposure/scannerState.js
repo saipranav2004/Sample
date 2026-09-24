@@ -67,7 +67,24 @@ export function describeScannerError(error) {
       configuration: true,
     };
   }
-  if (error?.code === 'NETWORK' || [500, 502, 503, 504].includes(error?.status)) {
+  /* No answer at all: the proxy gave up waiting (504, or the scanner's own
+     SCANNER_UNREACHABLE from the dev proxy), or the browser's own 20-second
+     timeout fired first. A wrong key never looks like this - the scanner
+     rejects one with a 401 straight away - so the message says so. */
+  if (
+    error?.status === 504 ||
+    error?.code === 'SCANNER_UNREACHABLE' ||
+    error?.code === 'ECONNABORTED' ||
+    error?.code === 'ETIMEDOUT'
+  ) {
+    return {
+      title: 'The Secret Scanner is not responding',
+      message:
+        'The request reached the proxy, but the scanner service behind it never answered, so the proxy gave up. This is not the dashboard key - a wrong key is rejected at once with a 401. The scanner is down, or the machine running the proxy cannot reach SCANNER_UPSTREAM (a firewall, security group or VPN). Check the scanner service, then try again.',
+      configuration: true,
+    };
+  }
+  if (error?.code === 'NETWORK' || [500, 502, 503].includes(error?.status)) {
     return {
       title: 'Cannot reach the credential exposure service',
       message:

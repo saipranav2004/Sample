@@ -982,3 +982,116 @@ export const AWS_CHECK_FIXES = {
 aws cloudtrail start-logging --name org-trail`,
   },
 };
+
+/* ── Connect flows for the other platforms ───────────────────────────────── */
+
+const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const HTTPS_URL = /^https:\/\/[a-z0-9.-]+(:\d+)?(\/.*)?$/i;
+
+/**
+ * What each platform asks for when it is connected, what to grant on the
+ * platform's side, and the checks the connection test runs.
+ *
+ * Field rules are the platforms' real formats (a GitLab token starts
+ * `glpat-`, a Datadog API key is 32 hex characters, and so on), so a typo is
+ * caught before the test runs. `secret` fields are sent once and never kept:
+ * the console stores only their last four characters, to show which one is
+ * in use.
+ */
+export const PLATFORM_CONNECT = {
+  gitlab: {
+    grant: 'A group access token with the read_api scope and at least the Reporter role. It reads projects, CI/CD job configuration and ID token settings. Nothing is written.',
+    fields: [
+      { key: 'baseUrl', label: 'GitLab URL', placeholder: 'https://gitlab.com', initial: 'https://gitlab.com', pattern: HTTPS_URL, message: 'Use the https:// address of your GitLab.' },
+      { key: 'group', label: 'Group path', placeholder: 'acme/platform', pattern: /^[\w.-]+(\/[\w.-]+)*$/, message: 'The group path as it appears in the URL, like acme/platform.' },
+      { key: 'token', label: 'Group access token', secret: true, placeholder: 'glpat-…', pattern: /^glpat-[A-Za-z0-9_-]{20,}$/, message: 'GitLab access tokens start with glpat- followed by at least 20 characters.' },
+    ],
+    checks: ['Token accepted by /api/v4/user', 'read_api scope present', 'Group projects listed'],
+    display: (config) => `${config.baseUrl.replace(/^https:\/\//, '')}/${config.group}`,
+  },
+  okta: {
+    grant: 'An API token created by a user with the Read-only Administrator role. It lists users, groups, applications and the AWS app\'s role mappings.',
+    fields: [
+      { key: 'domain', label: 'Okta domain', placeholder: 'acme.okta.com', pattern: /^[a-z0-9-]+\.(okta|oktapreview|okta-emea)\.com$/i, message: 'Your Okta domain, like acme.okta.com - without https://.' },
+      { key: 'token', label: 'API token', secret: true, placeholder: '00…', pattern: /^00[A-Za-z0-9_-]{40}$/, message: 'Okta API tokens are 42 characters and start with 00.' },
+    ],
+    checks: ['Organisation reachable at /api/v1/org', 'Token belongs to a read-only administrator', 'AWS Account Federation app found'],
+    display: (config) => config.domain,
+  },
+  entra: {
+    grant: 'An app registration with the Microsoft Graph application permissions User.Read.All, Application.Read.All and AuditLog.Read.All, with admin consent granted.',
+    fields: [
+      { key: 'tenantId', label: 'Directory (tenant) ID', placeholder: '00000000-0000-0000-0000-000000000000', pattern: GUID, message: 'A GUID, from the app registration overview.' },
+      { key: 'clientId', label: 'Application (client) ID', placeholder: '00000000-0000-0000-0000-000000000000', pattern: GUID, message: 'A GUID, from the app registration overview.' },
+      { key: 'clientSecret', label: 'Client secret value', secret: true, pattern: /^.{30,}$/, message: 'Paste the secret value (not its ID) - it is at least 30 characters.' },
+    ],
+    checks: ['Token issued by login.microsoftonline.com', 'Admin consent present for Graph permissions', 'Enterprise applications listed'],
+    display: (config) => `tenant ${config.tenantId.slice(0, 8)}…`,
+  },
+  vault: {
+    grant: 'An AppRole bound to a read-only policy: read on sys/auth and sys/mounts, so the console sees which auth methods and dynamic secret engines exist. It never reads a secret.',
+    fields: [
+      { key: 'address', label: 'Vault address', placeholder: 'https://vault.acme.internal:8200', pattern: HTTPS_URL, message: 'Use the https:// address Vault listens on.' },
+      { key: 'namespace', label: 'Namespace', optional: true, placeholder: 'admin/platform', pattern: /^[\w/-]*$/, message: 'Letters, numbers, - and / only.', hint: 'Vault Enterprise or HCP only. Leave empty otherwise.' },
+      { key: 'roleId', label: 'AppRole role ID', placeholder: '00000000-0000-0000-0000-000000000000', pattern: GUID, message: 'A role ID is a GUID.' },
+      { key: 'secretId', label: 'AppRole secret ID', secret: true, pattern: GUID, message: 'A secret ID is a GUID.' },
+    ],
+    checks: ['AppRole login succeeded', 'sys/auth readable', 'sys/mounts readable'],
+    display: (config) => config.address.replace(/^https:\/\//, ''),
+  },
+  datadog: {
+    grant: 'An API key, and an application key scoped to aws_configuration_read. Used to match the role Datadog\'s AWS integration assumes to the accounts it reads.',
+    fields: [
+      {
+        key: 'site',
+        label: 'Datadog site',
+        type: 'select',
+        initial: 'datadoghq.com',
+        options: [
+          { value: 'datadoghq.com', label: 'US1 - datadoghq.com' },
+          { value: 'us3.datadoghq.com', label: 'US3 - us3.datadoghq.com' },
+          { value: 'us5.datadoghq.com', label: 'US5 - us5.datadoghq.com' },
+          { value: 'datadoghq.eu', label: 'EU1 - datadoghq.eu' },
+          { value: 'ap1.datadoghq.com', label: 'AP1 - ap1.datadoghq.com' },
+          { value: 'ddog-gov.com', label: 'US1-FED - ddog-gov.com' },
+        ],
+      },
+      { key: 'apiKey', label: 'API key', secret: true, pattern: /^[0-9a-f]{32}$/i, message: 'Datadog API keys are 32 hexadecimal characters.' },
+      { key: 'appKey', label: 'Application key', secret: true, pattern: /^[0-9a-f]{40}$/i, message: 'Datadog application keys are 40 hexadecimal characters.' },
+    ],
+    checks: ['API key valid (/api/v1/validate)', 'AWS integration listed', 'Integration role matched to connected accounts'],
+    display: (config) => config.site,
+  },
+  splunk: {
+    grant: 'An authentication token for a Splunk user whose role can search the index CloudTrail is forwarded to, and nothing else.',
+    fields: [
+      { key: 'restUrl', label: 'Splunk REST API URL', placeholder: 'https://splunk.acme.internal:8089', pattern: HTTPS_URL, message: 'The management port address, usually https://…:8089.' },
+      { key: 'index', label: 'CloudTrail index', placeholder: 'aws_cloudtrail', initial: 'aws_cloudtrail', pattern: /^[a-z0-9_-]+$/, message: 'Lowercase letters, numbers, _ and - only.' },
+      { key: 'token', label: 'Authentication token', secret: true, placeholder: 'eyJ…', pattern: /^eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/, message: 'Splunk authentication tokens are JWTs, starting with eyJ.' },
+    ],
+    checks: ['Server reachable (/services/server/info)', 'Search on the index returns events', 'aws:cloudtrail sourcetype present'],
+    display: (config) => `${config.restUrl.replace(/^https:\/\//, '')} · ${config.index}`,
+  },
+  jira: {
+    grant: 'An API token for an account that can browse and create issues in the project findings should go to.',
+    fields: [
+      { key: 'site', label: 'Jira site', placeholder: 'https://acme.atlassian.net', pattern: /^https:\/\/[a-z0-9-]+\.atlassian\.net\/?$/i, message: 'Your Atlassian site, like https://acme.atlassian.net.' },
+      { key: 'email', label: 'Account email', placeholder: 'security-bot@acme.com', pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'The email of the account the API token belongs to.' },
+      { key: 'apiToken', label: 'API token', secret: true, pattern: /^[A-Za-z0-9_=-]{24,}$/, message: 'Paste the API token from id.atlassian.com - at least 24 characters.' },
+      { key: 'project', label: 'Project key', placeholder: 'SEC', pattern: /^[A-Z][A-Z0-9]{1,9}$/, message: 'The project key in capitals, like SEC.' },
+    ],
+    checks: ['Account authenticated (/rest/api/3/myself)', 'Project found', 'Create issues permission granted'],
+    display: (config) => `${config.site.replace(/^https:\/\//, '').replace(/\/$/, '')} · ${config.project}`,
+  },
+  servicenow: {
+    grant: 'An OAuth application registry entry for a user with the itil role, so incidents and change requests can be raised from a finding.',
+    fields: [
+      { key: 'instance', label: 'Instance URL', placeholder: 'https://acme.service-now.com', pattern: /^https:\/\/[a-z0-9-]+\.service-now\.com\/?$/i, message: 'Your instance, like https://acme.service-now.com.' },
+      { key: 'clientId', label: 'OAuth client ID', pattern: /^[0-9a-f]{32}$/i, message: 'ServiceNow client IDs are 32 hexadecimal characters.' },
+      { key: 'clientSecret', label: 'OAuth client secret', secret: true, pattern: /^.{10,}$/, message: 'Paste the client secret from the application registry.' },
+      { key: 'group', label: 'Assignment group', optional: true, placeholder: 'Security Operations', pattern: /^.{0,80}$/, message: 'Up to 80 characters.', hint: 'Where new incidents land. Leave empty to use the default.' },
+    ],
+    checks: ['OAuth token issued (/oauth_token.do)', 'Table API reachable (incident)', 'itil role present'],
+    display: (config) => config.instance.replace(/^https:\/\//, '').replace(/\/$/, ''),
+  },
+};

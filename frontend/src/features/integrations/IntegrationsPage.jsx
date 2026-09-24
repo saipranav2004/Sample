@@ -1,10 +1,11 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   AlertTriangle,
   ArrowRight,
   CheckCircle2,
-  ChevronDown,
+  CircleDashed,
+  Plus,
   Cloud,
   ExternalLink,
   Plug,
@@ -15,13 +16,15 @@ import { fetchIntegrations } from '../../lib/api/endpoints';
 import { useDemoQuery } from '../../lib/demo/useDemoQuery';
 import { formatDateTime, formatNumber, formatRelative } from '../../lib/format';
 import { PageHeader } from '../../shell/PageHeader';
+import { useAccess } from '../../app/useAccess';
 import { Button } from '../../ui/Button';
 import { Panel, PanelHeader, SectionLabel } from '../../ui/Panel';
 import { ListSkeleton, StatStripSkeleton } from '../../ui/Skeleton';
 import { MetricTile } from '../../ui/Stat';
 import { ErrorState } from '../../ui/States';
 import { Tag } from '../../ui/Tag';
-import { PLATFORMS, PLATFORM_CATEGORIES, platformByKey } from './catalog';
+import { PLATFORMS, PLATFORM_CATEGORIES, PLATFORM_CONNECT, platformByKey } from './catalog';
+import { ConnectPlatformDrawer } from './ConnectPlatformDrawer';
 import { AwsSetup } from './AwsSetup';
 
 /**
@@ -65,7 +68,7 @@ export default function IntegrationsPage() {
   const connectedKeys = useMemo(() => new Set(connected.map((row) => row.key)), [connected]);
 
   const available = useMemo(
-    () => PLATFORMS.filter((platform) => !connectedKeys.has(platform.key)),
+    () => PLATFORMS.filter((platform) => PLATFORM_CONNECT[platform.key] && !connectedKeys.has(platform.key)),
     [connectedKeys],
   );
 
@@ -82,6 +85,9 @@ export default function IntegrationsPage() {
     }));
   }, [available]);
 
+  /* The connect / manage drawer for platforms other than AWS. Mounted only
+     while open, so each opening starts clean. */
+  const [drawer, setDrawer] = useState(null);
   const openSetup = (key) => setSearchParams({ configure: key });
   const closeSetup = () => setSearchParams({});
 
@@ -104,7 +110,7 @@ export default function IntegrationsPage() {
   }
 
   const loading = query.isLoading && !data;
-  const attention = connected.filter((row) => row.status !== 'connected').length;
+  const attention = connected.filter((row) => row.status === 'attention' || row.status === 'error').length;
 
   return (
     <div className="flex flex-col gap-6">
@@ -132,7 +138,7 @@ export default function IntegrationsPage() {
             value={connected.length}
             icon={Plug}
             tone="info"
-            caption={`${formatNumber(available.length)} more planned`}
+            caption={`${formatNumber(available.length)} more available`}
           />
           <MetricTile
             label="AWS accounts covered"
@@ -267,59 +273,51 @@ export default function IntegrationsPage() {
         ) : (
           <ul className="divide-y divide-line">
             {connected.map((row) => (
-              <ConnectedRow key={row.key} row={row} onConfigure={() => openSetup(row.key)} />
+              <ConnectedRow
+                key={row.key}
+                row={row}
+                onConfigure={() => openSetup(row.key)}
+                onManage={() => setDrawer({ platform: row.platform, mode: 'manage' })}
+              />
             ))}
           </ul>
         )}
       </Panel>
 
-      {/* Not a grid of Connect buttons: none of these connectors exists yet,
-          and a wall of buttons that all say "not available" reads as a sales
-          page. One folded list says what is planned and what each would add. */}
-      <Panel flush className="overflow-hidden">
-        <details className="group">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 hover:bg-surface-2">
-            <span className="min-w-0">
-              <span className="block text-[13.5px] font-semibold text-ink">
-                Planned connectors <span className="font-normal text-ink-3">({formatNumber(available.length)})</span>
-              </span>
-              <span className="mt-0.5 block text-[12px] text-ink-3">
-                Not built yet. Each would add to the screens named, and none is needed for the rest to work.
-              </span>
-            </span>
-            <ChevronDown aria-hidden="true" className="size-4 shrink-0 text-ink-3 transition-transform group-open:rotate-180" />
-          </summary>
-          <ul className="divide-y divide-line border-t border-line">
-            {availableByCategory.flatMap((group) =>
-              group.items.map((platform) => {
-                const CategoryIcon = group.meta?.icon ?? Cloud;
-                return (
-                  <li key={platform.key} className="flex flex-wrap items-start gap-3 px-4 py-3">
-                    <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-[var(--radius-control)] border border-line bg-surface-2 text-ink-3">
-                      <CategoryIcon aria-hidden="true" className="size-4" />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="flex flex-wrap items-center gap-2">
-                        <span className="text-[13px] font-semibold text-ink">{platform.name}</span>
-                        <span className="text-[11px] text-ink-3">{group.meta?.label ?? group.key}</span>
-                      </span>
-                      <span className="mt-0.5 block text-[12px] leading-relaxed text-ink-2">{platform.summary}</span>
-                    </span>
-                    <span className="flex flex-wrap items-center gap-1.5">
-                      <span className="text-[10.5px] text-ink-3">Would feed</span>
-                      {platform.provides.map((entry) => (
-                        <span key={entry.to} className="rounded-full bg-surface-3 px-2 py-0.5 text-[10.5px] text-ink-3">
-                          {entry.label}
-                        </span>
-                      ))}
-                    </span>
-                  </li>
-                );
-              }),
-            )}
-          </ul>
-        </details>
-      </Panel>
+      {available.length > 0 && (
+        <div className="flex flex-col gap-4">
+          <div>
+            <h2 className="text-[13.5px] font-semibold text-ink">Available</h2>
+            <p className="mt-0.5 text-[12px] text-ink-3">
+              Grouped by what they contribute. Each names the screens it adds to; none is needed for the rest
+              to work.
+            </p>
+          </div>
+          {availableByCategory.map((group) => (
+            <div key={group.key}>
+              <SectionLabel>{group.meta?.label ?? group.key}</SectionLabel>
+              <div className="mt-2 grid gap-3 @min-[40rem]:grid-cols-2 @min-[68rem]:grid-cols-3">
+                {group.items.map((platform) => (
+                  <AvailableCard
+                    key={platform.key}
+                    platform={platform}
+                    onConnect={() => setDrawer({ platform, mode: 'connect' })}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {drawer && (
+        <ConnectPlatformDrawer
+          platform={drawer.platform}
+          mode={drawer.mode}
+          onClose={() => setDrawer(null)}
+          onChanged={query.refetch}
+        />
+      )}
     </div>
   );
 }
@@ -328,6 +326,7 @@ const STATUS_META = {
   connected: { label: 'Collecting', tone: 'low', icon: CheckCircle2 },
   attention: { label: 'Partial coverage', tone: 'medium', icon: AlertTriangle },
   error: { label: 'Not collecting', tone: 'critical', icon: AlertTriangle },
+  syncing: { label: 'Awaiting first sync', tone: 'info', icon: CircleDashed },
 };
 
 /**
@@ -338,7 +337,7 @@ const STATUS_META = {
  * rather than here, so they say so and link to the screen that proves they are
  * working - rather than offering a button that would open an empty wizard.
  */
-function ConnectedRow({ row, onConfigure }) {
+function ConnectedRow({ row, onConfigure, onManage }) {
   const status = STATUS_META[row.status] ?? STATUS_META.connected;
   const StatusIcon = status.icon;
   const CategoryIcon = PLATFORM_CATEGORIES[row.platform.category]?.icon ?? Cloud;
@@ -364,7 +363,13 @@ function ConnectedRow({ row, onConfigure }) {
             </div>
             <p className="mt-1 text-[12px] leading-relaxed text-ink-2">{row.detail}</p>
             <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px] text-ink-3">
-              <span>Last read {formatRelative(row.lastSyncedAt)}</span>
+              {row.lastSyncedAt ? (
+                <span>Last read {formatRelative(row.lastSyncedAt)}</span>
+              ) : row.connectedAt ? (
+                <span title={formatDateTime(row.connectedAt)}>
+                  Connected {formatRelative(row.connectedAt)} by {row.connectedBy}
+                </span>
+              ) : null}
               {row.roleName && <span className="font-mono">{row.roleName}</span>}
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -386,6 +391,10 @@ function ConnectedRow({ row, onConfigure }) {
           <Button variant="secondary" size="sm" icon={Settings2} onClick={onConfigure}>
             Configure
           </Button>
+        ) : row.manageable ? (
+          <Button variant="secondary" size="sm" icon={Settings2} onClick={onManage}>
+            Manage
+          </Button>
         ) : (
           <div className="flex flex-col items-end gap-1">
             <Button
@@ -402,6 +411,45 @@ function ConnectedRow({ row, onConfigure }) {
         )}
       </div>
     </li>
+  );
+}
+
+/**
+ * One platform that can be connected. Connect opens its setup: what to grant
+ * on that platform, the fields it needs, and a connection test.
+ */
+function AvailableCard({ platform, onConnect }) {
+  const { lock } = useAccess();
+  const CategoryIcon = PLATFORM_CATEGORIES[platform.category]?.icon ?? Cloud;
+  return (
+    <div className="flex flex-col gap-2.5 rounded-[var(--radius-panel)] border border-line bg-surface p-3.5 transition-colors hover:border-line-strong">
+      <div className="flex items-center gap-2.5">
+        <span className="grid size-8 shrink-0 place-items-center rounded-[var(--radius-control)] border border-line bg-surface-2 text-ink-3">
+          <CategoryIcon aria-hidden="true" className="size-4" />
+        </span>
+        <p className="min-w-0 truncate text-[13px] font-semibold text-ink">{platform.name}</p>
+      </div>
+      <p className="flex-1 text-[12px] leading-relaxed text-ink-2">{platform.summary}</p>
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="text-[10.5px] text-ink-3">Feeds</span>
+        {platform.provides.map((entry) => (
+          <span key={entry.to} className="rounded-full bg-surface-3 px-2 py-0.5 text-[10.5px] text-ink-3">
+            {entry.label}
+          </span>
+        ))}
+      </div>
+      <Button
+        variant="secondary"
+        size="sm"
+        icon={Plus}
+        className="self-start"
+        locked={lock('integrations.manage')}
+        onClick={onConnect}
+        aria-label={`Connect ${platform.name}`}
+      >
+        Connect
+      </Button>
+    </div>
   );
 }
 

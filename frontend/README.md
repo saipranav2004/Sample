@@ -75,6 +75,10 @@ What each role may do is one table, `src/lib/roles.js`, shown as a matrix on **S
 
 **AWS connector.** Settings > Integrations > Amazon Web Services opens on per-account coverage and health, with Health (fixes to copy for failing checks), Activity (the connector's change log) and Setup reference (StackSet deployment, how data is collected, permissions, rules). Discovery runs every 24 hours; Run discovery now and Re-run checks need Admin or higher, while connecting or removing accounts and changing the template need Super admin. Only accounts connected from the console can be removed; removing one with discovered data needs the backend to delete its records.
 
+**Other connectors.** GitLab, Okta, Entra ID, Vault, Datadog, Splunk, Jira and ServiceNow each have a Connect flow with that platform's real fields and formats, a connection test and a Manage / Disconnect view (Super admin). In the demo the test is simulated and a connected platform stays "Awaiting first sync": no data reaches other screens until the backend connector exists. Secrets are never stored - only their last four characters, for display.
+
+**Scanner not responding.** If Exposed credentials says "The Secret Scanner is not responding", the proxy reached its timeout (15s in dev, nginx's 10s connect timeout in production) without an answer from `SCANNER_UPSTREAM`. That is the scanner service or the network path to it, not the dashboard key - a wrong key is rejected at once with a 401.
+
 Demo state (assignments, role changes, connected accounts, report runs) lives in `localStorage` under `dna.demo.*`, so it is per browser. Clearing site data resets it.
 
 ## Deploying it

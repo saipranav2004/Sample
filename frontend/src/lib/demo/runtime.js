@@ -217,4 +217,6 @@ export const OVERLAY_KEYS = {
   awsAccounts: 'dna.demo.awsAccounts',
   /* AWS connector: template settings, check runs, discovery runs, history. */
   awsConnector: 'dna.demo.awsConnector',
+  /* Other platforms connected from Integrations: settings and secret hints only. */
+  platforms: 'dna.demo.platformConnections',
 };

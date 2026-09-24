@@ -48,6 +48,20 @@ export default defineConfig(({ mode }) => {
           rewrite: (path) => path.replace(/^\/secret-scanner/, ''),
           configure: (proxy) => {
             proxy.on('proxyReq', (proxyReq) => {
+              /* Give up on a scanner that does not answer before the browser
+                 does (its client times out at 20s), so the page gets a real
+                 504 and this terminal says why. A timer of our own, because
+                 the proxy's timeout option only starts once a connection is
+                 open - and "cannot even connect" is the failure that needs
+                 catching. */
+              const timer = setTimeout(() => {
+                const error = new Error('no response within 15s');
+                error.code = 'ETIMEDOUT';
+                proxyReq.destroy(error);
+              }, 15_000);
+              proxyReq.on('response', () => clearTimeout(timer));
+              proxyReq.on('close', () => clearTimeout(timer));
+
               /* Set, not appended: a client-supplied header is replaced, so
                  nobody can reach the scanner through this proxy with a key of
                  their own choosing. Removed when no key is configured, for the
@@ -72,10 +86,24 @@ export default defineConfig(({ mode }) => {
                 );
               }
             });
-            proxy.on('error', (error, req) => {
+            proxy.on('error', (error, req, res) => {
+              const reason = error.code || error.message;
               console.error(
-                `[scanner proxy] ${req?.method} ${req?.url} could not reach ${scannerUpstream}: ${error.code || error.message}`,
+                `[scanner proxy] ${req?.method} ${req?.url} could not reach ${scannerUpstream}: ${reason}` +
+                  (/TIMEDOUT|ECONNRESET|socket hang up/i.test(reason)
+                    ? ' - the scanner did not answer. It is down or not reachable from this machine; the key is not the problem.'
+                    : ''),
               );
+              /* Answer the browser ourselves, as nginx does in production: a
+                 504 with the key-attached flag, so the screen can say which
+                 side failed. */
+              if (res && !res.headersSent && typeof res.writeHead === 'function') {
+                res.writeHead(504, {
+                  'Content-Type': 'application/json',
+                  'X-Scanner-Key-Attached': scannerKey ? 'yes' : 'no',
+                });
+                res.end(JSON.stringify({ error: 'SCANNER_UNREACHABLE', message: `The Secret Scanner did not respond (${reason}).` }));
+              }
             });
           },
         },

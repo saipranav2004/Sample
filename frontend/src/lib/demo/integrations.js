@@ -326,11 +326,76 @@ export const CONNECTED_PLATFORMS = [
   },
 ];
 
+/* ── Other platforms ─────────────────────────────────────────────────────── */
+
+/* The platforms the connect flow knows. Kept here as keys only - their forms
+   and rules live with the screen - so the data layer refuses anything else. */
+const CONNECTABLE = ['gitlab', 'okta', 'entra', 'vault', 'datadog', 'splunk', 'jira', 'servicenow'];
+
+function platformStore() {
+  const raw = readOverlay(OVERLAY_KEYS.platforms, {});
+  return raw && typeof raw === 'object' ? raw : {};
+}
+
+export function platformConnections() {
+  return platformStore();
+}
+
+/** Last four characters of a secret, for "which token is this" - never more. */
+function hint(value) {
+  const text = String(value ?? '');
+  return text.length <= 4 ? '••••' : `••••${text.slice(-4)}`;
+}
+
+/**
+ * Connect a platform. Settings are stored; secrets are not - only a hint of
+ * each, so the screen can say which token is in use. A real backend would
+ * keep the secret in its own store; this demo has nowhere safe to put one.
+ */
+export function connectPlatform({ key, config = {}, secrets = {}, display = '' }) {
+  const actor = assertCan('integrations.manage');
+  if (!CONNECTABLE.includes(key)) throw new Error('That platform cannot be connected here.');
+  const store = platformStore();
+  if (store[key]) throw new Error('That platform is already connected. Disconnect it first to change its settings.');
+  if (Object.values(secrets).some((value) => !String(value ?? '').trim())) throw new Error('Every secret field is required.');
+  store[key] = {
+    key,
+    config,
+    hints: Object.fromEntries(Object.entries(secrets).map(([field, value]) => [field, hint(value)])),
+    display: String(display).slice(0, 120),
+    connectedAt: new Date().toISOString(),
+    connectedBy: actor.name,
+  };
+  writeOverlay(OVERLAY_KEYS.platforms, store);
+  return store[key];
+}
+
+export function disconnectPlatform(key) {
+  assertCan('integrations.manage');
+  const store = platformStore();
+  if (!store[key]) throw new Error('That platform is not connected.');
+  const { [key]: removed, ...rest } = store;
+  writeOverlay(OVERLAY_KEYS.platforms, rest);
+  return removed;
+}
+
 export function connectorRows() {
   const covered = coveredAccounts().length;
   const total = organisationAccounts().length;
   const missing = uncoveredAccounts();
-  return CONNECTED_PLATFORMS.map((row) => ({
+  const platforms = Object.values(platformStore()).map((entry) => ({
+    key: entry.key,
+    /* Connected and tested, but nothing has been read yet: the sync that
+       would fill the screens it feeds needs the backend connector. */
+    status: 'syncing',
+    detail: `Connected to ${entry.display || entry.key}. Awaiting the first sync.`,
+    configurable: false,
+    manageable: true,
+    connectedAt: entry.connectedAt,
+    connectedBy: entry.connectedBy,
+    lastSyncedAt: null,
+  }));
+  return [...CONNECTED_PLATFORMS.map((row) => ({
     ...row,
     status: row.key === 'aws' ? (missing.length > 0 ? 'attention' : 'connected') : row.status,
     detail:
@@ -345,7 +410,7 @@ export function connectorRows() {
       row.key === 'aws'
         ? discoveryStatus().lastRunAt
         : new Date(ESTATE_META.NOW - intBetween(rng(hashSeed(row.key)), 4, 190) * 60_000).toISOString(),
-  }));
+  })), ...platforms];
 }
 
 function listNames(accounts) {

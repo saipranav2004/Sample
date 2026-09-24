@@ -32,7 +32,10 @@ import {
   accountChecks,
   accountCoverage,
   awsCheckResults,
+  connectPlatform as linkPlatform,
   connectorHistory,
+  disconnectPlatform as unlinkPlatform,
+  platformConnections,
   declinedGroups,
   discoveryStatus,
   lastVerifiedAt,
@@ -455,6 +458,19 @@ export function fetchIntegrations(signal) {
     },
     { signal, latency: [200, 380] },
   );
+}
+
+export function connectPlatform(input) {
+  return demoRequest(() => linkPlatform(input), { latency: [300, 500] });
+}
+
+export function disconnectPlatform(key) {
+  return demoRequest(() => unlinkPlatform(key), { latency: [300, 500] });
+}
+
+/** A connected platform's stored settings: config and secret hints, never secrets. */
+export function fetchPlatformConnection(key, signal) {
+  return demoRequest(() => platformConnections()[key] ?? null, { signal, latency: [150, 300] });
 }
 
 export function runDiscoveryNow() {
