@@ -54,11 +54,11 @@ export const REPORT_TEMPLATES = [
     id: 'executive-summary',
     name: 'Executive summary',
     audience: 'Leadership',
-    purpose: 'The posture signals, the alerts that matter most, and what needs a decision.',
+    purpose: 'The risk signals, the alerts that matter most, and what needs a decision.',
     cadenceHint: 'monthly',
     formats: ['pdf'],
     sections: [
-      { key: 'posture', title: 'Posture signals' },
+      { key: 'posture', title: 'Risk signals' },
       { key: 'top-risks', title: 'Top risks in the alert queue' },
       { key: 'movement', title: 'What changed this week' },
       { key: 'asks', title: 'Decisions waiting on leadership' },
@@ -633,7 +633,7 @@ function measuresFor(key) {
 function sectionNote(key) {
   switch (key) {
     case 'posture':
-      return 'The same four signals, with the same counts, as the Posture overview.';
+      return 'The same four signals, with the same counts, as the Dashboard.';
     case 'top-risks':
       return 'Read from the alert queue: open Critical and High alerts, and the identities and accounts they name.';
     case 'by-tier':

@@ -58,20 +58,22 @@ Environment variables:
 
 ## Demo accounts and roles
 
-Until the backend exists, sign-in, users and roles run in the browser (`src/lib/demo/users.js`). The seeded accounts use the password `admin@123` and sign in with their username or email. People invited from the Users page choose their own password instead.
+Until the backend exists, sign-in, users and roles run in the browser (`src/lib/demo/users.js`). People are identified by username and full name only - no email is stored or shown. The seeded accounts use the password `admin@123`; people invited from User management choose their own password instead. **Download sign-ins** on that screen (all users, or one row) writes these details to a text file.
 
-| Username | Email | Role | State |
+| Username | Full name | Role | State |
 |---|---|---|---|
-| `cirm@admin` | `das.admin@gmail.com` | Super admin | Active |
-| `marcus.oyelaran` | `marcus.oyelaran@example.com` | Admin | Active |
-| `helena.brandt` | `helena.brandt@example.com` | Analyst | Active |
-| `sofia.marchetti` | `sofia.marchetti@example.com` | Viewer | Active |
-| `priya.raghavan` | `priya.raghavan@example.com` | Analyst | Invited, link expired (use Resend) |
-| `liam.donnelly` | `liam.donnelly@example.com` | Analyst | Deactivated (sign-in refused) |
+| `cirm@admin` | Admin | Super admin | Active |
+| `rahul.sharma` | Rahul Sharma | Admin | Active |
+| `kavya.reddy` | Kavya Reddy | Analyst | Active |
+| `sneha.kulkarni` | Sneha Kulkarni | Viewer | Active |
+| `priya.raghavan` | Priya Raghavan | Analyst | Invited, link expired (use Resend) |
+| `karthik.rao` | Karthik Rao | Analyst | Deactivated (sign-in refused) |
 
-**Invitations.** Invite user creates a one-time link (`/accept-invite?token=...`, valid 72 hours) that is shown once, to copy and send - there is no mail service yet. The invitee opens it, chooses a password (stored salted and SHA-256 hashed, never in plain text) and is signed in. Resend issues a new link and retires the old one; Withdraw and deactivation kill it. An expired, used, replaced, withdrawn or unknown link each gets its own message. In the demo a link only works in the browser that created it. The backend needs three calls to replace this: create invite, look up a token, accept.
+`das.admin@gmail.com` still signs in as Admin, as a hidden legacy alias; it is not displayed anywhere.
 
-What each role may do is one table, `src/lib/roles.js`, shown as a matrix on **Settings > Users & roles**. The screens read it to lock controls (`useAccess`, `<Button locked>`), and the demo data layer reads it to refuse the same requests. **A check in the browser is not security: the backend must enforce this table on the server.**
+**Invitations.** Invite user takes a full name and a username (suggested from the name) and creates a one-time link (`/accept-invite?token=...`, valid 72 hours) that is shown once, to copy and send - there is no mail service yet. The invitee opens it, chooses a password (stored salted and SHA-256 hashed, never in plain text) and is signed in. Resend issues a new link and retires the old one; Withdraw and deactivation kill it. An expired, used, replaced, withdrawn or unknown link each gets its own message. In the demo a link only works in the browser that created it. The backend needs three calls to replace this: create invite, look up a token, accept.
+
+What each role may do is one table, `src/lib/roles.js`, shown as a matrix on **User management** (account menu, super admin only). The screens read it to lock controls (`useAccess`, `<Button locked>`), and the demo data layer reads it to refuse the same requests. **A check in the browser is not security: the backend must enforce this table on the server.**
 
 **AWS connector.** Settings > Integrations > Amazon Web Services opens on per-account coverage and health, with Health (fixes to copy for failing checks), Activity (the connector's change log) and Setup reference (StackSet deployment, how data is collected, permissions, rules). Discovery runs every 24 hours; Run discovery now and Re-run checks need Admin or higher, while connecting or removing accounts and changing the template need Super admin. Only accounts connected from the console can be removed; removing one with discovered data needs the backend to delete its records.
 
@@ -155,28 +157,40 @@ pairs a persistent facet rail with the record surface.
 
 Grouped by the question an operator is answering, not by the API surface.
 
-| Route | Screen | Reads |
+| Route | Screen | Data |
 |---|---|---|
-| `/posture` | Posture - exposure signals, classification mix, credential surface, scan trend, activity, code exposure | `dashboard/summary`, `scans`, `events`, `findings` |
-| `/identities` | Identity explorer + record drawer (overview, credentials, service access, consumers, activity) | `identities`, `identities/lineage`, `identities/consumers`, `events` |
-| `/credentials` | Flattened credential register | `credentials` |
-| `/secrets` | Secret-backed identities | `secrets` |
-| `/exposure` | Code exposure triage, per-finding and grouped by push | `findings`, `POST allowlist` |
-| `/exposure/dismissed` | Allowlist review and restore | `GET allowlist`, `DELETE allowlist` |
-| `/activity` | CloudTrail events | `events` |
-| `/scans` | Scan history and global scope selection | `scans` |
-| `/my-resources` | Owner-scoped inventory | `dashboard/my-resources` |
+| `/overview` | Dashboard - exposure signals, classification mix, credential surface, discovery trend, activity, code exposure | demo estate, Secret Scanner |
+| `/posture`, `/posture/:id` | Posture (ISPM) - fleet score and trend, distribution, quick wins, pillars, per-identity checks, score impact, remediation, history | demo estate, access graph, genome, alerts |
+| `/alerts` | Alert queue, as a list or grouped by identity | demo estate, Secret Scanner |
+| `/identities` | Identity explorer + record drawer | demo estate |
+| `/credentials` | Credential register | demo estate |
+| `/exposure`, `/exposure/dismissed` | Exposed credentials and the accepted (allowlisted) set | Secret Scanner (live) |
+| `/access-graph`, `/access-graph/:id` | Access graph and blast radius | demo graph |
+| `/genome`, `/genome/:id` | NHI Genome - behavioural baselines and anomalies | demo genome |
+| `/activity` | CloudTrail events | demo estate |
+| `/reports`, `/reports/:id` | Reports and schedules | demo reports |
+| `/integrations` | Connectors, AWS coverage and health | demo connector state |
+| `/users` | User management (super admin) | demo users |
 
-Every screen is scoped to one discovery scan, chosen once in the top bar. An
-empty selection tracks the latest completed scan, which is the API's own
-default.
+The sidebar groups open and close on click (not hover); the group holding the current page always opens, and the rest remember how they were left.
+
+## Posture (ISPM)
+
+Every identity is scored out of 100 against 14 checks in six pillars - Least privilege, Credential hygiene, Trust & access, Escalation, Exposure, Lifecycle (`src/lib/demo/posture.js`, vocabulary in `src/lib/posture.js`). A failed check costs 25 / 15 / 8 / 3 points for Critical / High / Medium / Low. Bands: Healthy 80+, Fair 60-79, Poor 40-59, Critical below 40; grades A-B are Healthy, C Fair, D Poor, F Critical. Where a check has a published equivalent it names the CIS AWS Foundations requirement and AWS Security Hub control (IAM.1, IAM.2, IAM.3, IAM.5, IAM.22).
+
+The checks read the same records the other screens show - policies, MFA, key age, expiry, owner, last activity, the access graph's escalation edges and the genome's open anomalies - so a failed check always matches another screen. History is derived from when each condition began and when it was fixed, so the trend and the change log agree.
+
+**Remediate** (Admin or higher) shows the score before and after, what the fix does, what it can break, and the exact IAM policy and AWS CLI commands. Applying it passes the check at once (the score goes up as risk goes down), records who applied it, and resolves the matching open alerts - and genome anomalies - through the Alerts action path with a note. In the demo nothing is sent to AWS; a real implementation needs a write-capable role, which the read-only discovery role deliberately is not.
+
+Every screen reads the latest completed discovery run. The scan picker is out
+of this build: with one run behind the screens it would have nothing to do.
 
 ## Structure
 
 ```
 src/
   app/        providers (auth, theme, scan scope), route table, auth gate
-  shell/      navigation rail, top bar, scan switcher, command palette, page header
+  shell/      navigation rail, top bar, command palette, page header
   features/   one folder per screen; drawers live beside the screen that opens them
   ui/         design system - controls, panels, grid, overlays, states, skeletons
   charts/     chart components (the only place recharts is imported)

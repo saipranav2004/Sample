@@ -29,6 +29,8 @@ export function TrendChart({
       three measures at the same scan. */
   syncId,
   valueFormatter = formatNumber,
+  /** Y-axis range; recharts' automatic range when omitted. */
+  yDomain,
   className,
 }) {
   const gradientId = `trend-${dataKey}`;
@@ -60,6 +62,8 @@ export function TrendChart({
             tickLine={false}
             axisLine={false}
             width={38}
+            domain={yDomain ?? ['auto', 'auto']}
+            allowDecimals={false}
             tickFormatter={(value) => formatNumber(value)}
           />
           <Tooltip

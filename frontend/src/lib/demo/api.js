@@ -542,6 +542,25 @@ export async function updateAlerts(input) {
   return demoRequest(() => ({ changed: alerts.applyAlertAction(input) }), { latency: [180, 320] });
 }
 
+/* ── Posture ──────────────────────────────────────────────────────────────── */
+
+/* Loaded on demand, like alerts: posture reads the access graph and the
+   genome model, which no other first screen needs. */
+export async function fetchPostureOverview(query, signal) {
+  const posture = await import('./posture');
+  return posture.fetchPostureOverview(query, signal);
+}
+
+export async function fetchPostureIdentity(id, signal) {
+  const posture = await import('./posture');
+  return posture.fetchPostureIdentity(id, signal);
+}
+
+export async function remediatePosture(input) {
+  const posture = await import('./posture');
+  return posture.remediatePosture(input);
+}
+
 /* ── Users ────────────────────────────────────────────────────────────────── */
 
 /** The console's users, as `GET /api/users` would return them. Super admin only. */

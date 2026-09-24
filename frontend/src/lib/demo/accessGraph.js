@@ -41,7 +41,8 @@ import { demoRequest, hashSeed, intBetween, pick, rng, sample } from './runtime'
  * There is no graph endpoint. The nodes, edges and blast radii here are
  * generated in the browser, deterministically, under the same suspension
  * `lib/demo/runtime.js` documents for the other two features - and contained
- * the same way: nothing outside `features/access` imports this module.
+ * the same way: only `features/access` and the Posture scoring in
+ * `lib/demo/posture.js` read it.
  *
  * It deliberately speaks the live vocabulary rather than one of its own. The
  * identity classifications are `CLASSIFICATIONS` from `lib/domain`, the
@@ -1696,4 +1697,32 @@ export function preventionDocument(escalationKey, identity) {
     null,
     2,
   ).concat(identity ? `\n\n/* Attach as a permission boundary on ${identity} */` : '');
+}
+
+/**
+ * Every escalation edge in the graph, by the identity that holds it. Posture
+ * scores an identity on these, so they are read from the same graph the
+ * Access graph screen draws rather than derived a second time.
+ */
+export function escalationsByIdentity() {
+  const graph = buildGraph();
+  const out = new Map();
+  for (const edge of graph.edges) {
+    if (edge.kind !== 'ESCALATES_TO') continue;
+    const target = graph.byId.get(edge.to);
+    const list = out.get(edge.from) ?? [];
+    list.push({
+      method: escalationById(edge.method),
+      targetId: edge.to,
+      targetName: target?.name ?? edge.to,
+      targetIsAdmin: Boolean(target?.isAdmin),
+    });
+    out.set(edge.from, list);
+  }
+  return out;
+}
+
+/** The identities the graph holds - it is built over a budget, not the whole estate. */
+export function graphIdentityIds() {
+  return new Set(buildGraph().nodes.filter((node) => node.kind === 'identity').map((node) => node.id));
 }

@@ -51,7 +51,7 @@ export function evaluatePosture(identity) {
         ? { state: 'na', label: 'Never active' }
         : age > 90
           ? { state: 'fail', label: `Stale ${formatNumber(age)} days` }
-          : age > 30
+          : age > 45
             ? { state: 'warn', label: `Dormant ${formatNumber(age)} days` }
             : { state: 'pass', label: 'Recently active' },
 
@@ -172,7 +172,7 @@ export function ActivityCell({ identity, maxEvents }) {
   const events = Number(identity.total_events) || 0;
   const share = maxEvents > 0 ? Math.max(2, (events / maxEvents) * 100) : 0;
   const age = daysSince(identity.last_active);
-  const tone = age === null ? 'bg-line-strong' : age > 90 ? 'bg-high' : age > 30 ? 'bg-medium' : 'bg-brand';
+  const tone = age === null ? 'bg-line-strong' : age > 90 ? 'bg-high' : age > 45 ? 'bg-medium' : 'bg-brand';
 
   return (
     <span

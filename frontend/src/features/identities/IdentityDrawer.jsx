@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Activity,
   ArrowLeftRight,
@@ -189,12 +190,21 @@ export function IdentityDrawer({ identity, open, onClose }) {
           </div>
 
           <div>
-            <SectionLabel>Posture checks</SectionLabel>
+            <SectionLabel>Status checks</SectionLabel>
             <div className="mt-1">
               <StatusBreakdown identity={identity} />
             </div>
             <p className="mt-2 text-[11.5px] leading-relaxed text-ink-3">
-              The five checks behind this record's status. No score is derived from them.
+              The five checks behind this record's status.
+              {identity.id && (
+                <>
+                  {' '}The full scored evaluation, with fixes, is on{' '}
+                  <Link to={`/posture/${encodeURIComponent(identity.id)}`} className="font-medium text-brand hover:underline">
+                    Posture
+                  </Link>
+                  .
+                </>
+              )}
             </p>
           </div>
 

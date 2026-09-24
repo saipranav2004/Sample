@@ -249,6 +249,7 @@ function credentialAlerts() {
       account: credential.account_name,
       ownerName: identity?.owner_name ?? null,
       identityId: identity?.id ?? null,
+      credentialType: credential.type,
     };
 
     if (credential.severity === 'CRITICAL') {

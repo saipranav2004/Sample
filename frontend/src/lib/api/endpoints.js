@@ -68,6 +68,12 @@ export const acceptInvite = (input) => demo.acceptInvite(input);
 export const fetchAlerts = (signal) => demo.fetchAlerts(signal);
 export const updateAlerts = (input) => demo.updateAlerts(input);
 
+/* ── Posture ─────────────────────────────────────────────────────────────── */
+
+export const fetchPostureOverview = (query, signal) => demo.fetchPostureOverview(query, signal);
+export const fetchPostureIdentity = (id, signal) => demo.fetchPostureIdentity(id, signal);
+export const remediatePosture = (input) => demo.remediatePosture(input);
+
 /* ── Exact counts ────────────────────────────────────────────────────────── */
 
 export const countIdentities = (query, signal) => demo.countIdentities(query, signal);

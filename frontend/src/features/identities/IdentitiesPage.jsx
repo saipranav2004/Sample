@@ -200,7 +200,7 @@ export default function IdentitiesPage() {
       },
       {
         key: 'posture',
-        label: 'Posture',
+        label: 'Risk signals',
         options: FACETS.map((facet) => ({
           value: facet.param,
           label: facet.label,

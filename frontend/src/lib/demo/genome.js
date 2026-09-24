@@ -76,6 +76,14 @@ const SENSITIVE_APIS = [
   'kms:ScheduleKeyDeletion', 'organizations:InviteAccountToOrganization',
 ];
 
+/* Calls that can actually widen access - the IAM privilege-escalation
+   primitives. Destructive calls such as kms:ScheduleKeyDeletion are sensitive
+   but grant nothing, so they are never reported as an escalation. */
+const ESCALATION_APIS = [
+  'iam:PassRole', 'iam:CreateAccessKey', 'iam:AttachRolePolicy', 'iam:CreatePolicyVersion',
+  'iam:UpdateAssumeRolePolicy', 'iam:PutUserPolicy',
+];
+
 const RESOURCE_KINDS = ['S3 bucket', 'DynamoDB table', 'Secrets Manager', 'KMS key', 'SQS queue'];
 
 /* ── Generation ───────────────────────────────────────────────────────────── */
@@ -227,18 +235,22 @@ function buildActions(next) {
     .sort((a, b) => b.share - a.share);
 }
 
+/* A resource's kind follows from its name, in the order of RESOURCE_KINDS. */
+const RESOURCE_PREFIXES = ['s3://', 'dynamodb/', 'secret/', 'kms/', 'sqs/'];
+
 function buildResources(next, name) {
   const count = intBetween(next, 3, 5);
-  const out = [];
+  const out = new Map();
   for (let index = 0; index < count; index += 1) {
-    out.push({
-      resource: `${pick(next, ['s3://', 'dynamodb/', 'secret/', 'kms/', 'sqs/'])}${name}-${pick(next, ['prod', 'audit', 'events', 'store', 'cache'])}`,
-      kind: pick(next, RESOURCE_KINDS),
-      accesses: intBetween(next, 180, 19000),
-      isNew: false,
-    });
+    const prefix = pick(next, RESOURCE_PREFIXES);
+    const resource = `${prefix}${name}-${pick(next, ['prod', 'audit', 'events', 'store', 'cache'])}`;
+    /* The draw stays so every later value in the seeded sequence is unchanged. */
+    pick(next, RESOURCE_KINDS);
+    const accesses = intBetween(next, 180, 19000);
+    if (out.has(resource)) continue;
+    out.set(resource, { resource, kind: RESOURCE_KINDS[RESOURCE_PREFIXES.indexOf(prefix)], accesses, isNew: false });
   }
-  return out.sort((a, b) => b.accesses - a.accesses);
+  return [...out.values()].sort((a, b) => b.accesses - a.accesses);
 }
 
 /** 7 days x 24 hours of relative activity, 0-3. Weekday daytime is the norm. */
@@ -332,7 +344,8 @@ function buildAnomalies(next, identity) {
        any future real endpoint speak the same vocabulary as this generator. */
     const severity =
       confidence >= 95 ? 'CRITICAL' : confidence >= 88 ? 'HIGH' : confidence >= 79 ? 'MEDIUM' : 'LOW';
-    const api = type === 'PRIV_ESCALATION' || type === 'NEW_API' ? pick(next, SENSITIVE_APIS) : pick(next, APIS);
+    const api =
+      type === 'PRIV_ESCALATION' ? pick(next, ESCALATION_APIS) : type === 'NEW_API' ? pick(next, SENSITIVE_APIS) : pick(next, APIS);
     const minutesAgo = intBetween(next, 4, 2600);
     /* Drawn once, and never the identity's own region: a new-region anomaly
        reading `us-east-1 -> us-east-1` says the detector cannot tell the two
@@ -393,7 +406,10 @@ function baselineStatement(type, identity) {
 function observedStatement(next, type, identity, api, region) {
   switch (type) {
     case 'NEW_API':
-      return { headline: 'First occurrence', detail: `${intBetween(next, 1, 6)} calls to ${api}` };
+    {
+      const calls = intBetween(next, 1, 6);
+      return { headline: 'First occurrence', detail: `${calls} ${calls === 1 ? 'call' : 'calls'} to ${api}` };
+    }
     case 'NEW_RESOURCE':
       return { headline: 'First access', detail: `1 access to ${identity.typicalResources[0]?.resource}` };
     case 'NEW_REGION':
@@ -408,7 +424,10 @@ function observedStatement(next, type, identity, api, region) {
     case 'NEW_IP':
       return { headline: `203.0.113.${intBetween(next, 2, 250)}`, detail: 'Outside every baseline range' };
     case 'PRIV_ESCALATION':
-      return { headline: api, detail: `${intBetween(next, 1, 4)} calls that can widen access` };
+    {
+      const calls = intBetween(next, 1, 4);
+      return { headline: api, detail: `${calls} ${calls === 1 ? 'call' : 'calls'} that can widen access` };
+    }
     default:
       return { headline: 'Activity resumed', detail: `After ${intBetween(next, 45, 210)} quiet days` };
   }

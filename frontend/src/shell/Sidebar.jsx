@@ -75,7 +75,13 @@ export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseMobile
      do nothing on touch screens and are hard to reach by keyboard. The group
      holding the current screen is always opened when you arrive on it, and
      the rest remember how you left them. */
-  const [openGroups, setOpenGroups] = useState(() => readOpenGroups() ?? new Set(activeGroup ? [activeGroup] : []));
+  const [openGroups, setOpenGroups] = useState(() => {
+    /* The remembered groups, plus the one holding the page loaded - a
+       reload or a deep link lands with its own group open too. */
+    const remembered = readOpenGroups() ?? new Set();
+    if (activeGroup) remembered.add(activeGroup);
+    return remembered;
+  });
   const [lastActive, setLastActive] = useState(activeGroup);
   if (activeGroup !== lastActive) {
     setLastActive(activeGroup);

@@ -445,6 +445,14 @@ export function resendInvite(id) {
 /* ── Administration ───────────────────────────────────────────────────────── */
 
 /** Usernames: lowercase, starting with a letter, like `kavya.reddy`. */
+function activeSuperAdmins(rows) {
+  return rows.filter((row) => row.role === 'super_admin' && row.status !== 'deactivated');
+}
+
+function log(store, actor, text) {
+  store.activity = [{ at: new Date().toISOString(), actor: actor.name, text }, ...store.activity].slice(0, 50);
+}
+
 export const USERNAME = /^[a-z][a-z0-9._-]{2,31}$/;
 
 /**

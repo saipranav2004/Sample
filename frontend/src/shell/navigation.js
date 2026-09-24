@@ -10,6 +10,7 @@ import {
   // History, - reinstate with the Scans nav item
   KeyRound,
   Plug,
+  ShieldCheck,
   ShieldOff,
 } from 'lucide-react';
 
@@ -17,18 +18,19 @@ import {
  * Information architecture.
  *
  * Grouped by the question an operator is answering, not by the API surface:
- * "how exposed am I" (Posture), "what exists" (Inventory), "what leaked"
+ * "how exposed am I" (Overview), "what exists" (Inventory), "what leaked"
  * (Credential exposure), how it behaves (Behaviour), "what happened"
  * (Operations).
  */
 export const NAV_GROUPS = [
   {
     key: 'overview',
-    label: 'Posture',
-    /* Alerts sits beside the overview: the overview says how exposed the
-       estate is, and the alert queue is what somebody does about it. */
+    label: 'Overview',
+    /* The dashboard says what the estate holds, Posture scores how exposed
+       each identity is, and the alert queue is what somebody does about it. */
     items: [
-      { to: '/posture', label: 'Overview', icon: Gauge, end: true },
+      { to: '/overview', label: 'Dashboard', icon: Gauge, end: true },
+      { to: '/posture', label: 'Posture', icon: ShieldCheck },
       { to: '/alerts', label: 'Alerts', icon: BellRing },
     ],
   },
@@ -96,7 +98,7 @@ export function navGroupsFor(can) {
 }
 
 export const ALL_NAV_ITEMS = NAV_GROUPS.flatMap((group) =>
-  group.items.map((item) => ({ ...item, group: group.label || 'Posture' })),
+  group.items.map((item) => ({ ...item, group: group.label || 'Overview' })),
 );
 
 /**
@@ -105,8 +107,9 @@ export const ALL_NAV_ITEMS = NAV_GROUPS.flatMap((group) =>
  * path so the labels match the navigation exactly.
  */
 export const BREADCRUMBS = {
-  '/posture': ['Posture'],
-  '/alerts': ['Posture', 'Alerts'],
+  '/overview': ['Overview', 'Dashboard'],
+  '/posture': ['Overview', 'Posture'],
+  '/alerts': ['Overview', 'Alerts'],
   '/identities': ['Inventory', 'Identities'],
   '/credentials': ['Inventory', 'Credentials'],
   '/exposure': ['Credential exposure', 'Exposed credentials'],
@@ -125,6 +128,7 @@ export const BREADCRUMBS = {
  * table misses, so a record screen still says where it sits.
  */
 export const BREADCRUMB_PREFIXES = [
+  { prefix: '/posture/', trail: ['Overview', 'Posture', 'Identity'] },
   { prefix: '/access-graph/', trail: ['Access', 'Access graph', 'Identity'] },
   { prefix: '/genome/', trail: ['Behaviour', 'NHI Genome', 'Identity'] },
   { prefix: '/reports/', trail: ['Operations', 'Reports', 'Run'] },

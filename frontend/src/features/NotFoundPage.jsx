@@ -12,7 +12,7 @@ export default function NotFoundPage() {
         title="That screen does not exist"
         description="The address you followed is not part of the console. It may have been renamed in a newer version."
         action={
-          <Button as={Link} to="/posture" variant="primary" size="sm">
+          <Button as={Link} to="/overview" variant="primary" size="sm">
             Go to posture
           </Button>
         }

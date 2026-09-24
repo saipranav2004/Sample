@@ -65,6 +65,8 @@ export const PERMISSIONS = [
   { key: 'exposure.deepScan', group: 'Credential exposure', label: 'Request a deep scan of a repository', roles: ['super_admin', 'admin', 'analyst'] },
   { key: 'exposure.review', group: 'Credential exposure', label: 'Accept a finding as reviewed, or restore it', roles: ['super_admin', 'admin'] },
 
+  { key: 'posture.remediate', group: 'Posture', label: 'Apply a remediation to an identity', roles: ['super_admin', 'admin'] },
+
   { key: 'reports.generate', group: 'Reports', label: 'Generate a report', roles: ['super_admin', 'admin', 'analyst'] },
   { key: 'reports.schedule', group: 'Reports', label: 'Create, pause and delete schedules, and delete past runs', roles: ['super_admin', 'admin'] },
 

@@ -54,7 +54,7 @@ export function TopBar({ onOpenNav, onOpenCommand }) {
       </button>
 
       <Link
-        to="/posture"
+        to="/overview"
         aria-label="Deep Algorithms - go to posture overview"
         className="shrink-0 rounded px-1"
       >
