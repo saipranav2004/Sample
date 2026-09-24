@@ -32,7 +32,7 @@ import { applyTriage, isOpen } from '../alerts';
 import { actorTypeMeta, credentialKindMeta } from '../domain';
 import { estate, ESTATE_META, OPERATOR } from './estate';
 import { genomeAnomalies, genomeFleet, setAnomalyStatus } from './genome';
-import { AWS_VERIFIED_AT, awsCheckResults } from './integrations';
+import { awsCheckResults, discoveryRuns, lastVerifiedAt } from './integrations';
 import { hashSeed, intBetween, OVERLAY_KEYS, readOverlay, rng, writeOverlay } from './runtime';
 import { assertCan, directory } from './users';
 
@@ -114,14 +114,6 @@ function routeTo(ownerName) {
 /* ── When ─────────────────────────────────────────────────────────────────── */
 
 /** The fourteen daily discovery runs, oldest first - the same as the scan history. */
-function discoveryRuns() {
-  const runs = [];
-  for (let back = 13; back >= 0; back -= 1) {
-    /* Alerts are raised part-way through a run, never before it started. */
-    runs.push(ESTATE_META.NOW - back * DAY - 27 * MINUTE + 18 * MINUTE);
-  }
-  return runs;
-}
 
 function raisedAt(conditionAt) {
   const at = Date.parse(conditionAt);
@@ -371,7 +363,7 @@ function connectorAlerts() {
         key === 'organisation'
           ? 'Grant the organisation read permissions in a delegated administrator account.'
           : key === 'accounts'
-            ? 'Deploy the discovery role to the account - the Deploy tab has the StackSet commands.'
+            ? 'Connect the account from Integrations > Amazon Web Services > Accounts, or add its OU to the StackSet targets.'
             : 'Turn on a multi-region organisation trail.',
       evidence: [{ label: 'Check result', value: result.note }],
       entity: {
@@ -383,7 +375,7 @@ function connectorAlerts() {
       },
       account: null,
       ownerName: null,
-      verifiedAt: AWS_VERIFIED_AT,
+      verifiedAt: lastVerifiedAt(),
     }));
 }
 

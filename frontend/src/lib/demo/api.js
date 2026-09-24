@@ -27,11 +27,19 @@ import { estate, ESTATE_META, OPERATOR } from './estate';
 import * as users from './users';
 import { currentUserRow, sessionUser, verifySignIn } from './users';
 import {
-  AWS_VERIFIED_AT,
   CONSOLE_ACCOUNT_ID,
   TENANT_EXTERNAL_ID,
+  accountChecks,
   accountCoverage,
   awsCheckResults,
+  connectorHistory,
+  declinedGroups,
+  discoveryStatus,
+  lastVerifiedAt,
+  removeAwsAccount as removeAccount,
+  runDiscoveryNow as startDiscovery,
+  runHealthChecks as rerunChecks,
+  setGroupDeclined as setDeclined,
   connectAwsAccount as connectAccount,
   connectorRows,
   coveredAccounts,
@@ -438,12 +446,31 @@ export function fetchIntegrations(signal) {
           accountsConnected: coveredAccounts().length,
           unconnected: uncoveredAccounts().map((account) => ({ id: account.id, name: account.name })),
         },
-        accounts: accountCoverage(),
+        accounts: accountCoverage().map((account) => ({ ...account, checks: accountChecks(account) })),
+        discovery: discoveryStatus(),
+        template: { declined: declinedGroups() },
+        history: connectorHistory(),
         rows: connectorRows(),
       };
     },
     { signal, latency: [200, 380] },
   );
+}
+
+export function runDiscoveryNow() {
+  return demoRequest(() => startDiscovery(), { latency: [300, 500] });
+}
+
+export function runHealthChecks() {
+  return demoRequest(() => rerunChecks(), { latency: [1200, 1800] });
+}
+
+export function setTemplateGroup({ key, declined, label }) {
+  return demoRequest(() => setDeclined(key, declined, label), { latency: [200, 350] });
+}
+
+export function removeAwsAccount(accountId) {
+  return demoRequest(() => removeAccount(accountId), { latency: [400, 700] });
 }
 
 export function connectAwsAccount(input) {
@@ -463,7 +490,7 @@ export function fetchIntegrationHealth(platformKey, signal) {
           unverified: true,
         };
       }
-      return { platform: 'aws', verifiedAt: AWS_VERIFIED_AT, unverified: false, checks: awsCheckResults() };
+      return { platform: 'aws', verifiedAt: lastVerifiedAt(), unverified: false, checks: awsCheckResults() };
     },
     { signal, latency: [260, 520] },
   );

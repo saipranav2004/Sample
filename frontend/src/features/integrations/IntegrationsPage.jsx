@@ -4,25 +4,23 @@ import {
   AlertTriangle,
   ArrowRight,
   CheckCircle2,
+  ChevronDown,
   Cloud,
   ExternalLink,
   Plug,
-  Plus,
   RotateCw,
   Settings2,
 } from 'lucide-react';
 import { fetchIntegrations } from '../../lib/api/endpoints';
-import { useQuery } from '../../lib/hooks';
-import { formatNumber, formatRelative } from '../../lib/format';
+import { useDemoQuery } from '../../lib/demo/useDemoQuery';
+import { formatDateTime, formatNumber, formatRelative } from '../../lib/format';
 import { PageHeader } from '../../shell/PageHeader';
-import { useAccess } from '../../app/useAccess';
 import { Button } from '../../ui/Button';
 import { Panel, PanelHeader, SectionLabel } from '../../ui/Panel';
 import { ListSkeleton, StatStripSkeleton } from '../../ui/Skeleton';
 import { MetricTile } from '../../ui/Stat';
 import { ErrorState } from '../../ui/States';
 import { Tag } from '../../ui/Tag';
-import { useToast } from '../../ui/Toast';
 import { PLATFORMS, PLATFORM_CATEGORIES, platformByKey } from './catalog';
 import { AwsSetup } from './AwsSetup';
 
@@ -52,7 +50,9 @@ import { AwsSetup } from './AwsSetup';
 export default function IntegrationsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const configuring = searchParams.get('configure') || '';
-  const query = useQuery((signal) => fetchIntegrations(signal), []);
+  /* The demo query, so a discovery run finishing, an account being connected
+     or a template change made on the setup screen refreshes this too. */
+  const query = useDemoQuery((signal) => fetchIntegrations(signal), []);
   const data = query.data;
 
   const connected = useMemo(() => {
@@ -132,7 +132,7 @@ export default function IntegrationsPage() {
             value={connected.length}
             icon={Plug}
             tone="info"
-            caption={`${formatNumber(available.length)} more this console can read`}
+            caption={`${formatNumber(available.length)} more planned`}
           />
           <MetricTile
             label="AWS accounts covered"
@@ -211,6 +211,23 @@ export default function IntegrationsPage() {
               </div>
             </div>
 
+            {data.discovery && (
+              <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-ink-3">
+                <RotateCw aria-hidden="true" className="size-3.5" />
+                {data.discovery.running ? (
+                  <span className="font-medium text-ink-2">Discovery running now</span>
+                ) : (
+                  <span title={formatDateTime(data.discovery.lastRunAt)}>
+                    Last discovery {formatRelative(data.discovery.lastRunAt)}
+                  </span>
+                )}
+                <span aria-hidden="true">·</span>
+                <span title={formatDateTime(data.discovery.nextRunAt)}>Next {formatRelative(data.discovery.nextRunAt)}</span>
+                <span aria-hidden="true">·</span>
+                <span>Every 24 hours</span>
+              </p>
+            )}
+
             {data.coverage.unconnected.length > 0 && (
               <div className="mt-3 flex flex-wrap items-center gap-2 rounded-[var(--radius-control)] border border-medium/40 bg-medium-soft px-3.5 py-2.5">
                 <AlertTriangle aria-hidden="true" className="size-4 shrink-0 text-medium" />
@@ -226,7 +243,7 @@ export default function IntegrationsPage() {
                   iconRight={ArrowRight}
                   onClick={() => openSetup('aws')}
                 >
-                  Deploy the role
+                  Connect it
                 </Button>
               </div>
             )}
@@ -256,26 +273,53 @@ export default function IntegrationsPage() {
         )}
       </Panel>
 
-      <div className="flex flex-col gap-4">
-        <div>
-          <h2 className="text-[13.5px] font-semibold text-ink">Available</h2>
-          <p className="mt-0.5 text-[12px] text-ink-3">
-            Grouped by what they contribute rather than by vendor. None is required; each one
-            states which screen it improves and what that screen cannot say without it.
-          </p>
-        </div>
-
-        {availableByCategory.map((group) => (
-          <div key={group.key}>
-            <SectionLabel>{group.meta?.label ?? group.key}</SectionLabel>
-            <div className="mt-2 grid gap-3 @min-[40rem]:grid-cols-2 @min-[68rem]:grid-cols-3">
-              {group.items.map((platform) => (
-                <AvailableCard key={platform.key} platform={platform} />
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* Not a grid of Connect buttons: none of these connectors exists yet,
+          and a wall of buttons that all say "not available" reads as a sales
+          page. One folded list says what is planned and what each would add. */}
+      <Panel flush className="overflow-hidden">
+        <details className="group">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 hover:bg-surface-2">
+            <span className="min-w-0">
+              <span className="block text-[13.5px] font-semibold text-ink">
+                Planned connectors <span className="font-normal text-ink-3">({formatNumber(available.length)})</span>
+              </span>
+              <span className="mt-0.5 block text-[12px] text-ink-3">
+                Not built yet. Each would add to the screens named, and none is needed for the rest to work.
+              </span>
+            </span>
+            <ChevronDown aria-hidden="true" className="size-4 shrink-0 text-ink-3 transition-transform group-open:rotate-180" />
+          </summary>
+          <ul className="divide-y divide-line border-t border-line">
+            {availableByCategory.flatMap((group) =>
+              group.items.map((platform) => {
+                const CategoryIcon = group.meta?.icon ?? Cloud;
+                return (
+                  <li key={platform.key} className="flex flex-wrap items-start gap-3 px-4 py-3">
+                    <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-[var(--radius-control)] border border-line bg-surface-2 text-ink-3">
+                      <CategoryIcon aria-hidden="true" className="size-4" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex flex-wrap items-center gap-2">
+                        <span className="text-[13px] font-semibold text-ink">{platform.name}</span>
+                        <span className="text-[11px] text-ink-3">{group.meta?.label ?? group.key}</span>
+                      </span>
+                      <span className="mt-0.5 block text-[12px] leading-relaxed text-ink-2">{platform.summary}</span>
+                    </span>
+                    <span className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-[10.5px] text-ink-3">Would feed</span>
+                      {platform.provides.map((entry) => (
+                        <span key={entry.to} className="rounded-full bg-surface-3 px-2 py-0.5 text-[10.5px] text-ink-3">
+                          {entry.label}
+                        </span>
+                      ))}
+                    </span>
+                  </li>
+                );
+              }),
+            )}
+          </ul>
+        </details>
+      </Panel>
     </div>
   );
 }
@@ -358,61 +402,6 @@ function ConnectedRow({ row, onConfigure }) {
         )}
       </div>
     </li>
-  );
-}
-
-/**
- * One platform this console could read from.
- *
- * Connect only. There is deliberately no setup behind these: writing a wizard
- * for a connector that has not been built would put a screen in front of an
- * operator that cannot finish, which is worse than a button that says what it
- * will do when it exists.
- */
-function AvailableCard({ platform }) {
-  const { lock } = useAccess();
-  const { notify } = useToast();
-  const CategoryIcon = PLATFORM_CATEGORIES[platform.category]?.icon ?? Cloud;
-  return (
-    <div className="flex flex-col gap-2.5 rounded-[var(--radius-panel)] border border-line bg-surface p-3.5 transition-colors hover:border-line-strong">
-      <div className="flex items-center gap-2.5">
-        <span className="grid size-8 shrink-0 place-items-center rounded-[var(--radius-control)] border border-line bg-surface-2 text-ink-3">
-          <CategoryIcon aria-hidden="true" className="size-4" />
-        </span>
-        <p className="min-w-0 truncate text-[13px] font-semibold text-ink">{platform.name}</p>
-      </div>
-      <p className="flex-1 text-[12px] leading-relaxed text-ink-2">{platform.summary}</p>
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className="text-[10.5px] text-ink-3">Would feed</span>
-        {platform.provides.map((entry) => (
-          <span
-            key={entry.to}
-            className="rounded-full bg-surface-3 px-2 py-0.5 text-[10.5px] text-ink-3"
-          >
-            {entry.label}
-          </span>
-        ))}
-      </div>
-      {/* The button used to do nothing at all. It now says plainly that the
-          connector is not built yet, which is the truth, instead of looking
-          broken. */}
-      <Button
-        variant="secondary"
-        size="sm"
-        icon={Plus}
-        className="self-start"
-        locked={lock('integrations.manage')}
-        onClick={() =>
-          notify({
-            variant: 'info',
-            title: `${platform.name} is not available yet`,
-            description: 'This connector has not been built. Amazon Web Services is the only platform that can be connected from this console today.',
-          })
-        }
-      >
-        Connect
-      </Button>
-    </div>
   );
 }
 

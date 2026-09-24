@@ -73,6 +73,8 @@ Until the backend exists, sign-in, users and roles run in the browser (`src/lib/
 
 What each role may do is one table, `src/lib/roles.js`, shown as a matrix on **Settings > Users & roles**. The screens read it to lock controls (`useAccess`, `<Button locked>`), and the demo data layer reads it to refuse the same requests. **A check in the browser is not security: the backend must enforce this table on the server.**
 
+**AWS connector.** Settings > Integrations > Amazon Web Services opens on per-account coverage and health, with Health (fixes to copy for failing checks), Activity (the connector's change log) and Setup reference (StackSet deployment, how data is collected, permissions, rules). Discovery runs every 24 hours; Run discovery now and Re-run checks need Admin or higher, while connecting or removing accounts and changing the template need Super admin. Only accounts connected from the console can be removed; removing one with discovered data needs the backend to delete its records.
+
 Demo state (assignments, role changes, connected accounts, report runs) lives in `localStorage` under `dna.demo.*`, so it is per browser. Clearing site data resets it.
 
 ## Deploying it

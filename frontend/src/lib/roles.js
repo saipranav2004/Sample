@@ -68,6 +68,7 @@ export const PERMISSIONS = [
   { key: 'reports.generate', group: 'Reports', label: 'Generate a report', roles: ['super_admin', 'admin', 'analyst'] },
   { key: 'reports.schedule', group: 'Reports', label: 'Create, pause and delete schedules, and delete past runs', roles: ['super_admin', 'admin'] },
 
+  { key: 'integrations.operate', group: 'Administration', label: 'Re-run connector checks and start a discovery run', roles: ['super_admin', 'admin'] },
   { key: 'integrations.manage', group: 'Administration', label: 'Connect platforms and change integration setup', roles: ['super_admin'] },
   { key: 'users.manage', group: 'Administration', label: 'Invite users, change roles, deactivate accounts', roles: ['super_admin'] },
 ];

@@ -46,6 +46,10 @@ export const fetchEvents = (query, signal) => demo.fetchEvents(query, signal);
 export const fetchIntegrations = (signal) => demo.fetchIntegrations(signal);
 export const fetchIntegrationHealth = (platform, signal) => demo.fetchIntegrationHealth(platform, signal);
 export const connectAwsAccount = (input) => demo.connectAwsAccount(input);
+export const removeAwsAccount = (accountId) => demo.removeAwsAccount(accountId);
+export const runDiscoveryNow = () => demo.runDiscoveryNow();
+export const runHealthChecks = () => demo.runHealthChecks();
+export const setTemplateGroup = (input) => demo.setTemplateGroup(input);
 
 // ── Users (demo until the API exists) ──
 export const fetchUsers = (signal) => demo.fetchUsers(signal);

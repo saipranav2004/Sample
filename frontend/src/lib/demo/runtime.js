@@ -215,4 +215,6 @@ export const OVERLAY_KEYS = {
   notifications: 'dna.demo.notificationsSeen',
   /* AWS accounts connected from the Integrations wizard. */
   awsAccounts: 'dna.demo.awsAccounts',
+  /* AWS connector: template settings, check runs, discovery runs, history. */
+  awsConnector: 'dna.demo.awsConnector',
 };

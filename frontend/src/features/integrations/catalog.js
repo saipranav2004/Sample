@@ -134,15 +134,10 @@ export const PLATFORMS = [
     summary: 'The same federation picture for estates that sign in through Entra rather than Okta.',
     provides: [{ label: 'Identities', to: '/identities' }],
   },
-  {
-    key: 'secrets-manager',
-    name: 'AWS Secrets Manager',
-    short: 'Secrets Manager',
-    category: 'secrets',
-    summary:
-      'Which credentials are held in a managed store and when each was last rotated. Metadata only - the console never reads a secret value.',
-    provides: [{ label: 'Credentials', to: '/credentials' }],
-  },
+  /* AWS Secrets Manager is not listed here. It is inside AWS, and the AWS
+     role already reads its metadata (the "Secret store metadata" group), so
+     listing it as a separate platform to connect told people rotation data
+     was not being collected when it was. */
   {
     key: 'vault',
     name: 'HashiCorp Vault',
@@ -538,39 +533,45 @@ export const AWS_RULE_CATEGORIES = [
 export const AWS_HEALTH_CHECKS = [
   {
     key: 'assume',
+    scope: 'account',
     label: 'The role can be assumed',
     detail: 'sts:AssumeRole against the role ARN, with the external id.',
     fix: 'Check the role ARN and that the trust policy names this console\'s account id.',
   },
   {
     key: 'external-id',
+    scope: 'account',
     label: 'The external id matches',
     detail: 'An assume-role that succeeds without the external id means the condition is missing.',
     fix: 'Add the StringEquals condition on sts:ExternalId to the trust policy.',
   },
   {
     key: 'iam-read',
+    scope: 'account',
     label: 'IAM can be enumerated',
     detail: 'iam:GetAccountAuthorizationDetails returns without an AccessDenied.',
     fix: 'Attach the identity-inventory permissions, or the SecurityAudit managed policy.',
   },
   {
     key: 'cloudtrail',
+    scope: 'organisation',
     label: 'CloudTrail is readable',
     detail: 'cloudtrail:LookupEvents returns events in every region in range, and whether an organisation trail extends history past 90 days.',
-    fix: 'Grant the behaviour permissions. For history past 90 days, turn on a multi-region organisation trail.',
+    fix: 'Turn on a multi-region organisation trail from the management account, writing to a bucket in log-archive. The console reads the extra history automatically.',
   },
   {
     key: 'organisation',
+    scope: 'organisation',
     label: 'Organisation policies are readable',
     detail: 'organizations:ListPolicies returns, so denies can be applied before an edge is drawn.',
-    fix: 'Grant the guardrail permissions in a delegated administrator account.',
+    fix: 'Organisation policies can only be read from the management account or a delegated administrator. Delegate read access with the policy below.',
   },
   {
     key: 'accounts',
+    scope: 'organisation',
     label: 'Every account has the role',
     detail: 'The role resolves in each account the organisation lists.',
-    fix: 'Deploy the StackSet to the remaining accounts, or exclude them deliberately.',
+    fix: 'Connect the account from the Accounts tab, or add its OU to the StackSet targets.',
   },
 ];
 
@@ -869,7 +870,7 @@ aws iam get-role --role-name ${ROLE_NAME} --query Role.Arn --output text
  */
 export function stackSetCommands() {
   return `# From the management account (or a CloudFormation delegated administrator).
-# Save the CloudFormation template above as nhi-discovery-role.json first.
+# Download the CloudFormation template above as nhi-discovery-role.json first.
 
 aws cloudformation create-stack-set \\
   --stack-set-name nhi-discovery-role \\
@@ -919,3 +920,65 @@ export const DEPLOY_FORMATS = [
     build: (options) => awsCliScript(options),
   },
 ];
+
+/* ── Fixes for failing checks ────────────────────────────────────────────── */
+
+/**
+ * What to run when a check fails, as something to copy rather than a
+ * sentence to interpret. Only the checks that fail at organisation level have
+ * one: the account-level checks are fixed by redeploying the role, which the
+ * Connect wizard and the StackSet section already cover.
+ */
+export const AWS_CHECK_FIXES = {
+  organisation: {
+    where: 'Run from the management account. Replace <delegated-admin-account-id> with the account the console reads the organisation from.',
+    filename: 'org-read-delegation.json',
+    /* AWS Organizations resource-based delegation policy (PutResourcePolicy):
+       lets a delegated administrator account read the organisation's
+       structure and policies without the management account's credentials. */
+    code: `${JSON.stringify(
+      {
+        Version: '2012-10-17',
+        Statement: [
+          {
+            Sid: 'DelegateReadOnlyForNhiDiscovery',
+            Effect: 'Allow',
+            Principal: { AWS: 'arn:aws:iam::<delegated-admin-account-id>:root' },
+            Action: [
+              'organizations:DescribeOrganization',
+              'organizations:DescribeOrganizationalUnit',
+              'organizations:DescribeAccount',
+              'organizations:DescribePolicy',
+              'organizations:ListRoots',
+              'organizations:ListAccounts',
+              'organizations:ListAccountsForParent',
+              'organizations:ListOrganizationalUnitsForParent',
+              'organizations:ListParents',
+              'organizations:ListChildren',
+              'organizations:ListPolicies',
+              'organizations:ListPoliciesForTarget',
+              'organizations:ListTargetsForPolicy',
+            ],
+            Resource: '*',
+          },
+        ],
+      },
+      null,
+      2,
+    )}
+
+# Then, from the management account:
+# aws organizations put-resource-policy --content file://org-read-delegation.json`,
+  },
+  cloudtrail: {
+    where: 'Run from the management account (or a CloudTrail delegated administrator). The bucket needs a policy that lets CloudTrail write organisation logs to it.',
+    filename: 'org-trail.sh',
+    code: `aws cloudtrail create-trail \\
+  --name org-trail \\
+  --s3-bucket-name <log-archive-bucket> \\
+  --is-organization-trail \\
+  --is-multi-region-trail
+
+aws cloudtrail start-logging --name org-trail`,
+  },
+};
