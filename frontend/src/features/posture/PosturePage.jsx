@@ -371,7 +371,7 @@ export default function PosturePage() {
               <div className="mt-4">
                 <PillarBars
                   pillars={data.pillars}
-                  detail={(entry) => `${formatNumber(entry.failing)} ${entry.failing === 1 ? 'identity' : 'identities'} failing`}
+                  detail={(entry) => `${formatNumber(entry.failing)} of ${formatNumber(entry.evaluated)} evaluated failing`}
                 />
               </div>
             </Panel>

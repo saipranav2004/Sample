@@ -484,7 +484,10 @@ const CHECKS = [
     pillar: 'escalation',
     title: 'No privilege-escalation path',
     control: null,
-    applies: () => true,
+    /* Only where the access graph holds the identity. The graph is built
+       over a budget, and a pass for an identity it never looked at would be
+       a claim nobody checked. */
+    applies: (row, ctx) => ctx.inGraph.has(row.id),
     evaluate(row, ctx) {
       const paths = ctx.escalations.get(row.id) ?? [];
       if (paths.length === 0) return null;
@@ -836,6 +839,9 @@ function pillarsOf(results) {
     const inPillar = results.filter((result) => result.check.pillar === key);
     const failing = inPillar.filter((result) => result.state === 'fail');
     const lost = failing.reduce((sum, result) => sum + CHECK_WEIGHTS[result.failure.severity], 0);
+    if (inPillar.length === 0) {
+      return { key, label: PILLARS[key].label, summary: PILLARS[key].summary, score: null, status: 'na', checks: 0, failing: 0 };
+    }
     const status =
       failing.some((result) => SEVERITY_RANK[result.failure.severity] >= SEVERITY_RANK.HIGH)
         ? 'fail'
@@ -868,7 +874,7 @@ function summaryRow(row, ctx, results) {
   const score = scoreOf(results);
   const pillars = pillarsOf(results);
   const failing = results.filter((result) => result.state === 'fail');
-  const weakest = [...pillars].sort((a, b) => a.score - b.score)[0];
+  const weakest = pillars.filter((pillar) => pillar.score !== null).sort((a, b) => a.score - b.score)[0];
   const monthAgo = scoreAt(results, NOW - 30 * DAY);
   return {
     id: row.id,
@@ -884,7 +890,7 @@ function summaryRow(row, ctx, results) {
     score,
     grade: gradeFor(score),
     band: bandFor(score).key,
-    weakestPillar: weakest.status === 'pass' ? null : weakest.key,
+    weakestPillar: !weakest || weakest.status === 'pass' ? null : weakest.key,
     failed: failing.length,
     remediated: results.filter((result) => result.state === 'remediated').length,
     failedBySeverity: failing.reduce((acc, result) => ({ ...acc, [result.failure.severity]: (acc[result.failure.severity] ?? 0) + 1 }), {}),
@@ -975,7 +981,10 @@ export function postureOverview({ window = 30 } = {}) {
     .slice(0, 5);
 
   const pillars = PILLAR_ORDER.map((key) => {
-    const perIdentity = evaluated.map(({ results }) => pillarsOf(results).find((pillar) => pillar.key === key));
+    /* Identities the pillar could not evaluate are left out of its mean. */
+    const perIdentity = evaluated
+      .map(({ results }) => pillarsOf(results).find((pillar) => pillar.key === key))
+      .filter((pillar) => pillar.status !== 'na');
     const value = Math.round(mean(perIdentity.map((pillar) => pillar.score)));
     return {
       key,
@@ -983,6 +992,7 @@ export function postureOverview({ window = 30 } = {}) {
       summary: PILLARS[key].summary,
       score: value,
       failing: perIdentity.filter((pillar) => pillar.status !== 'pass').length,
+      evaluated: perIdentity.length,
       status: value >= 80 ? 'pass' : value >= 60 ? 'warn' : 'fail',
     };
   });

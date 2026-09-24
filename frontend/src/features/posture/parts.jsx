@@ -100,9 +100,13 @@ export function PillarBars({ pillars, detail }) {
             </span>
             {detail && <span className="block truncate text-[11px] text-ink-3">{detail(pillar)}</span>}
           </span>
-          <Meter value={pillar.score} tone={PILLAR_STATUS[pillar.status]?.tone ?? 'brand'} label={`${pillar.label} ${pillar.score} of 100`} />
+          {pillar.score === null ? (
+            <span className="text-[11.5px] text-ink-3">Not evaluated</span>
+          ) : (
+            <Meter value={pillar.score} tone={PILLAR_STATUS[pillar.status]?.tone ?? 'brand'} label={`${pillar.label} ${pillar.score} of 100`} />
+          )}
           <span data-numeric="" className="text-right text-[12.5px] font-semibold text-ink">
-            {pillar.score}
+            {pillar.score ?? '-'}
           </span>
           <span className="justify-self-end">
             <PillarStatusTag status={pillar.status} />

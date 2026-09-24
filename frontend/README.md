@@ -58,7 +58,7 @@ Environment variables:
 
 ## Demo accounts and roles
 
-Until the backend exists, sign-in, users and roles run in the browser (`src/lib/demo/users.js`). People are identified by username and full name only - no email is stored or shown. The seeded accounts use the password `admin@123`; people invited from User management choose their own password instead. **Download sign-ins** on that screen (all users, or one row) writes these details to a text file.
+Until the backend exists, sign-in, users and roles run in the browser (`src/lib/demo/users.js`). People are identified by username and full name only - no email is stored or shown. The seeded accounts use the password `NHI.admin@345`; people invited from User management choose their own password instead. **Download sign-ins** on that screen (all users, or one row) writes these details to a text file.
 
 | Username | Full name | Role | State |
 |---|---|---|---|
@@ -68,6 +68,8 @@ Until the backend exists, sign-in, users and roles run in the browser (`src/lib/
 | `sneha.kulkarni` | Sneha Kulkarni | Viewer | Active |
 | `priya.raghavan` | Priya Raghavan | Analyst | Invited, link expired (use Resend) |
 | `karthik.rao` | Karthik Rao | Analyst | Deactivated (sign-in refused) |
+
+**Landing.** Analysts sign in to their own queue (Alerts, Assigned to me); every other role lands on the Dashboard. Nothing is hidden by role: analysts still see the whole queue, because unassigned alerts are theirs to take, and viewers see everything read-only. Restricting what a user can see by account or team is scoping, and needs a user-to-scope model in the backend.
 
 `das.admin@gmail.com` still signs in as Admin, as a hidden legacy alias; it is not displayed anywhere.
 

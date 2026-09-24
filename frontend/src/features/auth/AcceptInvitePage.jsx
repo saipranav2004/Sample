@@ -127,7 +127,7 @@ function AcceptForm({ token, invite }) {
       /* Sign in with the password just chosen, through the ordinary sign-in
          path - so the first sign-in is also the proof that it works. */
       await signIn({ email: username, password });
-      navigate('/overview', { replace: true });
+      navigate('/', { replace: true });
     } catch (failure) {
       setError(failure?.message ?? 'The invitation could not be accepted.');
       setSubmitting(false);

@@ -92,6 +92,16 @@ export function minimumRoleFor(permission) {
   return [...ROLE_ORDER].reverse().find((role) => holders.includes(role)) ?? 'super_admin';
 }
 
+/**
+ * Where a role lands after signing in. An analyst works a queue, so they land
+ * on their own assigned alerts - the rest of the queue, and every other
+ * screen, stays one click away, because unassigned work is theirs to pick up.
+ * Everyone else lands on the dashboard.
+ */
+export function homeFor(role) {
+  return role === 'analyst' ? '/alerts?view=mine' : '/overview';
+}
+
 /** One sentence for a disabled control: why it is disabled and who can. */
 export function deniedReason(permission) {
   const needed = roleMeta(minimumRoleFor(permission)).label;

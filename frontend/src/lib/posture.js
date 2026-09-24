@@ -42,6 +42,7 @@ export const PILLAR_STATUS = {
   pass: { label: 'Pass', tone: 'low' },
   warn: { label: 'Warn', tone: 'medium' },
   fail: { label: 'Fail', tone: 'critical' },
+  na: { label: 'N/A', tone: 'neutral' },
 };
 
 export function bandMeta(key) {

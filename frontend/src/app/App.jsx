@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
-import { AuthProvider } from './AuthContext';
+import { AuthProvider, useAuth } from './AuthContext';
+import { homeFor } from '../lib/roles';
 import { ThemeProvider } from './ThemeContext';
 import { ScanProvider } from './ScanContext';
 import { RequireAuth } from './RequireAuth';
@@ -59,7 +60,7 @@ export default function App() {
                   </RequireAuth>
                 }
               >
-                <Route index element={<Navigate to="/overview" replace />} />
+                <Route index element={<HomeRedirect />} />
                 <Route
                   path="/overview"
                   element={
@@ -219,4 +220,10 @@ export default function App() {
       </ToastProvider>
     </ThemeProvider>
   );
+}
+
+/* The signed-in role's landing screen; see `homeFor`. */
+function HomeRedirect() {
+  const { user } = useAuth();
+  return <Navigate to={homeFor(user?.role)} replace />;
 }

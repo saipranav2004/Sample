@@ -210,12 +210,16 @@ function Overview({ data, failing, onFix }) {
     <div className="grid gap-4 @min-[64rem]:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
       <div className="flex min-w-0 flex-col gap-4">
         <Panel className="animate-rise">
-          <PanelHeader title="Pillars" subtitle="Fail means a high or critical check fails in the pillar; Warn means a lower one does." />
+          <PanelHeader title="Pillars" subtitle="Fail means a high or critical check fails in the pillar; Warn means a lower one does. Escalation paths are checked only for identities in the access graph." />
           <div className="mt-4">
             <PillarBars
               pillars={pillars}
               detail={(pillar) =>
-                pillar.failing ? `${pillar.failing} of ${pillar.checks} checks failing` : `${pillar.checks} ${pillar.checks === 1 ? 'check' : 'checks'} passing`
+                pillar.checks === 0
+                  ? 'No check here applies to it'
+                  : pillar.failing
+                    ? `${pillar.failing} of ${pillar.checks} checks failing`
+                    : `${pillar.checks} ${pillar.checks === 1 ? 'check' : 'checks'} passing`
               }
             />
           </div>

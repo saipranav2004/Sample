@@ -28,7 +28,7 @@ const ago = (ms) => new Date(NOW - ms).toISOString();
  * screen choose their own when they accept, and this one does not work for
  * them.
  */
-export const DEMO_PASSWORD = 'admin@123';
+export const DEMO_PASSWORD = 'NHI.admin@345';
 
 /** How long an invitation link works. */
 export const INVITE_TTL_HOURS = 72;

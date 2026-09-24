@@ -50,7 +50,7 @@ export default function LoginPage() {
   }, []);
 
   if (isAuthenticated) {
-    return <Navigate to={location.state?.from?.pathname || '/overview'} replace />;
+    return <Navigate to={location.state?.from?.pathname || '/'} replace />;
   }
 
   const onSubmit = async (event) => {
@@ -67,7 +67,7 @@ export default function LoginPage() {
     try {
       clearExpired();
       await signIn({ email: values.email.trim(), password: values.password });
-      navigate(location.state?.from?.pathname || '/overview', { replace: true });
+      navigate(location.state?.from?.pathname || '/', { replace: true });
     } catch (error) {
       setFormError(error?.message || 'Sign-in failed.');
       setValues((v) => ({ ...v, password: '' }));
