@@ -27,6 +27,7 @@ const GenomeDetailPage = lazy(() => import('../features/genome/GenomeDetailPage'
 const ReportsPage = lazy(() => import('../features/reports/ReportsPage'));
 const ReportViewPage = lazy(() => import('../features/reports/ReportViewPage'));
 const IntegrationsPage = lazy(() => import('../features/integrations/IntegrationsPage'));
+const UsersPage = lazy(() => import('../features/users/UsersPage'));
 const NotFoundPage = lazy(() => import('../features/NotFoundPage'));
 
 export default function App() {
@@ -164,6 +165,14 @@ export default function App() {
                   element={
                     <Suspense fallback={<RouteFallback />}>
                       <IntegrationsPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/users"
+                  element={
+                    <Suspense fallback={<RouteFallback />}>
+                      <UsersPage />
                     </Suspense>
                   }
                 />

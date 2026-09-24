@@ -1,3 +1,5 @@
+import { useAccess } from '../../app/useAccess';
+import { deniedReason } from '../../lib/roles';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
@@ -75,6 +77,8 @@ const URGENCY = { overdue: 4, ack_overdue: 3, due_soon: 2, on_track: 1, closed: 
 export default function AlertsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
+  const { can } = useAccess();
+  const canBulk = can('alerts.bulk');
   const { notify } = useToast();
   const { railOpen, toggleRail } = useFacetRail();
   const operatorUser = user?.username ?? null;
@@ -240,6 +244,12 @@ export default function AlertsPage() {
         const exposure = targets.filter(
           (alert) => alert.source === 'exposure' && alert.finding && (closing ? isOpen(alert) : action === 'reopen' && !isOpen(alert)),
         );
+        /* The scanner allowlist is written straight from here, before the
+           alert store sees the request, so the role check for it has to be
+           here too. */
+        if (exposure.length > 0 && !can('exposure.review')) {
+          throw new Error(`Closing or reopening an exposure alert writes the scanner allowlist. ${deniedReason('exposure.review')}`);
+        }
         if (exposure.length > 0) {
           const reasonText =
             action === 'resolve'
@@ -299,7 +309,7 @@ export default function AlertsPage() {
         setBusy(false);
       }
     },
-    [findingsQuery, notify, peopleByUser],
+    [can, findingsQuery, notify, peopleByUser],
   );
 
   const onBulk = async (action, options) => {
@@ -748,7 +758,7 @@ export default function AlertsPage() {
             onClearAll={clearAll}
           />
 
-          {selected.length > 0 && (
+          {canBulk && selected.length > 0 && (
             <BulkBar
               count={selected.length}
               people={people}
@@ -766,7 +776,7 @@ export default function AlertsPage() {
 
           <DataGrid
             caption="Alerts"
-            columns={columns}
+            columns={canBulk ? columns : columns.filter((column) => column.key !== 'select')}
             rows={pageRows}
             rowKey={(row) => row.id}
             loading={loading}

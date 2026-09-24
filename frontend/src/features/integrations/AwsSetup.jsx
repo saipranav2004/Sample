@@ -10,6 +10,8 @@ import {
   Download,
   Info,
   MinusCircle,
+  Plus,
+  Search,
   ShieldCheck,
 } from 'lucide-react';
 import { fetchIntegrationHealth, fetchSummary } from '../../lib/api/endpoints';
@@ -17,11 +19,14 @@ import { useQuery } from '../../lib/hooks';
 import { severityMeta } from '../../lib/domain';
 import { formatNumber, formatRelative } from '../../lib/format';
 import { PageHeader } from '../../shell/PageHeader';
+import { useAccess } from '../../app/useAccess';
+import { downloadText } from '../../lib/csv';
 import { Button } from '../../ui/Button';
 import { CopyButton, CopyableValue } from '../../ui/Copyable';
 import { Panel, PanelHeader, SectionLabel } from '../../ui/Panel';
 import { DetailSkeleton } from '../../ui/Skeleton';
 import { EmptyState } from '../../ui/States';
+import { SearchInput } from '../../ui/Field';
 import { Tabs } from '../../ui/Tabs';
 import { Tag } from '../../ui/Tag';
 import { cn } from '../../ui/cn';
@@ -30,18 +35,18 @@ import {
   AWS_MANAGED_POLICY_OPTION,
   AWS_PERMISSION_GROUPS,
   AWS_RULE_CATEGORIES,
+  DEPLOY_FORMATS,
   ROLE_NAME,
-  awsCliScript,
-  cloudFormationTemplate,
   denySecretValuesDocument,
   permissionPolicyDocument,
   stackSetCommands,
-  terraformModule,
   trustPolicyDocument,
 } from './catalog';
+import { ConnectAccountDrawer } from './ConnectAccountDrawer';
 
 const TABS = [
-  { value: 'configured', label: 'What is configured' },
+  { value: 'accounts', label: 'Accounts' },
+  { value: 'configured', label: 'How data is collected' },
   { value: 'deploy', label: 'Deploy' },
   { value: 'permissions', label: 'Permissions' },
   { value: 'rules', label: 'Rules' },
@@ -66,16 +71,20 @@ const TABS = [
  * wrong about it - this one cannot disagree with the inventory, because it is
  * reading the inventory.
  */
-export function AwsSetup({ data, onBack }) {
+export function AwsSetup({ data, onBack, onChanged }) {
+  const { lock } = useAccess();
+  /* The wizard is mounted only while open; `preset` is the account it was
+     opened for, or null for one typed in. */
+  const [connecting, setConnecting] = useState(null);
   /* The tab lives in the URL with the rest of this screen's state, so a link
      to "the Health tab of the AWS setup" is a link somebody can send. */
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = TABS.some((entry) => entry.value === searchParams.get('tab'))
     ? searchParams.get('tab')
-    : 'configured';
+    : 'accounts';
   const setTab = (value) => {
     const next = new URLSearchParams(searchParams);
-    if (value === 'configured') next.delete('tab');
+    if (value === 'accounts') next.delete('tab');
     else next.set('tab', value);
     setSearchParams(next, { replace: true });
   };
@@ -122,9 +131,19 @@ export function AwsSetup({ data, onBack }) {
         title="Configure Amazon Web Services"
         lede="The role that is granted, what it is allowed to read, and what has been verified."
         actions={
-          <Button variant="secondary" icon={ArrowLeft} onClick={onBack}>
-            All integrations
-          </Button>
+          <>
+            <Button variant="secondary" icon={ArrowLeft} onClick={onBack}>
+              All integrations
+            </Button>
+            <Button
+              variant="primary"
+              icon={Plus}
+              locked={lock('integrations.manage')}
+              onClick={() => setConnecting({ preset: null })}
+            >
+              Connect an account
+            </Button>
+          </>
         }
         meta={
           <div className="flex flex-wrap items-center gap-2">
@@ -158,7 +177,7 @@ export function AwsSetup({ data, onBack }) {
             label: 'Role deployed',
             value: `${formatNumber(data.coverage.accountsConnected)} of ${formatNumber(data.coverage.accountsTotal)} accounts`,
             state: partial ? 'warn' : 'pass',
-            tab: 'deploy',
+            tab: 'accounts',
           },
           {
             key: 'permissions',
@@ -183,6 +202,10 @@ export function AwsSetup({ data, onBack }) {
         ]}
         onOpen={setTab}
       />
+
+      {tab === 'accounts' && (
+        <AccountsTab data={data} onConnect={(account) => setConnecting({ preset: account })} />
+      )}
 
       {tab === 'deploy' && <DeployTab data={data} selectedKeys={selectedKeys} />}
 
@@ -210,6 +233,20 @@ export function AwsSetup({ data, onBack }) {
       {tab === 'rules' && <RulesTab />}
 
       {tab === 'health' && <HealthTab health={health} />}
+
+      {connecting && (
+        <ConnectAccountDrawer
+          data={data}
+          selectedKeys={selectedKeys}
+          preset={connecting.preset}
+          onClose={() => setConnecting(null)}
+          onConnected={() => {
+            onChanged?.();
+            health.refetch();
+            summary.refetch();
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -266,34 +303,139 @@ function SetupProgress({ steps, onOpen }) {
   );
 }
 
+/* ── Tab: accounts ───────────────────────────────────────────────────────── */
+
+const ACCOUNT_STATE = {
+  collecting: { label: 'Collecting', tone: 'low', icon: CheckCircle2 },
+  pending: { label: 'Awaiting first discovery', tone: 'info', icon: CircleDashed },
+  missing: { label: 'No role deployed', tone: 'medium', icon: AlertTriangle },
+};
+
+/**
+ * Coverage, one account per row.
+ *
+ * The question a connector screen gets asked most is "which of my accounts
+ * are you actually reading, and is anything missing" - so that is the first
+ * thing on it. Counts link to the Identities and Credentials screens searched
+ * by account id, so every number here can be checked in one click, and an
+ * account with no role says so and offers the fix instead of a zero.
+ */
+function AccountsTab({ data, onConnect }) {
+  const { lock } = useAccess();
+  const accounts = data.accounts ?? [];
+  const order = { missing: 0, pending: 1, collecting: 2 };
+  const rows = [...accounts].sort(
+    (a, b) => order[a.state] - order[b.state] || b.identities - a.identities || a.name.localeCompare(b.name),
+  );
+
+  return (
+    <Panel flush className="overflow-hidden">
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-line px-4 py-3">
+        <div className="min-w-0">
+          <h2 className="text-[13.5px] font-semibold text-ink">Accounts in your organisation</h2>
+          <p className="mt-0.5 text-[12px] leading-relaxed text-ink-3">
+            {formatNumber(data.coverage.accountsConnected)} of {formatNumber(data.coverage.accountsTotal)} have
+            the discovery role. An account without it is absent from every screen, not reported as
+            empty.
+          </p>
+        </div>
+      </div>
+      <div className="relative overflow-x-auto">
+        <table className="w-full min-w-[44rem] text-left">
+          <caption className="sr-only">AWS accounts and what is collected from each</caption>
+          <thead>
+            <tr className="border-b border-line bg-surface-2 text-[11px] font-semibold tracking-wide text-ink-3 uppercase">
+              <th scope="col" className="px-4 py-2.5">Account</th>
+              <th scope="col" className="px-3 py-2.5">State</th>
+              <th scope="col" className="px-3 py-2.5 text-right">Identities</th>
+              <th scope="col" className="px-3 py-2.5 text-right">Credentials</th>
+              <th scope="col" className="px-3 py-2.5 text-right">Regions</th>
+              <th scope="col" className="px-4 py-2.5 text-right">Last read</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-line">
+            {rows.map((account) => {
+              const meta = ACCOUNT_STATE[account.state] ?? ACCOUNT_STATE.missing;
+              const collecting = account.state === 'collecting';
+              return (
+                <tr key={account.id} className="align-middle">
+                  <td className="px-4 py-3">
+                    <span className="block text-[13px] font-semibold text-ink">{account.name}</span>
+                    <span className="mt-0.5 flex items-center gap-2 text-[11.5px] text-ink-3">
+                      <span className="font-mono">{account.id}</span>
+                      <span aria-hidden="true">·</span>
+                      <span className="capitalize">{account.env}</span>
+                    </span>
+                  </td>
+                  <td className="px-3 py-3">
+                    <Tag tone={meta.tone} size="sm" icon={meta.icon}>
+                      {meta.label}
+                    </Tag>
+                    {account.state === 'pending' && account.connectedAt && (
+                      <span className="mt-1 block text-[11px] text-ink-3">
+                        Connected {formatRelative(account.connectedAt)}
+                        {account.connectedBy ? ` by ${account.connectedBy}` : ''}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-3 py-3 text-right text-[13px]" data-numeric="">
+                    {collecting ? (
+                      <Link
+                        to={`/identities?search=${account.id}`}
+                        className="font-semibold text-ink hover:text-brand hover:underline"
+                        aria-label={`${formatNumber(account.identities)} identities in ${account.name}`}
+                      >
+                        {formatNumber(account.identities)}
+                      </Link>
+                    ) : (
+                      <span className="text-ink-3">-</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-3 text-right text-[13px]" data-numeric="">
+                    {collecting ? (
+                      <Link
+                        to={`/credentials?search=${account.id}`}
+                        className="font-semibold text-ink hover:text-brand hover:underline"
+                        aria-label={`${formatNumber(account.credentials)} credentials in ${account.name}`}
+                      >
+                        {formatNumber(account.credentials)}
+                      </Link>
+                    ) : (
+                      <span className="text-ink-3">-</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-3 text-right text-[13px] text-ink-2" data-numeric="">
+                    {collecting ? formatNumber(account.regions) : '-'}
+                  </td>
+                  <td className="px-4 py-3 text-right text-[12px] text-ink-3">
+                    {account.state === 'missing' ? (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        icon={Plus}
+                        locked={lock('integrations.manage')}
+                        onClick={() => onConnect(account)}
+                      >
+                        Connect
+                      </Button>
+                    ) : account.lastReadAt ? (
+                      formatRelative(account.lastReadAt)
+                    ) : (
+                      'Not yet'
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </Panel>
+  );
+}
+
 /* ── Tab: deploy ─────────────────────────────────────────────────────────── */
 
-const DEPLOY_FORMATS = [
-  {
-    value: 'cloudformation',
-    label: 'CloudFormation',
-    filename: 'nhi-discovery-role.json',
-    type: 'application/json',
-    how: 'Create a stack from this template in the account you are connecting: CloudFormation console, Create stack, Upload a template file. It needs the CAPABILITY_NAMED_IAM acknowledgement because it names the role.',
-    build: cloudFormationTemplate,
-  },
-  {
-    value: 'terraform',
-    label: 'Terraform',
-    filename: 'nhi-discovery-role.tf',
-    type: 'text/plain',
-    how: 'Add this file to a Terraform configuration whose AWS provider points at the account you are connecting, then terraform apply. The role_arn output is the value to give this console.',
-    build: terraformModule,
-  },
-  {
-    value: 'cli',
-    label: 'AWS CLI',
-    filename: 'nhi-discovery-role.sh',
-    type: 'text/x-shellscript',
-    how: 'Run with credentials for the account you are connecting. IAM is global, so it runs once per account, not once per region.',
-    build: awsCliScript,
-  },
-];
 
 /**
  * The role, as something you can deploy rather than something you retype.
@@ -317,16 +459,7 @@ function DeployTab({ data, selectedKeys }) {
   );
   const declined = AWS_PERMISSION_GROUPS.filter((group) => !selectedKeys.includes(group.key));
 
-  const download = () => {
-    const url = URL.createObjectURL(new Blob([text], { type: active.type }));
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = active.filename;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
-  };
+  const download = () => downloadText(text, active.filename, active.type);
 
   return (
     <>
@@ -589,6 +722,25 @@ function SetupValue({ label, value, note }) {
  * invites the reader to try.
  */
 function PermissionsTab({ optional, onToggle, selectedKeys }) {
+  const { can, lock } = useAccess();
+  const manage = can('integrations.manage');
+  /* Ninety-odd actions is a reference, not a read. The search answers the
+     question people actually arrive with - "does this role get X" - across
+     action names and the reasons given for them. */
+  const [search, setSearch] = useState('');
+  const needle = search.trim().toLowerCase();
+  const visibleGroups = useMemo(
+    () =>
+      AWS_PERMISSION_GROUPS.map((group) => {
+        if (!needle) return { group, actions: group.actions, groupMatch: true };
+        const groupMatch = [group.label, group.why, group.without, group.feeds]
+          .filter(Boolean)
+          .some((text) => text.toLowerCase().includes(needle));
+        const actions = group.actions.filter((action) => action.toLowerCase().includes(needle));
+        return { group, actions: groupMatch ? group.actions : actions, groupMatch, actionMatches: actions.length };
+      }).filter((entry) => entry.groupMatch || entry.actions.length > 0),
+    [needle],
+  );
   const policy = useMemo(() => permissionPolicyDocument(selectedKeys), [selectedKeys]);
   const actionCount = useMemo(
     () =>
@@ -614,8 +766,40 @@ function PermissionsTab({ optional, onToggle, selectedKeys }) {
           }
         />
 
+        <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Search actions, e.g. GetSecretValue or cloudtrail"
+            size="sm"
+            className="w-full sm:w-80"
+            aria-label="Search permissions"
+          />
+          {needle && (
+            <span className="text-[12px] text-ink-3" role="status">
+              {visibleGroups.length === 0
+                ? 'No permission matches. The role is not granted it.'
+                : `${formatNumber(visibleGroups.reduce((sum, entry) => sum + (entry.actionMatches ?? 0), 0))} matching actions in ${formatNumber(visibleGroups.length)} group${visibleGroups.length === 1 ? '' : 's'}`}
+            </span>
+          )}
+          {!manage && (
+            <span className="text-[12px] text-ink-3">Read-only for your role. {lock('integrations.manage')}</span>
+          )}
+        </div>
+
+        {needle && visibleGroups.length === 0 && (
+          <div className="mt-3 flex items-start gap-2 rounded-[var(--radius-control)] border border-line bg-surface-2 px-3.5 py-3">
+            <Search aria-hidden="true" className="mt-px size-4 shrink-0 text-ink-3" />
+            <p className="text-[12.5px] leading-relaxed text-ink-2">
+              Nothing in the role mentions <span className="font-mono">{search.trim()}</span>. If it
+              is a write or a secret read, that is by design: the role only reads metadata, and the
+              Deny below blocks secret values outright.
+            </p>
+          </div>
+        )}
+
         <ul className="mt-4 flex flex-col gap-3">
-          {AWS_PERMISSION_GROUPS.map((group) => {
+          {visibleGroups.map(({ group, actions, actionMatches }) => {
             const Icon = group.icon;
             const enabled = group.required || optional.includes(group.key);
             return (
@@ -668,10 +852,13 @@ function PermissionsTab({ optional, onToggle, selectedKeys }) {
                       type="button"
                       role="switch"
                       aria-checked={enabled}
-                      onClick={() => onToggle(group.key)}
+                      aria-disabled={!manage || undefined}
+                      title={manage ? undefined : lock('integrations.manage')}
+                      onClick={() => manage && onToggle(group.key)}
                       className={cn(
                         'relative h-6 w-11 shrink-0 rounded-full border transition-colors',
                         enabled ? 'border-brand bg-brand' : 'border-line-strong bg-surface-3',
+                        !manage && 'cursor-not-allowed opacity-55',
                       )}
                     >
                       <span className="sr-only">
@@ -688,19 +875,29 @@ function PermissionsTab({ optional, onToggle, selectedKeys }) {
                   )}
                 </div>
 
-                <details className="mt-2.5">
+                {/* Keyed on the search so a search opens the list it matched in,
+                    and clearing it folds them back. */}
+                <details key={needle ? `open-${needle}` : 'closed'} className="mt-2.5" open={Boolean(needle && actionMatches)}>
                   <summary className="cursor-pointer text-[11.5px] font-medium text-ink-2">
-                    {formatNumber(group.actions.length)} actions
+                    {needle && actionMatches
+                      ? `${formatNumber(actionMatches)} of ${formatNumber(group.actions.length)} actions match`
+                      : `${formatNumber(group.actions.length)} actions`}
                   </summary>
                   <ul className="mt-2 flex flex-wrap gap-1.5">
-                    {group.actions.map((action) => (
-                      <li
-                        key={action}
-                        className="rounded-md border border-line bg-surface px-1.5 py-0.5 font-mono text-[11px] text-ink-2"
-                      >
-                        {action}
-                      </li>
-                    ))}
+                    {actions.map((action) => {
+                      const hit = needle && action.toLowerCase().includes(needle);
+                      return (
+                        <li
+                          key={action}
+                          className={cn(
+                            'rounded-md border px-1.5 py-0.5 font-mono text-[11px]',
+                            hit ? 'border-brand/40 bg-info-soft text-ink' : 'border-line bg-surface text-ink-2',
+                          )}
+                        >
+                          {action}
+                        </li>
+                      );
+                    })}
                   </ul>
                 </details>
               </li>

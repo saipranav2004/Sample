@@ -1,3 +1,4 @@
+import { useAccess } from '../../app/useAccess';
 import { useCallback, useMemo } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Download, RotateCcw } from 'lucide-react';
@@ -29,6 +30,7 @@ import { useToast } from '../../ui/Toast';
  * the export is real even though the figures are demonstration data.
  */
 export default function ReportViewPage() {
+  const { lock } = useAccess();
   const { id } = useParams();
   const navigate = useNavigate();
   const { notify } = useToast();
@@ -134,6 +136,7 @@ export default function ReportViewPage() {
             <Button
               variant="secondary"
               icon={RotateCcw}
+              locked={lock('reports.generate')}
               onClick={() => {
                 generateReport({ templateId: run.templateId, format: run.format });
                 notify({ title: 'Queued again', description: 'The new run appears at the top of History.', variant: 'info' });

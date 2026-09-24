@@ -889,3 +889,33 @@ aws cloudformation create-stack-instances \\
 # If it should be covered, deploy the template there as an ordinary stack.
 `;
 }
+
+/* ── Deploy formats ─────────────────────────────────────────────────────── */
+
+/** The discovery role in the three forms the Deploy tab and the Connect wizard offer. */
+export const DEPLOY_FORMATS = [
+  {
+    value: 'cloudformation',
+    label: 'CloudFormation',
+    filename: 'nhi-discovery-role.json',
+    type: 'application/json',
+    how: 'Create a stack from this template in the account you are connecting: CloudFormation console, Create stack, Upload a template file. It needs the CAPABILITY_NAMED_IAM acknowledgement because it names the role.',
+    build: (options) => cloudFormationTemplate(options),
+  },
+  {
+    value: 'terraform',
+    label: 'Terraform',
+    filename: 'nhi-discovery-role.tf',
+    type: 'text/plain',
+    how: 'Add this file to a Terraform configuration whose AWS provider points at the account you are connecting, then terraform apply. The role_arn output is the value to give this console.',
+    build: (options) => terraformModule(options),
+  },
+  {
+    value: 'cli',
+    label: 'AWS CLI',
+    filename: 'nhi-discovery-role.sh',
+    type: 'text/x-shellscript',
+    how: 'Run with credentials for the account you are connecting. IAM is global, so it runs once per account, not once per region.',
+    build: (options) => awsCliScript(options),
+  },
+];

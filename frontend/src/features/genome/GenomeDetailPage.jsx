@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import { useAccess } from '../../app/useAccess';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -56,6 +57,7 @@ export default function GenomeDetailPage() {
   const [tab, setTab] = useState('genome');
   const [policyPreview, setPolicyPreview] = useState(null);
   const [freezeOpen, setFreezeOpen] = useState(false);
+  const { lock } = useAccess();
 
   const query = useDemoQuery((signal) => fetchGenomeIdentity(id, signal), [id]);
   const identity = query.data;
@@ -67,7 +69,12 @@ export default function GenomeDetailPage() {
 
   const decide = useCallback(
     (anomaly, status) => {
-      setAnomalyStatus(anomaly.id, status);
+      try {
+        setAnomalyStatus(anomaly.id, status);
+      } catch (error) {
+        notify({ title: 'Not recorded', description: error.message, variant: 'error' });
+        return;
+      }
       notify({
         title: `${ANOMALY_STATUSES[status].label}: ${ANOMALY_TYPES[anomaly.type].label}`,
         description: `Recorded on ${anomaly.identityName}.`,
@@ -79,7 +86,12 @@ export default function GenomeDetailPage() {
 
   const applyPolicy = useCallback(
     (policy) => {
-      setPolicyApplied(policy.id, true);
+      try {
+        setPolicyApplied(policy.id, true);
+      } catch (error) {
+        notify({ title: 'Policy not applied', description: error.message, variant: 'error' });
+        return;
+      }
       setPolicyPreview(null);
       notify({
         title: 'Policy applied',
@@ -138,7 +150,7 @@ export default function GenomeDetailPage() {
             <Button variant="secondary" as={Link} to="/genome" icon={ArrowLeft}>
               Fleet
             </Button>
-            <Button variant="danger" icon={Snowflake} onClick={() => setFreezeOpen(true)}>
+            <Button variant="danger" icon={Snowflake} onClick={() => setFreezeOpen(true)} locked={lock('anomalies.contain')}>
               Freeze credential
             </Button>
           </>
@@ -234,7 +246,7 @@ export default function GenomeDetailPage() {
             <Button variant="ghost" onClick={() => setPolicyPreview(null)}>
               Cancel
             </Button>
-            <Button variant="primary" icon={Check} onClick={() => applyPolicy(policyPreview)}>
+            <Button variant="primary" icon={Check} onClick={() => applyPolicy(policyPreview)} locked={lock('anomalies.contain')}>
               Apply policy
             </Button>
           </>
@@ -394,6 +406,7 @@ function GenomeTab({ identity }) {
 /* ── Anomalies ────────────────────────────────────────────────────────────── */
 
 function AnomaliesTab({ identity, onDecide }) {
+  const { lock } = useAccess();
   const open = identity.anomalies.filter((anomaly) => anomaly.status === 'open');
   const decided = identity.anomalies.filter((anomaly) => anomaly.status !== 'open');
 
@@ -464,13 +477,13 @@ function AnomaliesTab({ identity, onDecide }) {
 
               {anomaly.status === 'open' && (
                 <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3">
-                  <Button variant="primary" size="sm" icon={Check} onClick={() => onDecide(anomaly, 'acknowledged')}>
+                  <Button variant="primary" size="sm" icon={Check} onClick={() => onDecide(anomaly, 'acknowledged')} locked={lock('anomalies.work')}>
                     Acknowledge
                   </Button>
-                  <Button variant="secondary" size="sm" icon={ShieldCheck} onClick={() => onDecide(anomaly, 'expected')}>
+                  <Button variant="secondary" size="sm" icon={ShieldCheck} onClick={() => onDecide(anomaly, 'expected')} locked={lock('anomalies.dismiss')}>
                     Expected behaviour
                   </Button>
-                  <Button variant="ghost" size="sm" icon={EyeOff} onClick={() => onDecide(anomaly, 'suppressed')}>
+                  <Button variant="ghost" size="sm" icon={EyeOff} onClick={() => onDecide(anomaly, 'suppressed')} locked={lock('anomalies.dismiss')}>
                     Suppress this detector
                   </Button>
                 </div>
@@ -798,6 +811,7 @@ function PeersTab({ identity }) {
 /* ── Containment ──────────────────────────────────────────────────────────── */
 
 function ContainmentTab({ identity, onPreview, onApply }) {
+  const { lock } = useAccess();
   if (identity.policies.length === 0) {
     return (
       <Panel prominence="lead">
@@ -851,7 +865,7 @@ function ContainmentTab({ identity, onPreview, onApply }) {
               Preview document
             </Button>
             {!policy.applied && (
-              <Button variant="primary" size="sm" icon={Check} onClick={() => onApply(policy)}>
+              <Button variant="primary" size="sm" icon={Check} onClick={() => onApply(policy)} locked={lock('anomalies.contain')}>
                 Apply policy
               </Button>
             )}

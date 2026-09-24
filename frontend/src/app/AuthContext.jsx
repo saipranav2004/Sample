@@ -52,9 +52,21 @@ export function AuthProvider({ children }) {
         setStatus('authenticated');
       } catch (error) {
         if (controller.signal.aborted) return;
-        // A 401 is handled by the client interceptor; anything else means the
-        // service is unreachable, and signing the operator out would be wrong.
-        if (error?.status === 401) return;
+        // A 401 ends the session: the account was deactivated or the token is
+        // no longer valid. (The HTTP client's interceptor does the same for
+        // API calls; the profile check has to as well, or a deactivated
+        // account would keep a working shell until its next API request.)
+        // Anything else means the service is unreachable, and signing the
+        // operator out would be wrong.
+        if (error?.status === 401) {
+          localStorage.removeItem(TOKEN_KEY);
+          localStorage.removeItem(USER_KEY);
+          setExpired(true);
+          setToken(null);
+          setUser(null);
+          setStatus('anonymous');
+          return;
+        }
         setStatus('authenticated');
       }
     })();

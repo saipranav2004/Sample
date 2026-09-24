@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { PanelLeftClose, PanelLeftOpen, X } from 'lucide-react';
-import { NAV_GROUPS } from './navigation';
+import { useAccess } from '../app/useAccess';
+import { navGroupsFor } from './navigation';
 import { IconButton } from '../ui/Button';
 import { cn } from '../ui/cn';
 
@@ -49,6 +50,7 @@ function SidebarLink({ item, collapsed, onNavigate, badge }) {
 }
 
 export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseMobile, badges }) {
+  const { can } = useAccess();
   const content = (
     <>
       {/* Module header. The collapse control belongs at the top, where an
@@ -86,7 +88,7 @@ export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseMobile
       </div>
 
       <nav aria-label="Primary" className="min-h-0 flex-1 overflow-y-auto px-2.5 py-2">
-        {NAV_GROUPS.map((group, groupIndex) => (
+        {navGroupsFor(can).map((group, groupIndex) => (
           <div key={group.key} className="mb-3.5 last:mb-0">
             {group.label && !collapsed && (
               <p className="mb-1.5 px-2.5 text-[10px] font-semibold tracking-[0.14em] text-ink-3 uppercase">

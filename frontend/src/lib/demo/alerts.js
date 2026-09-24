@@ -34,6 +34,7 @@ import { estate, ESTATE_META, OPERATOR } from './estate';
 import { genomeAnomalies, genomeFleet, setAnomalyStatus } from './genome';
 import { AWS_VERIFIED_AT, awsCheckResults } from './integrations';
 import { hashSeed, intBetween, OVERLAY_KEYS, readOverlay, rng, writeOverlay } from './runtime';
+import { assertCan, directory } from './users';
 
 const DAY = ESTATE_META.DAY;
 const MINUTE = 60_000;
@@ -45,10 +46,27 @@ const MINUTE = 60_000;
  * signed-in operator.
  */
 export function alertPeople() {
-  return [
+  const people = [
     { user: OPERATOR.user, name: OPERATOR.name, team: OPERATOR.role },
     ...estate().people.map((person) => ({ user: person.user, name: person.name, team: person.team })),
   ];
+  /* Console users who are not identity owners - someone a super admin just
+     invited - can be assigned work too. Deactivated accounts cannot. */
+  const known = new Set(people.map((person) => person.user));
+  const inactive = new Set();
+  for (const row of directory()) {
+    if (row.status === 'deactivated') inactive.add(row.user);
+    else if (!known.has(row.user)) people.push({ user: row.user, name: row.name, team: row.team ?? row.title ?? null });
+  }
+  return people.filter((person) => !inactive.has(person.user));
+}
+
+/** The permission an alert action needs, for the acting user. */
+function permissionFor(action, { alerts, assignee, actorUser }) {
+  if (alerts.length > 1 && action !== 'comment') return 'alerts.bulk';
+  if (action === 'assign') return assignee && assignee === actorUser ? 'alerts.take' : 'alerts.assign';
+  if (action === 'dismiss' || action === 'reopen') return 'alerts.dismiss';
+  return 'alerts.work';
 }
 
 /**
@@ -59,11 +77,20 @@ export function alertPeople() {
  * administrator: the top of the policy is the person who can accept a risk.
  */
 export function escalationPolicy() {
-  const byUser = new Map(alertPeople().map((person) => [person.user, person]));
+  const people = alertPeople();
+  const byUser = new Map(people.map((person) => [person.user, person]));
+  /* A level whose person has been deactivated falls to an active super
+     admin, so an escalation always lands on somebody who can sign in. */
+  const fallback =
+    directory()
+      .filter((row) => row.role === 'super_admin' && row.status !== 'deactivated')
+      .map((row) => byUser.get(row.user))
+      .find(Boolean) ?? people[0];
+  const at = (user) => byUser.get(user) ?? fallback;
   return {
-    1: { ...byUser.get('helena.brandt'), role: 'Security on-call' },
-    2: { ...byUser.get('marcus.oyelaran'), role: 'Security engineering lead' },
-    3: { ...byUser.get(OPERATOR.user), role: 'Security administrator' },
+    1: { ...at('helena.brandt'), role: 'Security on-call' },
+    2: { ...at('marcus.oyelaran'), role: 'Security engineering lead' },
+    3: { ...at(OPERATOR.user), role: 'Security administrator' },
   };
 }
 
@@ -75,6 +102,12 @@ export function escalationPolicy() {
 function routeTo(ownerName) {
   const person = ownerName ? alertPeople().find((entry) => entry.name === ownerName) : null;
   if (person) return { person, why: 'owner of the identity' };
+  /* An owner whose console account is deactivated cannot take work, so the
+     alert goes to on-call - and says why, rather than claiming there is no
+     owner. */
+  if (ownerName && estate().people.some((entry) => entry.name === ownerName)) {
+    return { person: escalationPolicy()[1], why: `security on-call - ${ownerName}'s console account is deactivated` };
+  }
   return { person: escalationPolicy()[1], why: 'security on-call - no owner on record' };
 }
 
@@ -523,10 +556,21 @@ export function applyAlertAction({ alerts, action, assignee = null, reason = nul
   if (action === 'dismiss' && !reason) throw new Error('Choose a reason to dismiss.');
   if (action === 'comment' && !note.trim()) throw new Error('Write a note first.');
 
+  /* Checked before anything is written, the way the API would refuse the
+     whole request rather than apply part of it. */
+  const me = assertCan('data.view');
+  assertCan(permissionFor(action, { alerts, assignee, actorUser: me.user }));
+  if (['resolve', 'dismiss', 'reopen'].includes(action) && alerts.some((alert) => alert.source === 'exposure')) {
+    assertCan('exposure.review');
+  }
+
   const store = readStore();
   const policy = escalationPolicy();
   const people = new Map(alertPeople().map((person) => [person.user, person]));
-  const actor = OPERATOR.name;
+  if (action === 'assign' && assignee && !people.has(assignee)) {
+    throw new Error('That person cannot be assigned alerts.');
+  }
+  const actor = me.name;
   const nowIso = new Date().toISOString();
   const changed = [];
   const trimmed = note.trim();
@@ -534,7 +578,18 @@ export function applyAlertAction({ alerts, action, assignee = null, reason = nul
   for (const alert of alerts) {
     const entry = { ...(store[alert.id] ?? {}) };
     const log = [...(entry.activity ?? [])];
-    const push = (kind, text) => log.push({ at: nowIso, actor, kind, text: trimmed && kind !== 'comment' ? `${text} Note: ${trimmed}` : text });
+    /* `target` is who an assignment or escalation lands on, which is what
+       the notification bell reads; the title travels with it so the bell
+       needs nothing but this store. */
+    const push = (kind, text, target = null) =>
+      log.push({
+        at: nowIso,
+        actor,
+        actorUser: me.user,
+        kind,
+        text: trimmed && kind !== 'comment' ? `${text} Note: ${trimmed}` : text,
+        ...(target ? { target, alertTitle: alert.title, severity: alert.severity } : {}),
+      });
     /* A closed alert takes only a reopen or a note. Everything else would be a
        change to something that is no longer being worked. */
     if (!isOpen(alert) && !['reopen', 'comment'].includes(action)) continue;
@@ -555,7 +610,7 @@ export function applyAlertAction({ alerts, action, assignee = null, reason = nul
       case 'assign': {
         if ((alert.assignee ?? null) === (assignee ?? null)) continue;
         entry.assignee = assignee;
-        push('assigned', assignee ? `Assigned to ${people.get(assignee)?.name ?? assignee}.` : 'Unassigned.');
+        push('assigned', assignee ? `Assigned to ${people.get(assignee)?.name ?? assignee}.` : 'Unassigned.', assignee);
         break;
       }
       case 'acknowledge': {
@@ -563,14 +618,14 @@ export function applyAlertAction({ alerts, action, assignee = null, reason = nul
         entry.status = 'acknowledged';
         /* Acknowledging is "I have this", so an unowned alert becomes the
            acknowledger's, the way an on-call tool assigns it. */
-        if (!alert.assignee) entry.assignee = OPERATOR.user;
+        if (!alert.assignee) entry.assignee = me.user;
         push('acknowledged', 'Acknowledged.');
         break;
       }
       case 'start': {
         if (alert.status === 'in_progress') continue;
         entry.status = 'in_progress';
-        if (!alert.assignee) entry.assignee = OPERATOR.user;
+        if (!alert.assignee) entry.assignee = me.user;
         push('started', 'Work started.');
         break;
       }
@@ -603,11 +658,11 @@ export function applyAlertAction({ alerts, action, assignee = null, reason = nul
         const target = policy[level + 1];
         entry.escalationLevel = level + 1;
         entry.assignee = target.user;
-        push('escalated', `Escalated to level ${level + 1}, ${target.name} (${target.role}).`);
+        push('escalated', `Escalated to level ${level + 1}, ${target.name} (${target.role}).`, target.user);
         break;
       }
       case 'comment': {
-        log.push({ at: nowIso, actor, kind: 'comment', text: trimmed });
+        log.push({ at: nowIso, actor, actorUser: me.user, kind: 'comment', text: trimmed });
         break;
       }
       default:

@@ -1,3 +1,4 @@
+import { useAccess } from '../../app/useAccess';
 import { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -64,6 +65,7 @@ const entryKey = (entry) =>
   [entry.client_id, entry.file_path, entry.detector, entry.redacted].join('|');
 
 export default function DismissedPage() {
+  const { lock } = useAccess();
   const { notify } = useToast();
   const query = useQuery((signal) => fetchAllowlist(signal), []);
   const restoration = useMutation((input) => restoreFinding(input));
@@ -352,6 +354,7 @@ export default function DismissedPage() {
           variant="ghost"
           size="sm"
           icon={RotateCcw}
+          locked={lock('exposure.review')}
           onClick={(event) => {
             event.stopPropagation();
             setPendingRestore(row);
@@ -542,6 +545,7 @@ export default function DismissedPage() {
                             variant="ghost"
                             size="sm"
                             icon={RotateCcw}
+                            locked={lock('exposure.review')}
                             onClick={() => setPendingRestore(entry)}
                           >
                             Restore

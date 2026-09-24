@@ -2,6 +2,7 @@ import { OVERLAY_KEYS, demoRequest, hashSeed, intBetween, pick, readOverlay, rng
 import { ACTOR_CATEGORIES, ACTOR_CATEGORY_ORDER, credentialKindMeta } from '../domain';
 import { isOpen, responseState } from '../alerts';
 import { estate, OPERATOR } from './estate';
+import { assertCan } from './users';
 import { estateAlerts } from './alerts';
 import { ANOMALY_TYPES, genomeAnomalies, genomeFleet } from './genome';
 
@@ -337,7 +338,8 @@ export function fetchRun(id, signal) {
  * timers so the screen shows queued, running and ready in turn - the states a
  * reporting screen actually has to render.
  */
-export function generateReport({ templateId, format, trigger = 'manual', requestedBy = OPERATOR.name }) {
+export function generateReport({ templateId, format, trigger = 'manual', requestedBy }) {
+  const me = assertCan('reports.generate');
   const template = templateById(templateId);
   if (!template) throw new Error(`Unknown report template: ${templateId}`);
 
@@ -351,7 +353,7 @@ export function generateReport({ templateId, format, trigger = 'manual', request
     format: format ?? template.formats[0],
     status: 'queued',
     trigger,
-    requestedBy,
+    requestedBy: requestedBy ?? me.name,
     startedAt: new Date().toISOString(),
     durationMs: null,
     rows: null,
@@ -381,6 +383,7 @@ export function generateReport({ templateId, format, trigger = 'manual', request
 }
 
 export function saveSchedule(schedule) {
+  const me = assertCan('reports.schedule');
   const schedules = readSchedules();
   if (schedule.id) {
     writeOverlay(
@@ -391,13 +394,14 @@ export function saveSchedule(schedule) {
   }
   const id = `sch-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
   writeOverlay(OVERLAY_KEYS.schedules, [
-    { ...schedule, id, enabled: true, createdAt: new Date().toISOString(), lastRunAt: null },
+    { ...schedule, id, enabled: true, createdAt: new Date().toISOString(), createdBy: me.name, lastRunAt: null },
     ...schedules,
   ]);
   return id;
 }
 
 export function setScheduleEnabled(id, enabled) {
+  assertCan('reports.schedule');
   writeOverlay(
     OVERLAY_KEYS.schedules,
     readSchedules().map((entry) => (entry.id === id ? { ...entry, enabled } : entry)),
@@ -405,10 +409,12 @@ export function setScheduleEnabled(id, enabled) {
 }
 
 export function deleteSchedule(id) {
+  assertCan('reports.schedule');
   writeOverlay(OVERLAY_KEYS.schedules, readSchedules().filter((entry) => entry.id !== id));
 }
 
 export function deleteRun(id) {
+  assertCan('reports.schedule');
   writeOverlay(OVERLAY_KEYS.runs, readRuns().filter((entry) => entry.id !== id));
 }
 

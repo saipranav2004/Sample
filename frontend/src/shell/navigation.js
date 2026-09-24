@@ -11,6 +11,7 @@ import {
   KeyRound,
   Plug,
   ShieldOff,
+  UsersRound,
 } from 'lucide-react';
 
 /**
@@ -81,9 +82,23 @@ export const NAV_GROUPS = [
     label: 'Settings',
     /* Last in the rail on purpose. Everything above reads the estate; this is
        the one group that changes how the estate is collected. */
-    items: [{ to: '/integrations', label: 'Integrations', icon: Plug }],
+    items: [
+      { to: '/integrations', label: 'Integrations', icon: Plug },
+      /* `permission` hides an item from roles that cannot use the screen at
+         all. The route refuses them too; this only stops the rail offering
+         a door that is locked. */
+      { to: '/users', label: 'Users & roles', icon: UsersRound, permission: 'users.manage' },
+    ],
   },
 ];
+
+/** The navigation a role can use: items it lacks the permission for, and groups left empty, removed. */
+export function navGroupsFor(can) {
+  return NAV_GROUPS.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => !item.permission || can(item.permission)),
+  })).filter((group) => group.items.length > 0);
+}
 
 export const ALL_NAV_ITEMS = NAV_GROUPS.flatMap((group) =>
   group.items.map((item) => ({ ...item, group: group.label || 'Posture' })),
@@ -107,6 +122,7 @@ export const BREADCRUMBS = {
   // '/scans': ['Operations', 'Scans'],
   '/reports': ['Operations', 'Reports'],
   '/integrations': ['Settings', 'Integrations'],
+  '/users': ['Settings', 'Users & roles'],
 };
 
 /**

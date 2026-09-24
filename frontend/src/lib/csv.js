@@ -24,6 +24,15 @@ export function exportRowsToCsv({ filename, columns, rows }) {
     type: 'text/csv;charset=utf-8',
   });
 
+  downloadBlob(blob, filename);
+}
+
+/** Save text the page generated - a template, a script - as a file. */
+export function downloadText(text, filename, type = 'text/plain') {
+  downloadBlob(new Blob([text], { type }), filename);
+}
+
+function downloadBlob(blob, filename) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;

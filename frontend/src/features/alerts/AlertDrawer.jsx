@@ -24,6 +24,7 @@ import {
 } from '../../lib/alerts';
 import { severityMeta } from '../../lib/domain';
 import { formatDateTime, formatRelative, initialsOf } from '../../lib/format';
+import { useAccess } from '../../app/useAccess';
 import { Button } from '../../ui/Button';
 import { Field, Select, Textarea } from '../../ui/Field';
 import { Drawer } from '../../ui/Overlay';
@@ -61,6 +62,7 @@ export function AlertDrawer({ alert, people, policy, operatorUser, busy, onClose
   const [reason, setReason] = useState('');
   const [note, setNote] = useState('');
   const [comment, setComment] = useState('');
+  const { can, lock } = useAccess();
 
   if (!alert) return null;
 
@@ -75,6 +77,9 @@ export function AlertDrawer({ alert, people, policy, operatorUser, busy, onClose
   const assignee = alert.assignee ? peopleByUser.get(alert.assignee) : null;
   const source = ALERT_SOURCES[alert.source];
   const isExposure = alert.source === 'exposure';
+  /* Closing or reopening an exposure alert writes the scanner's allowlist,
+     which is the exposure-review permission on top of the alert one. */
+  const closeLock = (permission) => lock(permission) ?? (isExposure ? lock('exposure.review') : undefined);
 
   const reset = () => {
     setPending(null);
@@ -90,24 +95,24 @@ export function AlertDrawer({ alert, people, policy, operatorUser, busy, onClose
   const footer = open ? (
     <>
       {alert.status === 'new' && (
-        <Button variant="secondary" icon={Hand} onClick={() => onAction([alert], 'acknowledge')} disabled={busy}>
+        <Button variant="secondary" icon={Hand} onClick={() => onAction([alert], 'acknowledge')} disabled={busy} locked={lock('alerts.work')}>
           Acknowledge
         </Button>
       )}
       {alert.status !== 'in_progress' && (
-        <Button variant="secondary" icon={Play} onClick={() => onAction([alert], 'start')} disabled={busy}>
+        <Button variant="secondary" icon={Play} onClick={() => onAction([alert], 'start')} disabled={busy} locked={lock('alerts.work')}>
           Start work
         </Button>
       )}
-      <Button variant="secondary" icon={XCircle} onClick={() => setPending('dismiss')} disabled={busy}>
+      <Button variant="secondary" icon={XCircle} onClick={() => setPending('dismiss')} disabled={busy} locked={closeLock('alerts.dismiss')}>
         Dismiss
       </Button>
-      <Button variant="primary" icon={CheckCircle2} onClick={() => setPending('resolve')} disabled={busy}>
+      <Button variant="primary" icon={CheckCircle2} onClick={() => setPending('resolve')} disabled={busy} locked={closeLock('alerts.work')}>
         Resolve
       </Button>
     </>
   ) : (
-    <Button variant="secondary" icon={RotateCcw} onClick={() => onAction([alert], 'reopen')} loading={busy}>
+    <Button variant="secondary" icon={RotateCcw} onClick={() => onAction([alert], 'reopen')} loading={busy} locked={closeLock('alerts.dismiss')}>
       Reopen
     </Button>
   );
@@ -227,8 +232,9 @@ export function AlertDrawer({ alert, people, policy, operatorUser, busy, onClose
                 </span>
               </span>
             </div>
-            {open && (
+            {open && (can('alerts.assign') || can('alerts.take')) && (
               <div className="mt-3 flex flex-col gap-2">
+                {can('alerts.assign') ? (
                 <Select
                   size="sm"
                   aria-label="Assign to"
@@ -241,6 +247,11 @@ export function AlertDrawer({ alert, people, policy, operatorUser, busy, onClose
                   onChange={(event) => onAction([alert], 'assign', { assignee: event.target.value || null })}
                   disabled={busy}
                 />
+                ) : (
+                  <p className="text-[11.5px] leading-relaxed text-ink-3">
+                    Reassigning to someone else needs the Admin role. You can take it yourself.
+                  </p>
+                )}
                 {alert.assignee !== operatorUser && (
                   <Button
                     variant="ghost"
@@ -296,6 +307,7 @@ export function AlertDrawer({ alert, people, policy, operatorUser, busy, onClose
                 className="mt-3"
                 onClick={() => setPending('escalate')}
                 disabled={busy || !next}
+                locked={next ? lock('alerts.work') : undefined}
               >
                 {next ? `Escalate to ${next.name}` : 'At the final level'}
               </Button>
@@ -364,6 +376,7 @@ export function AlertDrawer({ alert, people, policy, operatorUser, busy, onClose
               );
             })}
           </ol>
+          {can('alerts.work') ? (
           <form
             className="mt-3 flex flex-col gap-2"
             onSubmit={async (event) => {
@@ -391,6 +404,9 @@ export function AlertDrawer({ alert, people, policy, operatorUser, busy, onClose
               Add note
             </Button>
           </form>
+          ) : (
+            <p className="mt-3 text-[12px] text-ink-3">Your role can read this timeline but not add to it.</p>
+          )}
         </div>
 
         {isExposure && (

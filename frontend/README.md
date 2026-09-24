@@ -56,6 +56,23 @@ Environment variables:
 | `SCANNER_UPSTREAM` | dev server | Scanner origin. Default `https://js-dev.adapid.link`. |
 | `SCANNER_DASHBOARD_KEY` | dev server | The scanner key. Never exposed to the client. |
 
+## Demo accounts and roles
+
+Until the backend exists, sign-in, users and roles run in the browser (`src/lib/demo/users.js`). Every account uses the password `admin@123`, and signs in with its username or email.
+
+| Username | Email | Role | State |
+|---|---|---|---|
+| `cirm@admin` | `das.admin@gmail.com` | Super admin | Active |
+| `marcus.oyelaran` | `marcus.oyelaran@example.com` | Admin | Active |
+| `helena.brandt` | `helena.brandt@example.com` | Analyst | Active |
+| `sofia.marchetti` | `sofia.marchetti@example.com` | Viewer | Active |
+| `priya.raghavan` | `priya.raghavan@example.com` | Analyst | Invited (active after first sign-in) |
+| `liam.donnelly` | `liam.donnelly@example.com` | Analyst | Deactivated (sign-in refused) |
+
+What each role may do is one table, `src/lib/roles.js`, shown as a matrix on **Settings > Users & roles**. The screens read it to lock controls (`useAccess`, `<Button locked>`), and the demo data layer reads it to refuse the same requests. **A check in the browser is not security: the backend must enforce this table on the server.**
+
+Demo state (assignments, role changes, connected accounts, report runs) lives in `localStorage` under `dna.demo.*`, so it is per browser. Clearing site data resets it.
+
 ## Deploying it
 
 ```bash

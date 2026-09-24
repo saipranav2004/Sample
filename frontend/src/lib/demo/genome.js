@@ -9,6 +9,7 @@ import {
   sample,
   writeOverlay,
 } from './runtime';
+import { assertCan } from './users';
 import { estate as sharedEstate } from './estate';
 import { actorTypeMeta } from '../domain';
 import { formatDate } from '../format';
@@ -460,6 +461,9 @@ function withOverlay(anomaly, overlay) {
 
 /** Records a decision on an anomaly. Survives a reload. */
 export function setAnomalyStatus(anomalyId, status, note) {
+  /* Deciding a departure is fine is a risk decision, and so is undoing one;
+     acknowledging and resolving are the working of the queue. */
+  assertCan(['acknowledged', 'resolved'].includes(status) ? 'anomalies.work' : 'anomalies.dismiss');
   const overlay = anomalyOverlay();
   /* Reopening removes the decision instead of recording "open" as one: the
      anomaly returns to exactly the state the detector left it in, with no
@@ -476,6 +480,7 @@ export function setAnomalyStatus(anomalyId, status, note) {
 }
 
 export function setPolicyApplied(policyId, applied) {
+  assertCan('anomalies.contain');
   const overlay = policyOverlay();
   writeOverlay(OVERLAY_KEYS.policies, {
     ...overlay,

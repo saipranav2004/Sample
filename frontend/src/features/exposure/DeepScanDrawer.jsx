@@ -1,3 +1,4 @@
+import { useAccess } from '../../app/useAccess';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -326,6 +327,7 @@ export function DeepScanDrawer({ open, onClose, findings = [] }) {
  * somebody watching a progress row would read that as a failure.
  */
 function TargetRow({ row, state, pending, onRequest, onRefresh }) {
+  const { lock } = useAccess();
   const status = state?.data;
   const meta = deepScanStateMeta(status?.status);
   const running = String(status?.status).toLowerCase() === 'running';
@@ -396,6 +398,7 @@ function TargetRow({ row, state, pending, onRequest, onRefresh }) {
             onClick={onRequest}
             loading={pending}
             disabled={running || pending}
+            locked={running ? undefined : lock('exposure.deepScan')}
           >
             {running
               ? 'Running'

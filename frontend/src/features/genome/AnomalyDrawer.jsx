@@ -1,4 +1,5 @@
 import { ArrowRight, Check, EyeOff, ShieldCheck, Undo2 } from 'lucide-react';
+import { useAccess } from '../../app/useAccess';
 import { ANOMALY_STATUSES, ANOMALY_TYPES } from '../../lib/demo/genome';
 import { severityMeta } from '../../lib/domain';
 import { formatDateTime, formatRelative } from '../../lib/format';
@@ -23,6 +24,7 @@ import { Tag } from '../../ui/Tag';
  * noise from this detector for this identity (suppress).
  */
 export function AnomalyDrawer({ anomaly, onClose, onDecide, onInvestigate }) {
+  const { lock } = useAccess();
   if (!anomaly) return null;
 
   const severity = severityMeta(anomaly.severity);
@@ -57,18 +59,18 @@ export function AnomalyDrawer({ anomaly, onClose, onDecide, onInvestigate }) {
               be returned to the queue, and the other three actions step aside
               for it rather than inviting the same decision twice. */}
           {decided ? (
-            <Button variant="secondary" onClick={() => onDecide(anomaly, 'open')} icon={Undo2}>
+            <Button variant="secondary" onClick={() => onDecide(anomaly, 'open')} icon={Undo2} locked={lock('anomalies.dismiss')}>
               Reopen
             </Button>
           ) : (
             <>
-              <Button variant="ghost" onClick={() => onDecide(anomaly, 'suppressed')} icon={EyeOff}>
+              <Button variant="ghost" onClick={() => onDecide(anomaly, 'suppressed')} icon={EyeOff} locked={lock('anomalies.dismiss')}>
                 Suppress
               </Button>
-              <Button variant="secondary" onClick={() => onDecide(anomaly, 'expected')} icon={ShieldCheck}>
+              <Button variant="secondary" onClick={() => onDecide(anomaly, 'expected')} icon={ShieldCheck} locked={lock('anomalies.dismiss')}>
                 Expected
               </Button>
-              <Button variant="primary" onClick={() => onDecide(anomaly, 'acknowledged')} icon={Check}>
+              <Button variant="primary" onClick={() => onDecide(anomaly, 'acknowledged')} icon={Check} locked={lock('anomalies.work')}>
                 Acknowledge
               </Button>
             </>

@@ -209,4 +209,10 @@ export const OVERLAY_KEYS = {
   /* v2: the templates were rebuilt on real figures. Runs saved under the old
      catalogue name templates that no longer exist, so they start afresh. */
   runs: 'dna.demo.reportRuns.v2',
+  /* Console users: invitations, role and status changes, sign-in times. */
+  users: 'dna.demo.users',
+  /* Per-user "read up to" marks for the notification bell. */
+  notifications: 'dna.demo.notificationsSeen',
+  /* AWS accounts connected from the Integrations wizard. */
+  awsAccounts: 'dna.demo.awsAccounts',
 };

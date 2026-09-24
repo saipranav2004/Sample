@@ -15,12 +15,14 @@ import { fetchIntegrations } from '../../lib/api/endpoints';
 import { useQuery } from '../../lib/hooks';
 import { formatNumber, formatRelative } from '../../lib/format';
 import { PageHeader } from '../../shell/PageHeader';
+import { useAccess } from '../../app/useAccess';
 import { Button } from '../../ui/Button';
 import { Panel, PanelHeader, SectionLabel } from '../../ui/Panel';
 import { ListSkeleton, StatStripSkeleton } from '../../ui/Skeleton';
 import { MetricTile } from '../../ui/Stat';
 import { ErrorState } from '../../ui/States';
 import { Tag } from '../../ui/Tag';
+import { useToast } from '../../ui/Toast';
 import { PLATFORMS, PLATFORM_CATEGORIES, platformByKey } from './catalog';
 import { AwsSetup } from './AwsSetup';
 
@@ -98,7 +100,7 @@ export default function IntegrationsPage() {
      than opening over it: a wizard inside a modal on top of the list it
      belongs to gives the reader two scroll positions to lose. */
   if (configuring === 'aws' && data) {
-    return <AwsSetup data={data} onBack={closeSetup} />;
+    return <AwsSetup data={data} onBack={closeSetup} onChanged={query.refetch} />;
   }
 
   const loading = query.isLoading && !data;
@@ -368,6 +370,8 @@ function ConnectedRow({ row, onConfigure }) {
  * will do when it exists.
  */
 function AvailableCard({ platform }) {
+  const { lock } = useAccess();
+  const { notify } = useToast();
   const CategoryIcon = PLATFORM_CATEGORIES[platform.category]?.icon ?? Cloud;
   return (
     <div className="flex flex-col gap-2.5 rounded-[var(--radius-panel)] border border-line bg-surface p-3.5 transition-colors hover:border-line-strong">
@@ -389,7 +393,23 @@ function AvailableCard({ platform }) {
           </span>
         ))}
       </div>
-      <Button variant="secondary" size="sm" icon={Plus} className="self-start">
+      {/* The button used to do nothing at all. It now says plainly that the
+          connector is not built yet, which is the truth, instead of looking
+          broken. */}
+      <Button
+        variant="secondary"
+        size="sm"
+        icon={Plus}
+        className="self-start"
+        locked={lock('integrations.manage')}
+        onClick={() =>
+          notify({
+            variant: 'info',
+            title: `${platform.name} is not available yet`,
+            description: 'This connector has not been built. Amazon Web Services is the only platform that can be connected from this console today.',
+          })
+        }
+      >
         Connect
       </Button>
     </div>

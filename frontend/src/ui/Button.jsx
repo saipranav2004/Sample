@@ -1,5 +1,5 @@
 import { forwardRef } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Lock } from 'lucide-react';
 import { cn } from './cn';
 
 const BASE =
@@ -48,10 +48,40 @@ export const Button = forwardRef(function Button(
     className,
     children,
     disabled,
+    /* A reason string when the signed-in role may not use this control. The
+       button stays visible and focusable - so the reader learns the action
+       exists and who can take it - but does nothing, shows a lock, and says
+       why on hover and to assistive tech. A plain `disabled` button would
+       swallow the tooltip in most browsers. */
+    locked,
     ...rest
   },
   ref,
 ) {
+  if (locked) {
+    const { onClick: _onClick, to: _to, href: _href, type: _type, ...safe } = rest;
+    return (
+      <button
+        {...safe}
+        ref={ref}
+        type="button"
+        aria-disabled="true"
+        title={locked}
+        onClick={(event) => event.preventDefault()}
+        className={cn(
+          BASE,
+          VARIANTS[variant],
+          variant !== 'link' && SIZES[size],
+          'cursor-not-allowed opacity-55 hover:brightness-100 active:translate-y-0',
+          className,
+        )}
+      >
+        <Lock aria-hidden="true" className={cn('size-4 shrink-0', iconClassName)} />
+        {children}
+        <span className="sr-only">. {locked}</span>
+      </button>
+    );
+  }
   return (
     <Tag
       ref={ref}
@@ -89,7 +119,7 @@ export const IconButton = forwardRef(function IconButton(
       title={label}
       {...rest}
     >
-      <Icon aria-hidden="true" className="size-4" />
+      {!rest.locked && <Icon aria-hidden="true" className="size-4" />}
     </Button>
   );
 });

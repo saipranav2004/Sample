@@ -24,12 +24,17 @@
 
 import { demoRequest, hashSeed, intBetween, rng } from './runtime';
 import { estate, ESTATE_META, OPERATOR } from './estate';
+import * as users from './users';
+import { currentUserRow, sessionUser, verifySignIn } from './users';
 import {
   AWS_VERIFIED_AT,
   CONSOLE_ACCOUNT_ID,
   TENANT_EXTERNAL_ID,
+  accountCoverage,
   awsCheckResults,
+  connectAwsAccount as connectAccount,
   connectorRows,
+  coveredAccounts,
   organisationAccounts,
   uncoveredAccounts,
 } from './integrations';
@@ -53,47 +58,35 @@ const isTrue = (value) => value === true || value === 'true';
 /* ── Auth ─────────────────────────────────────────────────────────────────── */
 
 
-/**
- * The one password the demo account accepts.
- *
- * Exported so the login check reads the same constant a docs page or a QA
- * script would - a hard-coded string in two places is a bug waiting for one
- * of them to be edited. The login form itself no longer pre-fills anything:
- * an operator types the username and password below.
- */
-export const DEMO_PASSWORD = 'admin@123';
-
-const SESSION_USER = {
-  id: 'user-das-admin',
-  username: OPERATOR.user,
-  email: OPERATOR.email,
-  name: OPERATOR.name,
-  role: OPERATOR.role,
-};
-
 export function login({ email, password } = {}, signal) {
   return demoRequest(
     () => {
-      /* Two spellings of the same operator are accepted: the account name
-         (`cirm@admin`) and the email address (`das.admin@gmail.com`). Both
-         are real, typeable strings - not a placeholder pre-filled into the
-         form - so the password field is a real control rather than
-         decoration. */
-      const identifier = lower(email);
-      const expected = [lower(OPERATOR.user), lower(OPERATOR.email)];
-      if (!expected.includes(identifier) || password !== DEMO_PASSWORD) {
-        const error = new Error('That username and password do not match an account.');
-        error.status = 401;
-        throw error;
-      }
-      return { token: `demo.${hashSeed(identifier).toString(36)}`, user: SESSION_USER, expires_in: 43_200 };
+      /* Each account signs in with its username or its email, so the
+         password field is a real control rather than decoration. The login
+         form pre-fills nothing. */
+      const { token, user } = verifySignIn(email, password);
+      return { token, user, expires_in: 43_200 };
     },
     { signal, latency: [420, 700] },
   );
 }
 
 export function fetchProfile(signal) {
-  return demoRequest(() => SESSION_USER, { signal, latency: [120, 240] });
+  return demoRequest(
+    () => {
+      /* Read from the directory on every call, so a role a super admin
+         changed, or an account they deactivated, takes effect on the next
+         load rather than at the next sign-in. */
+      const row = currentUserRow();
+      if (!row || row.status === 'deactivated') {
+        const error = new Error('Your session has ended. Sign in again.');
+        error.status = 401;
+        throw error;
+      }
+      return sessionUser(row);
+    },
+    { signal, latency: [120, 240] },
+  );
 }
 
 /* ── Dashboard ────────────────────────────────────────────────────────────── */
@@ -442,14 +435,19 @@ export function fetchIntegrations(signal) {
            this number and the accounts the identities come from agree. */
         coverage: {
           accountsTotal: org.length,
-          accountsConnected: estate().accounts.length,
+          accountsConnected: coveredAccounts().length,
           unconnected: uncoveredAccounts().map((account) => ({ id: account.id, name: account.name })),
         },
+        accounts: accountCoverage(),
         rows: connectorRows(),
       };
     },
     { signal, latency: [200, 380] },
   );
+}
+
+export function connectAwsAccount(input) {
+  return demoRequest(() => connectAccount(input), { latency: [1400, 2200] });
 }
 
 export function fetchIntegrationHealth(platformKey, signal) {
@@ -499,4 +497,29 @@ export async function fetchAlerts(signal) {
 export async function updateAlerts(input) {
   const alerts = await import('./alerts');
   return demoRequest(() => ({ changed: alerts.applyAlertAction(input) }), { latency: [180, 320] });
+}
+
+/* ── Users ────────────────────────────────────────────────────────────────── */
+
+/** The console's users, as `GET /api/users` would return them. Super admin only. */
+export function fetchUsers(signal) {
+  return demoRequest(
+    () => {
+      const me = users.assertCan('users.manage');
+      return { users: users.directory(), activity: users.directoryActivity(), me: me.id };
+    },
+    { signal, latency: [220, 420] },
+  );
+}
+
+export function inviteUser(input) {
+  return demoRequest(() => users.inviteUser(input), { latency: [350, 600] });
+}
+
+export function updateUser(id, patch) {
+  return demoRequest(() => users.updateUser(id, patch), { latency: [300, 520] });
+}
+
+export function revokeInvite(id) {
+  return demoRequest(() => users.revokeInvite(id), { latency: [300, 520] });
 }

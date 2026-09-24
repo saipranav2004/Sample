@@ -5,6 +5,7 @@ import { CornerDownLeft, Fingerprint, Search } from 'lucide-react';
 import { fetchIdentities } from '../lib/api/endpoints';
 import { useDebouncedValue, useQuery, useScrollLock } from '../lib/hooks';
 import { useScanContext } from '../app/ScanContext';
+import { useAccess } from '../app/useAccess';
 import { ALL_NAV_ITEMS } from './navigation';
 import { arnResource } from '../lib/format';
 import { classificationMeta } from '../lib/domain';
@@ -41,14 +42,16 @@ export function CommandPalette({ open, onClose }) {
     { enabled: open && debounced.length >= 2 },
   );
 
+  const { can } = useAccess();
   const navMatches = useMemo(() => {
     const needle = term.trim().toLowerCase();
-    if (!needle) return ALL_NAV_ITEMS;
-    return ALL_NAV_ITEMS.filter(
+    const allowed = ALL_NAV_ITEMS.filter((item) => !item.permission || can(item.permission));
+    if (!needle) return allowed;
+    return allowed.filter(
       (item) =>
         item.label.toLowerCase().includes(needle) || item.group.toLowerCase().includes(needle),
     );
-  }, [term]);
+  }, [term, can]);
 
   const identityMatches = useMemo(() => identityQuery.data?.rows ?? [], [identityQuery.data]);
 

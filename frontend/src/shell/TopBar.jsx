@@ -5,8 +5,10 @@ import { useAuth } from '../app/AuthContext';
 import { useThemeMode } from '../app/ThemeContext';
 import { usePopover } from '../lib/hooks';
 import { BrandLockup } from './Brand';
+import { NotificationBell } from './NotificationBell';
 // import { ScanSwitcher } from './ScanSwitcher';
-import { initialsOf, titleCaseEnum } from '../lib/format';
+import { initialsOf } from '../lib/format';
+import { roleMeta } from '../lib/roles';
 import { cn } from '../ui/cn';
 
 /**
@@ -96,6 +98,8 @@ export function TopBar({ onOpenNav, onOpenCommand }) {
         <Search aria-hidden="true" className="size-5" />
       </button>
 
+      <NotificationBell />
+
       {/* Shows the theme it switches TO - a sun in dark mode, a moon in light -
           which is the convention people already know from every other app. */}
       <button
@@ -157,7 +161,7 @@ export function TopBar({ onOpenNav, onOpenCommand }) {
                 <span className="mt-1.5 flex flex-wrap gap-1.5">
                   {user?.role && (
                     <span className="rounded-full border border-brand/25 bg-info-soft px-1.5 py-0.5 text-[10.5px] font-semibold text-brand">
-                      {titleCaseEnum(user.role)}
+                      {roleMeta(user.role).label}
                     </span>
                   )}
                   {user?.team && (

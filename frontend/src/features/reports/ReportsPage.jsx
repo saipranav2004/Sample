@@ -1,3 +1,4 @@
+import { useAccess } from '../../app/useAccess';
 import { useCallback, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
@@ -80,6 +81,7 @@ const SEARCH_PLACEHOLDERS = {
 };
 
 export default function ReportsPage() {
+  const { lock } = useAccess();
   const [searchParams, setSearchParams] = useSearchParams();
   const { notify } = useToast();
 
@@ -138,7 +140,12 @@ export default function ReportsPage() {
 
   const onGenerate = useCallback(
     (template, format) => {
-      generateReport({ templateId: template.id, format: format ?? template.formats[0] });
+      try {
+        generateReport({ templateId: template.id, format: format ?? template.formats[0] });
+      } catch (error) {
+        notify({ title: 'Not queued', description: error.message, variant: 'error' });
+        return;
+      }
       notify({
         title: `${template.name} queued`,
         description: 'Follow it in History. It becomes readable once the run finishes.',
@@ -152,7 +159,12 @@ export default function ReportsPage() {
   const onSaveSchedule = useCallback(
     (schedule) => {
       const existing = Boolean(schedule.id);
-      saveSchedule(schedule);
+      try {
+        saveSchedule(schedule);
+      } catch (error) {
+        notify({ title: 'Schedule not saved', description: error.message, variant: 'error' });
+        return;
+      }
       setScheduleOpen(false);
       setEditing(null);
       setScheduleFor(null);
@@ -311,6 +323,7 @@ export default function ReportsPage() {
             <Button
               variant="primary"
               icon={CalendarPlus}
+              locked={lock('reports.schedule')}
               onClick={() => {
                 setEditing(null);
                 setScheduleFor(null);
@@ -490,6 +503,7 @@ export default function ReportsPage() {
 /* ── Library ──────────────────────────────────────────────────────────────── */
 
 function LibraryTab({ query, templates, search, onClearSearch, onGenerate, onSchedule }) {
+  const { can, lock } = useAccess();
   if (query.isError && !query.data) {
     return <ErrorState error={query.error} onRetry={query.refetch} />;
   }
@@ -527,14 +541,14 @@ function LibraryTab({ query, templates, search, onClearSearch, onGenerate, onSch
               <OverflowMenu
                 label={`More actions for ${template.name}`}
                 items={[
-                  {
+                  can('reports.schedule') && {
                     key: 'schedule',
                     label: 'Schedule this report',
                     hint: template.scheduled ? 'Already on a schedule' : `Suggested: ${CADENCES[template.cadenceHint].label.toLowerCase()}`,
                     icon: CalendarClock,
                     onSelect: () => onSchedule(template),
                   },
-                  ...template.formats.map((format) => ({
+                  ...(can('reports.generate') ? template.formats : []).map((format) => ({
                     key: `gen-${format}`,
                     label: `Generate as ${REPORT_FORMATS[format].label}`,
                     hint: REPORT_FORMATS[format].hint,
@@ -585,10 +599,10 @@ function LibraryTab({ query, templates, search, onClearSearch, onGenerate, onSch
               row rather than below it, for the same reason - and because it is
               status, not an action. */}
           <div className="mt-auto flex flex-wrap items-center gap-2 border-t border-line pt-3">
-            <Button variant="primary" size="sm" icon={Play} onClick={() => onGenerate(template)}>
+            <Button variant="primary" size="sm" icon={Play} onClick={() => onGenerate(template)} locked={lock('reports.generate')}>
               Generate
             </Button>
-            <Button variant="ghost" size="sm" icon={CalendarClock} onClick={() => onSchedule(template)}>
+            <Button variant="ghost" size="sm" icon={CalendarClock} onClick={() => onSchedule(template)} locked={lock('reports.schedule')}>
               Schedule
             </Button>
             <span className="ml-auto text-[11px] text-ink-3">
@@ -629,6 +643,7 @@ function ScheduledTab({
   onToggle,
   onDelete,
 }) {
+  const { lock } = useAccess();
   /* `rows` stays whole: the count above the grid and the export beside it both
      describe everything the search matched, not the slice on screen.
      The page is clamped to the last one that exists, so a stale link carrying
@@ -734,9 +749,10 @@ function ScheduledTab({
                 label={row.enabled ? `Pause ${row.templateName}` : `Resume ${row.templateName}`}
                 size="sm"
                 onClick={() => onToggle(row)}
+                locked={lock('reports.schedule')}
               />
-              <IconButton icon={Pencil} label={`Edit ${row.templateName} schedule`} size="sm" onClick={() => onEdit(row)} />
-              <IconButton icon={Trash2} label={`Delete ${row.templateName} schedule`} size="sm" onClick={() => onDelete(row)} />
+              <IconButton icon={Pencil} label={`Edit ${row.templateName} schedule`} size="sm" onClick={() => onEdit(row)} locked={lock('reports.schedule')} />
+              <IconButton icon={Trash2} label={`Delete ${row.templateName} schedule`} size="sm" onClick={() => onDelete(row)} locked={lock('reports.schedule')} />
             </>
           )}
           emptyState={
@@ -755,7 +771,7 @@ function ScheduledTab({
                 title="Nothing is scheduled yet"
                 description="A scheduled report keeps producing without anyone asking, which is the point of scheduling one. Create a schedule and it appears here, with its cadence, recipients and next run."
                 action={
-                  <Button variant="primary" size="sm" icon={CalendarPlus} onClick={onCreate}>
+                  <Button variant="primary" size="sm" icon={CalendarPlus} onClick={onCreate} locked={lock('reports.schedule')}>
                     Schedule a report
                   </Button>
                 }
@@ -792,6 +808,7 @@ function HistoryTab({
   onRegenerate,
   onDelete,
 }) {
+  const { lock } = useAccess();
   const running = rows.filter((row) => row.status === 'queued' || row.status === 'running').length;
   /* Clamped, as in the Scheduled tab above. */
   const safePage = Math.min(page, Math.max(1, Math.ceil(rows.length / pageSize)));
@@ -927,8 +944,8 @@ function HistoryTab({
           density="comfortable"
           rowActions={(row) => (
             <>
-              <IconButton icon={RotateCcw} label={`Generate ${row.templateName} again`} size="sm" onClick={() => onRegenerate(row)} />
-              <IconButton icon={Trash2} label={`Delete this ${row.templateName} run`} size="sm" onClick={() => onDelete(row)} />
+              <IconButton icon={RotateCcw} label={`Generate ${row.templateName} again`} size="sm" onClick={() => onRegenerate(row)} locked={lock('reports.generate')} />
+              <IconButton icon={Trash2} label={`Delete this ${row.templateName} run`} size="sm" onClick={() => onDelete(row)} locked={lock('reports.schedule')} />
             </>
           )}
           emptyState={

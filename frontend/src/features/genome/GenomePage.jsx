@@ -208,7 +208,12 @@ export default function GenomePage() {
 
   const decide = useCallback(
     (anomaly, nextStatus) => {
-      setAnomalyStatus(anomaly.id, nextStatus);
+      try {
+        setAnomalyStatus(anomaly.id, nextStatus);
+      } catch (error) {
+        notify({ title: 'Not recorded', description: error.message, variant: 'error' });
+        return;
+      }
       notify({
         title: `${ANOMALY_STATUSES[nextStatus].label}: ${anomaly.identityName}`,
         description: `${ANOMALY_TYPES[anomaly.type].label} recorded as ${ANOMALY_STATUSES[nextStatus].label.toLowerCase()}.`,

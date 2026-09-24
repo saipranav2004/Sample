@@ -1,3 +1,4 @@
+import { useAccess } from '../../app/useAccess';
 import { useEffect, useState } from 'react';
 import { ExternalLink, FileWarning, ShieldOff } from 'lucide-react';
 import {
@@ -58,6 +59,7 @@ const DRAWER_TABS = [
 ];
 
 export function FindingDrawer({ finding, onClose, onDismiss, dismissing }) {
+  const { lock } = useAccess();
   const [reason, setReason] = useState('');
   const [confirming, setConfirming] = useState(false);
   const [tab, setTab] = useState('overview');
@@ -125,6 +127,7 @@ export function FindingDrawer({ finding, onClose, onDismiss, dismissing }) {
             variant={confirming ? 'danger' : 'primary'}
             icon={ShieldOff}
             loading={dismissing}
+            locked={lock('exposure.review')}
             onClick={() => {
               if (!confirming) {
                 setConfirming(true);
