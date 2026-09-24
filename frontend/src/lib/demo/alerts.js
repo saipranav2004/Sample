@@ -414,15 +414,22 @@ export function seedTriage(alert, now = ESTATE_META.NOW) {
       text: `Raised by rule: ${ALERT_RULES[alert.rule]?.label ?? alert.rule}.`,
     },
   ];
-  const at = (minutes) => new Date(Math.min(now - MINUTE, created + minutes * MINUTE)).toISOString();
+  const at = (minutes) => new Date(created + minutes * MINUTE).toISOString();
+  /* A seeded step only happened if its time has passed. This used to clamp
+     a future step to "a minute ago", so a young alert read "work started 1
+     minute ago" after an escalation for not being acknowledged - a timeline
+     that contradicts itself. Now the seeded state stops at the last step
+     that has actually happened. */
+  const happened = (minutes) => created + minutes * MINUTE <= now - MINUTE;
 
   /* The estate's own assignments come first: an identity already recorded as
      assigned to the operator has its alerts on the operator's list. */
   const identity = alert.identityId ? estate().identities.find((row) => row.id === alert.identityId) : null;
   if (identity?.assigned_to === OPERATOR.user) {
     activity.push({ at: at(4), actor: 'Routing rule', kind: 'assigned', text: `Assigned to ${OPERATOR.name} - the identity is on their list.` });
-    const started = h < 0.4;
+    if (!happened(35)) return { status: 'new', assignee: OPERATOR.user, escalationLevel: 1, activity };
     activity.push({ at: at(35), actor: OPERATOR.name, kind: 'acknowledged', text: 'Acknowledged.' });
+    const started = h < 0.4 && happened(180);
     if (started) activity.push({ at: at(180), actor: OPERATOR.name, kind: 'started', text: 'Work started.' });
     return { status: started ? 'in_progress' : 'acknowledged', assignee: OPERATOR.user, escalationLevel: 1, activity };
   }
@@ -439,11 +446,12 @@ export function seedTriage(alert, now = ESTATE_META.NOW) {
     kind: 'assigned',
     text: `Assigned to ${route.person.name} - ${route.why}.`,
   });
-  const acknowledged = h < assignedShare * 0.7;
+  const ackAfter = intBetween(rng(hashSeed(`ack:${alert.id}`)), 12, 50);
+  const acknowledged = h < assignedShare * 0.7 && happened(ackAfter);
   if (!acknowledged) return { status: 'new', assignee: route.person.user, escalationLevel: 1, activity };
 
-  activity.push({ at: at(intBetween(rng(hashSeed(`ack:${alert.id}`)), 12, 50)), actor: route.person.name, kind: 'acknowledged', text: 'Acknowledged.' });
-  if (h < assignedShare * 0.3) {
+  activity.push({ at: at(ackAfter), actor: route.person.name, kind: 'acknowledged', text: 'Acknowledged.' });
+  if (h < assignedShare * 0.3 && happened(240)) {
     activity.push({ at: at(240), actor: route.person.name, kind: 'started', text: 'Work started.' });
     return { status: 'in_progress', assignee: route.person.user, escalationLevel: 1, activity };
   }
@@ -498,7 +506,14 @@ export function estateAlerts(now = Date.now()) {
     if (raw.source === 'genome') {
       /* Status from the anomaly; assignment, escalation and notes from here. */
       const status = genomeStatus(raw, entry);
-      const activity = [...seeded.activity];
+      /* The seeded history has to agree with the status the anomaly gives:
+         an anomaly still open was not acknowledged by anyone, and one only
+         acknowledged has not had work started on it. */
+      const activity = seeded.activity.filter(
+        (item) =>
+          !(status === 'new' && (item.kind === 'acknowledged' || item.kind === 'started')) &&
+          !(status === 'acknowledged' && item.kind === 'started'),
+      );
       const decidedHere = (entry?.activity ?? []).some(
         (item) => raw.anomalyDecidedAt && Math.abs(Date.parse(item.at) - Date.parse(raw.anomalyDecidedAt)) < 5_000,
       );

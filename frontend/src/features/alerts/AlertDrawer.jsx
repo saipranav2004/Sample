@@ -19,8 +19,10 @@ import {
   RESPONSE_STATES,
   alertStatusMeta,
   dismissReasonMeta,
+  acknowledgedAt,
   isOpen,
   responseState,
+  spanText,
 } from '../../lib/alerts';
 import { severityMeta } from '../../lib/domain';
 import { formatDateTime, formatRelative, initialsOf } from '../../lib/format';
@@ -57,7 +59,7 @@ const ACTIVITY_ICON = {
  * dialog. This panel already traps focus; a dialog on top of it would trap it
  * again, and two traps fight over the Tab key.
  */
-export function AlertDrawer({ alert, people, policy, operatorUser, busy, onClose, onAction }) {
+export function AlertDrawer({ alert, people, policy, operatorUser, busy, onClose, onAction, now }) {
   const [pending, setPending] = useState(null);
   const [reason, setReason] = useState('');
   const [note, setNote] = useState('');
@@ -68,7 +70,10 @@ export function AlertDrawer({ alert, people, policy, operatorUser, busy, onClose
 
   const severity = severityMeta(alert.severity);
   const status = alertStatusMeta(alert.status);
-  const response = responseState(alert);
+  /* The page computes the clock once a minute and hands it down, so the
+     drawer and the list never disagree about what is overdue. */
+  const response = alert.response ?? responseState(alert, now);
+  const ackAt = acknowledgedAt(alert);
   const responseMeta = RESPONSE_STATES[response.state];
   const open = isOpen(alert);
   const level = alert.escalationLevel ?? 1;
@@ -271,7 +276,10 @@ export function AlertDrawer({ alert, people, policy, operatorUser, busy, onClose
             <SectionLabel>Escalation</SectionLabel>
             <ol className="mt-2 flex flex-col gap-1.5">
               {ESCALATION_LEVELS.map((entry) => {
-                const person = policy?.[entry.level];
+                /* Level one is whoever the alert was routed to - the owner, or
+                   on-call when there is none - so while it sits at level one
+                   the row names the current assignee, not on-call regardless. */
+                const person = entry.level === 1 && level === 1 && assignee ? assignee : policy?.[entry.level];
                 const current = entry.level === level;
                 const passed = entry.level < level;
                 return (
@@ -330,22 +338,19 @@ export function AlertDrawer({ alert, people, policy, operatorUser, busy, onClose
               </dd>
             </div>
             <div>
-              <dt className="text-ink-3">Acknowledge by</dt>
-              <dd
-                className={cn('font-medium', response.state === 'ack_overdue' ? 'text-high' : 'text-ink-2')}
-                title={formatDateTime(new Date(response.acknowledgeBy))}
-              >
-                {alert.status === 'new' || !open ? formatRelative(new Date(response.acknowledgeBy)) : 'Acknowledged'}
-              </dd>
+              <dt className="text-ink-3">{ackAt ? 'Acknowledged' : 'Acknowledge by'}</dt>
+              <Deadline
+                at={ackAt}
+                now={now}
+                due={response.acknowledgeBy}
+                open={open && !ackAt}
+                lateTone="text-high"
+                missing={alert.status !== 'new' ? 'Time not recorded' : null}
+              />
             </div>
             <div>
-              <dt className="text-ink-3">{open ? 'Resolve by' : 'Closed'}</dt>
-              <dd
-                className={cn('font-medium', response.state === 'overdue' ? 'text-critical' : 'text-ink-2')}
-                title={formatDateTime(new Date(open ? response.resolveBy : alert.closedAt))}
-              >
-                {open ? formatRelative(new Date(response.resolveBy)) : formatRelative(alert.closedAt)}
-              </dd>
+              <dt className="text-ink-3">{open ? 'Resolve by' : alert.status === 'dismissed' ? 'Dismissed' : 'Resolved'}</dt>
+              <Deadline at={open ? null : alert.closedAt} now={now} due={response.resolveBy} open={open} lateTone="text-critical" />
             </div>
           </dl>
         </div>
@@ -555,5 +560,35 @@ function ConfirmPanel({ action, alert, next, reason, onReason, note, onNote, bus
         </Button>
       </div>
     </div>
+  );
+}
+
+/**
+ * One response clock. Before it is met: the deadline, as "in 3 hours" or
+ * "Overdue by 12 days" - a missed deadline is lateness, not history, so it
+ * never reads "12 days ago". After it is met: when, and whether that was
+ * within the target or how late.
+ */
+function Deadline({ at, due, open, lateTone, now, missing = null }) {
+  if (at) {
+    const late = Date.parse(at) - due;
+    return (
+      <dd className="font-medium text-ink-2">
+        <span title={formatDateTime(at)}>{formatRelative(at)}</span>
+        <span className={cn('block text-[11.5px] font-normal', late > 0 ? lateTone : 'text-low')}>
+          {late > 0 ? `${spanText(late)} past the target` : 'Within the target'}
+        </span>
+      </dd>
+    );
+  }
+  if (!open) {
+    return <dd className="font-medium text-ink-3">{missing ?? 'Not recorded'}</dd>;
+  }
+  const overdue = now > due;
+  return (
+    <dd className={cn('font-medium', overdue ? lateTone : 'text-ink-2')} title={formatDateTime(new Date(due))}>
+      {overdue ? `Overdue by ${spanText(now - due)}` : formatRelative(new Date(due))}
+      <span className="block text-[11.5px] font-normal text-ink-3">{formatDateTime(new Date(due))}</span>
+    </dd>
   );
 }

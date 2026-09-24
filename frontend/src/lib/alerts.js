@@ -145,6 +145,46 @@ export const RESPONSE_STATES = {
 
 export const RESPONSE_STATE_ORDER = ['overdue', 'ack_overdue', 'due_soon', 'on_track', 'closed'];
 
+/* A person responding - any of these stops the acknowledge clock, the way an
+   on-call tool treats starting work or resolving outright as acknowledging. */
+const RESPONSE_KINDS = new Set(['acknowledged', 'started', 'resolved', 'dismissed']);
+
+/**
+ * When the alert was first responded to in its current life, or null.
+ *
+ * Read from the timeline, counting only events since it was last (re)opened,
+ * so a reopened alert starts its acknowledge clock again. Genome alerts can be
+ * decided on the Genome screen, which records the time on the anomaly, so
+ * that is the fallback; a closed alert with neither was answered by closing.
+ */
+export function acknowledgedAt(alert) {
+  const since = Date.parse(alert?.openedAt ?? alert?.createdAt ?? 0) || 0;
+  const hit = [...(alert?.activity ?? [])]
+    .filter((item) => RESPONSE_KINDS.has(item.kind) && Date.parse(item.at) >= since)
+    .sort((a, b) => Date.parse(a.at) - Date.parse(b.at))[0];
+  if (hit) return hit.at;
+  if (alert?.status !== 'new' && alert?.anomalyDecidedAt) return alert.anomalyDecidedAt;
+  if (!isOpen(alert) && alert?.closedAt) return alert.closedAt;
+  return null;
+}
+
+/** "3 hours", "12 days": a length of time in its largest sensible unit. */
+export function spanText(ms, { short = false } = {}) {
+  const minutes = Math.max(1, Math.round(Math.abs(ms) / 60_000));
+  const steps = [
+    [60, 1, 'minute', 'm'],
+    [60 * 24, 60, 'hour', 'h'],
+    [Infinity, 60 * 24, 'day', 'd'],
+  ];
+  for (const [limit, divisor, unit, abbr] of steps) {
+    if (minutes < limit) {
+      const amount = Math.max(1, Math.round(minutes / divisor));
+      return short ? `${amount}${abbr}` : `${amount} ${unit}${amount === 1 ? '' : 's'}`;
+    }
+  }
+  return '';
+}
+
 /**
  * An alert with its stored triage applied, and automatic escalation derived.
  *

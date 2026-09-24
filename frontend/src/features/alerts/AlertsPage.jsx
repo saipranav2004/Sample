@@ -23,6 +23,7 @@ import {
   DISMISS_REASONS,
   ESCALATION_LEVELS,
   RESPONSE_STATES,
+  spanText,
   RESPONSE_STATE_ORDER,
   RESPONSE_TARGETS,
   alertStatusMeta,
@@ -574,8 +575,10 @@ export default function AlertsPage() {
             <span className={cn('block text-[12px] font-medium', TONE_TEXT[meta.tone])}>{meta.label}</span>
             {isOpen(row) && (
               <span className="block truncate text-[11px] text-ink-3" title={formatDateTime(new Date(by))}>
-                {row.response.state === 'ack_overdue' ? 'ack due ' : 'due '}
-                {formatRelativeShort(new Date(by))}
+                {/* Lateness, not history: "overdue 12d", never "due 12d ago". */}
+                {now > by
+                  ? `${row.response.state === 'ack_overdue' ? 'ack ' : ''}overdue ${spanText(now - by, { short: true })}`
+                  : `${row.response.state === 'ack_overdue' ? 'ack ' : ''}due in ${spanText(by - now, { short: true })}`}
               </span>
             )}
           </span>
@@ -829,6 +832,7 @@ export default function AlertsPage() {
         busy={busy}
         onClose={() => setParams({ alert: '' }, { resetPage: false })}
         onAction={runAction}
+        now={now}
       />
 
       <BulkDismissModal
