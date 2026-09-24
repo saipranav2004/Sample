@@ -1,7 +1,8 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowRight, Download, SearchX, ShieldCheck, Sparkles } from 'lucide-react';
-import { fetchPostureOverview } from '../../lib/api/endpoints';
+import { ArrowRight, Download, SearchX, ShieldCheck, Sparkles, Wrench } from 'lucide-react';
+import { useAccess } from '../../app/useAccess';
+import { fetchPostureOverview, remediatePostureMany } from '../../lib/api/endpoints';
 import { useDemoQuery } from '../../lib/demo/useDemoQuery';
 import { exportRowsToCsv, timestampedName } from '../../lib/csv';
 import { SEVERITY_ORDER, severityMeta } from '../../lib/domain';
@@ -13,6 +14,7 @@ import { Button, IconButton } from '../../ui/Button';
 import { DataGrid } from '../../ui/DataGrid';
 import { SearchInput } from '../../ui/Field';
 import { AppliedFilters, FacetRail, useFacetRail } from '../../ui/FacetRail';
+import { Modal } from '../../ui/Overlay';
 import { Pagination } from '../../ui/Pagination';
 import { Panel, PanelHeader } from '../../ui/Panel';
 import { ChartSkeleton, ListSkeleton, Skeleton } from '../../ui/Skeleton';
@@ -421,6 +423,10 @@ export default function PosturePage() {
 
           <AppliedFilters filters={chips} onRemove={(key) => setParam(key, '')} onClearAll={clearAll} />
 
+          {check && data && rows.length > 0 && (
+            <BulkFix check={check} title={checkTitle} rows={rows} gain={data.checkGains?.[check]} total={allRows.length} />
+          )}
+
           {query.isError && !data ? null : (
             <DataGrid
               caption="Identity posture"
@@ -429,7 +435,7 @@ export default function PosturePage() {
               rowKey={(row) => row.id}
               loading={loading}
               refreshing={query.isRefreshing}
-              onRowClick={(row) => navigate(`/posture/${encodeURIComponent(row.id)}`)}
+              onRowClick={(row) => navigate(`/identities/${encodeURIComponent(row.id)}?tab=posture`)}
               sort={{ key: sortKey, direction: sortDirection }}
               onSortChange={(next) =>
                 setParams({ sort: next.key === 'score' ? '' : next.key, dir: next.direction === 'desc' ? 'desc' : '' })
@@ -437,7 +443,7 @@ export default function PosturePage() {
               rowActions={(row) => (
                 <IconButton
                   as={Link}
-                  to={`/posture/${encodeURIComponent(row.id)}`}
+                  to={`/identities/${encodeURIComponent(row.id)}?tab=posture`}
                   icon={ArrowRight}
                   size="sm"
                   label={`Investigate ${row.name}`}
@@ -641,7 +647,7 @@ function WeakestIdentities({ rows }) {
       <ul className="mt-3 divide-y divide-line">
         {weakest.map((row) => (
           <li key={row.id}>
-            <Link to={`/posture/${encodeURIComponent(row.id)}`} className="flex items-center gap-3 py-2 transition-colors hover:text-brand">
+            <Link to={`/identities/${encodeURIComponent(row.id)}?tab=posture`} className="flex items-center gap-3 py-2 transition-colors hover:text-brand">
               <ScoreRing score={row.score} size={36} grade={row.grade} />
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-mono text-[12.5px] font-semibold text-ink">{row.name}</span>
@@ -696,6 +702,83 @@ function BreakdownList({ title, items, onPick }) {
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+/**
+ * One check fixed on every identity the list shows - a quick win applied in
+ * one go. Shown only while the list is narrowed to a single check, so what it
+ * will act on is exactly the rows on screen. Recording an owner is left out:
+ * each identity needs its own.
+ */
+function BulkFix({ check, title, rows, gain, total }) {
+  const { can } = useAccess();
+  const { notify } = useToast();
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+  if (!can('posture.remediate')) return null;
+  const perIdentity = check === 'no-owner';
+  /* The fleet gain is for fixing it everywhere; a narrower list earns its share. */
+  const share = gain && gain.identities ? Math.round(((gain.fleetGain * rows.length) / gain.identities) * 10) / 10 : null;
+
+  const apply = async () => {
+    setBusy(true);
+    try {
+      const result = await remediatePostureMany({ checkKey: check, identityIds: rows.map((row) => row.id) });
+      notify({
+        variant: 'success',
+        title: `Fixed on ${formatNumber(result.count)} identities`,
+        description: `${title}.${result.resolvedAlerts ? ` ${result.resolvedAlerts} open ${result.resolvedAlerts === 1 ? 'alert' : 'alerts'} resolved.` : ''}`,
+      });
+      setConfirming(false);
+    } catch (failure) {
+      notify({ variant: 'error', title: 'Not applied', description: failure?.message });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-wrap items-center gap-3 border-b border-line bg-info-soft/60 px-4 py-2.5">
+      <Wrench aria-hidden="true" className="size-4 shrink-0 text-brand" />
+      <p className="min-w-0 flex-1 text-[12.5px] text-ink-2">
+        {perIdentity
+          ? 'Owners are recorded one identity at a time - each needs its own person. Open a row to record one.'
+          : `${formatNumber(rows.length)} ${rows.length === 1 ? 'identity fails' : 'identities fail'} "${title}".${share !== null ? ` Fixing ${rows.length === 1 ? 'it' : 'them all'} adds ${share} to the fleet score.` : ''}`}
+      </p>
+      {!perIdentity && (
+        <Button variant="primary" size="sm" icon={Wrench} onClick={() => setConfirming(true)}>
+          Fix {rows.length === 1 ? '1 identity' : `all ${formatNumber(rows.length)}`}
+        </Button>
+      )}
+      <Modal
+        open={confirming}
+        onClose={() => (busy ? null : setConfirming(false))}
+        title={`Fix ${formatNumber(rows.length)} ${rows.length === 1 ? 'identity' : 'identities'}?`}
+        description={`Applies "${title}" to every identity in this list${rows.length < total ? ' - the filtered rows, not the whole estate' : ''}. Each one gets the same remediation it would get on its own, including resolving its matching alerts, and each can be rolled back from its Posture tab.`}
+        icon={Wrench}
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setConfirming(false)} disabled={busy}>
+              Cancel
+            </Button>
+            <Button variant="primary" icon={Wrench} loading={busy} onClick={apply}>
+              {busy ? 'Applying…' : `Apply to ${formatNumber(rows.length)}`}
+            </Button>
+          </>
+        }
+      >
+        <ul className="max-h-48 overflow-y-auto rounded-[var(--radius-control)] border border-line text-[12px]">
+          {rows.slice(0, 50).map((row) => (
+            <li key={row.id} className="flex items-center justify-between gap-3 border-b border-line px-3 py-1.5 last:border-b-0">
+              <span className="truncate font-mono text-ink">{row.name}</span>
+              <span className="shrink-0 text-ink-3">{row.account}</span>
+            </li>
+          ))}
+          {rows.length > 50 && <li className="px-3 py-1.5 text-ink-3">and {formatNumber(rows.length - 50)} more</li>}
+        </ul>
+      </Modal>
     </div>
   );
 }

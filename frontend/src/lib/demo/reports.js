@@ -1,7 +1,8 @@
 import { OVERLAY_KEYS, demoRequest, hashSeed, intBetween, pick, readOverlay, rng, writeOverlay } from './runtime';
 import { ACTOR_CATEGORIES, ACTOR_CATEGORY_ORDER, credentialKindMeta } from '../domain';
 import { isOpen, responseState } from '../alerts';
-import { estate, OPERATOR } from './estate';
+import { OPERATOR } from './estate';
+import { effectiveEstate } from './effective';
 import { assertCan } from './users';
 import { estateAlerts } from './alerts';
 import { ANOMALY_TYPES, genomeAnomalies, genomeFleet } from './genome';
@@ -248,7 +249,7 @@ function seedRuns() {
  * the time it ran; those carry a plausible historical figure.
  */
 function rowsFor(templateId, next) {
-  const { identities, credentials } = estate();
+  const { identities, credentials } = effectiveEstate();
   switch (templateId) {
     case 'identity-inventory':
       return identities.length;
@@ -436,7 +437,7 @@ export function deleteRun(id) {
  * opened, because the scanner is the only place those figures exist.
  */
 function buildPreview(run, template) {
-  const { identities, accounts } = estate();
+  const { identities, accounts } = effectiveEstate();
   return {
     title: template.name,
     audience: template.audience,
@@ -460,7 +461,7 @@ const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
 
 function measuresFor(key) {
-  const { identities, credentials, accounts } = estate();
+  const { identities, credentials, accounts } = effectiveEstate();
   const nhis = identities.filter((row) => row.classification !== 'HUMAN');
   const alerts = estateAlerts();
   const open = alerts.filter(isOpen);

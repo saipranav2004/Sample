@@ -73,7 +73,11 @@ export function CommandPalette({ open, onClose }) {
         sub: identity.arn,
         icon: Fingerprint,
         run: () =>
-          navigate(`/identities?search=${encodeURIComponent(identity.name || identity.arn)}`),
+          navigate(
+            identity.id
+              ? `/identities/${encodeURIComponent(identity.id)}`
+              : `/identities?search=${encodeURIComponent(identity.name || identity.arn)}`,
+          ),
       })),
     ],
     [navMatches, identityMatches, navigate],

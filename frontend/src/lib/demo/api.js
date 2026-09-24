@@ -23,7 +23,8 @@
  */
 
 import { demoRequest, hashSeed, intBetween, rng } from './runtime';
-import { estate, ESTATE_META, OPERATOR } from './estate';
+import { ESTATE_META, OPERATOR } from './estate';
+import { effectiveEstate } from './effective';
 import * as users from './users';
 import { currentUserRow, sessionUser, verifySignIn } from './users';
 import {
@@ -105,7 +106,7 @@ export function fetchProfile(signal) {
 export function fetchSummary(_query, signal) {
   return demoRequest(
     () => {
-      const { identities, credentials } = estate();
+      const { identities, credentials } = effectiveEstate();
 
       const humans = identities.filter((row) => row.classification === 'HUMAN');
       const nhis = identities.filter((row) => row.classification !== 'HUMAN');
@@ -156,7 +157,7 @@ export function fetchSummary(_query, signal) {
         total_nhi_stale: nhis.filter((row) => row.last_active_days > 90).length,
         total_nhi_orphaned: nhis.filter((row) => row.owner_type === 'ORPHANED').length,
         total_nhi_with_keys: nhis.filter((row) => row.access_key_count > 0).length,
-        total_accounts: estate().accounts.length,
+        total_accounts: effectiveEstate().accounts.length,
       };
     },
     { signal, latency: [220, 420] },
@@ -186,7 +187,7 @@ export function fetchIdentities(query = {}, signal) {
       } = query;
 
       const needle = lower(search).trim();
-      const rows = estate().identities.filter((row) => {
+      const rows = effectiveEstate().identities.filter((row) => {
         if (classification && row.classification !== classification) return false;
         if (actorCategory && row.actor_category !== actorCategory) return false;
         if (identityType && row.identity_type !== identityType) return false;
@@ -232,10 +233,26 @@ export function fetchIdentities(query = {}, signal) {
   );
 }
 
+/** One identity, as `GET /api/identities/:id` would return it. */
+export function fetchIdentity(id, signal) {
+  return demoRequest(
+    () => {
+      const row = effectiveEstate().identities.find((identity) => identity.id === id);
+      if (!row) {
+        const error = new Error('No identity with that id. A later discovery run may have removed it.');
+        error.status = 404;
+        throw error;
+      }
+      return row;
+    },
+    { signal, latency: [180, 360] },
+  );
+}
+
 export function fetchLineage({ arn, page = 1, pageSize = 50 } = {}, signal) {
   return demoRequest(
     () => {
-      const { edges, byArn } = estate();
+      const { edges, byArn } = effectiveEstate();
       const rows = [];
 
       /* The drawer's table is keyed on the OTHER end of the relationship,
@@ -288,7 +305,7 @@ export function fetchLineage({ arn, page = 1, pageSize = 50 } = {}, signal) {
 export function fetchConsumers({ arn, page = 1, pageSize = 25 } = {}, signal) {
   return demoRequest(
     () => {
-      const { consumersOf } = estate();
+      const { consumersOf } = effectiveEstate();
       const rows = (consumersOf.get(arn) ?? []).map((edge) => ({
         id: `consumer-${edge.caller_arn}`,
         caller_arn: edge.caller_arn,
@@ -316,7 +333,7 @@ export function fetchCredentials({ page = 1, pageSize = 25, search, type, severi
   return demoRequest(
     () => {
       const needle = lower(search).trim();
-      const rows = estate().credentials.filter((row) => {
+      const rows = effectiveEstate().credentials.filter((row) => {
         if (type && row.type !== type) return false;
         if (severity && row.severity !== severity) return false;
         if (!needle) return true;
@@ -351,7 +368,7 @@ export function fetchCredentials({ page = 1, pageSize = 25, search, type, severi
 export function fetchScans({ page = 1, pageSize = 50 } = {}, signal) {
   return demoRequest(
     () => {
-      const { identities, credentials, events, accounts } = estate();
+      const { identities, credentials, events, accounts } = effectiveEstate();
 
       /* The scans screen and the scan picker are commented out of this build,
          but the dashboard's trend is a history of discovery runs and a single
@@ -399,8 +416,8 @@ export function fetchEvents({ identityArn, page = 1, pageSize = 25 } = {}, signa
   return demoRequest(
     () => {
       const rows = identityArn
-        ? estate().events.filter((row) => row.identity_arn === identityArn)
-        : estate().events;
+        ? effectiveEstate().events.filter((row) => row.identity_arn === identityArn)
+        : effectiveEstate().events;
       return paginate(rows, page, pageSize);
     },
     { signal, latency: [200, 400] },
@@ -440,7 +457,7 @@ export function fetchIntegrations(signal) {
              hole: our account id alone in a trust policy would let any
              principal inside our account assume the customer's role. */
           externalId: TENANT_EXTERNAL_ID,
-          regions: [...new Set(estate().identities.map((row) => row.region))].sort(),
+          regions: [...new Set(effectiveEstate().identities.map((row) => row.region))].sort(),
         },
         /* Counted, not written: the covered accounts are the estate's own, so
            this number and the accounts the identities come from agree. */
@@ -559,6 +576,16 @@ export async function fetchPostureIdentity(id, signal) {
 export async function remediatePosture(input) {
   const posture = await import('./posture');
   return posture.remediatePosture(input);
+}
+
+export async function remediatePostureMany(input) {
+  const posture = await import('./posture');
+  return posture.remediatePostureMany(input);
+}
+
+export async function rollBackPosture(input) {
+  const posture = await import('./posture');
+  return posture.rollBackPosture(input);
 }
 
 /* ── Users ────────────────────────────────────────────────────────────────── */

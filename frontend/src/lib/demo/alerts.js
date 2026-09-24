@@ -139,7 +139,7 @@ export const ALERT_RULES = {
 };
 
 function identityLink(row) {
-  return `/identities?search=${encodeURIComponent(row.name)}`;
+  return `/identities/${encodeURIComponent(row.id)}`;
 }
 
 function identityAlerts() {
@@ -151,7 +151,7 @@ function identityAlerts() {
       name: row.name,
       detail: `${actor} · ${row.account_name}`,
       to: identityLink(row),
-      linkLabel: 'Open in Identities',
+      linkLabel: 'Open identity record',
     };
     const common = { source: 'identities', entity, account: row.account_name, ownerName: row.owner_name, identityId: row.id };
 

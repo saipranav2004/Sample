@@ -71,7 +71,11 @@ export function ActivityFeed({ events, loading, error, onRetry, limit, emptyHint
               <p className="mt-0.5 truncate text-[12px] text-ink-2">
                 {event.identity_name ? (
                   <Link
-                    to={`/identities?search=${encodeURIComponent(event.identity_name)}`}
+                    to={
+                      event.identity_id
+                        ? `/identities/${encodeURIComponent(event.identity_id)}`
+                        : `/identities?search=${encodeURIComponent(event.identity_name)}`
+                    }
                     className="font-medium text-brand hover:underline"
                   >
                     {event.identity_name}

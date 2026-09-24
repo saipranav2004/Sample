@@ -205,6 +205,18 @@ export function AlertDrawer({ alert, people, policy, operatorUser, busy, onClose
               <Button as={Link} to={alert.entity.to} variant="secondary" size="sm" iconRight={ExternalLink}>
                 {alert.entity.linkLabel}
               </Button>
+              {/* The score impact of what this alert is about, and the fix. */}
+              {alert.identityId && (
+                <Button
+                  as={Link}
+                  to={`/identities/${encodeURIComponent(alert.identityId)}?tab=posture`}
+                  variant="ghost"
+                  size="sm"
+                  iconRight={ExternalLink}
+                >
+                  Posture and fixes
+                </Button>
+              )}
               {alert.entity.externalHref && (
                 <Button
                   as="a"

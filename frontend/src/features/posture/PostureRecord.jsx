@@ -1,24 +1,22 @@
 import { useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, Dna, History, KeyRound, ListChecks, Users, Waypoints, Wrench } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { CheckCircle2, History, KeyRound, Lock, RotateCcw, Users, Wrench } from 'lucide-react';
 import { useAccess } from '../../app/useAccess';
-import { fetchPostureIdentity } from '../../lib/api/endpoints';
-import { useDemoQuery } from '../../lib/demo/useDemoQuery';
+import { rollBackPosture } from '../../lib/api/endpoints';
 import { severityMeta } from '../../lib/domain';
 import { formatDate, formatDateTime, formatNumber, formatRelative } from '../../lib/format';
 import { bandFor, PILLARS } from '../../lib/posture';
-import { PageHeader } from '../../shell/PageHeader';
 import { TrendChart } from '../../charts/TrendChart';
 import { Button } from '../../ui/Button';
-import { CopyableValue } from '../../ui/Copyable';
 import { DataGrid } from '../../ui/DataGrid';
 import { Panel, PanelHeader } from '../../ui/Panel';
-import { DetailSkeleton, Skeleton } from '../../ui/Skeleton';
-import { ClearState, EmptyState, ErrorState } from '../../ui/States';
-import { Tabs } from '../../ui/Tabs';
+import { Modal } from '../../ui/Overlay';
+import { ClearState } from '../../ui/States';
+import { SegmentedControl } from '../../ui/Tabs';
 import { Tag } from '../../ui/Tag';
+import { useToast } from '../../ui/Toast';
 import { TONE_VAR } from '../../ui/cn';
-import { BandTag, PillarBars, ScoreRing } from './parts';
+import { PillarBars, ScoreRing } from './parts';
 import { RemediateDrawer } from './RemediateDrawer';
 
 const CREDENTIAL_STATUS = {
@@ -34,120 +32,100 @@ const STATE_META = {
 };
 
 /**
- * One identity's posture.
+ * One identity's posture, as the Posture tab of the identity page.
  *
- * Why the score is what it is, and what each fix is worth. The overview tab
- * leads with the failed checks and a Remediate action on each, because that
- * is what somebody opened the record to do; the checks tab lists every check
- * that applies, passing ones included, so a score of 100 can be read as well
- * as a score of 6; the history tab is how it got here.
+ * Why the score is what it is, and what each fix is worth. Overview leads
+ * with the failed checks and a Remediate action on each, because that is what
+ * somebody opened it to do; Checks lists every check that applies, passing
+ * ones included, so a score of 100 can be read as well as a score of 6;
+ * History is how it got here. A fix in force can be rolled back from Checks.
  */
-export default function PostureDetailPage() {
-  const { id } = useParams();
-  const [tab, setTab] = useState('overview');
+export function PostureRecord({ data }) {
+  const { can } = useAccess();
+  const { notify } = useToast();
+  const [view, setView] = useState('overview');
   const [fixing, setFixing] = useState(null);
-  const query = useDemoQuery((signal) => fetchPostureIdentity(id, signal), [id]);
-  const data = query.data;
-
-  const back = (
-    <Button variant="secondary" as={Link} to="/posture" icon={ArrowLeft}>
-      Posture
-    </Button>
-  );
-
-  if (query.isError && !data) {
-    return (
-      <div className="flex flex-col gap-6">
-        <PageHeader title="Identity posture" actions={back} />
-        <Panel>
-          {query.error?.status === 404 ? (
-            <EmptyState
-              icon={ListChecks}
-              title="No identity with that id"
-              description="It may have been removed by a later discovery run. Pick one from the Posture list."
-              action={back}
-            />
-          ) : (
-            <ErrorState error={query.error} onRetry={query.refetch} />
-          )}
-        </Panel>
-      </div>
-    );
-  }
-
-  if (!data) {
-    return (
-      <div className="flex flex-col gap-6" aria-busy="true">
-        <PageHeader title={<Skeleton className="h-7 w-64 rounded" />} actions={back} />
-        <Panel prominence="lead">
-          <DetailSkeleton rows={8} />
-        </Panel>
-        <span role="status" className="sr-only">
-          Loading identity posture
-        </span>
-      </div>
-    );
-  }
-
+  const [rolling, setRolling] = useState(null);
+  const [busy, setBusy] = useState(false);
   const { identity, checks } = data;
   const failing = checks.filter((check) => check.state === 'fail');
   const remediated = checks.filter((check) => check.state === 'remediated');
-  /* The fix open in the drawer, re-read from the latest data so a refetch
-     while it is open cannot leave it showing a stale plan. */
+  /* Re-read from the latest data, so a refetch while a dialog is open cannot
+     leave it acting on a stale plan. */
   const fixingCheck = fixing ? failing.find((check) => check.key === fixing) : null;
+  const rollingCheck = rolling ? checks.find((check) => check.key === rolling && check.canRollBack) : null;
+  const editable = can('posture.remediate');
 
-  const tabs = [
-    { value: 'overview', label: 'Overview' },
-    { value: 'checks', label: 'Checks', count: checks.length },
-    { value: 'history', label: 'History' },
-  ];
+  const rollBack = async () => {
+    setBusy(true);
+    try {
+      const result = await rollBackPosture({ identityId: identity.id, checkKey: rollingCheck.key });
+      notify({
+        variant: 'success',
+        title: 'Fix rolled back',
+        description: `${identity.name}: score ${result.before} to ${result.after}.${
+          result.reopenedAlerts > 0 ? ` ${result.reopenedAlerts} ${result.reopenedAlerts === 1 ? 'alert' : 'alerts'} reopened.` : ''
+        }`,
+      });
+      setRolling(null);
+    } catch (failure) {
+      notify({ variant: 'error', title: 'Not rolled back', description: failure?.message });
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader
-        title={<span className="font-mono">{identity.name}</span>}
-        lede={`${identity.type} · ${identity.category} · ${identity.account} · ${identity.region}`}
-        actions={
-          <>
-            {back}
-            {identity.inGraph && (
-              <Button variant="secondary" as={Link} to={`/access-graph/${encodeURIComponent(identity.id)}`} icon={Waypoints}>
-                Access graph
-              </Button>
-            )}
-            {identity.inGenome && (
-              <Button variant="secondary" as={Link} to={`/genome/${encodeURIComponent(identity.id)}`} icon={Dna}>
-                NHI Genome
-              </Button>
-            )}
-          </>
-        }
-        meta={
-          <div className="flex flex-wrap items-center gap-2">
-            <BandTag score={identity.score} />
-            <Tag tone="neutral" size="sm">
-              Grade {identity.grade}
-            </Tag>
-            {identity.isAdmin && (
-              <Tag tone="critical" size="sm">
-                Administrator
-              </Tag>
-            )}
-            <span className="min-w-0 max-w-full text-[11.5px] text-ink-3">
-              <CopyableValue value={identity.arn} />
-            </span>
-          </div>
-        }
-        tabs={<Tabs size="sm" tabs={tabs} value={tab} onChange={setTab} />}
-      />
-
+    <div className="flex flex-col gap-4">
       <ScoreSummary data={data} failing={failing} remediated={remediated} />
 
-      {tab === 'overview' && <Overview data={data} failing={failing} onFix={setFixing} />}
-      {tab === 'checks' && <ChecksTable checks={checks} onFix={setFixing} />}
-      {tab === 'history' && <HistoryTab data={data} />}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <SegmentedControl
+          label="Posture view"
+          options={[
+            { value: 'overview', label: 'Overview' },
+            { value: 'checks', label: `Checks (${checks.length})` },
+            { value: 'history', label: 'History' },
+          ]}
+          value={view}
+          onChange={setView}
+        />
+        {!editable && (
+          <p className="flex items-center gap-1.5 text-[12px] text-ink-3">
+            <Lock aria-hidden="true" className="size-3.5" />
+            Read-only. Applying or rolling back a fix needs the Admin role or higher.
+          </p>
+        )}
+      </div>
+
+      {view === 'overview' && <Overview data={data} failing={failing} onFix={setFixing} editable={editable} />}
+      {view === 'checks' && <ChecksTable checks={checks} onFix={setFixing} onRollBack={setRolling} editable={editable} />}
+      {view === 'history' && <HistoryTab data={data} />}
 
       {fixingCheck && <RemediateDrawer identity={identity} check={fixingCheck} onClose={() => setFixing(null)} />}
+
+      <Modal
+        open={Boolean(rollingCheck)}
+        onClose={() => (busy ? null : setRolling(null))}
+        title="Roll back this fix?"
+        description={
+          rollingCheck
+            ? `${rollingCheck.fix?.action}. The check fails again from now and costs ${rollingCheck.weight} points. Alerts the fix resolved are reopened if they are still resolved. Undo the change in AWS as well - rolling back here does not do that.`
+            : undefined
+        }
+        icon={RotateCcw}
+        tone="medium"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setRolling(null)} disabled={busy}>
+              Keep the fix
+            </Button>
+            <Button variant="danger" icon={RotateCcw} loading={busy} onClick={rollBack}>
+              Roll back
+            </Button>
+          </>
+        }
+      />
     </div>
   );
 }
@@ -178,7 +156,7 @@ function ScoreSummary({ data, failing, remediated }) {
             label="Peer standing"
             value={peers.percentile === null ? 'Only one' : peers.percentile === 0 ? 'Lowest in group' : `Above ${peers.percentile}%`}
           />
-          <Fact label="Open alerts" value={formatNumber(data.openAlerts)} to={data.openAlerts ? `/alerts?group=entity&q=${encodeURIComponent(identity.name)}` : null} />
+          <Fact label="Open alerts" value={formatNumber(data.openAlerts)} to={data.openAlerts ? `/identities/${encodeURIComponent(identity.id)}?tab=alerts` : null} />
         </dl>
       </div>
     </Panel>
@@ -202,7 +180,7 @@ function Fact({ label, value, to }) {
   );
 }
 
-function Overview({ data, failing, onFix }) {
+function Overview({ data, failing, onFix, editable }) {
   const { identity, pillars, credentials, peers, projected } = data;
   const impact = [...failing].sort((a, b) => b.remediation.gain - a.remediation.gain);
 
@@ -210,7 +188,7 @@ function Overview({ data, failing, onFix }) {
     <div className="grid gap-4 @min-[64rem]:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
       <div className="flex min-w-0 flex-col gap-4">
         <Panel className="animate-rise">
-          <PanelHeader title="Pillars" subtitle="Fail means a high or critical check fails in the pillar; Warn means a lower one does. Escalation paths are checked only for identities in the access graph." />
+          <PanelHeader title="Pillars" subtitle="Fail means a high or critical check fails in the pillar; Warn means a lower one does." />
           <div className="mt-4">
             <PillarBars
               pillars={pillars}
@@ -249,7 +227,7 @@ function Overview({ data, failing, onFix }) {
           ) : (
             <ul className="mt-3 divide-y divide-line border-t border-line">
               {failing.map((check) => (
-                <FailedCheck key={check.key} check={check} onFix={onFix} />
+                <FailedCheck key={check.key} check={check} onFix={onFix} editable={editable} />
               ))}
             </ul>
           )}
@@ -320,15 +298,15 @@ function Overview({ data, failing, onFix }) {
             </ul>
           )}
           <Link
-            to={`/credentials?search=${encodeURIComponent(identity.name)}`}
+            to={`/identities/${encodeURIComponent(identity.id)}?tab=credentials`}
             className="mt-3 inline-block text-[12px] font-medium text-brand hover:underline"
           >
-            Open in Credentials
+            All credentials on this identity
           </Link>
         </Panel>
 
         <Panel className="animate-rise" data-stagger="" style={{ '--stagger': 2 }}>
-          <PanelHeader icon={Users} title="Peer group" subtitle={`Every ${peers.group.toLowerCase()} identity in the estate.`} />
+          <PanelHeader icon={Users} title="Peer group" subtitle={`The ${formatNumber(peers.count)} identities classified ${peers.group} in the estate.`} />
           <PeerBar peers={peers} score={identity.score} />
         </Panel>
       </div>
@@ -348,8 +326,7 @@ function narrative(identity, failing) {
   return `${lead}${joined}.${tail} The weaknesses sit in ${pillars.join(', ')}.`;
 }
 
-function FailedCheck({ check, onFix }) {
-  const { lock } = useAccess();
+function FailedCheck({ check, onFix, editable }) {
   const severity = severityMeta(check.severity);
   return (
     <li className="flex flex-wrap items-start gap-x-4 gap-y-2 px-4 py-3.5 sm:px-5">
@@ -374,9 +351,11 @@ function FailedCheck({ check, onFix }) {
         <span data-numeric="" className="text-[12.5px] font-semibold text-low">
           +{check.remediation.gain}
         </span>
-        <Button variant="primary" size="sm" icon={Wrench} onClick={() => onFix(check.key)} locked={lock('posture.remediate')}>
-          Remediate
-        </Button>
+        {editable && (
+          <Button variant="primary" size="sm" icon={Wrench} onClick={() => onFix(check.key)}>
+            Remediate
+          </Button>
+        )}
       </div>
     </li>
   );
@@ -419,15 +398,14 @@ function PeerBar({ peers, score }) {
         {peers.percentile === null
           ? 'The only identity in its group.'
           : peers.percentile === 0
-            ? `No other ${peers.group.toLowerCase()} identity scores lower.`
-            : `Scores above ${peers.percentile}% of the other ${formatNumber(peers.count - 1)} ${peers.group.toLowerCase()} identities.`}
+            ? `No other identity classified ${peers.group} scores lower.`
+            : `Scores above ${peers.percentile}% of the other ${formatNumber(peers.count - 1)} identities classified ${peers.group}.`}
       </p>
     </div>
   );
 }
 
-function ChecksTable({ checks, onFix }) {
-  const { lock } = useAccess();
+function ChecksTable({ checks, onFix, onRollBack, editable }) {
   const columns = [
     {
       key: 'check',
@@ -493,14 +471,26 @@ function ChecksTable({ checks, onFix }) {
       width: '12%',
       cell: (check) =>
         check.state === 'fail' ? (
-          <Button variant="secondary" size="sm" icon={Wrench} onClick={() => onFix(check.key)} locked={lock('posture.remediate')}>
-            +{check.remediation.gain}
-          </Button>
+          editable ? (
+            <Button variant="secondary" size="sm" icon={Wrench} onClick={() => onFix(check.key)}>
+              +{check.remediation.gain}
+            </Button>
+          ) : (
+            <span data-numeric="" className="text-[12.5px] font-semibold text-low">
+              +{check.remediation.gain}
+            </span>
+          )
         ) : check.state === 'remediated' ? (
-          <span className="inline-flex items-center gap-1 text-[12px] text-ink-3" title={formatDateTime(check.fixedAt)}>
-            <CheckCircle2 aria-hidden="true" className="size-3.5 text-low" />
-            Applied
-          </span>
+          check.canRollBack && editable ? (
+            <Button variant="ghost" size="sm" icon={RotateCcw} onClick={() => onRollBack(check.key)} title={`Applied ${formatDateTime(check.fixedAt)}`}>
+              Roll back
+            </Button>
+          ) : (
+            <span className="inline-flex items-center gap-1 text-[12px] text-ink-3" title={formatDateTime(check.fixedAt)}>
+              <CheckCircle2 aria-hidden="true" className="size-3.5 text-low" />
+              Applied
+            </span>
+          )
         ) : (
           <span className="text-[12.5px] text-ink-3">-</span>
         ),

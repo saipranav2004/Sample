@@ -95,7 +95,6 @@ export function Tabs({ tabs, value, onChange, className, size = 'md' }) {
             role="tab"
             type="button"
             aria-selected={active}
-            aria-controls={`${baseId}-panel-${tab.value}`}
             tabIndex={active ? 0 : -1}
             onClick={() => onChange(tab.value)}
             className={cn(

@@ -2,7 +2,10 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Bot, FileWarning, Fingerprint, KeyRound, LineChart, RotateCw } from 'lucide-react';
 import { useScanContext } from '../../app/ScanContext';
-import { fetchEvents, fetchFindings, fetchSummary } from '../../lib/api/endpoints';
+import { fetchEvents, fetchFindings, fetchPostureOverview, fetchSummary } from '../../lib/api/endpoints';
+import { useDemoQuery } from '../../lib/demo/useDemoQuery';
+import { PILLARS } from '../../lib/posture';
+import { BandTag, Delta, ScoreRing } from '../posture/parts';
 import { useQuery } from '../../lib/hooks';
 import {
   CLASSIFICATION_ORDER,
@@ -138,6 +141,8 @@ export default function OverviewPage() {
         meta={<ScanContextStrip />}
       />
 
+      <PostureBanner />
+
       {/* ── Headline counters ───────────────────────────────────────────── */}
       {loadingSummary ? (
         <>
@@ -160,8 +165,6 @@ export default function OverviewPage() {
             caption={`${formatNumber(summary?.total_humans)} human · ${formatNumber(summary?.total_nhis)} non-human`}
           />
           <MetricTile
-            as={Link}
-            to="/identities?is_federated=true"
             data-stagger=""
             style={{ '--stagger': 1 }}
             className="animate-rise"
@@ -564,5 +567,71 @@ function FindingsMiniPanel({ query, summary }) {
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * The posture score leads the dashboard: it is the one number that says how
+ * exposed the estate is, and everything below it is what that number is made
+ * of. Its detail lives on Posture; this says where it stands, which way it is
+ * moving, and the single fix that would move it most.
+ */
+function PostureBanner() {
+  const query = useDemoQuery((signal) => fetchPostureOverview({ window: 30 }, signal), []);
+  const data = query.data;
+  if (query.isError && !data) {
+    return <InlineError error={query.error} onRetry={query.refetch} label="Posture score unavailable" />;
+  }
+  if (!data) {
+    return (
+      <Panel prominence="lead" aria-busy="true">
+        <div className="flex items-center gap-4">
+          <Skeleton className="size-16 rounded-full" />
+          <div className="flex flex-1 flex-col gap-2">
+            <Skeleton className="h-4 w-48 rounded" />
+            <Skeleton className="h-3 w-72 rounded" />
+          </div>
+        </div>
+      </Panel>
+    );
+  }
+  const weakest = [...data.pillars].sort((a, b) => a.score - b.score)[0];
+  const win = data.quickWins[0];
+  return (
+    <Panel prominence="lead" className="animate-rise">
+      <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
+        <div className="flex items-center gap-4">
+          <ScoreRing score={data.fleet.score} size={72} grade={data.fleet.grade} />
+          <div>
+            <p className="text-[10.5px] font-semibold tracking-[0.1em] text-ink-3 uppercase">Posture score</p>
+            <p className="mt-1 flex flex-wrap items-center gap-2 text-[13px] text-ink-2">
+              <BandTag score={data.fleet.score} />
+              <span>Grade {data.fleet.grade}</span>
+              <Delta value={data.fleet.delta} />
+              <span className="text-ink-3">in 30 days</span>
+            </p>
+          </div>
+        </div>
+        <dl className="grid flex-1 grid-cols-1 gap-x-6 gap-y-3 @min-[36rem]:grid-cols-2">
+          <div className="min-w-0">
+            <dt className="text-[10.5px] font-semibold tracking-[0.1em] text-ink-3 uppercase">Weakest pillar</dt>
+            <dd className="mt-0.5 truncate text-[13px] font-semibold text-ink">
+              {PILLARS[weakest.key].label} <span className="font-normal text-ink-3">at {weakest.score}</span>
+            </dd>
+          </div>
+          {win && (
+            <div className="min-w-0">
+              <dt className="text-[10.5px] font-semibold tracking-[0.1em] text-ink-3 uppercase">Biggest quick win</dt>
+              <dd className="mt-0.5 truncate text-[13px] font-semibold text-ink" title={win.title}>
+                {win.title} <span className="font-normal text-low">+{win.fleetGain}</span>
+              </dd>
+            </div>
+          )}
+        </dl>
+        <Button as={Link} to={win ? `/posture?check=${win.key}` : '/posture'} variant="secondary" size="sm" iconRight={ArrowRight}>
+          Open Posture
+        </Button>
+      </div>
+    </Panel>
   );
 }

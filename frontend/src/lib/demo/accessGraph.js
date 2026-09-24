@@ -1,5 +1,6 @@
 import { SEVERITY_ORDER } from '../domain';
 import { estate as sharedEstate } from './estate';
+import { effectiveEstate } from './effective';
 import { genomeFleet } from './genome';
 import { demoRequest, hashSeed, intBetween, pick, rng, sample } from './runtime';
 
@@ -466,13 +467,13 @@ const ACCOUNTS = sharedEstate().accounts.map((account) => ({
 const REGIONS = [...new Set(sharedEstate().identities.map((row) => row.region))];
 
 /**
- * How many of the estate's 228 identities the graph is built over.
- *
- * Not all of them: a reachability analysis over 228 principals is far more
- * graph than one focus and its first hop can show. This is enough for the
- * analysis to be interesting and small enough that it stays instant.
+ * The graph is built over every identity in the estate. It used to stop at a
+ * budget of 64, which left most identities out of every reachability answer -
+ * and made "no escalation path" mean "not looked at" for the rest. What is
+ * drawn is still bounded, by the degree-of-interest expansion below, so the
+ * size of the graph and the size of the picture are separate questions.
  */
-const GRAPH_IDENTITY_BUDGET = 64;
+const GRAPH_IDENTITY_BUDGET = Infinity;
 
 /**
  * Resource archetypes.
@@ -876,7 +877,7 @@ function buildGraph() {
 
   /* Pass-role and the escalation edges built on top of it. */
   for (const identity of identities) {
-    if (next() > 0.3) continue;
+    if (next() > 0.18) continue;
     const targets = sample(next, identities.filter((other) => other.id !== identity.id && other.accountId === identity.accountId), 1);
     for (const target of targets) {
       addEdge({ from: identity.id, to: target.id, kind: 'CAN_PASS_ROLE' });
@@ -1189,6 +1190,38 @@ function interestOf(node) {
  * Both live in the page, so the URL can carry them and a link can reproduce
  * exactly what somebody was looking at.
  */
+/**
+ * An identity node as the account stands now. The graph is built once from
+ * what discovery found; fixes applied on Posture change a node's policies,
+ * owner and keys, so what is served carries them. The edges stay as found,
+ * and an escalation edge from an identity that now has a permission boundary
+ * is marked blocked rather than removed, so the path it was stays readable.
+ */
+function withEffective(node) {
+  if (node?.kind !== 'identity') return node;
+  const now = effectiveEstate().byArn.get(node.arn);
+  if (!now || now === sharedEstate().byArn.get(node.arn)) return node;
+  return {
+    ...node,
+    isAdmin: now.is_admin,
+    ownerName: now.owner_name,
+    ownerType: now.owner_type,
+    attachedPolicies: now.attached_policies,
+    credentialCount: now.credential_count,
+    accessKeyCount: now.access_key_count,
+    accessKeyAgeDays: now.access_key_age_days,
+    permissionsBoundary: now.permissions_boundary ?? null,
+    postureFixes: now.posture_fixes ?? [],
+  };
+}
+
+function withBlocked(graph, edge) {
+  if (edge.kind !== 'ESCALATES_TO') return edge;
+  const from = graph.byId.get(edge.from);
+  const boundary = from ? effectiveEstate().byArn.get(from.arn)?.permissions_boundary : null;
+  return boundary ? { ...edge, blocked: true, blockedBy: boundary } : edge;
+}
+
 export function fetchNeighbourhood({ focusId, expanded = [], revealed = {} } = {}, signal) {
   return demoRequest(() => {
     const graph = buildGraph();
@@ -1297,7 +1330,7 @@ export function fetchNeighbourhood({ focusId, expanded = [], revealed = {} } = {
       }
       const unseen = [...neighbourIds].filter((id) => !visible.has(id)).length;
       return {
-        ...node,
+        ...withEffective(node),
         depth: depth.get(node.id) ?? 0,
         isFocus: node.id === focus.id,
         expanded: openSet.has(node.id),
@@ -1307,9 +1340,9 @@ export function fetchNeighbourhood({ focusId, expanded = [], revealed = {} } = {
       };
     });
 
-    const edges = [...shownEdges.values()].filter(
-      (edge) => visible.has(edge.from) && visible.has(edge.to),
-    );
+    const edges = [...shownEdges.values()]
+      .filter((edge) => visible.has(edge.from) && visible.has(edge.to))
+      .map((edge) => withBlocked(graph, edge));
 
     return {
       focus,
@@ -1553,7 +1586,7 @@ export function fetchNode(nodeId, signal) {
     /* The credentials this identity actually holds, and the trust that lets
        anything assume it - both read from the shared estate, so the tab and
        the credential register cannot disagree. */
-    const shared = sharedEstate();
+    const shared = effectiveEstate();
     const heldCredentials =
       node.kind === 'identity' ? (shared.credentialsOf.get(node.arn) ?? []) : [];
     const trustedBy =
@@ -1600,9 +1633,9 @@ export function fetchNode(nodeId, signal) {
       : null;
 
     return {
-      node,
-      inbound,
-      outbound,
+      node: withEffective(node),
+      inbound: inbound.map((edge) => withBlocked(graph, edge)),
+      outbound: outbound.map((edge) => withBlocked(graph, edge)),
       radius: node.kind === 'identity' ? blastRadius(nodeId) : null,
       reach,
       observed,
@@ -1624,14 +1657,14 @@ export function fetchIdentityAccess(identityId, signal) {
     }
     const radius = blastRadius(identityId);
     return {
-      identity: node,
+      identity: withEffective(node),
       radius,
       inbound: (graph.adjacency.into.get(identityId) ?? []).map((edge) => describeEdge(graph, edge, 'in')),
       outbound: (graph.adjacency.out.get(identityId) ?? []).map((edge) => describeEdge(graph, edge, 'out')),
       escalations: (graph.adjacency.out.get(identityId) ?? [])
         .filter((edge) => edge.kind === 'ESCALATES_TO')
         .map((edge) => ({
-          ...describeEdge(graph, edge, 'out'),
+          ...describeEdge(graph, withBlocked(graph, edge), 'out'),
           method: ESCALATIONS.find((entry) => entry.key === edge.method) ?? null,
         })),
     };

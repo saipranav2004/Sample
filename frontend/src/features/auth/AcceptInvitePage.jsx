@@ -32,7 +32,7 @@ export default function AcceptInvitePage() {
 
   return (
     <div className="auth-canvas relative grid min-h-dvh place-items-center overflow-hidden px-4 py-10">
-      <section data-theme="light" className="w-full max-w-[30rem]">
+      <main data-theme="light" className="w-full max-w-[30rem]">
         <div className="animate-auth-card rounded-[18px] border border-[var(--t-auth-card-line)] bg-[var(--t-auth-card)] p-6 shadow-[0_34px_80px_-28px_rgba(2,10,20,0.55)] sm:p-9">
           <div className="flex justify-center">
             <span className="block h-10 overflow-hidden" style={{ aspectRatio: '8000 / 2044' }}>
@@ -84,7 +84,7 @@ export default function AcceptInvitePage() {
             />
           )}
         </div>
-      </section>
+      </main>
     </div>
   );
 }

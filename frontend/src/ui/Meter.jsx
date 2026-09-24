@@ -71,7 +71,9 @@ export function ProportionBar({ segments = [], total, height = 10, onSelect, cla
     <div
       className={cn('flex w-full gap-[2px] overflow-hidden rounded-full bg-track', className)}
       style={{ height }}
-      role="img"
+      /* A picture when it only shows; a group of buttons when each segment
+         filters - an image cannot contain controls. */
+      role={onSelect ? 'group' : 'img'}
       aria-label={
         ariaLabel ||
         segments.map((seg) => `${seg.label}: ${seg.value}`).join(', ')

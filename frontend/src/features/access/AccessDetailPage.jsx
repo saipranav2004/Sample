@@ -140,10 +140,10 @@ export default function AccessDetailPage() {
             <Button
               variant="ghost"
               as={Link}
-              to={`/identities?search=${encodeURIComponent(identity.name)}`}
+              to={`/identities/${encodeURIComponent(identity.id)}`}
               iconRight={ExternalLink}
             >
-              Inventory
+              Identity record
             </Button>
             <Button variant="secondary" icon={Download} onClick={onExport} disabled={accessRows.length === 0}>
               Export access
@@ -321,15 +321,26 @@ export default function AccessDetailPage() {
               data.escalations.map((edge, index) => (
                 <div
                   key={edge.id}
-                  className="animate-rise rounded-[var(--radius-control)] border border-critical/25 bg-critical-soft p-3.5"
+                  className={
+                    edge.blocked
+                      ? 'animate-rise rounded-[var(--radius-control)] border border-line bg-surface-2 p-3.5'
+                      : 'animate-rise rounded-[var(--radius-control)] border border-critical/25 bg-critical-soft p-3.5'
+                  }
                   data-stagger=""
                   style={{ '--stagger': Math.min(index, 4) }}
                 >
                   <p className="flex flex-wrap items-center gap-1.5">
-                    <Tag tone="critical" size="sm" dot>
+                    <Tag tone={edge.blocked ? 'neutral' : 'critical'} size="sm" dot>
                       {edge.method?.label ?? 'Escalation'}
                     </Tag>
-                    <span className="text-[13px] font-semibold text-ink">becomes {edge.otherName}</span>
+                    <span className="text-[13px] font-semibold text-ink">
+                      {edge.blocked ? 'could become' : 'becomes'} {edge.otherName}
+                    </span>
+                    {edge.blocked && (
+                      <Tag tone="low" size="sm">
+                        Blocked by {edge.blockedBy}
+                      </Tag>
+                    )}
                   </p>
                   <p className="mt-1.5 font-mono text-[11.5px] leading-relaxed break-words text-ink-2">
                     {edge.method?.permissions.join(' + ')}
@@ -434,7 +445,7 @@ function accessColumns(identity) {
     },
     {
       key: 'flags',
-      header: '',
+      header: 'Flags',
       width: '8%',
       cell: (row) =>
         row.wildcard ? (

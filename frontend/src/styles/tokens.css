@@ -57,14 +57,14 @@
   /* Ink ------------------------------------------------------------------ */
   --t-ink: #0b1b2e;
   --t-ink-2: #4a5b70;
-  --t-ink-3: #7c8da3;
+  --t-ink-3: #5a6b81;
   --t-ink-inverse: #f7fafe;
 
   /* Top bar - follows the theme. Application chrome, not a marketing header. */
   --t-topbar: #ffffff;
   --t-topbar-line: #dfe6f0;
   --t-topbar-ink: #0b1b2e;
-  --t-topbar-muted: #6b7d94;
+  --t-topbar-muted: #5a6b81;
   --t-topbar-hover: #eef2f7;
   --t-topbar-field: #f4f7fb;
 
@@ -75,9 +75,9 @@
   /* Risk / status -------------------------------------------------------- */
   --t-critical: #b42318;
   --t-critical-soft: #fdeceb;
-  --t-high: #c4520a;
+  --t-high: #b54a07;
   --t-high-soft: #fdf0e6;
-  --t-medium: #a06a02;
+  --t-medium: #8f5f02;
   --t-medium-soft: #fdf6e3;
   --t-low: #05734b;
   --t-low-soft: #e7f6ef;
@@ -126,8 +126,8 @@
   --t-auth-ink-2: #94a3b8;
   --t-auth-accent: #53c9ed;
   --t-auth-link: #1aa6d9;
-  --t-auth-action: #1492c4;
-  --t-auth-action-hover: #117ea9;
+  --t-auth-action: #0e79a6;
+  --t-auth-action-hover: #0b6a92;
   --t-auth-badge: #0b243c;
   --t-auth-badge-ink: #9dd3ea;
   --t-auth-card: #ffffff;
@@ -159,7 +159,7 @@
 
   --t-ink: #eef3fa;
   --t-ink-2: #a5b5c9;
-  --t-ink-3: #6f8098;
+  --t-ink-3: #8392a8;
   --t-ink-inverse: #0b1b2e;
 
   --t-topbar: #08121f;
@@ -172,7 +172,7 @@
   --t-sidebar: #0a1322;
   --t-sidebar-line: #1e2e46;
 
-  --t-brand: #2f92d8;
+  --t-brand: #3a9ae0;
   --t-brand-strong: #1c7cbf;
 
   --t-critical: #f2837a;

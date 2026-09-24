@@ -81,7 +81,7 @@ export default function LoginPage() {
       {/* Both columns start on the same line. `items-start` rather than
           `items-center` is what makes that true - centring each column
           independently is what pushed the statement below the card. */}
-      <div className="relative mx-auto grid min-h-[inherit] w-full max-w-[1900px] grid-cols-1 content-center items-start gap-x-[clamp(2rem,4vw,6rem)] gap-y-12 px-[clamp(1.25rem,5.9vw,7rem)] py-[clamp(2rem,3.6vh,3.5rem)] lg:grid-cols-[minmax(0,1fr)_clamp(23rem,32.7vw,38.75rem)]">
+      <main className="relative mx-auto grid min-h-[inherit] w-full max-w-[1900px] grid-cols-1 content-center items-start gap-x-[clamp(2rem,4vw,6rem)] gap-y-12 px-[clamp(1.25rem,5.9vw,7rem)] py-[clamp(2rem,3.6vh,3.5rem)] lg:grid-cols-[minmax(0,1fr)_clamp(23rem,32.7vw,38.75rem)]">
         {/* Product statement. No `order` override on either column: source
            order is statement then card, which stacks that way on a phone and
            reads left-to-right on a wide screen. */}
@@ -258,7 +258,7 @@ export default function LoginPage() {
             </p>
           </div>
         </section>
-      </div>
+      </main>
     </div>
   );
 }

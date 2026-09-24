@@ -156,7 +156,11 @@ export function DataGrid({
                 </th>
               );
             })}
-            {rowActions && <th scope="col" className="w-12 px-2 py-2.5" />}
+            {rowActions && (
+              <th scope="col" className="w-12 px-2 py-2.5">
+                <span className="sr-only">Actions</span>
+              </th>
+            )}
           </tr>
         </thead>
         <tbody className={cn('transition-opacity duration-200', refreshing && 'opacity-55')}>

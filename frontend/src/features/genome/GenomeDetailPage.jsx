@@ -7,6 +7,7 @@ import {
   Dna,
   EyeOff,
   FileCode,
+  Fingerprint as FingerprintIcon,
   Play,
   ShieldCheck,
   Snowflake,
@@ -149,6 +150,9 @@ export default function GenomeDetailPage() {
           <>
             <Button variant="secondary" as={Link} to="/genome" icon={ArrowLeft}>
               Fleet
+            </Button>
+            <Button variant="ghost" as={Link} to={`/identities/${encodeURIComponent(identity.id)}`} icon={FingerprintIcon}>
+              Identity record
             </Button>
             <Button variant="danger" icon={Snowflake} onClick={() => setFreezeOpen(true)} locked={lock('anomalies.contain')}>
               Freeze credential

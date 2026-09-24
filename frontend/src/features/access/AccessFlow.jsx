@@ -142,13 +142,15 @@ function FlowInner({
     const byId = new Map((data?.nodes ?? []).map((node) => [node.id, node]));
     return (data?.edges ?? []).map((edge) => {
       const meta = EDGE_KINDS[edge.kind];
-      const escalation = Boolean(meta?.escalation);
+      /* A path a permission boundary now blocks is drawn as a plain edge and
+         labelled so: the relationship was found, but it no longer works. */
+      const escalation = Boolean(meta?.escalation) && !edge.blocked;
       const style = escalation ? EDGE_STYLE.escalation : EDGE_STYLE.base;
 
       /* The label is on the edge only where the relationship is not obvious
          from the two nodes it joins. "Authenticates" between a key and a role
          says nothing; "Escalates to" between two roles is the whole point. */
-      const worthLabelling = escalation || edge.crossAccount;
+      const worthLabelling = escalation || edge.blocked || edge.crossAccount;
 
       return {
         id: edge.id,
@@ -156,7 +158,7 @@ function FlowInner({
         target: edge.to,
         type: 'smoothstep',
         animated: false,
-        label: worthLabelling ? (escalation ? 'escalates' : 'cross-account') : undefined,
+        label: worthLabelling ? (escalation ? 'escalates' : edge.blocked ? 'blocked' : 'cross-account') : undefined,
         labelShowBg: true,
         labelBgPadding: [4, 2],
         labelBgBorderRadius: 4,

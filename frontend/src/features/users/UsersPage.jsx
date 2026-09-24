@@ -236,7 +236,7 @@ function UsersScreen() {
                     const status = USER_STATUSES[user.status];
                     const busy = busyId === user.id;
                     return (
-                      <tr key={user.id} className={cn('align-middle', user.status === 'deactivated' && 'opacity-70')}>
+                      <tr key={user.id} className={cn('align-middle',)}>
                         <td className="px-4 py-3">
                           <div className="flex min-w-0 items-center gap-3">
                             <span

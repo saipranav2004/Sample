@@ -395,13 +395,23 @@ function buildIdentities() {
 
   const humanCount = Math.round(TOTAL_IDENTITIES * HUMAN_SHARE);
   const machineCount = TOTAL_IDENTITIES - humanCount;
+  const accountsByPerson = new Map();
 
   /* Humans first, so machine identities can be owned by one of them. */
   for (let i = 0; i < humanCount; i += 1) {
     const person = PEOPLE[i % PEOPLE.length];
-    const suffix = i >= PEOPLE.length ? `.${Math.floor(i / PEOPLE.length) + 1}` : '';
-    const account = pick(next, ACCOUNTS);
-    const name = `${person.user}${suffix}`;
+    /* A person with IAM users in several accounts keeps the same username in
+       each - the usual sprawl, and what a real estate looks like - rather
+       than a numbered copy of themselves. Their accounts are distinct: if the
+       draw lands on one they already have, the next account over is used,
+       without another draw, so the rest of the seeded sequence is unchanged. */
+    const held = accountsByPerson.get(person.user) ?? new Set();
+    let accountIndex = ACCOUNTS.indexOf(pick(next, ACCOUNTS));
+    while (held.has(ACCOUNTS[accountIndex].id)) accountIndex = (accountIndex + 1) % ACCOUNTS.length;
+    const account = ACCOUNTS[accountIndex];
+    held.add(account.id);
+    accountsByPerson.set(person.user, held);
+    const name = person.user;
     used.add(name);
     const ownHuman = rng(hashSeed(`idle:${account.id}:${name}`));
     const lastActiveDays = Math.round(140 * ownHuman() ** 3);
@@ -542,7 +552,8 @@ function buildIdentities() {
       last_active_days: lastActiveDays,
       created_at: daysAgo(intBetween(next, profile.age[0], profile.age[1])),
       discovered_at: daysAgo(intBetween(next, 2, 60)),
-      trust_type: federated ? (classification === 'NHI_CICD' ? 'OIDC' : 'SAML') : 'ASSUME_ROLE',
+      /* An IAM user signs in with a password; only a role is assumed. */
+      trust_type: isUserPrincipal ? 'PASSWORD' : federated ? (classification === 'NHI_CICD' ? 'OIDC' : 'SAML') : 'ASSUME_ROLE',
       trust_service:
         classification === 'NHI_CICD'
           ? 'token.actions.githubusercontent.com'
@@ -567,25 +578,46 @@ function buildIdentities() {
       identity.classification === 'HUMAN'
         ? sample(own, ['engineering', 'oncall', 'data-readers', 'deployers', 'break-glass'], intBetween(own, 1, 3))
         : [];
-    identity.matched_rules =
-      identity.classification === 'HUMAN'
-        ? ['console-access', 'password-last-used']
-        : [
-            identity.trust_service ? 'trust-policy-principal' : 'no-console-access',
-            identity.is_secret ? 'secret-store-reference' : 'access-key-present',
-            'naming-convention',
-          ];
-    identity.evidence =
-      identity.classification === 'HUMAN'
-        ? `Console sign-in recorded ${identity.console_last_signin ? 'within the retention window' : 'never'}; password last rotated ${identity.password_age_days} days ago.`
-        : `No console sign-in in CloudTrail. ${
-            identity.trust_service
-              ? `Trust policy names ${identity.trust_service}.`
-              : 'Assumed by another principal in the same account.'
-          } ${identity.is_secret ? 'Credentials held in Secrets Manager.' : 'Long-lived access key present.'}`;
   }
 
   return identities;
+}
+
+/**
+ * Why an identity was classified the way it was - the rules that matched and
+ * the evidence behind them. Written from what the identity actually holds,
+ * after its credentials are known: it used to be written first, from a flag,
+ * so a role with no key read "Long-lived access key present" and a shared
+ * user with console sign-ins read "No console sign-in in CloudTrail".
+ * Exported so the estate as it stands after fixes can restate it.
+ */
+export function classificationEvidence(identity) {
+  const keys = (identity.owned_credentials ?? []).filter((credential) => credential.type === 'ACCESS_KEY');
+  const keyText = keys.length
+    ? `${keys.length} long-lived access ${keys.length === 1 ? 'key' : 'keys'} held through IAM user ${keys[0].iam_user}.`
+    : 'No long-lived access key.';
+  if (identity.classification === 'HUMAN') {
+    return {
+      matched_rules: ['console-access', 'password-last-used'],
+      evidence: `Console sign-in recorded ${identity.console_last_signin ? 'within the retention window' : 'never'}; password last rotated ${identity.password_age_days} days ago.`,
+    };
+  }
+  if (identity.classification === 'DUAL_IDENTITY') {
+    return {
+      matched_rules: ['console-access', keys.length ? 'access-key-present' : 'programmatic-api-calls', 'shared-credential-pattern'],
+      evidence: `Console sign-ins and API calls from a workload share this IAM user's credentials. ${keyText}`,
+    };
+  }
+  return {
+    matched_rules: [
+      identity.trust_service ? 'trust-policy-principal' : 'no-console-access',
+      identity.is_secret ? 'secret-store-reference' : keys.length ? 'access-key-present' : 'role-session-only',
+      'naming-convention',
+    ],
+    evidence: `No console sign-in in CloudTrail. ${
+      identity.trust_service ? `Trust policy names ${identity.trust_service}.` : 'Assumed by another principal in the same account.'
+    } ${identity.is_secret ? 'Credentials held in Secrets Manager.' : keyText}`,
+  };
 }
 
 /**
@@ -714,9 +746,24 @@ function buildCredentials(identities) {
         last_used_date: daysAgo(lastUsedDays),
         last_used_days: lastUsedDays,
         last_used_service: pick(own, AWS_SERVICES),
+        /* An access key always belongs to an IAM user - a role cannot hold
+           one. For a person or a dual identity that user is the identity
+           itself; a workload that authenticates with a key does so through a
+           separate IAM user created for it, named here so a command can act
+           on it. */
+        ...(type === 'ACCESS_KEY'
+          ? {
+              iam_user: identity.principal_type === 'IAM_USER' ? identity.name : `${identity.name}-key-user`,
+              iam_user_arn: `arn:aws:iam::${identity.account_id}:user/${
+                identity.principal_type === 'IAM_USER' ? identity.name : `${identity.name}-key-user`
+              }`,
+            }
+          : {}),
         description:
           type === 'ACCESS_KEY'
-            ? `Long-lived access key, ${ageDays} days old${stale ? `, unused for ${lastUsedDays} days` : ''}.`
+            ? `Long-lived access key of IAM user ${
+                identity.principal_type === 'IAM_USER' ? identity.name : `${identity.name}-key-user`
+              }, ${ageDays} days old${stale ? `, unused for ${lastUsedDays} days` : ''}.`
             : type === 'SECRET_MANAGER'
               ? 'Credential material stored in Secrets Manager with a rotation schedule.'
               : type === 'SSM_PARAMETER'
@@ -841,6 +888,7 @@ function buildEvents(identities) {
         event_name: eventName,
         event_source: service,
         event_time: iso(minutesAgo * 60_000),
+        identity_id: identity.id,
         identity_arn: identity.arn,
         identity_name: identity.name,
         identity_classification: identity.classification,
@@ -931,6 +979,7 @@ export function estate() {
     identity.access_key_age_days = own
       .filter((row) => row.type === 'ACCESS_KEY')
       .reduce((max, row) => Math.max(max, row.age_days), 0);
+    Object.assign(identity, classificationEvidence(identity));
   }
 
   /* What "assigned to me" means.

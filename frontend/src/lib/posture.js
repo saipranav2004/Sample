@@ -14,6 +14,9 @@ export const PILLARS = {
 };
 export const PILLAR_ORDER = Object.keys(PILLARS);
 
+/* Service-wide managed policies: every action on the service, or every secret. */
+export const BROAD_POLICIES = ['AmazonDynamoDBFullAccess', 'AmazonSQSFullAccess', 'SecretsManagerReadWrite'];
+
 /** Points a failed check costs, by severity. */
 export const CHECK_WEIGHTS = { CRITICAL: 25, HIGH: 15, MEDIUM: 8, LOW: 3 };
 

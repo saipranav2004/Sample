@@ -16,7 +16,8 @@
  * while the Identities screen listed identities in it.
  */
 
-import { estate, ESTATE_META } from './estate';
+import { ESTATE_META } from './estate';
+import { effectiveEstate } from './effective';
 import { hashSeed, intBetween, OVERLAY_KEYS, readOverlay, rng, writeOverlay } from './runtime';
 import { assertCan } from './users';
 
@@ -33,7 +34,7 @@ function wizardAccounts() {
 }
 
 export function organisationAccounts() {
-  const known = [...estate().accounts, ...UNCOVERED_ACCOUNTS];
+  const known = [...effectiveEstate().accounts, ...UNCOVERED_ACCOUNTS];
   const ids = new Set(known.map((account) => account.id));
   return [...known, ...wizardAccounts().filter((account) => !ids.has(account.id))];
 }
@@ -42,7 +43,7 @@ export function organisationAccounts() {
 export function coveredAccounts() {
   const connected = new Set(wizardAccounts().map((account) => account.id));
   return organisationAccounts().filter(
-    (account) => estate().accounts.some((row) => row.id === account.id) || connected.has(account.id),
+    (account) => effectiveEstate().accounts.some((row) => row.id === account.id) || connected.has(account.id),
   );
 }
 
@@ -153,7 +154,7 @@ export function discoveryStatus(now = Date.now()) {
   const manualRunning = runs.find((run) => run.status === 'running') ?? null;
   let next = lastStart + DAY;
   while (next <= now) next += DAY;
-  const { identities, credentials } = estate();
+  const { identities, credentials } = effectiveEstate();
   return {
     cadence: 'daily',
     intervalHours: 24,
@@ -191,7 +192,7 @@ export function runDiscoveryNow() {
     const later = readConnector();
     const done = later.runs.find((entry) => entry.id === run.id);
     if (!done) return;
-    const { identities, credentials } = estate();
+    const { identities, credentials } = effectiveEstate();
     later.history = [
       {
         at: done.finishedAt ?? new Date().toISOString(),
@@ -423,9 +424,9 @@ function listNames(accounts) {
  * filtered to that account agree.
  */
 export function accountCoverage() {
-  const { identities, credentials } = estate();
+  const { identities, credentials } = effectiveEstate();
   const connected = new Map(wizardAccounts().map((account) => [account.id, account]));
-  const estateIds = new Set(estate().accounts.map((account) => account.id));
+  const estateIds = new Set(effectiveEstate().accounts.map((account) => account.id));
   const status = discoveryStatus();
   const lastRun = Date.parse(status.lastRunAt);
   const lastScheduled = lastScheduledStart();
@@ -526,7 +527,7 @@ export function connectAwsAccount({ accountId, name, env, roleArn }) {
 export function awsCheckResults() {
   const covered = coveredAccounts().length;
   const total = organisationAccounts().length;
-  const regions = new Set(estate().identities.map((row) => row.region)).size;
+  const regions = new Set(effectiveEstate().identities.map((row) => row.region)).size;
   const uncovered = uncoveredAccounts();
   const missing = listNames(uncovered);
   return {

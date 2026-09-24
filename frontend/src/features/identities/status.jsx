@@ -29,11 +29,15 @@ export function evaluatePosture(identity) {
   const age = daysSince(identity.last_active);
 
   const checks = {
-    mfa: !isHuman
+    /* Wherever a password signs in to the console - a person, or a user a
+       person shares with a workload - not only where the owner is human. */
+    mfa: !isHuman && !identity.console_access
       ? { state: 'na', label: 'MFA not applicable' }
       : identity.mfa_enabled
         ? { state: 'pass', label: 'MFA enabled' }
-        : { state: 'fail', label: 'MFA disabled' },
+        : identity.mfa_enforced
+          ? { state: 'warn', label: 'MFA enforced, not enrolled' }
+          : { state: 'fail', label: 'MFA disabled' },
 
     privilege: identity.is_admin
       ? { state: 'fail', label: 'Admin-level access' }

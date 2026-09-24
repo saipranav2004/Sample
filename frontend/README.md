@@ -58,7 +58,7 @@ Environment variables:
 
 ## Demo accounts and roles
 
-Until the backend exists, sign-in, users and roles run in the browser (`src/lib/demo/users.js`). People are identified by username and full name only - no email is stored or shown. The seeded accounts use the password `NHI.admin@345`; people invited from User management choose their own password instead. **Download sign-ins** on that screen (all users, or one row) writes these details to a text file.
+Until the backend exists, sign-in, users and roles run in the browser (`src/lib/demo/users.js`). People are identified by username and full name only - no email is stored or shown. A person with IAM users in several accounts has the same username in each. The seeded accounts use the password `NHI.admin@345`; people invited from User management choose their own password instead. **Download sign-ins** on that screen (all users, or one row) writes these details to a text file.
 
 | Username | Full name | Role | State |
 |---|---|---|---|
@@ -162,9 +162,10 @@ Grouped by the question an operator is answering, not by the API surface.
 | Route | Screen | Data |
 |---|---|---|
 | `/overview` | Dashboard - exposure signals, classification mix, credential surface, discovery trend, activity, code exposure | demo estate, Secret Scanner |
-| `/posture`, `/posture/:id` | Posture (ISPM) - fleet score and trend, distribution, quick wins, pillars, per-identity checks, score impact, remediation, history | demo estate, access graph, genome, alerts |
+| `/posture` | Posture (ISPM) - fleet score and trend, distribution, quick wins with bulk fix, pillars, category and account breakdowns | demo estate, access graph, genome, alerts |
 | `/alerts` | Alert queue, as a list or grouped by identity | demo estate, Secret Scanner |
 | `/identities` | Identity explorer + record drawer | demo estate |
+| `/identities/:id` | Identity page - overview, posture (checks, remediate, roll back, history), credentials, service access, consumers, activity, alerts. `/posture/:id` redirects here | demo estate, posture, alerts |
 | `/credentials` | Credential register | demo estate |
 | `/exposure`, `/exposure/dismissed` | Exposed credentials and the accepted (allowlisted) set | Secret Scanner (live) |
 | `/access-graph`, `/access-graph/:id` | Access graph and blast radius | demo graph |
@@ -182,7 +183,11 @@ Every identity is scored out of 100 against 14 checks in six pillars - Least pri
 
 The checks read the same records the other screens show - policies, MFA, key age, expiry, owner, last activity, the access graph's escalation edges and the genome's open anomalies - so a failed check always matches another screen. History is derived from when each condition began and when it was fixed, so the trend and the change log agree.
 
-**Remediate** (Admin or higher) shows the score before and after, what the fix does, what it can break, and the exact IAM policy and AWS CLI commands. Applying it passes the check at once (the score goes up as risk goes down), records who applied it, and resolves the matching open alerts - and genome anomalies - through the Alerts action path with a note. In the demo nothing is sent to AWS; a real implementation needs a write-capable role, which the read-only discovery role deliberately is not.
+Each identity's posture is the **Posture tab of its identity page**. **Remediate** (Admin or higher) shows the score before and after, what the fix does, what it can break, and the exact IAM policy and AWS CLI commands. Applying it passes the check at once (the score goes up as risk goes down), records who applied it, and resolves the matching open alerts - and genome anomalies - through the Alerts action path with a note. A quick win can be applied to every identity in the filtered list at once (except recording an owner, which needs a person per identity). A fix in force can be **rolled back** from the Checks view: the check fails again, the history keeps both steps, and the alerts the fix resolved reopen.
+
+**Fixes show everywhere.** Screens that describe the account as it is now - Identities, Credentials, the Dashboard, Reports, the access graph - read the estate with fixes applied (`src/lib/demo/effective.js`): a detached policy, a rotated key, a recorded owner or a permission boundary (the escalation edge is drawn as blocked) appears on all of them. Alerts keep the condition as found and are resolved, not deleted, so their record survives. Enforcing MFA is the one fix that changes no fact: the person still has no device until they enrol, so they still count as a human without MFA and show "MFA enforced, not enrolled".
+
+In the demo nothing is sent to AWS; a real implementation needs a write-capable role, which the read-only discovery role deliberately is not.
 
 Every screen reads the latest completed discovery run. The scan picker is out
 of this build: with one run behind the screens it would have nothing to do.

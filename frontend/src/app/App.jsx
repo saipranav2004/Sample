@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom';
 import { AuthProvider, useAuth } from './AuthContext';
 import { homeFor } from '../lib/roles';
 import { ThemeProvider } from './ThemeContext';
@@ -14,7 +14,7 @@ import LoginPage from '../features/auth/LoginPage';
    screens that draw charts, so first paint after sign-in stays small. */
 const OverviewPage = lazy(() => import('../features/overview/OverviewPage'));
 const PosturePage = lazy(() => import('../features/posture/PosturePage'));
-const PostureDetailPage = lazy(() => import('../features/posture/PostureDetailPage'));
+const IdentityPage = lazy(() => import('../features/identities/IdentityPage'));
 const AlertsPage = lazy(() => import('../features/alerts/AlertsPage'));
 const IdentitiesPage = lazy(() => import('../features/identities/IdentitiesPage'));
 const CredentialsPage = lazy(() => import('../features/credentials/CredentialsPage'));
@@ -77,14 +77,9 @@ export default function App() {
                     </Suspense>
                   }
                 />
-                <Route
-                  path="/posture/:id"
-                  element={
-                    <Suspense fallback={<RouteFallback />}>
-                      <PostureDetailPage />
-                    </Suspense>
-                  }
-                />
+                {/* Posture detail is the Posture tab of the identity page now;
+                    old links still land on it. */}
+                <Route path="/posture/:id" element={<PostureRedirect />} />
                 <Route
                   path="/alerts"
                   element={
@@ -98,6 +93,14 @@ export default function App() {
                   element={
                     <Suspense fallback={<RouteFallback />}>
                       <IdentitiesPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/identities/:id"
+                  element={
+                    <Suspense fallback={<RouteFallback />}>
+                      <IdentityPage />
                     </Suspense>
                   }
                 />
@@ -226,4 +229,9 @@ export default function App() {
 function HomeRedirect() {
   const { user } = useAuth();
   return <Navigate to={homeFor(user?.role)} replace />;
+}
+
+function PostureRedirect() {
+  const { id } = useParams();
+  return <Navigate to={`/identities/${encodeURIComponent(id)}?tab=posture`} replace />;
 }

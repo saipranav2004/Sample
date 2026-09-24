@@ -29,6 +29,7 @@ export const fetchSummary = (query, signal) => demo.fetchSummary(query, signal);
 /* ── Identities ──────────────────────────────────────────────────────────── */
 
 export const fetchIdentities = (query, signal) => demo.fetchIdentities(query, signal);
+export const fetchIdentity = (id, signal) => demo.fetchIdentity(id, signal);
 export const fetchLineage = (query, signal) => demo.fetchLineage(query, signal);
 export const fetchConsumers = (query, signal) => demo.fetchConsumers(query, signal);
 
@@ -73,6 +74,8 @@ export const updateAlerts = (input) => demo.updateAlerts(input);
 export const fetchPostureOverview = (query, signal) => demo.fetchPostureOverview(query, signal);
 export const fetchPostureIdentity = (id, signal) => demo.fetchPostureIdentity(id, signal);
 export const remediatePosture = (input) => demo.remediatePosture(input);
+export const remediatePostureMany = (input) => demo.remediatePostureMany(input);
+export const rollBackPosture = (input) => demo.rollBackPosture(input);
 
 /* ── Exact counts ────────────────────────────────────────────────────────── */
 

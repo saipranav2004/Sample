@@ -244,7 +244,10 @@ const ACTOR_TYPES = {
     boundVia: "The role itself - the actor lives outside the account",
   },
   'AWS::IAM::User': {
-    label: 'IAM user as service account',
+    /* True of a person's user and of one shared with a workload alike; the
+       classification (Human, Dual identity) says which. Labelling every IAM
+       user "as service account" called every person a workload. */
+    label: 'IAM user',
     category: 'EXCEPTION',
     discoveryApi: 'iam:ListUsers',
     boundVia: 'None. The user is both actor and credential holder - the documented exception',
@@ -387,7 +390,7 @@ export const POSTURE_SIGNALS = [
     denominatorLabel: 'of human identities',
     tone: 'critical',
     query: { without_mfa: 'true' },
-    rationale: 'Console identities that can authenticate with a password alone.',
+    rationale: 'People with no MFA device. Where MFA is enforced by policy they can sign in but do nothing until they enrol one.',
   },
   {
     key: 'admin',

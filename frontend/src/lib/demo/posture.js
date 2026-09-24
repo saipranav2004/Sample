@@ -30,16 +30,16 @@ import { escalationsByIdentity, graphIdentityIds } from './accessGraph';
 import { applyAlertAction, estateAlerts } from './alerts';
 import { estate, ESTATE_META } from './estate';
 import { genomeAnomalies, genomeFleet } from './genome';
-import { demoRequest, hashSeed, OVERLAY_KEYS, readOverlay, rng, writeOverlay } from './runtime';
+import { effectiveEstate } from './effective';
+import { activeCycle, readRemediationStore, writeRemediationStore } from './remediations';
+import { demoRequest, hashSeed, OVERLAY_KEYS, readOverlay, rng } from './runtime';
 import { assertCan } from './users';
-import { bandFor, BANDS, CHECK_WEIGHTS, gradeFor, PILLAR_ORDER, PILLARS } from '../posture';
+import { bandFor, BANDS, BROAD_POLICIES, CHECK_WEIGHTS, gradeFor, PILLAR_ORDER, PILLARS } from '../posture';
 
 const { NOW, DAY } = ESTATE_META;
 
 /* ── Inputs shared by the checks ─────────────────────────────────────────── */
 
-/* Service-wide managed policies: every action on the service, or every secret. */
-const BROAD_POLICIES = ['AmazonDynamoDBFullAccess', 'AmazonSQSFullAccess', 'SecretsManagerReadWrite'];
 
 /* What each managed policy is normally attached for, as the actions a scoped
    replacement keeps. Used when the genome has no observed actions to go on. */
@@ -83,7 +83,9 @@ function context() {
     list.push(anomaly);
     anomalies.set(anomaly.identityId, list);
   }
-  return { ...staticContext(), anomalies };
+  /* The estate as it stands after fixes, for what the screens display. The
+     checks themselves read the estate as discovered - see effective.js. */
+  return { ...staticContext(), anomalies, effective: effectiveEstate() };
 }
 
 const isUser = (row) => row.arn.includes(':user/');
@@ -266,6 +268,7 @@ const CHECKS = [
         detail: `${old[0].cred_id} is ${days(old[0].age_days)} old${old.length > 1 ? `, and ${old.length - 1} more over 90 days` : ''}.`,
         since: plusDays(old[0].created_at, 90),
         keys: old.map((cred) => cred.cred_id),
+        keyUsers: Object.fromEntries(old.map((cred) => [cred.cred_id, cred.iam_user])),
       };
     },
     fix(_row, _ctx, failure) {
@@ -280,11 +283,10 @@ const CHECKS = [
             content: failure.keys
               .map((key) =>
                 [
-                  `USER=$(aws iam get-access-key-last-used --access-key-id ${key} --query UserName --output text)`,
-                  'aws iam create-access-key --user-name "$USER"',
+                  `aws iam create-access-key --user-name ${failure.keyUsers[key]}`,
                   '# Deploy the new key to the workload, then:',
-                  `aws iam update-access-key --user-name "$USER" --access-key-id ${key} --status Inactive`,
-                  `aws iam delete-access-key --user-name "$USER" --access-key-id ${key}`,
+                  `aws iam update-access-key --user-name ${failure.keyUsers[key]} --access-key-id ${key} --status Inactive`,
+                  `aws iam delete-access-key --user-name ${failure.keyUsers[key]} --access-key-id ${key}`,
                 ].join('\n'),
               )
               .join('\n\n'),
@@ -313,15 +315,15 @@ const CHECKS = [
             ? `${expired[0].cred_id} expired and is still attached.`
             : `${expired.length} expired credentials are still attached, the oldest ${expired[0].cred_id}.`,
         since: expired[0].expires_at,
-        credentials: expired.map((cred) => ({ id: cred.cred_id, type: cred.type })),
+        credentials: expired.map((cred) => ({ id: cred.cred_id, type: cred.type, user: cred.iam_user ?? null })),
       };
     },
     fix(_row, _ctx, failure) {
-      const command = ({ id, type }) => {
+      const command = ({ id, type, user }) => {
         if (type === 'SECRET_MANAGER') return `aws secretsmanager delete-secret --secret-id ${id} --recovery-window-in-days 7`;
         if (type === 'SSM_PARAMETER') return `aws ssm delete-parameter --name ${id}`;
         if (type === 'ACCESS_KEY') {
-          return `USER=$(aws iam get-access-key-last-used --access-key-id ${id} --query UserName --output text)\naws iam delete-access-key --user-name "$USER" --access-key-id ${id}`;
+          return `aws iam delete-access-key --user-name ${user} --access-key-id ${id}`;
         }
         return `# ${id}: revoke it with the service that issued it, then remove the reference.`;
       };
@@ -350,12 +352,13 @@ const CHECKS = [
         detail: `Holds ${keys.length === 1 ? 'a long-lived access key' : `${keys.length} long-lived access keys`}, the oldest ${days(oldest.age_days)} old.`,
         since: oldest.created_at,
         keys: keys.map((cred) => cred.cred_id),
+        keyUsers: Object.fromEntries(keys.map((cred) => [cred.cred_id, cred.iam_user])),
       };
     },
     fix(row, _ctx, failure) {
       return {
         action: 'Deactivate the long-lived key',
-        summary: `Deactivates ${failure.keys.join(', ')} once the workload authenticates with its own role through temporary credentials.`,
+        summary: `Deactivates ${failure.keys.join(', ')} (IAM user ${[...new Set(Object.values(failure.keyUsers))].join(', ')}) once the workload authenticates with its own role through temporary credentials.`,
         caution: `Confirm ${principalName(row)} is using the role first: a workload still on the key stops working. Deactivation can be undone.`,
         artifacts: [
           {
@@ -363,8 +366,7 @@ const CHECKS = [
             language: 'shell',
             content: failure.keys
               .map(
-                (key) =>
-                  `USER=$(aws iam get-access-key-last-used --access-key-id ${key} --query UserName --output text)\naws iam update-access-key --user-name "$USER" --access-key-id ${key} --status Inactive`,
+                (key) => `aws iam update-access-key --user-name ${failure.keyUsers[key]} --access-key-id ${key} --status Inactive`,
               )
               .join('\n\n'),
           },
@@ -781,8 +783,7 @@ function anomalyFailure(anomalies, describe) {
 /* ── Remediation store ───────────────────────────────────────────────────── */
 
 function readRemediations() {
-  const stored = readOverlay(OVERLAY_KEYS.posture, {});
-  return stored && typeof stored === 'object' ? stored : {};
+  return readRemediationStore();
 }
 
 /* ── Evaluation ──────────────────────────────────────────────────────────── */
@@ -793,29 +794,46 @@ function readRemediations() {
  * the moment it was cleared for the history.
  */
 function evaluateIdentity(row, ctx, remediations, extra = null) {
-  const fixes = { ...(remediations[row.id] ?? {}), ...(extra ?? {}) };
+  const entries = remediations[row.id] ?? {};
+  /* Every application of a fix, in order; `extra` adds a hypothetical one,
+     which is how the score a fix would earn is worked out. */
+  const cyclesOf = (key) => [...(entries[key]?.cycles ?? []), ...(extra?.[key] ? [extra[key]] : [])];
   const results = [];
   for (const check of CHECKS) {
     if (!check.applies(row, ctx)) continue;
     const failure = check.evaluate(row, ctx);
     if (!failure) {
-      results.push({ check, state: 'pass', failure: null, fixedAt: null, fix: null });
+      results.push({ check, state: 'pass', failure: null, fixedAt: null, fix: null, intervals: [], cycles: [] });
       continue;
     }
-    const own = fixes[check.key] ?? null;
-    const by = (check.supersededBy ?? []).map((key) => fixes[key]).filter(Boolean);
-    const clearing = [own, ...by].filter(Boolean).sort((a, b) => Date.parse(a.at) - Date.parse(b.at))[0] ?? null;
+    /* When the check was passing because of a fix - its own, or one that
+       also clears it - as [from, to) spans; `to` is null while in force. */
+    const intervals = [check.key, ...(check.supersededBy ?? [])].flatMap((key) =>
+      cyclesOf(key).map((cycle) => ({
+        key,
+        cycle,
+        from: Date.parse(cycle.at),
+        to: cycle.rolledBackAt ? Date.parse(cycle.rolledBackAt) : null,
+      })),
+    );
+    const open = intervals.filter((span) => span.to === null).sort((a, b) => a.from - b.from)[0] ?? null;
+    const ownCycles = cyclesOf(check.key);
+    const ownActive = ownCycles.length && !ownCycles[ownCycles.length - 1].rolledBackAt ? ownCycles[ownCycles.length - 1] : null;
     results.push({
       check,
-      state: clearing ? 'remediated' : 'fail',
+      state: open ? 'remediated' : 'fail',
       failure,
-      fixedAt: clearing?.at ?? null,
-      fix: own,
-      clearedBy: clearing && clearing !== own ? Object.keys(fixes).find((key) => fixes[key] === clearing) : null,
+      fixedAt: open?.cycle.at ?? null,
+      fix: ownActive,
+      clearedBy: open && open.key !== check.key ? open.key : null,
+      intervals,
+      cycles: ownCycles,
     });
   }
   return results;
 }
+
+const clearedAt = (result, time) => result.intervals.some((span) => span.from <= time && (span.to === null || time < span.to));
 
 function scoreOf(results) {
   const lost = results
@@ -829,7 +847,7 @@ function scoreAt(results, time) {
   const lost = results
     .filter((result) => result.failure)
     .filter((result) => Date.parse(result.failure.since) <= time)
-    .filter((result) => !(result.fixedAt && Date.parse(result.fixedAt) <= time))
+    .filter((result) => !clearedAt(result, time))
     .reduce((sum, result) => sum + CHECK_WEIGHTS[result.failure.severity], 0);
   return Math.max(0, 100 - lost);
 }
@@ -863,10 +881,11 @@ function pillarsOf(results) {
 }
 
 function primaryCredential(ctx, row) {
-  const creds = credentialsOf(ctx, row);
+  const creds = ctx.effective.credentialsOf.get(row.arn) ?? [];
   const key = creds.filter((cred) => cred.type === 'ACCESS_KEY').sort((a, b) => b.age_days - a.age_days)[0];
   const chosen = key ?? creds[0] ?? null;
-  if (!chosen) return isUser(row) && row.console_access ? { label: 'Console password', status: null, ageDays: row.password_age_days } : null;
+  const now = ctx.effective.byArn.get(row.arn) ?? row;
+  if (!chosen) return isUser(row) && now.console_access ? { label: 'Console password', status: null, ageDays: row.password_age_days } : null;
   return { label: credentialKindMeta(chosen.type).label, status: chosen.status, ageDays: chosen.age_days };
 }
 
@@ -928,7 +947,21 @@ export const POSTURE_FLAGS = [
   { key: 'dormant', label: 'Dormant', checks: ['unused-access'] },
 ];
 
+/* The fleet evaluation is ~0.5s of work on the main thread, and its inputs
+   change only when a fix is applied or rolled back, or an anomaly is decided.
+   Cached on exactly those, so a revisit costs nothing and a change is never
+   served stale. */
+let overviewCache = null;
+
 export function postureOverview({ window = 30 } = {}) {
+  const key = JSON.stringify([window, readRemediationStore(), readOverlay(OVERLAY_KEYS.anomalies, {})]);
+  if (overviewCache?.key === key) return overviewCache.value;
+  const value = computeOverview({ window });
+  overviewCache = { key, value };
+  return value;
+}
+
+function computeOverview({ window = 30 } = {}) {
   const evaluated = evaluateAll();
   const rows = evaluated.map((entry) => entry.summary);
   const score = Math.round(mean(rows.map((row) => row.score)));
@@ -966,6 +999,9 @@ export function postureOverview({ window = 30 } = {}) {
       gains.set(key, entry);
     }
   }
+  const checkGains = Object.fromEntries(
+    [...gains.values()].map((entry) => [entry.key, { identities: entry.identities, fleetGain: round1(entry.points / rows.length) }]),
+  );
   const quickWins = [...gains.values()]
     .map((entry) => {
       const check = CHECKS_BY_KEY.get(entry.key);
@@ -1022,6 +1058,7 @@ export function postureOverview({ window = 30 } = {}) {
     distribution,
     flags,
     quickWins,
+    checkGains,
     pillars,
     byCategory: groupBy((row) => row.category),
     byAccount: groupBy((row) => row.account),
@@ -1070,6 +1107,7 @@ export function postureIdentity(id) {
       since: result.failure?.since ?? null,
       fixedAt: result.fixedAt,
       fix: result.fix,
+      canRollBack: Boolean(result.fix),
       clearedBy: result.clearedBy ? CHECKS_BY_KEY.get(result.clearedBy)?.title ?? null : null,
       remediation: result.state === 'fail' ? remediationPreview(result, row, ctx, remediations, summary.score, openAlerts) : null,
     }))
@@ -1098,50 +1136,68 @@ export function postureIdentity(id) {
   }
   history.push({ at: new Date(NOW).toISOString(), score: summary.score });
 
+  /* The change log is read off the same spans the score uses: an entry only
+     where the check actually changed between failing and passing, so a fix
+     applied while another already covered it adds no phantom points. */
   const events = [];
   for (const result of results) {
     if (!result.failure) continue;
     const weight = CHECK_WEIGHTS[result.failure.severity];
-    events.push({
-      at: result.failure.since,
-      kind: 'failed',
-      delta: -weight,
-      title: `${result.check.title} - failed`,
-      detail: result.failure.detail,
-    });
-    if (result.fixedAt) {
-      events.push({
-        at: result.fixedAt,
-        kind: 'remediated',
-        delta: weight,
-        title: `${result.check.title} - remediated`,
-        detail: result.fix
-          ? `${result.fix.action}. Applied by ${result.fix.by}.`
-          : `Cleared by: ${CHECKS_BY_KEY.get(result.clearedBy)?.title ?? 'another fix'}.`,
-      });
+    const since = Date.parse(result.failure.since);
+    events.push({ at: result.failure.since, kind: 'failed', delta: -weight, title: `${result.check.title} - failed`, detail: result.failure.detail });
+    const moments = [...new Set(result.intervals.flatMap((span) => [span.from, span.to]).filter((time) => time !== null && time >= since))].sort((x, y) => x - y);
+    for (const time of moments) {
+      const before = clearedAt(result, time - 1);
+      const after = clearedAt(result, time);
+      if (before === after) continue;
+      const starting = result.intervals.find((span) => span.from === time);
+      const ending = result.intervals.find((span) => span.to === time);
+      if (after) {
+        events.push({
+          at: new Date(time).toISOString(),
+          kind: 'remediated',
+          delta: weight,
+          title: `${result.check.title} - remediated`,
+          detail:
+            starting.key === result.check.key
+              ? `${starting.cycle.action}${starting.cycle.owner ? ` (owner ${starting.cycle.owner})` : ''}. Applied by ${starting.cycle.by}.`
+              : `Cleared by: ${CHECKS_BY_KEY.get(starting.key)?.title ?? 'another fix'}. Applied by ${starting.cycle.by}.`,
+        });
+      } else {
+        events.push({
+          at: new Date(time).toISOString(),
+          kind: 'rolled-back',
+          delta: -weight,
+          title: `${result.check.title} - rolled back`,
+          detail: `${ending.cycle.action} rolled back by ${ending.cycle.rolledBackBy ?? 'an administrator'}.`,
+        });
+      }
     }
   }
   events.sort((a, b) => Date.parse(b.at) - Date.parse(a.at));
 
+  const now = ctx.effective.byArn.get(row.arn) ?? row;
   return {
     identity: {
       ...summary,
-      owner: row.owner_type === 'ORPHANED' ? null : row.owner_name,
-      ownerTag: remediations[row.id]?.['no-owner']?.owner ?? null,
+      owner: now.owner_type === 'ORPHANED' ? null : now.owner_name,
+      ownerTag: activeCycle(remediations[row.id]?.['no-owner'])?.owner ?? null,
       team: row.team ?? null,
       region: row.region,
       lastActiveDays: row.last_active_days,
       createdAt: row.created_at,
-      policies: row.attached_policies ?? [],
-      mfa: row.console_access ? Boolean(row.mfa_enabled) : null,
+      policies: now.attached_policies ?? [],
+      mfa: now.console_access ? Boolean(now.mfa_enabled) : null,
+      mfaEnforced: Boolean(now.mfa_enforced),
       inGenome: ctx.fleet.has(row.id),
       inGraph: ctx.inGraph.has(row.id),
     },
     pillars: pillarsOf(results),
     checks,
     projected,
-    credentials: credentialsOf(ctx, row).map((cred) => ({
+    credentials: (ctx.effective.credentialsOf.get(row.arn) ?? []).map((cred) => ({
       id: cred.cred_id,
+      rotatedFrom: cred.rotated_from ?? null,
       type: cred.type,
       label: credentialKindMeta(cred.type).label,
       status: cred.status,
@@ -1166,46 +1222,43 @@ export function postureIdentity(id) {
 /* ── Remediating ─────────────────────────────────────────────────────────── */
 
 /**
- * Apply one check's remediation to one identity. Refused for a role without
- * `posture.remediate`, and for a check that is not failing. Closes the open
- * alerts the fix resolves - genome alerts included, which resolves their
- * anomalies - through the Alerts action path, so every screen agrees.
+ * Apply one check's remediation to one or more identities, as one request:
+ * refused as a whole when the role lacks `posture.remediate`, when any
+ * identity is not failing the check, or when an owner is needed and not
+ * chosen. Closes the open alerts each fix resolves - genome alerts included,
+ * which resolves their anomalies - through the Alerts action path, and
+ * records which ones, so a rollback can reopen exactly those.
  */
-export function remediate({ identityId, checkKey, owner = null }) {
+function applyFix({ identityIds, checkKey, owner = null }) {
   const me = assertCan('posture.remediate');
   const ctx = context();
-  const row = ctx.identities.find((identity) => identity.id === identityId);
   const check = CHECKS_BY_KEY.get(checkKey);
-  if (!row || !check) throw new Error('That identity or check no longer exists.');
+  if (!check) throw new Error('That check no longer exists.');
+  const ids = [...new Set(identityIds)];
+  if (ids.length === 0) throw new Error('Choose at least one identity.');
   const remediations = readRemediations();
-  const results = evaluateIdentity(row, ctx, remediations);
-  const result = results.find((entry) => entry.check.key === checkKey);
-  if (!result || result.state !== 'fail') throw new Error('This check is already passing.');
-
-  const plan = check.fix(row, ctx, result.failure);
-  let ownerPerson = null;
-  if (plan.needsOwner) {
-    ownerPerson = ctx.people.find((person) => person.user === owner);
-    if (!ownerPerson) throw new Error('Choose who owns this identity.');
-  }
-
-  const before = scoreOf(results);
+  const alerts = estateAlerts();
   const at = new Date().toISOString();
-  const entry = {
-    at,
-    by: me.name,
-    byUser: me.user,
-    action: plan.action,
-    ...(ownerPerson ? { owner: ownerPerson.name } : {}),
-  };
-  const next = { ...remediations, [row.id]: { ...(remediations[row.id] ?? {}), [checkKey]: entry } };
 
-  /* Alerts first, while the store still shows the check failing: if the
-     alert write is refused the remediation is not recorded either. */
-  const toResolve = estateAlerts().filter(
-    (alert) => alert.identityId === row.id && isOpen(alert) && check.resolves(alert, result.failure),
-  );
-  if (toResolve.length > 0) {
+  const plans = ids.map((identityId) => {
+    const row = ctx.identities.find((identity) => identity.id === identityId);
+    if (!row) throw new Error('One of those identities no longer exists.');
+    const results = evaluateIdentity(row, ctx, remediations);
+    const result = results.find((entry) => entry.check.key === checkKey);
+    if (!result || result.state !== 'fail') throw new Error(`${row.name} is already passing this check.`);
+    const plan = check.fix(row, ctx, result.failure);
+    let ownerPerson = null;
+    if (plan.needsOwner) {
+      ownerPerson = ctx.people.find((person) => person.user === owner);
+      if (!ownerPerson) throw new Error('Choose who owns this identity.');
+    }
+    const toResolve = alerts.filter((alert) => alert.identityId === row.id && isOpen(alert) && check.resolves(alert, result.failure));
+    return { row, plan, ownerPerson, toResolve, before: scoreOf(results) };
+  });
+
+  /* Alerts first: if that write is refused, nothing is recorded. */
+  for (const { plan, ownerPerson, toResolve } of plans) {
+    if (toResolve.length === 0) continue;
     applyAlertAction({
       alerts: toResolve,
       action: 'resolve',
@@ -1213,9 +1266,76 @@ export function remediate({ identityId, checkKey, owner = null }) {
     });
   }
 
-  writeOverlay(OVERLAY_KEYS.posture, next);
-  const after = scoreOf(evaluateIdentity(row, ctx, next));
-  return { before, after, resolvedAlerts: toResolve.length, action: plan.action };
+  const next = { ...remediations };
+  for (const { row, plan, ownerPerson, toResolve } of plans) {
+    const entries = { ...(next[row.id] ?? {}) };
+    const cycles = [...(entries[checkKey]?.cycles ?? [])];
+    cycles.push({
+      at,
+      by: me.name,
+      byUser: me.user,
+      action: plan.action,
+      ...(ownerPerson ? { owner: ownerPerson.name } : {}),
+      alertIds: toResolve.map((alert) => alert.id),
+    });
+    entries[checkKey] = { cycles };
+    next[row.id] = entries;
+  }
+  writeRemediationStore(next);
+
+  return plans.map(({ row, plan, toResolve, before }) => ({
+    identityId: row.id,
+    name: row.name,
+    before,
+    after: scoreOf(evaluateIdentity(row, ctx, next)),
+    resolvedAlerts: toResolve.length,
+    action: plan.action,
+  }));
+}
+
+export function remediate({ identityId, checkKey, owner = null }) {
+  return applyFix({ identityIds: [identityId], checkKey, owner })[0];
+}
+
+/** One check fixed on many identities - a quick win applied in one go. */
+export function remediateMany({ identityIds, checkKey }) {
+  const check = CHECKS_BY_KEY.get(checkKey);
+  if (check?.key === 'no-owner') throw new Error('Each identity needs its own owner. Record owners one at a time.');
+  const results = applyFix({ identityIds, checkKey });
+  return {
+    count: results.length,
+    resolvedAlerts: results.reduce((sum, entry) => sum + entry.resolvedAlerts, 0),
+    gained: results.reduce((sum, entry) => sum + (entry.after - entry.before), 0),
+  };
+}
+
+/**
+ * Undo a fix in force. The check fails again from now, the history keeps both
+ * the fix and its rollback, and the alerts the fix resolved are reopened - if
+ * they are still resolved: one somebody has since dismissed stays dismissed.
+ */
+export function rollBack({ identityId, checkKey }) {
+  const me = assertCan('posture.remediate');
+  const ctx = context();
+  const row = ctx.identities.find((identity) => identity.id === identityId);
+  if (!row) throw new Error('That identity no longer exists.');
+  const remediations = readRemediations();
+  const entry = remediations[row.id]?.[checkKey];
+  const cycle = activeCycle(entry);
+  if (!cycle) throw new Error('There is no fix in force to roll back.');
+  const before = scoreOf(evaluateIdentity(row, ctx, remediations));
+
+  const reopen = estateAlerts().filter((alert) => (cycle.alertIds ?? []).includes(alert.id) && alert.status === 'resolved');
+  if (reopen.length > 0) {
+    applyAlertAction({ alerts: reopen, action: 'reopen', note: `Posture fix rolled back: ${cycle.action}.` });
+  }
+
+  const cycles = entry.cycles.map((item, index) =>
+    index === entry.cycles.length - 1 ? { ...item, rolledBackAt: new Date().toISOString(), rolledBackBy: me.name } : item,
+  );
+  const next = { ...remediations, [row.id]: { ...remediations[row.id], [checkKey]: { cycles } } };
+  writeRemediationStore(next);
+  return { before, after: scoreOf(evaluateIdentity(row, ctx, next)), reopenedAlerts: reopen.length, action: cycle.action };
 }
 
 /* ── Transport ───────────────────────────────────────────────────────────── */
@@ -1230,4 +1350,12 @@ export function fetchPostureIdentity(id, signal) {
 
 export function remediatePosture(input) {
   return demoRequest(() => remediate(input), { latency: [700, 1100] });
+}
+
+export function remediatePostureMany(input) {
+  return demoRequest(() => remediateMany(input), { latency: [900, 1400] });
+}
+
+export function rollBackPosture(input) {
+  return demoRequest(() => rollBack(input), { latency: [600, 900] });
 }
