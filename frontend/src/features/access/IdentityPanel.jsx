@@ -458,13 +458,13 @@ function PanelTabs({ tabs, value, onChange }) {
             className={cn(
               'flex items-center gap-1 rounded-full border px-2 py-[3px] text-[11.5px] transition-colors duration-150',
               active
-                ? 'border-brand bg-brand font-medium text-white'
+                ? 'border-brand bg-info-soft font-semibold text-brand'
                 : 'border-line-strong bg-surface text-ink-2 hover:border-ink-3/50 hover:bg-surface-3',
             )}
           >
             {tab.label}
             {tab.count ? (
-              <span data-numeric="" className={cn('text-[10.5px]', active ? 'text-white/80' : 'text-ink-3')}>
+              <span data-numeric="" className={cn('text-[10.5px]', active ? 'text-brand' : 'text-ink-3')}>
                 {tab.count}
               </span>
             ) : null}

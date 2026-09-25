@@ -12,10 +12,8 @@ import {
   SearchX,
   XCircle,
 } from 'lucide-react';
-import { dismissFinding, fetchAlerts, fetchFindings, restoreFinding, updateAlerts } from '../../lib/api/endpoints';
+import { dismissFinding, restoreFinding, updateAlerts } from '../../lib/api/endpoints';
 import { useAuth } from '../../app/AuthContext';
-import { useQuery } from '../../lib/hooks';
-import { useDemoQuery } from '../../lib/demo/useDemoQuery';
 import {
   ALERT_SOURCES,
   ALERT_SOURCE_ORDER,
@@ -28,6 +26,7 @@ import {
   RESPONSE_TARGETS,
   alertStatusMeta,
   dismissReasonMeta,
+  handoffOf,
   isOpen,
   responseState,
 } from '../../lib/alerts';
@@ -53,6 +52,8 @@ import { useToast } from '../../ui/Toast';
 import { cn } from '../../ui/cn';
 import { describeScannerError } from '../exposure/scannerState';
 import { AlertDrawer, Avatar } from './AlertDrawer';
+import { useAlertFeed } from './AlertFeed';
+import { LiveStatus, QueueSummary } from './queueParts';
 import { exposureAlerts } from './exposureAlerts';
 import { IdentityGroups, groupByEntity } from './IdentityGroups';
 
@@ -72,8 +73,10 @@ const URGENCY = { overdue: 4, ack_overdue: 3, due_soon: 2, on_track: 1, closed: 
  *
  * ── Views before filters ────────────────────────────────────────────────────
  * The tabs are the questions a responder asks in order: what is open, what
- * has nobody picked up, what is mine, what has been escalated, what is late,
- * what was closed. The rail refines within whichever one is selected, and
+ * has not been acknowledged, what is mine, what has been escalated, what is
+ * late, what was closed. An analyst sees only their own alerts, so they get
+ * the subset of those that still means something, and no tiles: a queue of
+ * one person's work is read as a list, not a dashboard. The rail refines within whichever one is selected, and
  * every choice is in the URL so a filtered queue is a link.
  */
 export default function AlertsPage() {
@@ -85,8 +88,14 @@ export default function AlertsPage() {
   const { railOpen, toggleRail } = useFacetRail();
   const operatorUser = user?.username ?? null;
 
-  const alertsQuery = useDemoQuery((signal) => fetchAlerts(signal), []);
-  const findingsQuery = useQuery((signal) => fetchFindings(signal), []);
+  /* The shell keeps the queue live (see AlertFeed): read on an interval and
+     on every change, so this page and the sidebar count never disagree. */
+  const { query: alertsQuery, findingsQuery } = useAlertFeed();
+  /* An analyst's queue is theirs alone - the API returns only what is
+     assigned or escalated to them - so the views about other people's work
+     (who has nothing, what is someone else's) are not offered. */
+  const scoped = alertsQuery.data ? alertsQuery.data.scope !== 'all' : !can('alerts.viewAll');
+  const views = scoped ? VIEWS.filter((entry) => !entry.wholeQueue) : VIEWS;
 
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [busy, setBusy] = useState(false);
@@ -102,7 +111,7 @@ export default function AlertsPage() {
     return () => clearInterval(timer);
   }, []);
 
-  const view = VIEWS.some((entry) => entry.value === searchParams.get('view')) ? searchParams.get('view') : 'open';
+  const view = views.some((entry) => entry.value === searchParams.get('view')) ? searchParams.get('view') : 'open';
   const filters = useMemo(
     () => ({
       severity: searchParams.get('severity') || '',
@@ -148,14 +157,18 @@ export default function AlertsPage() {
      the live scanner feed with the same triage store. */
   const all = useMemo(() => {
     if (!data) return [];
-    const exposure = exposureAlerts(findingsQuery.data?.findings ?? [], data.triage, data.policy, now);
+    /* Exposure alerts are raised here, from the scanner feed, so the same
+       scope the API applied to the rest is applied to them here. */
+    const exposure = exposureAlerts(findingsQuery.data?.findings ?? [], data.triage, data.policy, now).filter(
+      (alert) => data.scope === 'all' || alert.assignee === operatorUser,
+    );
     return [...data.alerts, ...exposure].map((alert) => ({ ...alert, response: responseState(alert, now) }));
-  }, [data, findingsQuery.data, now]);
+  }, [data, findingsQuery.data, now, operatorUser]);
 
   const inView = useMemo(() => {
-    const test = VIEWS.find((entry) => entry.value === view)?.test ?? (() => true);
+    const test = views.find((entry) => entry.value === view)?.test ?? (() => true);
     return all.filter((alert) => test(alert, operatorUser));
-  }, [all, view, operatorUser]);
+  }, [all, view, views, operatorUser]);
 
   const filtered = useMemo(() => {
     const needle = search.toLowerCase();
@@ -222,9 +235,9 @@ export default function AlertsPage() {
 
   const counts = useMemo(() => {
     const out = {};
-    for (const entry of VIEWS) out[entry.value] = all.filter((alert) => entry.test(alert, operatorUser)).length;
+    for (const entry of views) out[entry.value] = all.filter((alert) => entry.test(alert, operatorUser)).length;
     return out;
-  }, [all, operatorUser]);
+  }, [all, views, operatorUser]);
 
   const openAlerts = useMemo(() => all.filter(isOpen), [all]);
   const bySeverity = useMemo(() => {
@@ -292,13 +305,16 @@ export default function AlertsPage() {
             description: 'The scanner allowlist write failed for those, so they are still open. The rest went through.',
           });
         } else if (action !== 'comment' && action !== 'assign') {
+          const next = action === 'escalate' && changed.length === 1 ? policy?.[(targets[0].escalationLevel ?? 1) + 1] : null;
           notify({
             variant: 'success',
             title: ACTION_DONE[action]?.(changed.length) ?? 'Updated',
             description:
               changed.length < targets.length
                 ? `${targets.length - changed.length} were already in that state and were left alone.`
-                : undefined,
+                : next && scoped
+                  ? `It is now with ${next.name} and has left your queue.`
+                  : undefined,
           });
         } else if (action === 'assign' && changed.length > 0) {
           const name = options.assignee ? peopleByUser.get(options.assignee)?.name ?? options.assignee : null;
@@ -308,6 +324,11 @@ export default function AlertsPage() {
             description: changed.length > 1 ? `${changed.length} alerts.` : undefined,
           });
         }
+        /* Handed on by an analyst, the alert is no longer theirs to see, so
+           its drawer closes rather than turning into "not in your queue". */
+        if (scoped && (action === 'escalate' || (action === 'assign' && options.assignee !== operatorUser))) {
+          setParams({ alert: '' }, { resetPage: false });
+        }
         return true;
       } catch (error) {
         notify({ variant: 'error', title: 'That did not go through', description: error?.message });
@@ -316,7 +337,7 @@ export default function AlertsPage() {
         setBusy(false);
       }
     },
-    [can, findingsQuery, notify, peopleByUser],
+    [can, findingsQuery, notify, peopleByUser, policy, scoped, operatorUser, setParams],
   );
 
   const onBulk = async (action, options) => {
@@ -410,7 +431,7 @@ export default function AlertsPage() {
         })),
         onToggle: toggle('status'),
       },
-      {
+      !scoped && {
         key: 'assignee',
         label: 'Assigned to',
         options: [
@@ -429,8 +450,8 @@ export default function AlertsPage() {
         ],
         onToggle: toggle('assignee'),
       },
-    ];
-  }, [inView, filters, people, operatorUser, setParams]);
+    ].filter(Boolean);
+  }, [inView, filters, people, operatorUser, setParams, scoped]);
 
   const chips = [
     filters.severity && { key: 'severity', label: 'Severity', value: severityMeta(filters.severity).label },
@@ -552,7 +573,28 @@ export default function AlertsPage() {
         );
       },
     },
-    {
+    scoped
+      ? {
+          key: 'assignee',
+          header: 'How it reached you',
+          width: '16%',
+          cell: (row) => {
+            const handoff = handoffOf(row, operatorUser);
+            return (
+              <span className="block min-w-0">
+                <span className="block truncate text-[12.5px] text-ink-2" title={handoff?.label}>
+                  {handoff?.label ?? 'On-call routing'}
+                </span>
+                {handoff?.at && (
+                  <span className="block truncate text-[11px] text-ink-3" title={formatDateTime(handoff.at)}>
+                    {formatRelativeShort(handoff.at)}
+                  </span>
+                )}
+              </span>
+            );
+          },
+        }
+      : {
       key: 'assignee',
       header: 'Assigned to',
       width: '16%',
@@ -627,10 +669,17 @@ export default function AlertsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Alerts"
-        lede="Every problem the other screens raise, in one queue - with an owner, a deadline and an escalation path."
+        title={scoped ? 'My alerts' : 'Alerts'}
+        lede={
+          scoped
+            ? 'The alerts assigned or escalated to you - nobody else\'s. A new one appears here, and as a notice on any screen, as soon as it is handed to you.'
+            : 'Every problem the other screens raise, in one queue - with an owner, a deadline and an escalation path.'
+        }
         actions={
-          <IconButton icon={Info} label="Escalation policy and response targets" onClick={() => setPolicyOpen(true)} />
+          <>
+            <LiveStatus refreshing={alertsQuery.isRefreshing} />
+            <IconButton icon={Info} label="Escalation policy and response targets" onClick={() => setPolicyOpen(true)} />
+          </>
         }
         tabs={
           <Tabs
@@ -640,12 +689,14 @@ export default function AlertsPage() {
               setSelectedIds(new Set());
               setParams({ view: value === 'open' ? '' : value, status: '', response: '' });
             }}
-            tabs={VIEWS.map((entry) => ({ value: entry.value, label: entry.label, count: loading ? undefined : counts[entry.value] }))}
+            tabs={views.map((entry) => ({ value: entry.value, label: entry.label, count: loading ? undefined : counts[entry.value] }))}
           />
         }
       />
 
-      {loading ? (
+      {scoped ? (
+        <QueueSummary loading={loading} open={openAlerts} counts={counts} />
+      ) : loading ? (
         <StatStripSkeleton count={4} />
       ) : (
         <div className="grid gap-3 @min-[30rem]:grid-cols-2 @min-[54rem]:grid-cols-4">
@@ -660,11 +711,11 @@ export default function AlertsPage() {
           />
           <MetricTile
             as={Link}
-            to="/alerts?view=triage"
-            label="Needs an owner"
-            value={counts.triage}
-            tone={counts.triage > 0 ? 'high' : 'low'}
-            caption="New, and nobody has picked it up"
+            to="/alerts?view=unacked"
+            label="Not acknowledged"
+            value={counts.unacked}
+            tone={counts.unacked > 0 ? 'high' : 'low'}
+            caption="Routed to someone who has not picked it up yet"
           />
           <MetricTile
             as={Link}
@@ -682,6 +733,20 @@ export default function AlertsPage() {
             tone={counts.escalated > 0 ? 'medium' : 'low'}
             caption="Above the responder it was routed to"
           />
+        </div>
+      )}
+
+      {openId && !openAlert && !loading && !findingsQuery.isLoading && (
+        <div className="flex flex-wrap items-start gap-2.5 rounded-[var(--radius-panel)] border border-line bg-surface-2 px-4 py-3">
+          <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-ink-3" />
+          <p className="min-w-0 flex-1 text-[12.5px] leading-relaxed text-ink-2">
+            {scoped
+              ? 'That alert is not in your queue. It may have been reassigned, or escalated to the next level.'
+              : 'No alert with that id. It may have been raised from a finding that has since been removed.'}
+          </p>
+          <Button variant="ghost" size="sm" onClick={() => setParams({ alert: '' }, { resetPage: false })}>
+            Dismiss
+          </Button>
         </div>
       )}
 
@@ -820,8 +885,8 @@ export default function AlertsPage() {
                 />
               ) : (
                 <ClearState
-                  title={VIEWS.find((entry) => entry.value === view)?.empty ?? 'Nothing here'}
-                  description={VIEWS.find((entry) => entry.value === view)?.emptyDetail}
+                  title={views.find((entry) => entry.value === view)?.empty ?? 'Nothing here'}
+                  description={views.find((entry) => entry.value === view)?.emptyDetail}
                 />
               )
             ) : (
@@ -860,8 +925,8 @@ export default function AlertsPage() {
                 />
               ) : (
                 <ClearState
-                  title={VIEWS.find((entry) => entry.value === view)?.empty ?? 'Nothing here'}
-                  description={VIEWS.find((entry) => entry.value === view)?.emptyDetail}
+                  title={views.find((entry) => entry.value === view)?.empty ?? 'Nothing here'}
+                  description={views.find((entry) => entry.value === view)?.emptyDetail}
                 />
               )
             }
@@ -943,6 +1008,8 @@ const ACTION_DONE = {
 /**
  * The views, as the questions a responder asks - in the order they ask them.
  * `test` decides membership; everything else about the view is copy.
+ * `wholeQueue` views only mean something to someone who sees every alert: to
+ * an analyst, everything is already theirs, and anything escalated has left.
  */
 const VIEWS = [
   {
@@ -953,15 +1020,19 @@ const VIEWS = [
     emptyDetail: 'Every alert has been resolved or dismissed.',
   },
   {
-    value: 'triage',
-    label: 'Needs an owner',
-    test: (alert) => alert.status === 'new' && !alert.assignee,
-    empty: 'Every new alert has an owner',
-    emptyDetail: 'Every new alert has somebody assigned to it.',
+    /* Every alert is routed the moment it is raised, so the gap an on-call
+       tool watches is not "nobody has it" but "whoever has it has not
+       answered" - PagerDuty's Triggered state. */
+    value: 'unacked',
+    label: 'Not acknowledged',
+    test: (alert) => alert.status === 'new',
+    empty: 'Everything has been acknowledged',
+    emptyDetail: 'Every open alert has been picked up by the person it was routed to.',
   },
   {
     value: 'mine',
     label: 'Assigned to me',
+    wholeQueue: true,
     test: (alert, me) => isOpen(alert) && Boolean(me) && alert.assignee === me,
     empty: 'Nothing assigned to you',
     emptyDetail: 'Alerts assigned to you, or escalated to you, appear here.',
@@ -969,6 +1040,7 @@ const VIEWS = [
   {
     value: 'escalated',
     label: 'Escalated',
+    wholeQueue: true,
     test: (alert) => isOpen(alert) && (alert.escalationLevel ?? 1) >= 2,
     empty: 'Nothing escalated',
     emptyDetail: 'No open alert has gone above the responder it was routed to.',
@@ -1013,17 +1085,13 @@ function BulkBar({ count, people, operatorUser, busy, anyOpen, anyClosed, anyNew
               aria-label="Assign selected alerts to"
               value=""
               placeholder="Assign to…"
-              options={[
-                { value: '__none', label: 'Nobody (unassign)' },
-                ...people.map((person) => ({
-                  value: person.user,
-                  label: person.user === operatorUser ? `${person.name} (you)` : person.name,
-                })),
-              ]}
+              options={people.map((person) => ({
+                value: person.user,
+                label: person.user === operatorUser ? `${person.name} (you)` : person.name,
+              }))}
               onChange={(event) => {
                 const value = event.target.value;
-                if (!value) return;
-                onAction('assign', { assignee: value === '__none' ? null : value });
+                if (value) onAction('assign', { assignee: value });
               }}
               disabled={busy}
             />

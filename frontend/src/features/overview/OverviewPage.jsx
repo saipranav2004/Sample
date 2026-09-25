@@ -1,7 +1,8 @@
-import { useMemo } from 'react';
+import { lazy, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Bot, FileWarning, Fingerprint, KeyRound, LineChart, RotateCw } from 'lucide-react';
+import { ArrowRight, Bot, FileWarning, Fingerprint, KeyRound, LineChart, RotateCw, ShieldAlert } from 'lucide-react';
 import { useScanContext } from '../../app/ScanContext';
+import { useAccess } from '../../app/useAccess';
 import { fetchEvents, fetchFindings, fetchPostureOverview, fetchSummary } from '../../lib/api/endpoints';
 import { useDemoQuery } from '../../lib/demo/useDemoQuery';
 import { PILLARS } from '../../lib/posture';
@@ -26,8 +27,8 @@ import { TrendChart } from '../../charts/TrendChart';
 import { Button } from '../../ui/Button';
 import { Panel, PanelHeader } from '../../ui/Panel';
 import { MetricTile } from '../../ui/Stat';
-import { ProportionBar } from '../../ui/Meter';
 import { Tag } from '../../ui/Tag';
+import { cn } from '../../ui/cn';
 import {
   ChartSkeleton,
   DonutSkeleton,
@@ -41,7 +42,25 @@ import { SignalList } from './SignalList';
 import { ActivityFeed } from '../activity/ActivityFeed';
 import { describeScannerError, summariseFindings } from '../exposure/scannerState';
 
+const MyWorkPage = lazy(() => import('./MyWorkPage'));
+
+/**
+ * Each role's home, at one address.
+ *
+ * An analyst's work is the alerts routed to them, so their home is that
+ * queue ("My work"). Admins run the programme and get the organisation
+ * dashboard. A viewer gets the same dashboard without credential exposure,
+ * which their role does not open - read-only oversight of posture and
+ * inventory. The navigation, the breadcrumb and the command palette name the
+ * page the same way.
+ */
 export default function OverviewPage() {
+  const { role, can } = useAccess();
+  if (role === 'analyst') return <MyWorkPage />;
+  return <OrganisationDashboard exposure={can('exposure.view')} readOnly={!can('alerts.view')} />;
+}
+
+function OrganisationDashboard({ exposure, readOnly }) {
   const { selectedScanId, scans } = useScanContext();
 
   const summaryQuery = useQuery((signal) => fetchSummary({ scanId: selectedScanId }, signal), [
@@ -51,7 +70,9 @@ export default function OverviewPage() {
     (signal) => fetchEvents({ scanId: selectedScanId, page: 1, pageSize: 8 }, signal),
     [selectedScanId],
   );
-  const findingsQuery = useQuery((signal) => fetchFindings(signal), []);
+  /* Not requested at all for a role that cannot see exposure - hiding the
+     panel is not enough if the response still reaches the browser. */
+  const findingsQuery = useQuery((signal) => fetchFindings(signal), [], { enabled: exposure });
 
   const summary = summaryQuery.data;
 
@@ -104,7 +125,7 @@ export default function OverviewPage() {
   const refreshAll = () => {
     summaryQuery.refetch();
     eventsQuery.refetch();
-    findingsQuery.refetch();
+    if (exposure) findingsQuery.refetch();
   };
 
   if (summaryQuery.isError && !summary) {
@@ -128,6 +149,7 @@ export default function OverviewPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Dashboard"
+        lede={readOnly ? 'Read-only oversight of posture and inventory. Your role does not work alerts or open exposed credentials.' : undefined}
         actions={
           <Button
             variant="secondary"
@@ -162,18 +184,20 @@ export default function OverviewPage() {
             sparkline={trendData.map((point) => point.identities)}
             icon={Fingerprint}
             tone="brand"
-            caption={`${formatNumber(summary?.total_humans)} human · ${formatNumber(summary?.total_nhis)} non-human`}
+            caption={`Non-human identities across ${formatNumber(summary?.total_accounts)} accounts`}
           />
           <MetricTile
+            as={Link}
+            to="/identities?owner_type=ORPHANED"
             data-stagger=""
             style={{ '--stagger': 1 }}
             className="animate-rise"
-            label="Non-human identities"
-            value={summary?.total_nhis}
+            label="Without an owner"
+            value={summary?.total_orphaned}
             icon={Bot}
-            tone="info"
-            caption="Workloads, pipelines, agents and vendor platforms"
-            meter={percentValue(summary?.total_nhis, totalIdentities)}
+            tone="high"
+            caption="No owner, team or creator could be resolved"
+            meter={percentValue(summary?.total_orphaned, totalIdentities)}
             meterLabel="Share of all identities"
           />
           <MetricTile
@@ -188,7 +212,24 @@ export default function OverviewPage() {
             tone="medium"
             caption="Keys, passwords and certificates held by identities"
           />
-          <CodeExposureTile query={findingsQuery} summary={findingSummary} />
+          {exposure ? (
+            <CodeExposureTile query={findingsQuery} summary={findingSummary} />
+          ) : (
+            <MetricTile
+              as={Link}
+              to="/identities?is_admin=true"
+              data-stagger=""
+              style={{ '--stagger': 3 }}
+              className="animate-rise"
+              label="Administrator access"
+              value={summary?.total_admin}
+              icon={ShieldAlert}
+              tone="critical"
+              caption="Identities holding an administrator-equivalent policy"
+              meter={percentValue(summary?.total_admin, totalIdentities)}
+              meterLabel="Share of all identities"
+            />
+          )}
         </div>
       )}
 
@@ -227,54 +268,6 @@ export default function OverviewPage() {
                   total={totalIdentities}
                   centerLabel="Identities"
                 />
-                <div className="mt-4 border-t border-line pt-3">
-                  <p className="text-[11px] font-semibold tracking-[0.1em] text-ink-3 uppercase">
-                    Human vs non-human
-                  </p>
-                  <ProportionBar
-                    className="mt-2"
-                    total={totalIdentities}
-                    ariaLabel={`${formatNumber(summary?.total_humans)} human and ${formatNumber(summary?.total_nhis)} non-human identities`}
-                    segments={[
-                      {
-                        key: 'human',
-                        label: 'Human',
-                        value: Number(summary?.total_humans) || 0,
-                        color: 'var(--t-series-1)',
-                      },
-                      {
-                        key: 'nhi',
-                        label: 'Non-human',
-                        value: Number(summary?.total_nhis) || 0,
-                        color: 'var(--t-series-5)',
-                      },
-                    ]}
-                  />
-                  <dl className="mt-2.5 flex items-center justify-between text-[12px]">
-                    <div className="flex items-center gap-1.5">
-                      <span
-                        aria-hidden="true"
-                        className="size-2 rounded-[2px]"
-                        style={{ background: 'var(--t-series-1)' }}
-                      />
-                      <dt className="text-ink-3">Human</dt>
-                      <dd data-numeric="" className="font-semibold text-ink">
-                        {formatNumber(summary?.total_humans)}
-                      </dd>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span
-                        aria-hidden="true"
-                        className="size-2 rounded-[2px]"
-                        style={{ background: 'var(--t-series-5)' }}
-                      />
-                      <dt className="text-ink-3">Non-human</dt>
-                      <dd data-numeric="" className="font-semibold text-ink">
-                        {formatNumber(summary?.total_nhis)}
-                      </dd>
-                    </div>
-                  </dl>
-                </div>
               </>
             )}
           </div>
@@ -391,7 +384,7 @@ export default function OverviewPage() {
       </div>
 
       {/* ── Activity + newest findings ──────────────────────────────────── */}
-      <div className="grid gap-4 @min-[52rem]:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+      <div className={cn('grid gap-4', exposure && '@min-[52rem]:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]')}>
         <Panel prominence="quiet" className="animate-rise" data-stagger="" style={{ '--stagger': 7 }}>
           <PanelHeader prominence="quiet"
             title="Latest API activity"
@@ -412,19 +405,21 @@ export default function OverviewPage() {
           </div>
         </Panel>
 
-        <Panel prominence="default" className="animate-rise" data-stagger="" style={{ '--stagger': 8 }}>
-          <PanelHeader
-            title="Credential exposure"
-            actions={
-              <Button as={Link} to="/exposure" variant="secondary" size="sm" iconRight={ArrowRight}>
-                Review findings
-              </Button>
-            }
-          />
-          <div className="mt-4">
-            <FindingsMiniPanel query={findingsQuery} summary={findingSummary} />
-          </div>
-        </Panel>
+        {exposure && (
+          <Panel prominence="default" className="animate-rise" data-stagger="" style={{ '--stagger': 8 }}>
+            <PanelHeader
+              title="Credential exposure"
+              actions={
+                <Button as={Link} to="/exposure" variant="secondary" size="sm" iconRight={ArrowRight}>
+                  Review findings
+                </Button>
+              }
+            />
+            <div className="mt-4">
+              <FindingsMiniPanel query={findingsQuery} summary={findingSummary} />
+            </div>
+          </Panel>
+        )}
       </div>
     </div>
   );

@@ -42,7 +42,6 @@ import {
 /** Each preset must be expressible in one request - no client-side unions. */
 const VIEW_PRESETS = [
   { key: 'all', label: 'All identities', params: {}, countField: 'total_identities' },
-  { key: 'mfa', label: 'No MFA', params: { without_mfa: 'true' }, countField: 'total_humans_without_mfa' },
   { key: 'admin', label: 'Admin access', params: { is_admin: 'true' }, countField: 'total_admin' },
   { key: 'stale', label: 'Stale 90+', params: { is_stale: 'true' }, countField: 'total_stale_90plus' },
   { key: 'orphaned', label: 'Orphaned', params: { owner_type: 'ORPHANED' }, countField: 'total_orphaned' },
@@ -54,6 +53,17 @@ const VIEW_PRESETS = [
 ];
 
 const DENSITY_KEY = 'dna.grid.density';
+
+/* A short mark per classification, so the column tells the kinds apart. */
+const CLASS_BADGE = {
+  NHI_SERVICE: 'SVC',
+  NHI_AGENT: 'AI',
+  NHI_CICD: 'CI',
+  NHI_SAAS: 'SAAS',
+  NHI_EPHEMERAL: 'EPH',
+  DUAL_IDENTITY: 'DUAL',
+  UNCLASSIFIED: '?',
+};
 
 export default function IdentitiesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -279,7 +289,6 @@ export default function IdentitiesPage() {
       width: '24%',
       cell: (row) => {
         const meta = classificationMeta(row.classification);
-        const isHuman = meta.kind === 'human';
         return (
           <span className="flex min-w-0 items-center gap-3">
             <span
@@ -288,10 +297,12 @@ export default function IdentitiesPage() {
               style={{
                 borderColor: `color-mix(in srgb, ${meta.color} 34%, transparent)`,
                 background: `color-mix(in srgb, ${meta.color} 10%, transparent)`,
-                color: meta.color,
+                /* Mixed toward the ink so the letters clear 4.5:1 on the tint
+                   in both themes; the hue still says which class. */
+                color: `color-mix(in srgb, ${meta.color} 62%, var(--t-ink))`,
               }}
             >
-              {isHuman ? 'HU' : 'NHI'}
+              {CLASS_BADGE[row.classification] ?? 'NHI'}
             </span>
             <span className="min-w-0">
               <span className="block truncate text-[13px] font-semibold text-ink" title={row.name || row.arn}>

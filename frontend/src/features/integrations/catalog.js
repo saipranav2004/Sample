@@ -120,7 +120,7 @@ export const PLATFORMS = [
     short: 'Okta',
     category: 'idp',
     summary:
-      'Who the humans are. Without an identity provider a federated role can be listed but the person arriving through it cannot be named.',
+      'Who is behind each federated role. Without an identity provider the role can be listed, but not tied to a named owner or the group that uses it.',
     provides: [
       { label: 'Identities', to: '/identities' },
       { label: 'Access graph', to: '/access-graph' },

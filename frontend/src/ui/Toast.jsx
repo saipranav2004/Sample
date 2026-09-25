@@ -35,9 +35,9 @@ export function ToastProvider({ children }) {
   }, []);
 
   const notify = useCallback(
-    ({ title, description, variant = 'info', duration = 5000 }) => {
+    ({ title, description, variant = 'info', duration = 5000, action = null }) => {
       const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-      setToasts((current) => [...current.slice(-2), { id, title, description, variant }]);
+      setToasts((current) => [...current.slice(-2), { id, title, description, variant, action }]);
       if (duration > 0) {
         timers.current.set(
           id,
@@ -75,6 +75,18 @@ export function ToastProvider({ children }) {
                 <p className="text-[13px] font-semibold text-ink">{toast.title}</p>
                 {toast.description && (
                   <p className="mt-0.5 text-[12.5px] leading-relaxed text-ink-2">{toast.description}</p>
+                )}
+                {toast.action && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      toast.action.onSelect();
+                      dismiss(toast.id);
+                    }}
+                    className="mt-1.5 text-[12.5px] font-semibold text-brand hover:underline"
+                  >
+                    {toast.action.label}
+                  </button>
                 )}
               </div>
               <button

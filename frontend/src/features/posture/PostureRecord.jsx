@@ -131,6 +131,7 @@ export function PostureRecord({ data }) {
 }
 
 function ScoreSummary({ data, failing, remediated }) {
+  const { can } = useAccess();
   const { identity, projected, peers } = data;
   return (
     <Panel prominence="lead" className="animate-rise">
@@ -156,7 +157,16 @@ function ScoreSummary({ data, failing, remediated }) {
             label="Peer standing"
             value={peers.percentile === null ? 'Only one' : peers.percentile === 0 ? 'Lowest in group' : `Above ${peers.percentile}%`}
           />
-          <Fact label="Open alerts" value={formatNumber(data.openAlerts)} to={data.openAlerts ? `/identities/${encodeURIComponent(identity.id)}?tab=alerts` : null} />
+          {/* The count is whatever the API let this user see: every open alert
+              for an admin, their own for an analyst, and nothing for a role
+              without the queue - so the label says which, or the fact goes. */}
+          {can('alerts.view') && (
+            <Fact
+              label={can('alerts.viewAll') ? 'Open alerts' : 'Your open alerts'}
+              value={formatNumber(data.openAlerts)}
+              to={data.openAlerts ? `/identities/${encodeURIComponent(identity.id)}?tab=alerts` : null}
+            />
+          )}
         </dl>
       </div>
     </Panel>

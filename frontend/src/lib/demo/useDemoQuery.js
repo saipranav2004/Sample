@@ -11,12 +11,33 @@ import { subscribeOverlay } from './runtime';
  * the kind of half-wired demo the request was against.
  *
  * Every overlay write bumps a revision, which is a dependency of the query, so
- * one action refreshes every view built on the same data.
+ * one action refreshes every view built on the same data - in this tab and,
+ * through the \`storage\` event, in any other tab of the console.
+ *
+ * \`refreshMs\` adds a visible-tab poll for state that moves with the clock.
  */
-export function useDemoQuery(fetcher, deps = [], options) {
+export function useDemoQuery(fetcher, deps = [], options = {}) {
+  const { refreshMs, ...queryOptions } = options;
   const [revision, setRevision] = useState(0);
 
   useEffect(() => subscribeOverlay(() => setRevision((value) => value + 1)), []);
 
-  return useQuery(fetcher, [...deps, revision], options);
+  /* Some state changes with time rather than with a write - a critical alert
+     left untouched for an hour escalates on its own - so a live queue also
+     re-reads on an interval. Skipped while the tab is hidden: nobody is
+     looking, and the first visible tick catches up. */
+  useEffect(() => {
+    if (!refreshMs) return undefined;
+    const bump = () => {
+      if (document.visibilityState === 'visible') setRevision((value) => value + 1);
+    };
+    const timer = window.setInterval(bump, refreshMs);
+    document.addEventListener('visibilitychange', bump);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', bump);
+    };
+  }, [refreshMs]);
+
+  return useQuery(fetcher, [...deps, revision], queryOptions);
 }

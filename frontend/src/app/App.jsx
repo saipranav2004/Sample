@@ -7,6 +7,7 @@ import { ScanProvider } from './ScanContext';
 import { RequireAuth } from './RequireAuth';
 import { ToastProvider } from '../ui/Toast';
 import { AppShell } from '../shell/AppShell';
+import { RequirePermission } from './RequirePermission';
 import { RouteFallback } from '../shell/RouteFallback';
 import LoginPage from '../features/auth/LoginPage';
 
@@ -84,7 +85,9 @@ export default function App() {
                   path="/alerts"
                   element={
                     <Suspense fallback={<RouteFallback />}>
-                      <AlertsPage />
+                      <RequirePermission permission="alerts.view" screen="Alerts" title="The alert queue is not part of your role">
+                        <AlertsPage />
+                      </RequirePermission>
                     </Suspense>
                   }
                 />
@@ -116,7 +119,9 @@ export default function App() {
                   path="/exposure"
                   element={
                     <Suspense fallback={<RouteFallback />}>
-                      <FindingsPage />
+                      <RequirePermission permission="exposure.view" screen="Exposed credentials" title="Exposed credentials are not part of your role">
+                        <FindingsPage />
+                      </RequirePermission>
                     </Suspense>
                   }
                 />
@@ -124,7 +129,9 @@ export default function App() {
                   path="/exposure/dismissed"
                   element={
                     <Suspense fallback={<RouteFallback />}>
-                      <DismissedPage />
+                      <RequirePermission permission="exposure.view" screen="Accepted" title="Exposed credentials are not part of your role">
+                        <DismissedPage />
+                      </RequirePermission>
                     </Suspense>
                   }
                 />

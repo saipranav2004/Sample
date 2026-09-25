@@ -22,7 +22,6 @@ export function IdentityDrawer({ identity, open, onClose }) {
   const [tab, setTab] = useState('overview');
   if (!identity) return null;
   const meta = classificationMeta(identity.classification);
-  const isHuman = meta.kind === 'human';
 
   return (
     <Drawer
@@ -34,7 +33,7 @@ export function IdentityDrawer({ identity, open, onClose }) {
       subtitle={<CopyableValue value={identity.arn} />}
       header={
         <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-          <IdentityTags identity={identity} isHuman={isHuman} />
+          <IdentityTags identity={identity} />
           {identity.id && (
             <Button
               as={Link}
@@ -61,7 +60,7 @@ export function IdentityDrawer({ identity, open, onClose }) {
 }
 
 /** Type, admin, MFA and trust at a glance - the same tags on the drawer and the page. */
-export function IdentityTags({ identity, isHuman }) {
+export function IdentityTags({ identity }) {
   return (
     <>
       {identity.identity_type && (
@@ -74,7 +73,7 @@ export function IdentityTags({ identity, isHuman }) {
           Admin access
         </Tag>
       )}
-      {(isHuman || identity.console_access) &&
+      {identity.console_access &&
         (identity.mfa_enabled ? (
           <Tag tone="low" size="sm" icon={ShieldCheck}>
             MFA enabled

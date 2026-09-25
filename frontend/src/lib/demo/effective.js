@@ -15,9 +15,9 @@
  *    what a fix earned and to draw the history.
  *
  * MFA is the one fix that does not change a fact about the identity: the
- * enforcement policy blocks everything until the person enrols a device, but
- * no device is enrolled until they do. The identity says "MFA enforced" and
- * still counts as a human without MFA, because that is still true.
+ * enforcement policy blocks console sign-in until a device is enrolled, but
+ * none is until someone does it. The identity says "MFA enforced" and still
+ * counts as signing in without MFA, because that is still true.
  */
 import { BROAD_POLICIES } from '../posture';
 import { classificationEvidence, estate, ESTATE_META } from './estate';

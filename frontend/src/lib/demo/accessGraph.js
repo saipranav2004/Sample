@@ -376,7 +376,7 @@ export const GRAPH_INPUTS = [
     label: 'Group membership',
     source: 'iam:ListGroupsForUser',
     gives: 'Permissions a user holds without any policy of its own.',
-    without: 'Human access is understated.',
+    without: 'Access an IAM user inherits from its groups is missed.',
     covered: true,
   },
   {
@@ -432,7 +432,7 @@ export const GRAPH_INPUTS = [
     key: 'idp',
     label: 'Identity provider',
     source: 'Identity Center assignments, or the IdP directory',
-    gives: 'Which humans land in which roles, by group.',
+    gives: 'Which directory groups land in which federated roles.',
     without: 'Federated entry points end at the provider instead of at a person.',
     covered: false,
     note: 'Federated principals are modelled as one node each rather than resolved to the people behind them.',
@@ -528,7 +528,7 @@ const FEDERATED_PRINCIPALS = [
     id: 'fed-okta',
     name: 'okta-saml-prod',
     label: 'Okta SAML federation',
-    detail: 'Human operators arrive through this provider. Its group mapping decides which roles they land in.',
+    detail: 'An identity provider people sign in through. Its group mapping decides which roles they land in.',
     external: true,
   },
   {
@@ -613,12 +613,9 @@ function buildGraph() {
      the identity explorer - so a principal opened here is the principal opened
      there, and the numbers in both places are the same numbers.
 
-     The whole estate is 228 identities. Drawing all of them would be a
-     hairball nobody reads, and this screen opens on one focus and its first
-     hop anyway, so the graph is built over the machine identities plus the
-     humans who own or consume them - the subset the access question is about.
-     They are taken in the estate's own risk order, so the interesting ones are
-     in rather than a random slice. */
+     The graph holds every non-human identity in the estate; what is drawn is
+     bounded by the degree-of-interest expansion, not by leaving identities
+     out. They are taken in the estate's own risk order. */
   const shared = sharedEstate();
   const graphPool = [...shared.identities]
     .sort((a, b) => {
@@ -629,8 +626,7 @@ function buildGraph() {
            pulled the better-managed identities into the graph first. */
         (row.access_key_count > 0 ? 2 : 0) +
         (row.owner_type === 'ORPHANED' ? 2 : 0) +
-        (row.consumer_count ?? 0) / 4 +
-        (row.classification === 'HUMAN' ? 1 : 0);
+        (row.consumer_count ?? 0) / 4;
       return weight(b) - weight(a) || a.name.localeCompare(b.name);
     })
     .slice(0, GRAPH_IDENTITY_BUDGET);
@@ -648,7 +644,7 @@ function buildGraph() {
       identityType: row.identity_type,
       classification: row.classification,
       isAdmin: row.is_admin,
-      mfaEnabled: row.classification === 'HUMAN' || row.console_access ? row.mfa_enabled : null,
+      mfaEnabled: row.console_access ? row.mfa_enabled : null,
       trustType: row.is_federated ? 'federated' : 'service',
       /* Hours rather than days, because that is the unit this module's
          staleness checks already work in. */

@@ -1,5 +1,6 @@
 import axios from 'axios';
-import { attachInterceptors, TOKEN_KEY, USER_KEY } from './http';
+import { attachInterceptors } from './http';
+import { clearSession, readToken } from './session';
 
 /**
  * Core NHI Discovery API (Go service). Base URL is empty in development so
@@ -12,7 +13,7 @@ const client = axios.create({
 });
 
 client.interceptors.request.use((config) => {
-  const token = localStorage.getItem(TOKEN_KEY);
+  const token = readToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
@@ -28,8 +29,7 @@ export function onSessionExpired(handler) {
 
 attachInterceptors(client, {
   onUnauthorized: () => {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
+    clearSession();
     unauthorizedHandler?.();
   },
 });

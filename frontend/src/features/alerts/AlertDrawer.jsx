@@ -256,12 +256,14 @@ export function AlertDrawer({ alert, people, policy, operatorUser, busy, onClose
                   size="sm"
                   aria-label="Assign to"
                   value={alert.assignee ?? ''}
-                  placeholder="Unassigned"
+                  placeholder="Choose someone"
                   options={people.map((person) => ({
                     value: person.user,
                     label: `${person.name} - ${person.team}`,
                   }))}
-                  onChange={(event) => onAction([alert], 'assign', { assignee: event.target.value || null })}
+                  onChange={(event) => {
+                    if (event.target.value) onAction([alert], 'assign', { assignee: event.target.value });
+                  }}
                   disabled={busy}
                 />
                 ) : (

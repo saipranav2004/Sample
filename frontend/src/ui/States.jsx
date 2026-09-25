@@ -15,7 +15,9 @@ export function EmptyState({
   tone = 'neutral',
   compact = false,
   className,
+  headingLevel = 3,
 }) {
+  const Heading = `h${headingLevel}`;
   return (
     <div
       className={cn(
@@ -35,7 +37,7 @@ export function EmptyState({
       >
         <Icon aria-hidden="true" className={compact ? 'size-4.5' : 'size-5'} />
       </span>
-      <h3 className="text-[14px] font-semibold text-ink">{title}</h3>
+      <Heading className="text-[14px] font-semibold text-ink">{title}</Heading>
       {description && (
         <p className="max-w-sm text-balance text-[12.5px] leading-relaxed text-ink-3">{description}</p>
       )}

@@ -232,3 +232,27 @@ export function applyTriage(base, entry, policy, now = Date.now()) {
   merged.activity.sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
   return merged;
 }
+
+/**
+ * How the alert reached whoever holds it now: the latest hand-off on its
+ * timeline. An analyst's queue shows only their own alerts, so "why is this
+ * mine" - routed as owner or on-call, escalated to me, handed over by an
+ * admin, or taken myself - is the one thing the assignee column can no longer
+ * answer.
+ */
+export function handoffOf(alert, me) {
+  const last = [...(alert?.activity ?? [])]
+    .filter((item) => item.kind === 'assigned' || item.kind === 'escalated')
+    .sort((a, b) => Date.parse(a.at) - Date.parse(b.at))
+    .pop();
+  if (!last) return null;
+  if (last.kind === 'escalated') {
+    return { kind: 'escalated', at: last.at, label: last.actor === 'Escalation policy' ? 'Auto-escalated' : `Escalated by ${last.actor}` };
+  }
+  if (last.actor === 'Routing rule') {
+    if (/^Reassigned/.test(last.text)) return { kind: 'routed', at: last.at, label: 'Handed back to you' };
+    return { kind: 'routed', at: last.at, label: /on-call/.test(last.text) ? 'On-call routing' : 'You own the identity' };
+  }
+  if (me && last.actorUser === me) return { kind: 'took', at: last.at, label: 'You took it' };
+  return { kind: 'assigned', at: last.at, label: `Assigned by ${last.actor}` };
+}

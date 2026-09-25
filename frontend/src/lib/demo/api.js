@@ -25,6 +25,7 @@
 import { demoRequest, hashSeed, intBetween, rng } from './runtime';
 import { ESTATE_META, OPERATOR } from './estate';
 import { effectiveEstate } from './effective';
+import { roleCan } from '../roles';
 import * as users from './users';
 import { currentUserRow, sessionUser, verifySignIn } from './users';
 import {
@@ -521,12 +522,19 @@ export async function fetchAlerts(signal) {
      would put it in the first-load bundle of every screen. */
   const alerts = await import('./alerts');
   return demoRequest(
-    () => ({
-      alerts: alerts.estateAlerts(),
-      triage: alerts.alertTriageStore(),
-      policy: alerts.escalationPolicy(),
-      people: alerts.alertPeople(),
-    }),
+    () => {
+      users.assertCan('alerts.view');
+      const me = users.currentUserRow();
+      return {
+        /* Scoped here, as the API would scope it: an analyst's response holds
+           only the alerts assigned or escalated to them. */
+        alerts: alerts.visibleAlerts(alerts.estateAlerts()),
+        triage: alerts.alertTriageStore(),
+        policy: alerts.escalationPolicy(),
+        people: alerts.alertPeople(),
+        scope: roleCan(me.role, 'alerts.viewAll') ? 'all' : 'mine',
+      };
+    },
     { signal, latency: [260, 480] },
   );
 }
@@ -583,8 +591,22 @@ export function inviteUser(input) {
   return demoRequest(() => users.inviteUser(input), { latency: [350, 600] });
 }
 
-export function updateUser(id, patch) {
-  return demoRequest(() => users.updateUser(id, patch), { latency: [300, 520] });
+export async function updateUser(id, patch) {
+  const alerts = await import('./alerts');
+  return demoRequest(
+    () => {
+      const before = users.directory().find((row) => row.id === id);
+      const after = users.updateUser(id, patch);
+      /* Someone who can no longer work alerts cannot keep any: theirs go back
+         to the escalation policy in the same request, as a server would. */
+      const worked = (row) => row?.status === 'active' && roleCan(row.role, 'alerts.work');
+      if (worked(before) && !worked(after)) {
+        alerts.handBackAlertsOf(before, after.status === 'active' ? 'no longer works alerts' : 'was deactivated');
+      }
+      return after;
+    },
+    { latency: [300, 520] },
+  );
 }
 
 export function revokeInvite(id) {

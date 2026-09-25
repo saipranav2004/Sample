@@ -1,34 +1,58 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { fetchProfile, login as loginRequest } from '../lib/api/endpoints';
 import { onSessionExpired, default as client } from '../lib/api/client';
-import { TOKEN_KEY, USER_KEY } from '../lib/api/http';
+import {
+  adoptSession,
+  clearSession,
+  readStoredUser,
+  readToken,
+  subscribeSignOut,
+  writeSession,
+  writeStoredUser,
+} from '../lib/api/session';
+import { subscribeOverlay, OVERLAY_KEYS } from '../lib/demo/runtime';
 
 const AuthContext = createContext(null);
 
-function readStoredUser() {
-  try {
-    const raw = localStorage.getItem(USER_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-}
-
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY));
+  const [token, setToken] = useState(() => {
+    adoptSession();
+    return readToken();
+  });
   // Seeded from storage so a refresh renders the shell immediately and the
   // profile request only corrects it.
   const [user, setUser] = useState(readStoredUser);
-  const [status, setStatus] = useState(() => (localStorage.getItem(TOKEN_KEY) ? 'verifying' : 'anonymous'));
+  const [status, setStatus] = useState(() => (readToken() ? 'verifying' : 'anonymous'));
   const [expired, setExpired] = useState(false);
+  /* Bumped when the console's users change, so a role changed or an account
+     deactivated by an administrator reaches this session without a reload. */
+  const [profileRevision, setProfileRevision] = useState(0);
 
   const logout = useCallback(() => {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
+    clearSession();
     setToken(null);
     setUser(null);
     setStatus('anonymous');
   }, []);
+
+  /* Signing out in another tab of the same session signs this one out too. */
+  useEffect(
+    () =>
+      subscribeSignOut(() => {
+        setToken(null);
+        setUser(null);
+        setStatus('anonymous');
+      }),
+    [],
+  );
+
+  useEffect(
+    () =>
+      subscribeOverlay((key) => {
+        if (key === OVERLAY_KEYS.users || key === null) setProfileRevision((value) => value + 1);
+      }),
+    [],
+  );
 
   useEffect(() => {
     onSessionExpired(() => {
@@ -48,7 +72,7 @@ export function AuthProvider({ children }) {
         const profile = await fetchProfile(controller.signal);
         if (controller.signal.aborted) return;
         setUser(profile);
-        localStorage.setItem(USER_KEY, JSON.stringify(profile));
+        writeStoredUser(profile);
         setStatus('authenticated');
       } catch (error) {
         if (controller.signal.aborted) return;
@@ -59,8 +83,7 @@ export function AuthProvider({ children }) {
         // Anything else means the service is unreachable, and signing the
         // operator out would be wrong.
         if (error?.status === 401) {
-          localStorage.removeItem(TOKEN_KEY);
-          localStorage.removeItem(USER_KEY);
+          clearSession();
           setExpired(true);
           setToken(null);
           setUser(null);
@@ -72,15 +95,14 @@ export function AuthProvider({ children }) {
     })();
 
     return () => controller.abort();
-  }, [token]);
+  }, [token, profileRevision]);
 
   const signIn = useCallback(async ({ email, password }) => {
     const result = await loginRequest({ email, password });
     const nextToken = result?.token;
     if (!nextToken) throw new Error('The service did not return a session token.');
 
-    localStorage.setItem(TOKEN_KEY, nextToken);
-    if (result.user) localStorage.setItem(USER_KEY, JSON.stringify(result.user));
+    writeSession(nextToken, result.user);
     client.defaults.headers.Authorization = `Bearer ${nextToken}`;
 
     setExpired(false);

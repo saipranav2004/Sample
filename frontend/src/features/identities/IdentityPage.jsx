@@ -4,6 +4,7 @@ import { ArrowLeft, BellRing, Dna, Fingerprint, ShieldCheck, Waypoints } from 'l
 import { RESPONSE_STATES, isOpen } from '../../lib/alerts';
 import { fetchAlerts, fetchIdentity, fetchPostureIdentity } from '../../lib/api/endpoints';
 import { useDemoQuery } from '../../lib/demo/useDemoQuery';
+import { useAccess } from '../../app/useAccess';
 import { actorTypeMeta, classificationMeta, severityMeta } from '../../lib/domain';
 import { formatRelative } from '../../lib/format';
 import { PageHeader } from '../../shell/PageHeader';
@@ -41,7 +42,12 @@ export default function IdentityPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const identityQuery = useDemoQuery((signal) => fetchIdentity(id, signal), [id]);
   const postureQuery = useDemoQuery((signal) => fetchPostureIdentity(id, signal), [id]);
-  const alertsQuery = useDemoQuery((signal) => fetchAlerts(signal), []);
+  const { can } = useAccess();
+  /* Only for a role with the alert queue; for an analyst the API returns
+     their own alerts, so the tab shows theirs on this identity. */
+  const withAlerts = can('alerts.view');
+  const scopedAlerts = !can('alerts.viewAll');
+  const alertsQuery = useDemoQuery((signal) => fetchAlerts(signal), [], { enabled: withAlerts });
   const identity = identityQuery.data;
   const posture = postureQuery.data;
 
@@ -56,7 +62,9 @@ export default function IdentityPage() {
         ...recordTabs(identity).slice(0, 1),
         { value: 'posture', label: 'Posture', icon: ShieldCheck },
         ...recordTabs(identity).slice(1),
-        { value: 'alerts', label: 'Alerts', icon: BellRing, count: openAlerts || undefined },
+        ...(withAlerts
+          ? [{ value: 'alerts', label: scopedAlerts ? 'My alerts' : 'Alerts', icon: BellRing, count: openAlerts || undefined }]
+          : []),
       ]
     : [];
   const requested = searchParams.get('tab') || 'overview';
@@ -136,7 +144,7 @@ export default function IdentityPage() {
         meta={
           <div className="flex flex-wrap items-center gap-2">
             {posture && <BandTag score={posture.identity.score} />}
-            <IdentityTags identity={identity} isHuman={meta.kind === 'human'} />
+            <IdentityTags identity={identity} />
             <span className="min-w-0 max-w-full text-[11.5px] text-ink-3">
               <CopyableValue value={identity.arn} />
             </span>
@@ -164,12 +172,12 @@ export default function IdentityPage() {
           <PostureRecord data={posture} />
         ))}
 
-      {tab === 'alerts' && <AlertsTab query={alertsQuery} alerts={alerts} />}
+      {tab === 'alerts' && <AlertsTab query={alertsQuery} alerts={alerts} scoped={scopedAlerts} />}
     </div>
   );
 }
 
-function AlertsTab({ query, alerts }) {
+function AlertsTab({ query, alerts, scoped }) {
   if (query.isError && !query.data) {
     return (
       <Panel>
@@ -190,11 +198,26 @@ function AlertsTab({ query, alerts }) {
   return (
     <Panel flush className="animate-rise overflow-hidden">
       <div className="px-4 pt-4 pb-3 sm:px-5">
-        <PanelHeader title="Alerts on this identity" subtitle="Open first, then closed. Alerts on the credentials it holds are included." />
+        <PanelHeader
+          title={scoped ? 'Your alerts on this identity' : 'Alerts on this identity'}
+          subtitle={
+            scoped
+              ? 'Only the alerts assigned or escalated to you. Open first, then closed; alerts on its credentials are included.'
+              : 'Open first, then closed. Alerts on the credentials it holds are included.'
+          }
+        />
       </div>
       {ordered.length === 0 ? (
         <div className="px-4 pb-4 sm:px-5">
-          <ClearState compact title="No alerts" description="Nothing has been raised on this identity or its credentials." />
+          <ClearState
+            compact
+            title="No alerts"
+            description={
+              scoped
+                ? 'Nothing on this identity or its credentials is assigned to you.'
+                : 'Nothing has been raised on this identity or its credentials.'
+            }
+          />
         </div>
       ) : (
         <ul className="divide-y divide-line border-t border-line">

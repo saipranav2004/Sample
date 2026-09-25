@@ -201,6 +201,16 @@ function notifyOverlay(key) {
   for (const listener of listeners) listener(key);
 }
 
+/* Another tab's write arrives as a \`storage\` event (the browser never fires
+   it in the tab that wrote). Relaying it keeps two open consoles in step: an
+   alert escalated in one appears in the assignee's queue in the other. A
+   \`null\` key means the other tab cleared storage, which touches every overlay. */
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (event) => {
+    if (event.key === null || event.key.startsWith('dna.demo.')) notifyOverlay(event.key);
+  });
+}
+
 export const OVERLAY_KEYS = {
   alerts: 'dna.demo.alertState',
   anomalies: 'dna.demo.anomalyState',

@@ -164,7 +164,7 @@ export function IdentityRecordPanels({ identity, tab, active = true }) {
               </Fact>
               <Fact label="Used by">
                 {isUser ? (
-                  identity.classification === 'HUMAN' ? 'The person it belongs to' : 'A person and a workload, sharing it'
+                  'A person and a workload, sharing it'
                 ) : lineageQuery.isLoading && !lineageQuery.data ? (
                   <Skeleton className="h-4 w-32 rounded" />
                 ) : assumedBy.length === 0 ? (

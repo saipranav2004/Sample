@@ -48,16 +48,19 @@ export function CommandPalette({ open, onClose }) {
     { enabled: open && debounced.length >= 2 },
   );
 
-  const { can } = useAccess();
+  const { can, role } = useAccess();
   const navMatches = useMemo(() => {
     const needle = term.trim().toLowerCase();
-    const allowed = ALL_NAV_ITEMS.filter((item) => !item.permission || can(item.permission));
+    const allowed = ALL_NAV_ITEMS.filter((item) => !item.permission || can(item.permission)).map((item) => ({
+      ...item,
+      label: item.roleLabels?.[role] ?? item.label,
+    }));
     if (!needle) return allowed;
     return allowed.filter(
       (item) =>
         item.label.toLowerCase().includes(needle) || item.group.toLowerCase().includes(needle),
     );
-  }, [term, can]);
+  }, [term, can, role]);
 
   const identityMatches = useMemo(() => identityQuery.data?.rows ?? [], [identityQuery.data]);
   /* Credentials matched on their own id or the IAM user holding them. A

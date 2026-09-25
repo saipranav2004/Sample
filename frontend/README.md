@@ -1,7 +1,8 @@
 # NHI Console - Deep Algorithms
 
 Operator console for non-human identity discovery, posture and credential
-exposure across AWS. This directory contains **only the frontend**; it reads
+exposure across AWS. It shows non-human identities only: people appear as
+creators and owners of identities, never as identities themselves. This directory contains **only the frontend**; it reads
 two backends and modifies neither.
 
 ---
@@ -69,7 +70,23 @@ Until the backend exists, sign-in, users and roles run in the browser (`src/lib/
 | `priya.raghavan` | Priya Raghavan | Analyst | Invited, link expired (use Resend) |
 | `karthik.rao` | Karthik Rao | Analyst | Deactivated (sign-in refused) |
 
-**Landing.** Analysts sign in to their own queue (Alerts, Assigned to me); every other role lands on the Dashboard. Nothing is hidden by role: analysts still see the whole queue, because unassigned alerts are theirs to take, and viewers see everything read-only. Restricting what a user can see by account or team is scoping, and needs a user-to-scope model in the backend.
+**Each role gets its own console.** Every role lands on `/overview`, which is a different page per role:
+
+| Role | Home (`/overview`) | Alerts | Credential exposure |
+|---|---|---|---|
+| Super admin, Admin | Organisation dashboard | Every alert, with tiles, all views and bulk actions | Yes |
+| Analyst | **My work** - their own alerts: late, just handed to them, in progress, closed this week, and the identities behind them. No metric tiles | **My alerts** - only what is assigned or escalated to them, with "how it reached you" (on-call routing, owner, escalated by, assigned by) | Yes - they triage exposure alerts |
+| Viewer | Dashboard without exposure: read-only oversight of posture and inventory | No queue (screen and API refused) | No (screens, dashboard panels, report and links removed) |
+
+User management > Roles & permissions shows, per role, where it lands, its alert scope and which screens it does not get - derived from the same permission table and navigation, so it cannot drift.
+
+**Every alert has an owner.** As in an on-call tool ([PagerDuty incidents](https://support.pagerduty.com/main/docs/incidents)), an alert is assigned the moment it is raised: to the identity's owner when they work alerts in this console, otherwise to security on-call (level 1). A Critical alert still New after an hour escalates to level 2. Alerts can be reassigned but never unassigned, so the analyst-only view can never hide an alert from everyone. When a user is deactivated or moved to a role without the queue, their open alerts go back to whoever holds their escalation level, with a timeline entry saying why. The "Needs an owner" view is now **Not acknowledged** (PagerDuty's Triggered state).
+
+**Live.** The shell keeps the signed-in person's queue live (`src/features/alerts/AlertFeed.jsx`): the sidebar shows how many open alerts are theirs, and anything newly routed, assigned or escalated to them arrives as a notice with a link, on any screen - never for their own actions, never on first load. In the demo this is a 20-second poll of the visible tab plus an immediate refresh on every change, in the same tab or another (the `storage` event). A role change or deactivation reaches an open session without a reload. With the real API, replace the poll with server push (SSE or WebSocket) or poll the alerts endpoint.
+
+**Two roles side by side.** Each tab keeps its own session (`src/lib/api/session.js`): account menu > **Switch account** signs this tab in as someone else while other tabs keep theirs. Open the admin in one tab and Kavya in another, assign an alert to Kavya, and it appears in her tab with a notice. Signing out ends that session in every tab holding it, and only that one.
+
+**Enforcement.** The demo data layer applies the same scope an API would: `fetchAlerts` returns only an analyst's own alerts and refuses a viewer, and reports built from the Secret Scanner are not listed or generated for a viewer. The Secret Scanner itself is reached through the proxy, which cannot tell roles apart - **the backend or proxy must check the user's role before serving exposure data**, or a viewer can still call it directly.
 
 `das.admin@gmail.com` still signs in as Admin, as a hidden legacy alias; it is not displayed anywhere.
 
@@ -161,13 +178,13 @@ Grouped by the question an operator is answering, not by the API surface.
 
 | Route | Screen | Data |
 |---|---|---|
-| `/overview` | Dashboard - exposure signals, classification mix, credential surface, discovery trend, activity, code exposure | demo estate, Secret Scanner |
+| `/overview` | Each role's home: Dashboard (exposure signals, classification mix, credential surface, discovery trend, activity, code exposure); for an analyst, My work; for a viewer, the Dashboard without exposure | demo estate, alerts, Secret Scanner |
 | `/posture` | Posture (ISPM) - fleet score and trend, distribution, quick wins with bulk fix, pillars, category and account breakdowns | demo estate, access graph, genome, alerts |
-| `/alerts` | Alert queue, as a list or grouped by identity | demo estate, Secret Scanner |
+| `/alerts` | Alert queue, as a list or grouped by identity; an analyst's own alerts only; not for viewers | demo estate, Secret Scanner |
 | `/identities` | Identity explorer + record drawer | demo estate |
 | `/identities/:id` | Identity page. Overview answers what it is, where, who owns it, the IAM role or user it acts as, its permissions, what it authenticates with, who uses it and when it was last used. Tabs: Posture (checks, remediate, roll back, history), Credentials, Role use (who assumes its role, and which roles it assumes, from CloudTrail AssumeRole events), Activity, Alerts. `/posture/:id` redirects here | demo estate, posture, alerts |
 | `/credentials` | Credential register | demo estate |
-| `/exposure`, `/exposure/dismissed` | Exposed credentials and the accepted (allowlisted) set | Secret Scanner (live) |
+| `/exposure`, `/exposure/dismissed` | Exposed credentials and the accepted (allowlisted) set; not for viewers | Secret Scanner (live) |
 | `/access-graph`, `/access-graph/:id` | Access graph and blast radius | demo graph |
 | `/genome`, `/genome/:id` | NHI Genome - behavioural baselines and anomalies | demo genome |
 | `/activity` | CloudTrail events | demo estate |
@@ -187,7 +204,7 @@ The checks read the same records the other screens show - policies, MFA, key age
 
 Each identity's posture is the **Posture tab of its identity page**. **Remediate** (Admin or higher) shows the score before and after, what the fix does, what it can break, and the exact IAM policy and AWS CLI commands. Applying it passes the check at once (the score goes up as risk goes down), records who applied it, and resolves the matching open alerts - and genome anomalies - through the Alerts action path with a note. A quick win can be applied to every identity in the filtered list at once (except recording an owner, which needs a person per identity). A fix in force can be **rolled back** from the Checks view: the check fails again, the history keeps both steps, and the alerts the fix resolved reopen.
 
-**Fixes show everywhere.** Screens that describe the account as it is now - Identities, Credentials, the Dashboard, Reports, the access graph - read the estate with fixes applied (`src/lib/demo/effective.js`): a detached policy, a rotated key, a recorded owner or a permission boundary (the escalation edge is drawn as blocked) appears on all of them. Alerts keep the condition as found and are resolved, not deleted, so their record survives. Enforcing MFA is the one fix that changes no fact: the person still has no device until they enrol, so they still count as a human without MFA and show "MFA enforced, not enrolled".
+**Fixes show everywhere.** Screens that describe the account as it is now - Identities, Credentials, the Dashboard, Reports, the access graph - read the estate with fixes applied (`src/lib/demo/effective.js`): a detached policy, a rotated key, a recorded owner or a permission boundary (the escalation edge is drawn as blocked) appears on all of them. Alerts keep the condition as found and are resolved, not deleted, so their record survives. Enforcing MFA is the one fix that changes no fact: the console user still has no device until someone enrols one, so the identity shows "MFA enforced, not enrolled".
 
 In the demo nothing is sent to AWS; a real implementation needs a write-capable role, which the read-only discovery role deliberately is not.
 

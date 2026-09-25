@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ChevronRight } from 'lucide-react';
-import { BREADCRUMBS, BREADCRUMB_PREFIXES } from './navigation';
+import { useAccess } from '../app/useAccess';
+import { ALL_NAV_ITEMS, BREADCRUMBS, BREADCRUMB_PREFIXES } from './navigation';
 import { cn } from '../ui/cn';
 
 /**
@@ -15,8 +16,13 @@ import { cn } from '../ui/cn';
 export function ContextBar() {
   const { pathname, key } = useLocation();
   const navigate = useNavigate();
+  const { role } = useAccess();
+  /* A screen named differently for a role (an analyst's "My work") is named
+     the same way here as in the navigation. */
+  const roleLabel = ALL_NAV_ITEMS.find((item) => item.to === pathname)?.roleLabels?.[role];
+  const exact = BREADCRUMBS[pathname];
   const trail =
-    BREADCRUMBS[pathname] ??
+    (exact && roleLabel ? [...exact.slice(0, -1), roleLabel] : exact) ??
     BREADCRUMB_PREFIXES.find((entry) => pathname.startsWith(entry.prefix))?.trail;
 
   /* `key === 'default'` means this is the first entry in the history stack, so

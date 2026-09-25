@@ -115,8 +115,23 @@ export function exposureAlerts(findings, triage, policy, now = Date.now()) {
   }
   const liveIds = new Set();
 
+  /* Routed like every other alert: a secret in code has no identity owner,
+     so it goes to security on-call the moment it is raised. */
+  const onCall = policy?.[1] ?? null;
+  const route = (base) =>
+    onCall
+      ? {
+          ...base,
+          assignee: onCall.user,
+          activity: [
+            ...base.activity,
+            { at: base.createdAt, actor: 'Routing rule', kind: 'assigned', text: `Assigned to ${onCall.name} - security on-call.` },
+          ],
+        }
+      : base;
+
   const open = [...groups.values()].map(({ finding, count }) => {
-    const base = raise(finding, count);
+    const base = route(raise(finding, count));
     liveIds.add(base.id);
     const entry = triage?.[base.id];
     /* Live means open, whatever the store remembers. */
@@ -130,7 +145,7 @@ export function exposureAlerts(findings, triage, policy, now = Date.now()) {
     .map(([id, entry]) => {
       const { activity: snapshotActivity, ...snapshot } = entry.snapshot;
       return applyTriage(
-        { ...snapshot, id, status: entry.status, assignee: null, escalationLevel: 1, activity: snapshotActivity ?? [] },
+        { ...snapshot, id, status: entry.status, assignee: onCall?.user ?? null, escalationLevel: 1, activity: snapshotActivity ?? [] },
         entry,
         policy,
         now,

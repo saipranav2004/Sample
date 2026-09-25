@@ -29,9 +29,11 @@ export const NAV_GROUPS = [
     /* The dashboard says what the estate holds, Posture scores how exposed
        each identity is, and the alert queue is what somebody does about it. */
     items: [
-      { to: '/overview', label: 'Dashboard', icon: Gauge, end: true },
+      /* Each role's home: the dashboard for admins and viewers, "My work"
+         for an analyst - see `features/overview`. */
+      { to: '/overview', label: 'Dashboard', roleLabels: { analyst: 'My work' }, icon: Gauge, end: true },
       { to: '/posture', label: 'Posture', icon: ShieldCheck },
-      { to: '/alerts', label: 'Alerts', icon: BellRing },
+      { to: '/alerts', label: 'Alerts', roleLabels: { analyst: 'My alerts' }, icon: BellRing, permission: 'alerts.view' },
     ],
   },
   {
@@ -46,8 +48,8 @@ export const NAV_GROUPS = [
     key: 'exposure',
     label: 'Credential exposure',
     items: [
-      { to: '/exposure', label: 'Exposed credentials', icon: FileWarning, end: true },
-      { to: '/exposure/dismissed', label: 'Accepted', icon: ShieldOff },
+      { to: '/exposure', label: 'Exposed credentials', icon: FileWarning, end: true, permission: 'exposure.view' },
+      { to: '/exposure/dismissed', label: 'Accepted', icon: ShieldOff, permission: 'exposure.view' },
     ],
   },
   {
@@ -90,10 +92,12 @@ export const NAV_GROUPS = [
 ];
 
 /** The navigation a role can use: items it lacks the permission for, and groups left empty, removed. */
-export function navGroupsFor(can) {
+export function navGroupsFor(can, role) {
   return NAV_GROUPS.map((group) => ({
     ...group,
-    items: group.items.filter((item) => !item.permission || can(item.permission)),
+    items: group.items
+      .filter((item) => !item.permission || can(item.permission))
+      .map((item) => ({ ...item, label: item.roleLabels?.[role] ?? item.label })),
   })).filter((group) => group.items.length > 0);
 }
 

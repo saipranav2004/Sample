@@ -5,7 +5,8 @@ import { fetchUsers, inviteUser, resendInvite, revokeInvite, updateUser } from '
 import { DEMO_PASSWORD, INVITE_TTL_HOURS, USERNAME, USER_STATUSES } from '../../lib/demo/users';
 import { useDemoQuery } from '../../lib/demo/useDemoQuery';
 import { formatDateTime, formatNumber, formatRelative, initialsOf } from '../../lib/format';
-import { PERMISSIONS, ROLE_ORDER, ROLES } from '../../lib/roles';
+import { PERMISSIONS, ROLE_HOME, ROLE_ORDER, ROLES, roleCan } from '../../lib/roles';
+import { ALL_NAV_ITEMS } from '../../shell/navigation';
 import { PageHeader } from '../../shell/PageHeader';
 import { Button, IconButton } from '../../ui/Button';
 import { downloadText } from '../../lib/csv';
@@ -41,7 +42,7 @@ const ROLE_TONE = { super_admin: 'brand', admin: 'info', analyst: 'neutral', vie
  */
 export default function UsersPage() {
   return (
-    <RequirePermission permission="users.manage" title="Only a super admin can manage users">
+    <RequirePermission permission="users.manage" screen="User management" title="Only a super admin can manage users">
       <UsersScreen />
     </RequirePermission>
   );
@@ -487,6 +488,7 @@ function RolesTab({ counts }) {
               </span>
             </div>
             <p className="text-[12.5px] leading-relaxed text-ink-2">{ROLES[key].summary}</p>
+            <RoleView role={key} />
           </Panel>
         ))}
       </div>
@@ -544,6 +546,38 @@ function RolesTab({ counts }) {
         </div>
       </Panel>
     </>
+  );
+}
+
+/**
+ * What signing in as this role looks like: where it lands, whose alerts it
+ * sees, and which screens it does not get at all. Derived from the same
+ * permission table and navigation the console uses, so it cannot drift.
+ */
+function RoleView({ role }) {
+  const hidden = [
+    ...ALL_NAV_ITEMS.filter((item) => item.permission && !roleCan(role, item.permission)).map((item) => item.label),
+    /* Reached from the account menu rather than the navigation. */
+    ...(roleCan(role, 'users.manage') ? [] : ['User management']),
+  ];
+  const alerts = roleCan(role, 'alerts.viewAll')
+    ? 'Every alert'
+    : roleCan(role, 'alerts.view')
+      ? 'Only those assigned or escalated to them, live'
+      : 'No alert queue';
+  return (
+    <dl className="mt-auto grid gap-1.5 border-t border-line pt-2.5 text-[12px]">
+      {[
+        ['Lands on', ROLE_HOME[role]],
+        ['Alerts', alerts],
+        ['Not shown', hidden.length ? hidden.join(', ') : 'Nothing - every screen'],
+      ].map(([label, value]) => (
+        <div key={label} className="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-2">
+          <dt className="text-ink-3">{label}</dt>
+          <dd className="text-ink-2">{value}</dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 

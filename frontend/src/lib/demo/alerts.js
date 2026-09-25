@@ -34,7 +34,8 @@ import { estate, ESTATE_META, OPERATOR } from './estate';
 import { genomeAnomalies, genomeFleet, setAnomalyStatus } from './genome';
 import { awsCheckResults, discoveryRuns, lastVerifiedAt } from './integrations';
 import { hashSeed, intBetween, OVERLAY_KEYS, readOverlay, rng, writeOverlay } from './runtime';
-import { assertCan, directory } from './users';
+import { assertCan, currentUserRow, directory } from './users';
+import { roleCan } from '../roles';
 
 const DAY = ESTATE_META.DAY;
 const MINUTE = 60_000;
@@ -46,19 +47,26 @@ const MINUTE = 60_000;
  * signed-in operator.
  */
 export function alertPeople() {
-  const people = [
-    { user: OPERATOR.user, name: OPERATOR.name, team: OPERATOR.role },
-    ...estate().people.map((person) => ({ user: person.user, name: person.name, team: person.team })),
-  ];
-  /* Console users who are not identity owners - someone a super admin just
-     invited - can be assigned work too. Deactivated accounts cannot. */
-  const known = new Set(people.map((person) => person.user));
-  const inactive = new Set();
-  for (const row of directory()) {
-    if (row.status === 'deactivated') inactive.add(row.user);
-    else if (!known.has(row.user)) people.push({ user: row.user, name: row.name, team: row.team ?? row.title ?? null });
-  }
-  return people.filter((person) => !inactive.has(person.user));
+  /* Only people who can sign in and work an alert. An alert handed to an
+     identity owner with no console account - or to a viewer, or to someone
+     whose invitation is still pending - would sit where nobody could see it. */
+  return directory()
+    .filter((row) => row.status === 'active' && roleCan(row.role, 'alerts.work'))
+    .map((row) => ({ user: row.user, name: row.name, team: row.team ?? row.title ?? null, role: row.role }));
+}
+
+/**
+ * The alerts the signed-in user may see. Super admins and admins see the
+ * whole queue; everyone else sees what is assigned to them - including what
+ * was escalated to them, since an escalation assigns the next level. Applied
+ * here, in the data layer, the way the API would apply it: a screen that
+ * filtered a full list itself would still have downloaded every alert.
+ */
+export function visibleAlerts(alerts) {
+  const me = currentUserRow();
+  if (!me) return [];
+  if (roleCan(me.role, 'alerts.viewAll')) return alerts;
+  return alerts.filter((alert) => alert.assignee === me.user);
 }
 
 /** The permission an alert action needs, for the acting user. */
@@ -106,7 +114,7 @@ function routeTo(ownerName) {
      alert goes to on-call - and says why, rather than claiming there is no
      owner. */
   if (ownerName && estate().people.some((entry) => entry.name === ownerName)) {
-    return { person: escalationPolicy()[1], why: `security on-call - ${ownerName}'s console account is deactivated` };
+    return { person: escalationPolicy()[1], why: `security on-call - ${ownerName} does not work alerts in this console` };
   }
   return { person: escalationPolicy()[1], why: 'security on-call - no owner on record' };
 }
@@ -128,7 +136,7 @@ const plusDays = (iso, days) => new Date(Date.parse(iso) + days * DAY).toISOStri
 
 export const ALERT_RULES = {
   'nhi-admin-orphaned': { label: 'Administrator-equivalent identity with no owner', source: 'identities' },
-  'human-no-mfa': { label: 'Console user without MFA', source: 'identities' },
+  'console-no-mfa': { label: 'Console sign-in without MFA', source: 'identities' },
   'admin-stale': { label: 'Administrator-equivalent identity unused for 90+ days', source: 'identities' },
   'dual-identity': { label: 'IAM user used as a service account', source: 'identities' },
   'credential-critical': { label: 'Critical credential', source: 'credentials' },
@@ -173,18 +181,21 @@ function identityAlerts() {
       });
     }
 
-    if (row.classification === 'HUMAN' && !row.mfa_enabled) {
+    /* An IAM user that signs in to the console without MFA. With people out
+       of scope these are users shared by a person and a workload - the worst
+       case, because the password also unlocks what the workload can do. */
+    if (row.console_access && !row.mfa_enabled) {
       out.push({
         ...common,
-        rule: 'human-no-mfa',
+        rule: 'console-no-mfa',
         severity: row.is_admin ? 'CRITICAL' : 'HIGH',
         conditionAt: row.discovered_at,
-        title: row.is_admin ? 'Administrator console user without MFA' : 'Console user without MFA',
-        summary: `${row.name} can sign in to the console with a password alone.`,
+        title: row.is_admin ? 'Administrator IAM user signs in without MFA' : 'IAM user signs in without MFA',
+        summary: `${row.name} can sign in to the console with a password alone, and a workload uses the same user.`,
         impact: row.is_admin
           ? 'A phished or reused password is a full administrator session.'
           : 'A phished or reused password is a console session with everything this user can reach.',
-        recommendation: 'Require MFA for this user, or move it to federated sign-in through the identity provider.',
+        recommendation: 'Require MFA for this user, and move the workload to a role of its own.',
         evidence: [
           { label: 'MFA', value: 'Not enabled' },
           { label: 'Password age', value: `${row.password_age_days} days` },
@@ -435,14 +446,15 @@ export function seedTriage(alert, now = ESTATE_META.NOW) {
     return { status: started ? 'in_progress' : 'acknowledged', assignee: OPERATOR.user, escalationLevel: 1, activity };
   }
 
+  /* Every alert is assigned the moment it is raised, as an on-call tool does
+     it: to the identity's owner when they work alerts here, otherwise to
+     security on-call. An alert with nobody on it is an alert nobody sees -
+     and an analyst sees only their own. `assignedShare` now only decides how
+     far the seeded work has got. */
   const assignedShare = alert.severity === 'CRITICAL' ? 0.65 : alert.severity === 'HIGH' ? 0.55 : 0.4;
-  if (h >= assignedShare) {
-    /* Left in the queue: New and unassigned, which is the state triage exists for. */
-    return { status: 'new', assignee: null, escalationLevel: 1, activity };
-  }
 
   activity.push({
-    at: at(3),
+    at: at(1),
     actor: 'Routing rule',
     kind: 'assigned',
     text: `Assigned to ${route.person.name} - ${route.why}.`,
@@ -557,6 +569,51 @@ export function estateAlerts(now = Date.now()) {
   });
 }
 
+/**
+ * Hand a person's open alerts back to the escalation policy when they stop
+ * working alerts here - deactivated, or moved to a role without the queue.
+ *
+ * What an on-call tool does when a responder is removed: nothing may stay
+ * with somebody who can no longer see it. Each alert goes to whoever sits at
+ * its current escalation level now, and its timeline says why. Only stored
+ * assignments need this - routed and escalated-by-policy assignments are
+ * derived on every read and already skip anyone who cannot take them.
+ */
+export function handBackAlertsOf(leaving, why) {
+  const store = readStore();
+  /* Most people hold no stored assignment; skip rebuilding the queue for them. */
+  if (!Object.values(store).some((entry) => entry.assignee === leaving.user)) return 0;
+  const policy = escalationPolicy();
+  const nowIso = new Date().toISOString();
+  const estateById = new Map(estateAlerts().map((alert) => [alert.id, alert]));
+  let moved = 0;
+  for (const [id, entry] of Object.entries(store)) {
+    if (entry.assignee !== leaving.user) continue;
+    const alert = estateById.get(id);
+    const status = alert?.status ?? entry.status ?? 'new';
+    if (status === 'resolved' || status === 'dismissed') continue;
+    const target = policy[alert?.escalationLevel ?? entry.escalationLevel ?? 1] ?? policy[1];
+    if (!target || target.user === leaving.user) continue;
+    store[id] = {
+      ...entry,
+      assignee: target.user,
+      activity: [
+        ...(entry.activity ?? []),
+        {
+          at: nowIso,
+          actor: 'Routing rule',
+          kind: 'assigned',
+          text: `Reassigned to ${target.name} - ${leaving.name} ${why}.`,
+          target: target.user,
+        },
+      ],
+    };
+    moved += 1;
+  }
+  if (moved > 0) writeOverlay(OVERLAY_KEYS.alerts, store);
+  return moved;
+}
+
 /* ── Changing it ──────────────────────────────────────────────────────────── */
 
 const ACTIONS = ['assign', 'acknowledge', 'start', 'resolve', 'dismiss', 'reopen', 'escalate', 'comment'];
@@ -587,7 +644,11 @@ export function applyAlertAction({ alerts, action, assignee = null, reason = nul
   const store = readStore();
   const policy = escalationPolicy();
   const people = new Map(alertPeople().map((person) => [person.user, person]));
-  if (action === 'assign' && assignee && !people.has(assignee)) {
+  /* Every alert is routed to somebody when it is raised, and stays with
+     somebody: an unassigned alert would sit in no analyst's queue. Handing
+     it on is a reassignment, never an unassignment. */
+  if (action === 'assign' && !assignee) throw new Error('Every alert needs an owner. Assign it to someone instead.');
+  if (action === 'assign' && !people.has(assignee)) {
     throw new Error('That person cannot be assigned alerts.');
   }
   const actor = me.name;
@@ -630,7 +691,7 @@ export function applyAlertAction({ alerts, action, assignee = null, reason = nul
       case 'assign': {
         if ((alert.assignee ?? null) === (assignee ?? null)) continue;
         entry.assignee = assignee;
-        push('assigned', assignee ? `Assigned to ${people.get(assignee)?.name ?? assignee}.` : 'Unassigned.', assignee);
+        push('assigned', `Assigned to ${people.get(assignee)?.name ?? assignee}.`, assignee);
         break;
       }
       case 'acknowledge': {
@@ -726,7 +787,7 @@ export function applyAlertAction({ alerts, action, assignee = null, reason = nul
         /* Only what was raised. Everything done since lives in the entry's own
            activity, which is appended when the alert is rebuilt - copying the
            merged timeline here printed every event twice. */
-        activity: alert.activity.filter((item) => item.kind === 'created'),
+        activity: alert.activity.filter((item) => item.kind === 'created' || item.actor === 'Routing rule'),
       };
     }
 

@@ -309,7 +309,7 @@ export const OWNER_TYPES = {
   TAG_OWNER: { label: 'Owner tag', tone: 'info' },
   TEAM_TAG: { label: 'Team tag', tone: 'info' },
   CLOUDTRAIL_CREATOR: { label: 'Creator, from CloudTrail', tone: 'info' },
-  HUMAN: { label: 'Human owner', tone: 'info' },
+  HUMAN: { label: 'Named owner', tone: 'info' },
   NHI_CICD: { label: 'CI/CD managed', tone: 'brand' },
   NHI_IAC: { label: 'IaC managed', tone: 'brand' },
   AWS_SERVICE: { label: 'AWS service', tone: 'neutral' },
@@ -386,16 +386,6 @@ export function credentialKindMeta(value) {
    ------------------------------------------------------------------------- */
 
 export const POSTURE_SIGNALS = [
-  {
-    key: 'without_mfa',
-    label: 'Humans without MFA',
-    field: 'total_humans_without_mfa',
-    denominator: 'total_humans',
-    denominatorLabel: 'of human identities',
-    tone: 'critical',
-    query: { without_mfa: 'true' },
-    rationale: 'People with no MFA device. Where MFA is enforced by policy they can sign in but do nothing until they enrol one.',
-  },
   {
     key: 'admin',
     label: 'Admin-level access',

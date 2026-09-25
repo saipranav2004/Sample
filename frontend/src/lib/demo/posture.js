@@ -27,7 +27,7 @@
 import { isOpen } from '../alerts';
 import { actorTypeMeta, classificationMeta, credentialKindMeta } from '../domain';
 import { escalationsByIdentity, graphIdentityIds } from './accessGraph';
-import { applyAlertAction, estateAlerts } from './alerts';
+import { applyAlertAction, estateAlerts, visibleAlerts } from './alerts';
 import { estate, ESTATE_META } from './estate';
 import { genomeAnomalies, genomeFleet } from './genome';
 import { effectiveEstate } from './effective';
@@ -342,7 +342,7 @@ const CHECKS = [
     pillar: 'credential_hygiene',
     title: 'Workload uses temporary credentials, not a long-lived key',
     control: null,
-    applies: (row) => row.classification !== 'HUMAN',
+    applies: () => true,
     evaluate(row, ctx) {
       const keys = activeKeys(ctx, row);
       if (keys.length === 0) return null;
@@ -430,7 +430,7 @@ const CHECKS = [
         ],
       };
     },
-    resolves: (alert) => alert.rule === 'human-no-mfa',
+    resolves: (alert) => alert.rule === 'console-no-mfa',
   },
   {
     key: 'external-trust',
@@ -727,7 +727,7 @@ const CHECKS = [
     pillar: 'lifecycle',
     title: 'Has an accountable owner',
     control: null,
-    applies: (row) => row.classification !== 'HUMAN',
+    applies: () => true,
     evaluate(row) {
       if (row.owner_type !== 'ORPHANED') return null;
       return {
@@ -1099,7 +1099,10 @@ export function postureIdentity(id) {
   const remediations = readRemediations();
   const results = evaluateIdentity(row, ctx, remediations);
   const summary = summaryRow(row, ctx, results);
+  /* All of them, for the fixes each would resolve; the count shown is only
+     what the signed-in user can open. */
   const openAlerts = estateAlerts().filter((alert) => alert.identityId === row.id && isOpen(alert));
+  const visibleOpen = visibleAlerts(openAlerts).length;
 
   const checks = results
     .map((result) => ({
@@ -1222,7 +1225,7 @@ export function postureIdentity(id) {
     },
     history,
     events,
-    openAlerts: openAlerts.length,
+    openAlerts: visibleOpen,
   };
 }
 

@@ -1,4 +1,3 @@
-import { classificationMeta } from '../../lib/domain';
 import {
   daysSince,
   formatDateTime,
@@ -25,13 +24,12 @@ import { cn, TONE_BG, TONE_FG } from '../../ui/cn';
 const CHECK_ORDER = ['mfa', 'privilege', 'ownership', 'activity', 'credential'];
 
 export function evaluatePosture(identity) {
-  const isHuman = classificationMeta(identity.classification).kind === 'human';
   const age = daysSince(identity.last_active);
 
   const checks = {
     /* Wherever a password signs in to the console - a person, or a user a
        person shares with a workload - not only where the owner is human. */
-    mfa: !isHuman && !identity.console_access
+    mfa: !identity.console_access
       ? { state: 'na', label: 'MFA not applicable' }
       : identity.mfa_enabled
         ? { state: 'pass', label: 'MFA enabled' }

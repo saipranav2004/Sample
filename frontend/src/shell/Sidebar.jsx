@@ -3,6 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { ChevronDown, PanelLeftClose, PanelLeftOpen, X } from 'lucide-react';
 import { useAccess } from '../app/useAccess';
 import { navGroupsFor } from './navigation';
+import { useAlertFeed } from '../features/alerts/AlertFeed';
 import { IconButton } from '../ui/Button';
 import { cn } from '../ui/cn';
 
@@ -50,6 +51,18 @@ function SidebarLink({ item, collapsed, onNavigate, badge }) {
   );
 }
 
+function NavCount({ count }) {
+  return (
+    <span
+      className="rounded-full bg-surface px-1.5 py-px text-[10.5px] font-semibold text-ink tabular-nums ring-1 ring-line-strong"
+      title={`${count} open alert${count === 1 ? '' : 's'} assigned to you`}
+    >
+      <span aria-hidden="true">{count > 99 ? '99+' : count}</span>
+      <span className="sr-only">, {count} open assigned to you</span>
+    </span>
+  );
+}
+
 const OPEN_KEY = 'dna.nav.openGroups';
 
 function readOpenGroups() {
@@ -65,10 +78,14 @@ function isActiveItem(item, pathname) {
   return pathname === item.to || (!item.end && pathname.startsWith(`${item.to}/`));
 }
 
-export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseMobile, badges }) {
-  const { can } = useAccess();
+export function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onCloseMobile }) {
+  const { can, role } = useAccess();
+  /* Your open alerts, kept live by the shell's alert feed - the count an
+     on-call responder checks first, visible from every screen. */
+  const { mine } = useAlertFeed();
+  const badges = mine.length > 0 ? { '/alerts': <NavCount count={mine.length} /> } : {};
   const { pathname } = useLocation();
-  const groups = navGroupsFor(can);
+  const groups = navGroupsFor(can, role);
   const activeGroup = groups.find((group) => group.items.some((item) => isActiveItem(item, pathname)))?.key ?? null;
 
   /* Groups open and close on click, not hover: hover menus open by accident,

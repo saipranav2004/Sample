@@ -13,7 +13,7 @@
  * the same assignments and role changes, which is what lets the difference
  * between roles be shown on one machine.
  */
-import { TOKEN_KEY } from '../api/http';
+import { readToken } from '../api/session';
 import { forbidden, roleCan, ROLES } from '../roles';
 import { ESTATE_META, OPERATOR } from './estate';
 import { OVERLAY_KEYS, readOverlay, writeOverlay } from './runtime';
@@ -217,12 +217,7 @@ function tokenFor(row) {
  * call rather than cached, so a role change reaches the next request.
  */
 export function currentUserRow() {
-  let token = null;
-  try {
-    token = localStorage.getItem(TOKEN_KEY);
-  } catch {
-    token = null;
-  }
+  const token = readToken();
   if (!token?.startsWith('demo.')) return null;
   const id = token.slice('demo.'.length);
   return directory().find((row) => row.id === id) ?? null;

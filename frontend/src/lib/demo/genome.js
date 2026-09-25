@@ -117,7 +117,6 @@ const PEER_CATEGORY_BY_ACTOR_CATEGORY = {
      - a static key - is the thing its peers share. */
   EXCEPTION: 'Static credential',
   UNKNOWN: 'Compute',
-  HUMAN: 'Compute',
 };
 
 function runtimeFor(row) {
@@ -150,7 +149,7 @@ function buildFleet() {
      accounts, so an anomaly named a workload that existed nowhere else in the
      product. Baselines are about machine behaviour, so humans are out - which
      is a statement about the screen rather than a shortcut. */
-  const fleet = sharedEstate().identities.filter((row) => row.classification !== 'HUMAN');
+  const fleet = sharedEstate().identities;
 
   const identities = [];
   for (const row of fleet) {

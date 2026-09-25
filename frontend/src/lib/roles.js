@@ -32,13 +32,13 @@ export const ROLES = {
     key: 'analyst',
     label: 'Analyst',
     rank: 2,
-    summary: 'Works the alert queue: acknowledge, investigate, resolve and escalate. Cannot accept a risk or reassign other people.',
+    summary: 'Works the alerts assigned or escalated to them: acknowledge, investigate, resolve and escalate. Cannot accept a risk or reassign other people.',
   },
   viewer: {
     key: 'viewer',
     label: 'Viewer',
     rank: 1,
-    summary: 'Read-only access for audit and oversight. Can export what they can see.',
+    summary: 'Read-only oversight: posture, inventory and reports. No alert queue and no exposed secrets.',
   },
 };
 
@@ -49,9 +49,11 @@ export const ROLE_ORDER = ['super_admin', 'admin', 'analyst', 'viewer'];
  * User management screen shows them. `roles` lists who holds it.
  */
 export const PERMISSIONS = [
-  { key: 'data.view', group: 'Visibility', label: 'View every screen and record', roles: ['super_admin', 'admin', 'analyst', 'viewer'] },
+  { key: 'data.view', group: 'Visibility', label: 'View posture, inventory, access, behaviour, activity and reports', roles: ['super_admin', 'admin', 'analyst', 'viewer'] },
   { key: 'data.export', group: 'Visibility', label: 'Export tables to CSV', roles: ['super_admin', 'admin', 'analyst', 'viewer'] },
 
+  { key: 'alerts.view', group: 'Alerts', label: 'Open the Alerts screen', roles: ['super_admin', 'admin', 'analyst'] },
+  { key: 'alerts.viewAll', group: 'Alerts', label: 'See every alert - otherwise only those assigned or escalated to you', roles: ['super_admin', 'admin'] },
   { key: 'alerts.work', group: 'Alerts', label: 'Acknowledge, start, resolve, escalate and add notes', roles: ['super_admin', 'admin', 'analyst'] },
   { key: 'alerts.take', group: 'Alerts', label: 'Assign an alert to themselves', roles: ['super_admin', 'admin', 'analyst'] },
   { key: 'alerts.assign', group: 'Alerts', label: 'Assign alerts to anyone', roles: ['super_admin', 'admin'] },
@@ -62,6 +64,7 @@ export const PERMISSIONS = [
   { key: 'anomalies.dismiss', group: 'NHI Genome', label: 'Mark an anomaly expected or suppress a detector, and reopen', roles: ['super_admin', 'admin'] },
   { key: 'anomalies.contain', group: 'NHI Genome', label: 'Apply a containment policy or freeze a credential', roles: ['super_admin', 'admin'] },
 
+  { key: 'exposure.view', group: 'Credential exposure', label: 'See exposed credentials - secrets found in code', roles: ['super_admin', 'admin', 'analyst'] },
   { key: 'exposure.deepScan', group: 'Credential exposure', label: 'Request a deep scan of a repository', roles: ['super_admin', 'admin', 'analyst'] },
   { key: 'exposure.review', group: 'Credential exposure', label: 'Accept a finding as reviewed, or restore it', roles: ['super_admin', 'admin'] },
 
@@ -93,14 +96,21 @@ export function minimumRoleFor(permission) {
 }
 
 /**
- * Where a role lands after signing in. An analyst works a queue, so they land
- * on their own assigned alerts - the rest of the queue, and every other
- * screen, stays one click away, because unassigned work is theirs to pick up.
- * Everyone else lands on the dashboard.
+ * Where a role lands after signing in: `/overview`, which is each role's own
+ * home - the organisation dashboard for admins, "My work" for an analyst, a
+ * read-only summary for a viewer (see `features/overview`).
  */
-export function homeFor(role) {
-  return role === 'analyst' ? '/alerts?view=mine' : '/overview';
+export function homeFor() {
+  return '/overview';
 }
+
+/** What `/overview` is for each role, in words - shown on User management. */
+export const ROLE_HOME = {
+  super_admin: 'Organisation dashboard',
+  admin: 'Organisation dashboard',
+  analyst: 'My work - their own alert queue',
+  viewer: 'Dashboard, without credential exposure',
+};
 
 /** One sentence for a disabled control: why it is disabled and who can. */
 export function deniedReason(permission) {

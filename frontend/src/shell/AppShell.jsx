@@ -5,6 +5,7 @@ import { TopBar } from './TopBar';
 import { ContextBar } from './ContextBar';
 import { CommandPalette } from './CommandPalette';
 import { cn } from '../ui/cn';
+import { AlertFeedProvider } from '../features/alerts/AlertFeed';
 
 const COLLAPSE_KEY = 'dna.sidebar.collapsed';
 
@@ -47,41 +48,43 @@ export function AppShell() {
   }, []);
 
   return (
-    <div className="min-h-dvh bg-canvas">
-      <a
-        href="#main"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[90] focus:rounded-md focus:bg-surface focus:px-3 focus:py-2 focus:text-[13px] focus:font-medium focus:text-ink focus:shadow-lg"
-      >
-        Skip to content
-      </a>
+    <AlertFeedProvider>
+      <div className="min-h-dvh bg-canvas">
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[90] focus:rounded-md focus:bg-surface focus:px-3 focus:py-2 focus:text-[13px] focus:font-medium focus:text-ink focus:shadow-lg"
+        >
+          Skip to content
+        </a>
 
-      <TopBar onOpenNav={() => setMobileOpen(true)} onOpenCommand={() => setCommandOpen(true)} />
+        <TopBar onOpenNav={() => setMobileOpen(true)} onOpenCommand={() => setCommandOpen(true)} />
 
-      <Sidebar
-        collapsed={collapsed}
-        onToggleCollapse={toggleCollapse}
-        mobileOpen={mobileOpen}
-        onCloseMobile={() => setMobileOpen(false)}
-      />
+        <Sidebar
+          collapsed={collapsed}
+          onToggleCollapse={toggleCollapse}
+          mobileOpen={mobileOpen}
+          onCloseMobile={() => setMobileOpen(false)}
+        />
 
-      <div
-        className={cn(
-          'flex min-h-dvh flex-col pt-16 transition-[padding] duration-250 ease-[var(--ease-out-quint)]',
-          collapsed ? 'lg:pl-[60px]' : 'lg:pl-[232px]',
-        )}
-      >
-        <ContextBar />
-        <main id="main" className="flex-1 px-3 pt-4 pb-14 sm:px-5 lg:px-6">
-          {/* A query container. The metric rows below key their column count
-              off this width, not the viewport's - see `docs/UX-DECISIONS.md`
-              §10. */}
-          <div className="content-scale @container mx-auto w-full max-w-[1760px]">
-            <Outlet />
-          </div>
-        </main>
+        <div
+          className={cn(
+            'flex min-h-dvh flex-col pt-16 transition-[padding] duration-250 ease-[var(--ease-out-quint)]',
+            collapsed ? 'lg:pl-[60px]' : 'lg:pl-[232px]',
+          )}
+        >
+          <ContextBar />
+          <main id="main" className="flex-1 px-3 pt-4 pb-14 sm:px-5 lg:px-6">
+            {/* A query container. The metric rows below key their column count
+                off this width, not the viewport's - see `docs/UX-DECISIONS.md`
+                §10. */}
+            <div className="content-scale @container mx-auto w-full max-w-[1760px]">
+              <Outlet />
+            </div>
+          </main>
+        </div>
+
+        <CommandPalette open={commandOpen} onClose={() => setCommandOpen(false)} />
       </div>
-
-      <CommandPalette open={commandOpen} onClose={() => setCommandOpen(false)} />
-    </div>
+    </AlertFeedProvider>
   );
 }

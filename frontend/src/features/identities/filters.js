@@ -14,13 +14,6 @@ import { ACTOR_CATEGORIES, ACTOR_CATEGORY_ORDER, actorTypeMeta } from '../../lib
  */
 export const FACETS = [
   {
-    param: 'without_mfa',
-    label: 'No MFA',
-    tone: 'critical',
-    summaryField: 'total_humans_without_mfa',
-    hint: 'Human identities with MFA disabled',
-  },
-  {
     param: 'is_admin',
     label: 'Admin access',
     tone: 'critical',
@@ -64,16 +57,16 @@ export const FACETS = [
  * category here is what the actor IS: compute, a pipeline, an agent, a data
  * job, a vendor platform outside the account.
  */
-export const ACTOR_CATEGORY_OPTIONS = ACTOR_CATEGORY_ORDER.map((value) => ({
+export const ACTOR_CATEGORY_OPTIONS = ACTOR_CATEGORY_ORDER.filter((value) => value !== 'HUMAN').map((value) => ({
   value,
   label: ACTOR_CATEGORIES[value],
 }));
 
 export const OWNER_TYPE_OPTIONS = [
-  { value: 'HUMAN', label: 'Human owner' },
-  { value: 'NHI_CICD', label: 'CI/CD managed' },
-  { value: 'NHI_IAC', label: 'IaC managed' },
-  { value: 'AWS_SERVICE', label: 'AWS service' },
+  /* Where the owner was resolved from - the values discovery records. */
+  { value: 'TAG_OWNER', label: 'Owner tag' },
+  { value: 'TEAM_TAG', label: 'Team tag' },
+  { value: 'CLOUDTRAIL_CREATOR', label: 'Creator, from CloudTrail' },
   { value: 'ORPHANED', label: 'Orphaned' },
 ];
 

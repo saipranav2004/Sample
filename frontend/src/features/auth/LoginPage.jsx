@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { AlertTriangle, ArrowRight, BadgeCheck, Clock3, Lock, Mail, ShieldCheck } from 'lucide-react';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { AlertTriangle, ArrowRight, BadgeCheck, Clock3, Info, Lock, Mail, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../../app/AuthContext';
 import { Button } from '../../ui/Button';
 import { Field, Input, PasswordInput } from '../../ui/Field';
@@ -28,9 +28,13 @@ const TRUST_MARKS = [
  * palette with `data-theme="light"`.
  */
 export default function LoginPage() {
-  const { signIn, isAuthenticated, expired, clearExpired } = useAuth();
+  const { signIn, isAuthenticated, expired, clearExpired, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  /* "Switch account" from the account menu: sign in as someone else in this
+     tab while other tabs keep theirs - how two roles are worked side by side
+     in one browser. */
+  const switching = new URLSearchParams(location.search).get('switch') === '1';
 
   /* Starts blank. There is no identity provider behind this screen, but the
      account is a real one that types the same as any other: `cirm@admin` or
@@ -49,7 +53,7 @@ export default function LoginPage() {
     usernameRef.current?.focus();
   }, []);
 
-  if (isAuthenticated) {
+  if (isAuthenticated && !switching) {
     return <Navigate to={location.state?.from?.pathname || '/'} replace />;
   }
 
@@ -168,6 +172,22 @@ export default function LoginPage() {
             <p className="mt-[clamp(0.25rem,0.5vw,0.6rem)] text-[clamp(13px,1.06vw,20px)] text-ink-3">
               Sign in to access the platform
             </p>
+
+            {switching && isAuthenticated && (
+              <div
+                role="status"
+                className="mt-5 flex items-start gap-2 rounded-[var(--radius-control)] border border-info/25 bg-info-soft px-3 py-2.5 text-[clamp(12px,0.85vw,16px)] text-ink-2"
+              >
+                <Info aria-hidden="true" className="mt-px size-4 shrink-0 text-info" />
+                <span>
+                  Signed in as {user?.name ?? 'another account'} in this tab. Signing in here switches this tab
+                  only - other open tabs keep their account.{' '}
+                  <Link to="/" className="font-semibold text-brand underline-offset-4 hover:underline">
+                    Back to the console
+                  </Link>
+                </span>
+              </div>
+            )}
 
             {expired && !formError && (
               <p

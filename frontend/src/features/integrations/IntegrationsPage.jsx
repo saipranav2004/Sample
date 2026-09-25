@@ -338,6 +338,10 @@ const STATUS_META = {
  * working - rather than offering a button that would open an empty wizard.
  */
 function ConnectedRow({ row, onConfigure, onManage }) {
+  /* A screen the role cannot open is named, not linked. */
+  const { can } = useAccess();
+  const reachable = (to) => !to.startsWith('/exposure') || can('exposure.view');
+  const firstReachable = row.platform.provides.find((entry) => reachable(entry.to));
   const status = STATUS_META[row.status] ?? STATUS_META.connected;
   const StatusIcon = status.icon;
   const CategoryIcon = PLATFORM_CATEGORIES[row.platform.category]?.icon ?? Cloud;
@@ -374,15 +378,21 @@ function ConnectedRow({ row, onConfigure, onManage }) {
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
               <span className="text-[11px] text-ink-3">Feeds</span>
-              {row.platform.provides.map((entry) => (
-                <Link
-                  key={entry.to}
-                  to={entry.to}
-                  className="rounded-full border border-line bg-surface-2 px-2 py-0.5 text-[11px] text-ink-2 transition-colors hover:border-line-strong hover:text-ink"
-                >
-                  {entry.label}
-                </Link>
-              ))}
+              {row.platform.provides.map((entry) =>
+                reachable(entry.to) ? (
+                  <Link
+                    key={entry.to}
+                    to={entry.to}
+                    className="rounded-full border border-line bg-surface-2 px-2 py-0.5 text-[11px] text-ink-2 transition-colors hover:border-line-strong hover:text-ink"
+                  >
+                    {entry.label}
+                  </Link>
+                ) : (
+                  <span key={entry.to} className="rounded-full bg-surface-3 px-2 py-0.5 text-[11px] text-ink-3">
+                    {entry.label}
+                  </span>
+                ),
+              )}
             </div>
           </div>
         </div>
@@ -397,15 +407,11 @@ function ConnectedRow({ row, onConfigure, onManage }) {
           </Button>
         ) : (
           <div className="flex flex-col items-end gap-1">
-            <Button
-              as={Link}
-              to={row.platform.provides[0]?.to ?? '/exposure'}
-              variant="ghost"
-              size="sm"
-              iconRight={ExternalLink}
-            >
-              See what it reads
-            </Button>
+            {firstReachable && (
+              <Button as={Link} to={firstReachable.to} variant="ghost" size="sm" iconRight={ExternalLink}>
+                See what it reads
+              </Button>
+            )}
             <span className="text-[11px] text-ink-3">Managed by {row.managedBy}</span>
           </div>
         )}

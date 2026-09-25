@@ -1026,7 +1026,11 @@ function attachSecretStores(identities, credentials) {
 export function estate() {
   if (cache) return cache;
 
-  const identities = buildIdentities();
+  /* The product is about non-human identities only. People are still
+     generated - they are who creates and owns the workloads - but their own
+     IAM users are not part of the estate this console reports: no screen,
+     count, alert or graph shows a person's identity. */
+  const identities = buildIdentities().filter((row) => row.classification !== 'HUMAN');
   const credentials = buildCredentials(identities);
   attachSecretStores(identities, credentials);
   const { edges, consumersOf } = buildRelationships(identities);

@@ -3,7 +3,8 @@ import { ACTOR_CATEGORIES, ACTOR_CATEGORY_ORDER, credentialKindMeta } from '../d
 import { isOpen, responseState } from '../alerts';
 import { OPERATOR } from './estate';
 import { effectiveEstate } from './effective';
-import { assertCan } from './users';
+import { assertCan, currentUserRow } from './users';
+import { forbidden, roleCan } from '../roles';
 import { estateAlerts } from './alerts';
 import { ANOMALY_TYPES, genomeAnomalies, genomeFleet } from './genome';
 
@@ -157,6 +158,22 @@ export function templateById(id) {
   return REPORT_TEMPLATES.find((template) => template.id === id) ?? null;
 }
 
+/* A report built from the Secret Scanner shows exposed credentials, so it is
+   offered only to roles that may open them - the same line the navigation
+   draws. Filtered here, where the API would filter it, rather than hidden in
+   the page after the fact. */
+const exposureOnly = (template) => Boolean(template?.sections.some((section) => section.live === 'exposure'));
+
+function mayRead(templateId) {
+  const template = templateById(templateId);
+  if (!exposureOnly(template)) return true;
+  const me = currentUserRow();
+  return Boolean(me) && roleCan(me.role, 'exposure.view');
+}
+
+const visibleRuns = () => readRuns().filter((run) => mayRead(run.templateId));
+const visibleSchedules = () => readSchedules().filter((schedule) => mayRead(schedule.templateId));
+
 /* ── Persisted state ──────────────────────────────────────────────────────── */
 
 /**
@@ -271,10 +288,11 @@ function rowsFor(templateId, next) {
 
 export function fetchReportLibrary(signal) {
   return demoRequest(() => {
-    const runs = readRuns();
-    const schedules = readSchedules();
+    const runs = visibleRuns();
+    const schedules = visibleSchedules();
+    const templates = REPORT_TEMPLATES.filter((template) => mayRead(template.id));
     return {
-      templates: REPORT_TEMPLATES.map((template) => {
+      templates: templates.map((template) => {
         const forTemplate = runs
           .filter((run) => run.templateId === template.id && run.status === 'ready')
           .sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt));
@@ -286,7 +304,7 @@ export function fetchReportLibrary(signal) {
         };
       }),
       totals: {
-        templates: REPORT_TEMPLATES.length,
+        templates: templates.length,
         generated30d: runs.filter((run) => withinDays(run.startedAt, 30)).length,
         ready30d: runs.filter((run) => run.status === 'ready' && withinDays(run.startedAt, 30)).length,
         schedules: schedules.filter((schedule) => schedule.enabled).length,
@@ -298,7 +316,7 @@ export function fetchReportLibrary(signal) {
 
 export function fetchSchedules(signal) {
   return demoRequest(() => {
-    const rows = readSchedules()
+    const rows = visibleSchedules()
       .map((schedule) => ({
         ...schedule,
         templateName: templateById(schedule.templateId)?.name ?? schedule.templateId,
@@ -311,7 +329,7 @@ export function fetchSchedules(signal) {
 
 export function fetchRuns({ templateId = '', status = '' } = {}, signal) {
   return demoRequest(() => {
-    const rows = readRuns()
+    const rows = visibleRuns()
       .filter((run) => (templateId ? run.templateId === templateId : true))
       .filter((run) => (status ? run.status === status : true))
       .sort((a, b) => new Date(b.startedAt) - new Date(a.startedAt));
@@ -327,6 +345,7 @@ export function fetchRun(id, signal) {
       error.status = 404;
       throw error;
     }
+    if (!mayRead(run.templateId)) throw forbidden('exposure.view');
     const template = templateById(run.templateId);
     return { ...run, template, preview: buildPreview(run, template) };
   }, { signal });
@@ -343,6 +362,7 @@ export function generateReport({ templateId, format, trigger = 'manual', request
   const me = assertCan('reports.generate');
   const template = templateById(templateId);
   if (!template) throw new Error(`Unknown report template: ${templateId}`);
+  if (!mayRead(templateId)) throw forbidden('exposure.view');
 
   const id = `run-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
   const next = rng(hashSeed(id));
@@ -462,7 +482,7 @@ const DAY = 24 * HOUR;
 
 function measuresFor(key) {
   const { identities, credentials, accounts } = effectiveEstate();
-  const nhis = identities.filter((row) => row.classification !== 'HUMAN');
+  const nhis = identities;
   const alerts = estateAlerts();
   const open = alerts.filter(isOpen);
   const anomalies = genomeAnomalies();
@@ -473,7 +493,6 @@ function measuresFor(key) {
   switch (key) {
     case 'posture':
       return [
-        ['Humans without MFA', count(identities, (row) => row.classification === 'HUMAN' && !row.mfa_enabled)],
         ['Admin-level access', count(identities, (row) => row.is_admin)],
         ['Orphaned identities', count(identities, (row) => row.owner_type === 'ORPHANED')],
         ['Stale for 90+ days', count(identities, (row) => row.last_active_days > 90)],
@@ -522,7 +541,6 @@ function measuresFor(key) {
       return [
         ['Records', identities.length],
         ['Accounts', accounts.length],
-        ['Machine identities', nhis.length],
       ];
     case 'age':
       return [
@@ -582,8 +600,7 @@ function measuresFor(key) {
     case 'admin':
       return [
         ['Administrator-equivalent', count(identities, (row) => row.is_admin)],
-        ['Of those, machine identities', count(nhis, (row) => row.is_admin)],
-        ['Of those, humans without MFA', count(identities, (row) => row.is_admin && row.classification === 'HUMAN' && !row.mfa_enabled)],
+        ['Of those, signing in without MFA', count(identities, (row) => row.is_admin && row.console_access && !row.mfa_enabled)],
       ];
     case 'standing':
       return [
@@ -634,7 +651,7 @@ function measuresFor(key) {
 function sectionNote(key) {
   switch (key) {
     case 'posture':
-      return 'The same four signals, with the same counts, as the Dashboard.';
+      return 'The same signals, with the same counts, as the Dashboard.';
     case 'top-risks':
       return 'Read from the alert queue: open Critical and High alerts, and the identities and accounts they name.';
     case 'by-tier':
@@ -644,7 +661,7 @@ function sectionNote(key) {
     case 'response':
       return "Measured against this console's default response targets, which the Alerts screen lists.";
     case 'baselines':
-      return 'A baseline is learned per machine identity. Humans are not baselined.';
+      return 'A baseline is learned per machine identity.';
     case 'accepted':
       return 'Every dismissal records a reason. These are the counts by reason, from the alert queue.';
     default:
