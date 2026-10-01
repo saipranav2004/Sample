@@ -1,0 +1,625 @@
+================================================================================
+SECRET SCANNER API -- INTEGRATION GUIDE
+================================================================================
+ 
+COVERS BOTH SOURCES THROUGH ONE API
+--------------------------------------------------------------------------------
+This API now returns findings from TWO independent scanners -- AWS
+CodeCommit and GitHub -- merged together. Nothing about the endpoints,
+auth, or base URL changes depending on the source; every finding just
+carries a `platform` field ("codecommit" or "github") so you can tell
+them apart, filter, or split them into separate tabs. See the
+FIELD-BY-FIELD section below for exactly what differs per platform
+(repository naming, which *_uri field is populated).
+ 
+ 
+BASE URL
+--------------------------------------------------------------------------------
+https://js-dev.adapid.link
+ 
+All endpoints below are relative to this. For example, "GET /api/findings"
+means "GET https://js-dev.adapid.link/api/findings".
+ 
+ 
+AUTHENTICATION
+--------------------------------------------------------------------------------
+Every request (except /health) needs this header:
+ 
+  X-Dashboard-Key: <the key we gave you>
+ 
+If the header is missing or wrong, you get back:
+  Status: 401
+  Body:   {"error": "unauthorized"}
+ 
+IMPORTANT -- keep this key on your SERVER, not in browser JavaScript.
+If you put it directly in frontend code that runs in someone's browser,
+anyone can open developer tools and read it out of the page, and then
+they'd have permanent read access to every finding. The correct pattern:
+ 
+  Your dashboard's browser code --> Your own backend --> Our API
+ 
+Your backend holds the key and makes the call; your frontend only ever
+talks to your own backend, the same way it already does for your other
+data sources.
+ 
+ 
+================================================================================
+ENDPOINT 1: GET /api/findings
+This is the one endpoint that gives you everything -- both the
+"Findings" list AND everything you need to build an "Overview" summary.
+================================================================================
+ 
+REQUEST
+--------------------------------------------------------------------------------
+  GET /api/findings
+  Header: X-Dashboard-Key: <your key>
+ 
+Example (curl, to try it yourself first):
+ 
+  curl -H "X-Dashboard-Key: <your key>" https://js-dev.adapid.link/api/findings
+ 
+RESPONSE
+--------------------------------------------------------------------------------
+  Status: 200
+  Body (one real GitHub finding, one real CodeCommit finding, shown
+  together exactly as the API returns them -- this is the real shape,
+  not two separate response formats. Both are ACTUAL captured responses
+  from the live API, not hand-written examples):
+  {
+    "count": 86,
+    "findings": [
+      {
+        "finding_id": "naresh-github-test/Naresh-commits464/outage-test/e41a8aea205bf6a53aadb7865b24d5f10e188026/data-pipeline/settings.py:3:stripe_key",
+        "client_id": "naresh-github-test",
+        "repository": "Naresh-commits464/outage-test",
+        "branch": "main",
+        "commit_id": "e41a8aea205bf6a53aadb7865b24d5f10e188026",
+        "author": "Naresh <naresh@das357.onmicrosoft.com>",
+        "created_at": "2026-09-23T11:36:56+00:00",
+        "detector": "stripe_key",
+        "severity": "high",
+        "file_path": "data-pipeline/settings.py",
+        "line_number": 3,
+        "redacted": "sk_t*******************************************kR6t",
+        "verification_status": "UNSUPPORTED",
+        "risk_tier": "HIGH",
+        "recommended_action": "PAGE_ON_CALL",
+        "codecommit_uri": null,
+        "platform": "github",
+        "github_uri": "https://github.com/Naresh-commits464/outage-test/blob/e41a8aea205bf6a53aadb7865b24d5f10e188026/data-pipeline/settings.py#L3%22,
+        "line_preview": "STRIPE_API_KEY = \"sk_t*******************************************kR6t\"",
+        "confidence": "high",
+        "category": "payments",
+        "committer": "Naresh <naresh@das357.onmicrosoft.com>",
+        "commit_message": "Add data-pipeline: Postgres-backed order processing pipeline",
+        "commit_authored_at": "2026-09-21T08:28:16Z",
+        "files_changed": 3,
+        "additions": 17,
+        "deletions": 0,
+        "repo_visibility": "public",
+        "repo_stars": 0,
+        "repo_forks": 0,
+        "repo_pushed_at": "2026-09-23T10:32:14Z"
+      },
+      {
+        "finding_id": "test-sample-client/test-sample/10b0687316ed83a3db66cecec41c08b7793416f2/live-test-flaskr-init.py:50:aws_access_key_id",
+        "client_id": "test-sample-client",
+        "repository": "test-sample",
+        "branch": "master",
+        "commit_id": "10b0687316ed83a3db66cecec41c08b7793416f2",
+        "author": "Naresh <naresh@das357.onmicrosoft.com>",
+        "created_at": "2026-09-23T11:37:08+00:00",
+        "detector": "aws_access_key_id",
+        "severity": "high",
+        "file_path": "live-test-flaskr-init.py",
+        "line_number": 50,
+        "redacted": "AKIA************MPLE",
+        "verification_status": "UNSUPPORTED",
+        "risk_tier": "HIGH",
+        "recommended_action": "PAGE_ON_CALL",
+        "codecommit_uri": "https://ap-south-1.console.aws.amazon.com/codesuite/codecommit/repositories/test-sample/browse/10b0687316ed83a3db66cecec41c08b7793416f2/--/live-test-flaskr-init.py?region=ap-south-1%22,
+        "platform": "codecommit",
+        "github_uri": null,
+        "line_preview": "aws_access_key_id = \"AKIA************MPLE\"",
+        "confidence": "high",
+        "category": "cloud",
+        "committer": "Naresh <naresh@das357.onmicrosoft.com>",
+        "commit_message": "Live test: verify real-time CodeCommit detection\n",
+        "commit_authored_at": "1790079297 +0530",
+        "files_changed": 1,
+        "additions": null,
+        "deletions": null,
+        "repo_visibility": "private",
+        "repo_stars": null,
+        "repo_forks": null,
+        "repo_pushed_at": null
+      }
+    ]
+  }
+ 
+  Both examples above came from a full-history deep-scan (Endpoint 5),
+  not a live push -- shown deliberately, to prove every enrichment field
+  is now populated regardless of which scan path produced the finding.
+  Before 2026-09-23 this wasn't true: the initial full-history onboarding
+  walk and an explicit deep-scan skipped fetching this per-commit
+  metadata entirely, so a bootstrap/deep-scanned finding permanently
+  showed nulls for committer/commit_message/commit_authored_at/
+  files_changed/repo_visibility even when brand new, unlike the same
+  finding if a live push later re-scanned it. Fixed now -- all three scan
+  paths populate the same fields the same way. The CodeCommit example's
+  additions/deletions/repo_stars/repo_forks/repo_pushed_at are still null,
+  but that's the genuine, permanent platform-only reason (see those
+  fields' own notes below), not a scan-path gap.
+ 
+FIELD-BY-FIELD, IN PLAIN LANGUAGE
+--------------------------------------------------------------------------------
+  finding_id            A unique ID for this exact finding. Use it as your
+                        React/UI list "key" -- it won't collide with
+                        anything else, ever.
+ 
+  client_id             Which customer/account this finding belongs to.
+                        Now spans both platforms -- e.g.
+                        "test-sample-client" for CodeCommit findings,
+                        "naresh-github-test" for GitHub ones. Treat it as
+                        an opaque tenant label, not something to parse.
+ 
+  platform              "codecommit" or "github" -- which scanner found
+                        this. Use this to filter/tab your UI (see
+                        "SPLITTING BY PLATFORM" below), NOT the shape of
+                        the `repository` field, which differs per
+                        platform (see next row).
+ 
+  repository            The repository name the secret was found in.
+                        Format differs by platform:
+                          codecommit -> bare repo name, e.g. "test-sample"
+                          github     -> "owner/repo", e.g.
+                                        "Naresh-commits464/test2"
+                        Don't assume either shape -- branch on `platform`
+                        first if you need to parse this.
+ 
+  branch                Which branch was pushed (e.g. "master",
+                        "feature/branch-risk-test").
+ 
+  commit_id             The full Git commit hash the secret was
+                        introduced in (or last seen in).
+ 
+  author                Who pushed it, as "Name <email>" -- straight from
+                        their Git commit author info.
+ 
+  created_at            When we detected it. Always UTC, ISO 8601 WITH an
+                        explicit offset, e.g. "2026-09-23T11:12:25+00:00".
+                        Convert it in your own code to whatever timezone
+                        your users expect (see the "TIMEZONE GOTCHA" note
+                        below -- this one bit us once, worth reading).
+                        Updated 2026-09-23: this field's exact shape
+                        changed (it used to come back with NO timezone
+                        marker at all, e.g. "2026-09-18 12:17:39") when
+                        we moved this system's storage backend -- if your
+                        integration was built against the old shape,
+                        re-check your parsing against the TIMEZONE GOTCHA
+                        note now, not just at first integration time.
+ 
+  detector              Which rule matched -- e.g. "aws_access_key_id",
+                        "slack_webhook", "mongodb_connection_string",
+                        "github_token", "generic_password_assignment".
+                        There are dozens of these; treat it as an opaque
+                        label to show the user, not something to
+                        hard-code a list of.
+ 
+  severity              The detector's OWN opinion of how bad this type
+                        of secret usually is: "high" or "medium". This is
+                        an input to risk_tier below, not the final
+                        answer -- use risk_tier for anything
+                        user-facing.
+ 
+  file_path             Path to the file inside the repository.
+ 
+  line_number            Line number inside that file.
+ 
+  redacted              The secret's value, safely masked (e.g.
+                        "AKIA****************ZZZZ"). We never return the
+                        real secret over this API -- this is the only
+                        form of it you'll ever see.
+ 
+  verification_status   Whether we confirmed the secret is actually still
+                        live. Today this is ALWAYS "UNSUPPORTED" -- by
+                        design, this deployment's AWS access is
+                        read-only-CodeCommit only, with no permission to
+                        check IAM key liveness. Don't build UI that
+                        implies we've confirmed something is safe or
+                        dangerous based on this field; it just means "not
+                        checked."
+ 
+  risk_tier             The actionable severity: "CRITICAL", "HIGH",
+                        "MEDIUM", or "LOW". This is what should drive your
+                        UI's color-coding and sorting. NOTE: "CRITICAL"
+                        cannot currently appear (it requires the liveness
+                        check mentioned above), so don't be surprised if
+                        you never see it in real data yet.
+ 
+  recommended_action    A suggested next step: "LOG_ONLY", "NOTIFY_SOC",
+                        "PAGE_ON_CALL", or "TRIGGER_REMEDIATION" -- rising
+                        urgency in that order. Purely informational; we
+                        don't page anyone automatically.
+ 
+  codecommit_uri        A ready-to-click link straight to that exact
+                        file, line, and commit in the AWS CodeCommit
+                        console. ALWAYS null for a GitHub finding (see
+                        github_uri instead) -- also null for a
+                        CodeCommit finding if we didn't have enough
+                        information to build it (older data, or a client
+                        with no region on file). Always check for null
+                        before rendering a link either way.
+ 
+  github_uri            The GitHub equivalent -- a ready-to-click link
+                        straight to that exact file/line/commit on
+                        github.com. ALWAYS null for a CodeCommit finding.
+                        A finding has exactly one of codecommit_uri /
+                        github_uri populated, never both, never neither
+                        (barring the CodeCommit no-region edge case
+                        above) -- the simplest correct link-rendering
+                        logic is:
+                          const link = finding.codecommit_uri ?? finding.github_uri;
+                          const label = finding.codecommit_uri ? "AWS" : "GitHub";
+ 
+  line_preview           The actual line of code the secret was found on,
+                          with the secret itself masked the same way
+                          `redacted` is -- safe to display directly. Can
+                          be null on very old findings recorded before we
+                          started saving this; never null on anything new.
+ 
+  confidence             How sure the detector is: "high" or "medium".
+                          Distinct from severity/risk_tier -- this is
+                          about pattern-match certainty, not how bad the
+                          secret would be if real.
+ 
+  category               A rough grouping of what kind of secret this is,
+                          e.g. "cloud", "messaging", "authentication",
+                          "generic", "payments", "ai". Not an exhaustive
+                          enum you should hard-code -- treat it as a
+                          label, same as `detector`.
+ 
+  committer              Who committed it, as "Name <email>" -- distinct
+                          from `author` (who wrote it). Usually the same
+                          person, but not always (e.g. a squashed/rebased
+                          commit, or a bot committing someone else's
+                          change). Populated on any finding regardless of
+                          which scan path found it (live push, initial
+                          onboarding, or an explicit deep-scan); null only
+                          on findings recorded before this field existed
+                          at all (before 2026-09-21).
+ 
+  commit_message         The actual commit message for the commit this
+                          finding came from.
+ 
+  commit_authored_at     When the commit was actually written -- NOT
+                          when we detected it (see created_at above for
+                          that). Two different raw formats depending on
+                          platform, both passed through as-is:
+                            github     -> ISO 8601, e.g.
+                                          "2026-09-21T12:46:25Z"
+                            codecommit -> git's own raw format, e.g.
+                                          "1758454920 +0530" (a Unix
+                                          timestamp, then a timezone
+                                          offset, space-separated)
+                          Check which platform a finding is from before
+                          assuming either shape.
+ 
+  files_changed          How many files were touched by this commit. On
+                          GitHub this is exact (from GitHub's own diff
+                          stats). On CodeCommit there's no equivalent API
+                          field, so this is actually "how many of those
+                          files we actually scanned" -- it can undercount
+                          if the commit also touched a binary or
+                          oversized file that got filtered out before
+                          scanning. Don't treat the two platforms'
+                          numbers as directly comparable.
+ 
+  additions / deletions  Lines added/removed in the commit. GITHUB ONLY
+                          -- always null for a CodeCommit finding; there
+                          is no CodeCommit API field for this at all, not
+                          just "not implemented yet."
+ 
+  repo_visibility        "public" or "private". For GitHub this is the
+                          repo's real, current visibility from GitHub's
+                          own API. For CodeCommit this is always the
+                          literal string "private" (never null on a new
+                          finding, regardless of scan path) -- every
+                          CodeCommit repo is private to its AWS account
+                          by definition, so we record that one known fact
+                          instead of leaving it blank.
+ 
+  repo_stars / repo_forks  GitHub's stargazer/fork counts. GITHUB ONLY,
+                          same reasoning as repo_visibility -- CodeCommit
+                          has no social/discovery features at all.
+ 
+  repo_pushed_at          When the repository itself was last pushed to
+                          (not this specific commit -- the repo's overall
+                          last-push time). GITHUB ONLY, ISO 8601.
+ 
+  A quick way to tell "platform-only field, always null on the other
+  platform" apart from "just an old finding, will be populated on new
+  ones": additions, deletions, repo_stars, repo_forks, and repo_pushed_at
+  are the ONLY fields that stay permanently null for CodeCommit findings
+  (repo_visibility is CodeCommit's one exception -- see its own field
+  note above). Every other field described above (line_preview,
+  confidence, category, committer, commit_message, commit_authored_at,
+  files_changed) is populated on both platforms, regardless of which
+  scan path found the finding (live push, initial onboarding, or an
+  explicit deep-scan) -- null there means old data recorded before that
+  field existed, not "unsupported" or "this scan path doesn't fetch it."
+ 
+ 
+SPLITTING BY PLATFORM (e.g. separate "CodeCommit" / "GitHub" tabs)
+--------------------------------------------------------------------------------
+There's no separate endpoint per platform -- call /api/findings once (as
+always) and filter client-side:
+ 
+  const codecommitFindings = findings.filter(f => f.platform !== "github");
+  const githubFindings     = findings.filter(f => f.platform === "github");
+ 
+Note the CodeCommit filter checks `!== "github"`, not `=== "codecommit"`:
+a finding written before platform-tracking existed can come back with
+platform: null, and those are always CodeCommit findings (GitHub support
+didn't exist yet when they were recorded) -- the `!==` form handles that
+correctly without any extra null-checking on your end.
+ 
+ 
+HOW TO BUILD AN "OVERVIEW" PAGE FROM THIS SAME DATA
+--------------------------------------------------------------------------------
+There's no separate "overview" endpoint -- call /api/findings once and
+compute the summary yourself, the same way our own dashboard does:
+ 
+  - Total findings          = findings.length
+  - High / Medium / Low counts
+                             = count findings where risk_tier equals each
+                              (CRITICAL can't currently appear -- see that
+                              field's note above -- so we don't bother
+                              showing a tile for it)
+  - Repositories affected   = number of DISTINCT values of `repository`
+                              across all findings (dedupe by the full
+                              string; a CodeCommit "test-sample" and a
+                              GitHub "someoneelse/test-sample" are
+                              different repos even though they share a
+                              name)
+  - By platform             = count findings where platform is "github"
+                              vs. everything else (see "SPLITTING BY
+                              PLATFORM" above)
+  - "Most recent" list      = the findings array is already sorted
+                              newest-first by created_at -- just take
+                              the first N, regardless of platform
+ 
+GROUPING MULTIPLE FINDINGS FROM ONE PUSH
+--------------------------------------------------------------------------------
+A single push can introduce several secrets at once (e.g. a new folder
+with three config files). If you want your UI to show "one push, N
+findings" instead of N separate unrelated-looking rows, group by
+commit_id -- every finding from the same push shares the same commit_id.
+ 
+Now that findings span multiple repositories (and two platforms), group
+by the combination of (repository, commit_id), not commit_id alone --
+two different repos could theoretically produce the same short hash
+prefix if you're truncating for display, and grouping only by the full
+commit_id already avoids real collisions, but grouping by (repository,
+commit_id) is the belt-and-suspenders version that also protects you if
+you ever truncate the hash for a compact UI.
+ 
+ 
+================================================================================
+ENDPOINT 2: GET /api/allowlist
+Lists every finding a human has already reviewed and marked safe.
+================================================================================
+ 
+REQUEST
+  GET /api/allowlist
+  Header: X-Dashboard-Key: <your key>
+ 
+RESPONSE
+  Status: 200
+  Body:
+  {
+    "entries": [
+      {
+        "client_id": "test-sample-client",
+        "file_path": "config.py",
+        "detector": "aws_access_key_id",
+        "redacted": "AKIA****MNOP",
+        "reason": "rotated",
+        "dismissed_by": "dashboard user",
+        "dismissed_at": "2026-09-18T12:01:44+00:00"
+      }
+    ]
+  }
+ 
+You probably don't need to call this directly -- GET /api/findings already
+excludes anything on this list automatically. This endpoint exists mainly
+so a UI can show a separate "previously dismissed" view if you want one.
+ 
+ 
+================================================================================
+ENDPOINT 3: POST /api/allowlist
+"Mark this finding as safe" -- a known fixture, already-rotated secret,
+etc. Once marked, it stops appearing in GET /api/findings immediately.
+================================================================================
+ 
+REQUEST
+  POST /api/allowlist
+  Header: X-Dashboard-Key: <your key>
+  Header: Content-Type: application/json
+  Body:
+  {
+    "client_id": "test-sample-client",
+    "file_path": "config.py",
+    "detector": "aws_access_key_id",
+    "redacted": "AKIA****MNOP",
+    "reason": "rotated"
+  }
+ 
+All four of client_id, file_path, detector, and redacted are REQUIRED --
+copy them exactly from the finding object you got back from
+GET /api/findings. `reason` is optional free text, shown back to whoever
+looks at the allowlist later.
+ 
+RESPONSE
+  Status: 200
+  Body:
+  {
+    "ok": true,
+    "entry": { ... the saved entry, same shape as endpoint 2 ... }
+  }
+ 
+ 
+================================================================================
+ENDPOINT 4: DELETE /api/allowlist
+Undo a "mark as safe" -- the finding will reappear in
+GET /api/findings again (assuming it's still in our records).
+================================================================================
+ 
+REQUEST
+  DELETE /api/allowlist
+  Header: X-Dashboard-Key: <your key>
+  Header: Content-Type: application/json
+  Body: (same four required fields as POST, no "reason" needed)
+  {
+    "client_id": "test-sample-client",
+    "file_path": "config.py",
+    "detector": "aws_access_key_id",
+    "redacted": "AKIA****MNOP"
+  }
+ 
+RESPONSE
+  Status: 200
+  Body: {"ok": true}       (ok is false if nothing matched -- not an error)
+ 
+ 
+================================================================================
+ENDPOINT 5: POST /api/deep-scan
+Trigger the OPTIONAL full commit-by-commit history walk for one repo.
+The default onboarding scan only ever looks at files as they exist
+right now; this instead walks every commit from the first one to HEAD,
+so it can also catch a secret that was committed and later deleted --
+something a snapshot-only scan can never see. It's opt-in because it
+doesn't scale automatically to a repo with a huge commit history.
+================================================================================
+ 
+REQUEST
+--------------------------------------------------------------------------------
+  POST /api/deep-scan
+  Header: X-Dashboard-Key: <your key>
+  Header: Content-Type: application/json
+  Body:
+  {
+    "client_id": "test-sample-client",
+    "repository": "test-sample"
+  }
+ 
+  `repository` format depends on the client's platform (looked up from
+  our own records, not something you specify) -- a bare name for
+  CodeCommit ("test-sample"), or "owner/repo" for GitHub
+  ("Naresh-commits464/outage-test"). Sending the wrong shape for a
+  GitHub client gets you a 400 telling you so.
+ 
+RESPONSE
+--------------------------------------------------------------------------------
+  Status: 202
+  Body:
+  {
+    "accepted": true,
+    "status": "running"
+  }
+ 
+  Re-POSTing for a repo that already has a completed (or still-running)
+  deep scan starts a fresh one and resets its status back to "running" --
+  there's no need to check GET /api/deep-scan-status first.
+ 
+ERRORS
+--------------------------------------------------------------------------------
+  400   Missing client_id/repository, invalid JSON, or (GitHub clients
+        only) `repository` wasn't given as "owner/repo".
+  400   (CodeCommit clients) `repository` isn't one of that client's
+        onboarded repositories.
+  404   {"error": "unknown client_id '...'"} -- client_id doesn't exist
+        in our records at all.
+  502   {"error": "backend unreachable: ..."} -- this request is proxied
+        internally to the specific backend that owns the client_id
+        (CodeCommit vs. GitHub are two separate internal services); this
+        means that backend was briefly unreachable. Safe to retry.
+ 
+ 
+================================================================================
+ENDPOINT 6: GET /api/deep-scan-status
+Poll this after POST /api/deep-scan to find out when it's done.
+================================================================================
+ 
+REQUEST
+--------------------------------------------------------------------------------
+  GET /api/deep-scan-status?client_id=test-sample-client&repository=test-sample
+  Header: X-Dashboard-Key: <your key>
+ 
+RESPONSE -- never been requested
+--------------------------------------------------------------------------------
+  Status: 200
+  Body:  {"status": "not_started"}
+ 
+RESPONSE -- still running
+--------------------------------------------------------------------------------
+  Status: 200
+  Body:
+  {
+    "client_id": "test-sample-client",
+    "repo_key": "test-sample",
+    "platform": "codecommit",
+    "requested_at": "2026-09-22T10:15:03+00:00",
+    "completed_at": null,
+    "commits_scanned": null,
+    "findings": null,
+    "failed_at": null,
+    "error": null,
+    "status": "running"
+  }
+ 
+RESPONSE -- complete
+--------------------------------------------------------------------------------
+  Status: 200
+  Body:
+  {
+    "client_id": "test-sample-client",
+    "repo_key": "test-sample",
+    "platform": "codecommit",
+    "requested_at": "2026-09-22T10:15:03+00:00",
+    "completed_at": "2026-09-22T10:19:47+00:00",
+    "commits_scanned": 5000,
+    "findings": 3,
+    "failed_at": null,
+    "error": null,
+    "status": "complete"
+  }
+ 
+RESPONSE -- failed
+--------------------------------------------------------------------------------
+  Added 2026-09-22: the walk itself can raise (most commonly a missing
+  IAM permission or a revoked GitHub installation) -- this is how that
+  shows up, instead of "running" forever with no explanation.
+  Status: 200
+  Body:
+  {
+    "client_id": "test-sample-client",
+    "repo_key": "test-sample",
+    "platform": "codecommit",
+    "requested_at": "2026-09-22T10:15:03+00:00",
+    "completed_at": null,
+    "commits_scanned": null,
+    "findings": null,
+    "failed_at": "2026-09-22T10:15:17+00:00",
+    "error": "An error occurred (AccessDeniedException) when calling the GetBranch operation: ...",
+    "status": "failed"
+  }
+ 
+  `error` is the raw exception message -- fine to show directly to an
+  admin/operator, not something to show an end user as-is.
+ 
+  There's no push notification for this -- poll on an interval (our own
+  dashboard uses 5 seconds) until `status` flips to "complete" or
+  "failed". Re-POSTing /api/deep-scan (Endpoint 5) after a failure starts
+  a fresh attempt and clears failed_at/error, same as it does for a
+  completed one.
