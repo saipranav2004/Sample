@@ -3,195 +3,237 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Zenstra Homepage Mockup</title>
+<title>Zenstra · Runtime security for AI agents</title>
+<script>try{var t=localStorage.getItem('zx-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}document.documentElement.classList.add('js');</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wdth,wght@0,75..100,400..700;1,75..100,400..700&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="assets/zx.css">
 <link rel="stylesheet" href="assets/site.css">
 <style>
-  /* ---------- Hero ---------- */
-  .hero { background: var(--night); color: var(--night-ink); padding-block: 72px 0; position: relative; overflow: hidden; }
-  .hero::before { content: ''; position: absolute; inset: 0; background-image: linear-gradient(var(--night-line) 1px, transparent 1px), linear-gradient(90deg, var(--night-line) 1px, transparent 1px); background-size: 48px 48px; mask-image: linear-gradient(180deg, rgba(0,0,0,0.5), transparent 70%); pointer-events: none; }
-  .hero-grid { position: relative; display: grid; grid-template-columns: minmax(0, 9fr) minmax(0, 13fr); gap: 40px; align-items: start; }
-  @media (max-width: 1000px) { .hero-grid { grid-template-columns: 1fr; } }
-  .hero .eyebrow { color: var(--signal); }
-  .hero h1 { font-size: clamp(34px, 4.4vw, 50px); line-height: 1.06; letter-spacing: -0.022em; font-weight: 600; max-width: 14ch; }
-  .hero p.sub { margin-top: 20px; font-size: 17px; line-height: 1.6; color: var(--night-ink-2); max-width: 46ch; }
-  .hero .ctas { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
-  .hero .btn-secondary { background: transparent; color: var(--night-ink); border-color: rgba(234,242,250,0.28); }
-  .hero .btn-secondary:hover { border-color: var(--night-ink); color: var(--night-ink); }
-  .hero .btn-primary { background: #1a7fca; }
-  .hero .btn-primary:hover { background: #2a8fda; }
-  .facts { list-style: none; padding: 0; margin: 40px 0 0; display: grid; grid-template-columns: 1fr 1fr; gap: 14px 24px; max-width: 460px; }
-  .facts li { display: flex; gap: 10px; font-size: 13.5px; line-height: 1.45; color: var(--night-ink-2); }
-  .facts li b { color: var(--night-ink); font-weight: 600; display: block; }
-  .facts svg { width: 16px; height: 16px; flex: none; margin-top: 2px; color: var(--signal); }
+  .js:not(.reduce):not(.reveal-all) .hero [data-hero], .js:not(.reduce):not(.reveal-all) .ledger { opacity: 0; }
+  .js:not(.reduce):not(.reveal-all) .hero h1 .line > span { transform: translateY(105%); }
 
-  /* Decision ledger: the product's unit of work, used as the hero image */
-  .ledger { background: #0a2240; border: 1px solid var(--night-line); border-radius: var(--r-3) var(--r-3) 0 0; border-bottom: 0; overflow: hidden; }
-  .ledger-head { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--night-line); }
-  .ledger-head h2 { font-size: 13px; font-weight: 600; color: var(--night-ink); letter-spacing: 0; }
-  .live { display: inline-flex; align-items: center; gap: 6px; font: 500 11.5px/1 var(--font-mono); color: var(--signal); text-transform: uppercase; letter-spacing: 0.06em; }
-  .live i { width: 6px; height: 6px; border-radius: 50%; background: var(--signal); box-shadow: 0 0 0 0 rgba(18,176,240,0.6); animation: pulse 2s infinite; }
-  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(18,176,240,0.5); } 70% { box-shadow: 0 0 0 6px rgba(18,176,240,0); } 100% { box-shadow: 0 0 0 0 rgba(18,176,240,0); } }
-  .ledger-head .spacer { flex: 1; }
-  .pause { background: none; border: 1px solid var(--night-line); color: var(--night-ink-2); height: 26px; padding: 0 8px; border-radius: var(--r-1); font: 500 12px/1 var(--font-sans); cursor: pointer; }
-  .pause:hover { color: var(--night-ink); border-color: var(--night-ink-2); }
-  .ledger table { width: 100%; border-collapse: collapse; font: 12px/1.4 var(--font-mono); color: var(--night-ink-2); }
-  .ledger th { text-align: left; font: 600 10.5px/1 var(--font-sans); font-stretch: 85%; letter-spacing: 0.08em; text-transform: uppercase; color: #7f97b2; padding: 10px 12px; border-bottom: 1px solid var(--night-line); white-space: nowrap; }
-  .ledger td { padding: 9px 12px; border-bottom: 1px solid var(--night-line); white-space: nowrap; }
-  .ledger td.agent { color: var(--night-ink); }
-  .ledger td.ms { text-align: right; font-variant-numeric: tabular-nums; }
-  .ledger tr.enter { animation: rowIn var(--t-slow) var(--ease-out); }
-  @keyframes rowIn { from { opacity: 0; transform: translateY(-6px); background: rgba(18,176,240,0.08); } to { opacity: 1; transform: none; } }
-  .ledger .verdict.allow { color: #8ea4bd; }
-  .ledger .verdict.stepup { color: #e8b84a; }
-  .ledger .verdict.block { color: #ff7a6e; }
-  .ledger-scroll { overflow-x: auto; }
-  .ledger-foot { display: flex; flex-wrap: wrap; gap: 8px 24px; padding: 12px 16px; font-size: 12.5px; color: #7f97b2; border-top: 1px solid var(--night-line); }
-  .ledger-foot b { color: var(--night-ink); font-weight: 600; font-variant-numeric: tabular-nums; }
-  .ledger-foot a { color: var(--signal); }
-
-  /* ---------- Proof bar ---------- */
-  .proof { background: var(--surface); border-bottom: 1px solid var(--line); padding-block: 28px; }
-  .proof .wrap { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; }
-  .proof div { border-left: 1px solid var(--line); padding-left: 16px; }
-  .proof b { display: block; font-size: 15px; }
-  .proof span { font-size: 13px; color: var(--ink-3); }
-  @media (max-width: 880px) { .proof .wrap { grid-template-columns: 1fr 1fr; } }
-
-  /* ---------- Problem: three incidents ---------- */
-  .incidents { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; border: 1px solid var(--line); border-radius: var(--r-3); background: var(--surface); overflow: hidden; }
-  .incident { padding: 24px; border-right: 1px solid var(--line); display: grid; gap: 14px; align-content: start; min-width: 0; }
-  .incident:last-child { border-right: 0; }
-  .incident h3 { font-size: 17px; line-height: 1.35; }
-  .incident dl { margin: 0; display: grid; gap: 10px; font-size: 14px; }
-  .incident dd { margin: 2px 0 0; color: var(--ink-2); line-height: 1.5; }
-  .incident .control { border-top: 1px dashed var(--line-strong); padding-top: 12px; font-size: 13.5px; color: var(--ink-2); }
-  .incident .control b { color: var(--ink); }
-  @media (max-width: 960px) { .incidents { grid-template-columns: 1fr; } .incident { border-right: 0; border-bottom: 1px solid var(--line); } .incident:last-child { border-bottom: 0; } }
+  /* ---------- Problem ---------- */
+  .problem-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 64px; align-items: start; }
+  .problem-grid .sticky { position: sticky; top: 120px; }
+  .problem-grid .sticky .lede { margin-top: 22px; }
+  .compare { margin-top: 32px; display: grid; gap: 10px; font-size: 14.5px; }
+  .compare div { display: grid; grid-template-columns: 140px 1fr; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+  .compare b { font-weight: 600; }
+  .compare span { color: var(--ink-2); }
+  .incidents { display: grid; gap: 16px; }
+  .incident { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 26px; display: grid; gap: 16px; overflow: hidden; transition: border-color var(--t-base), box-shadow var(--t-base), transform 500ms var(--ease-expo); }
+  .incident:hover { border-color: var(--line-strong); box-shadow: var(--shadow-2); transform: translateY(-2px); }
+  .incident h3 { font-size: 20px; line-height: 1.3; letter-spacing: -0.015em; }
+  .replay { font: 12.5px/1.6 var(--font-mono); background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: grid; gap: 6px; color: var(--ink-2); }
+  .replay > div { display: grid; grid-template-columns: 74px 1fr; gap: 10px; opacity: 0.25; transform: translateX(-6px); transition: opacity 500ms var(--ease-out), transform 600ms var(--ease-expo); }
+  .replay > div time { color: var(--ink-3); }
+  .replay > div b { color: var(--ink); font-weight: 500; }
+  .incident.play .replay > div { opacity: 1; transform: none; }
+  .incident.play .replay > div:nth-child(2) { transition-delay: 400ms; }
+  .incident.play .replay > div:nth-child(3) { transition-delay: 800ms; }
+  .incident.play .replay > div:nth-child(4) { transition-delay: 1200ms; }
+  .stamp { position: absolute; right: 22px; top: 22px; padding: 6px 10px; border: 2px solid currentColor; border-radius: 6px; font: 700 12px/1 var(--font-mono); letter-spacing: 0.12em; transform: rotate(-8deg) scale(1.8); opacity: 0; transition: transform 500ms cubic-bezier(0.34, 1.56, 0.64, 1) 1500ms, opacity 200ms 1500ms; }
+  .stamp.block { color: var(--crit); }
+  .stamp.held { color: var(--med); }
+  .incident.play .stamp { transform: rotate(-8deg) scale(1); opacity: 1; }
+  .control { font-size: 14px; color: var(--ink-2); }
+  .control b { color: var(--ink); }
+  @media (max-width: 960px) { .problem-grid { grid-template-columns: 1fr; gap: 32px; } .problem-grid .sticky { position: static; } }
 
   /* ---------- Architecture ---------- */
-  .arch-band { background: var(--surface); border-block: 1px solid var(--line); }
-  .arch { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 4fr) minmax(0, 3fr); gap: 0; align-items: stretch; }
-  .arch-col { display: grid; gap: 10px; align-content: center; }
-  .arch-col .label { margin-bottom: 2px; }
-  .node { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--r-2); background: var(--bg); }
-  .node svg { width: 18px; height: 18px; flex: none; color: var(--ink-3); margin-top: 2px; }
-  .node b { display: block; font-size: 14px; }
+  .arch-sec { background: var(--surface); border-block: 1px solid var(--line); }
+  .arch { position: relative; display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 4fr) minmax(0, 3fr); gap: 0; align-items: center; }
+  .arch-flow { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+  .arch-flow .wire { fill: none; stroke: var(--line-strong); stroke-width: 1.2; stroke-dasharray: 3 5; animation: dash 1.4s linear infinite; }
+  .arch-flow .pkt { fill: var(--signal); filter: drop-shadow(0 0 4px var(--signal)); }
+  .arch-flow .pkt-b { fill: var(--crit); filter: drop-shadow(0 0 4px var(--crit)); }
+  @keyframes dash { to { stroke-dashoffset: -16; } }
+  .arch-col { display: grid; gap: 12px; align-content: center; position: relative; z-index: 1; }
+  .node { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); transition: border-color var(--t-base), transform 400ms var(--ease-expo); }
+  .node:hover { border-color: var(--brand); transform: translateY(-2px); }
+  .node svg { width: 18px; height: 18px; flex: none; color: var(--brand); margin-top: 2px; }
+  .node b { display: block; font-size: 14.5px; }
   .node small { display: block; font-size: 12.5px; color: var(--ink-3); line-height: 1.4; }
-  .gate { position: relative; margin-inline: 40px; border: 1px solid var(--brand); border-radius: var(--r-3); background: var(--surface); padding: 20px; display: grid; gap: 12px; }
-  .gate::before, .gate::after { content: ''; position: absolute; top: 50%; width: 40px; height: 0; border-top: 1.5px dashed var(--line-strong); }
-  .gate::before { right: 100%; }
-  .gate::after { left: 100%; }
+  .gate { position: relative; z-index: 1; margin-inline: 48px; border: 1px solid color-mix(in srgb, var(--brand) 60%, var(--line)); border-radius: 14px; background: var(--surface); padding: 22px; display: grid; gap: 14px; box-shadow: 0 0 0 6px color-mix(in srgb, var(--brand) 6%, transparent), 0 30px 60px -30px var(--glow); }
   .gate-title { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-  .gate-title b { font-size: 15px; }
+  .gate-title b { font-size: 16px; }
   .gate-title code { color: var(--ink-3); font-size: 11.5px; }
   .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; counter-reset: s; }
-  .steps li { counter-increment: s; display: grid; grid-template-columns: 24px 1fr auto; gap: 10px; align-items: center; padding: 9px 10px; border-radius: var(--r-2); background: var(--surface-2); font-size: 13.5px; }
-  .steps li::before { content: counter(s); font: 600 11px/22px var(--font-mono); text-align: center; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--line-strong); color: var(--ink-2); background: var(--surface); }
-  .steps li small { color: var(--ink-3); font-size: 12px; }
-  .gate-out { display: flex; gap: 14px; flex-wrap: wrap; padding-top: 4px; border-top: 1px solid var(--line); }
-  @media (max-width: 960px) { .arch { grid-template-columns: 1fr; gap: 28px; } .gate { margin-inline: 0; } .gate::before, .gate::after { display: none; } }
-  .deploy { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; margin-top: 48px; padding-top: 32px; border-top: 1px solid var(--line); }
-  .deploy h3 { font-size: 15px; display: flex; gap: 8px; align-items: center; }
-  .deploy p { font-size: 14px; color: var(--ink-2); margin-top: 6px; }
-  .deploy code { display: inline-block; margin-top: 10px; padding: 3px 6px; background: var(--surface-2); border-radius: var(--r-1); color: var(--ink-2); }
+  .steps li { counter-increment: s; position: relative; display: grid; grid-template-columns: 26px 1fr auto; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 8px; background: var(--surface-2); font-size: 14px; border: 1px solid transparent; transition: background 300ms, border-color 300ms, transform 400ms var(--ease-expo); }
+  .steps li::before { content: counter(s); font: 600 11px/24px var(--font-mono); text-align: center; width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--line-strong); color: var(--ink-2); background: var(--surface); transition: all 300ms; }
+  .steps li small { color: var(--ink-3); font-size: 12px; white-space: nowrap; }
+  .steps li.active { background: var(--brand-wash); border-color: color-mix(in srgb, var(--brand) 40%, transparent); transform: translateX(4px); }
+  .steps li.active::before { background: var(--brand); border-color: var(--brand); color: #fff; }
+  .steps li.done::before { content: '✓'; color: var(--ok); border-color: var(--ok); }
+  .gate-out { display: flex; gap: 16px; flex-wrap: wrap; padding-top: 6px; border-top: 1px solid var(--line); }
+  .gate-out .verdict { padding: 6px 8px; border-radius: 6px; transition: background 300ms, transform 400ms var(--ease-expo); }
+  .gate-out .verdict.lit { transform: scale(1.06); }
+  .gate-out .verdict.allow.lit { background: var(--neutral-wash); }
+  .gate-out .verdict.stepup.lit { background: var(--med-wash); }
+  .gate-out .verdict.block.lit { background: var(--crit-wash); }
+  @media (max-width: 960px) { .arch { grid-template-columns: 1fr; gap: 28px; } .gate { margin-inline: 0; } }
+  .deploy { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 64px; }
+  .deploy > div { padding: 24px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); transition: border-color var(--t-base), transform 500ms var(--ease-expo); }
+  .deploy > div:hover { border-color: var(--brand); transform: translateY(-3px); }
+  .deploy .label { color: var(--brand); }
+  .deploy h3 { font-size: 18px; margin-top: 8px; }
+  .deploy p { font-size: 14px; color: var(--ink-2); margin-top: 8px; }
+  .deploy code { display: inline-block; margin-top: 14px; padding: 5px 8px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; color: var(--ink-2); font-size: 12px; }
   @media (max-width: 820px) { .deploy { grid-template-columns: 1fr; } }
 
-  /* ---------- Capabilities: three jobs ---------- */
-  .pillars { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
-  .pillar { border-top: 2px solid var(--ink); padding-top: 18px; min-width: 0; }
-  .pillar .label { color: var(--ink); }
-  .pillar h3 { font-size: 21px; margin-top: 6px; line-height: 1.25; }
-  .pillar > p { color: var(--ink-2); font-size: 14.5px; margin-top: 8px; }
-  .caps { list-style: none; margin: 20px 0 0; padding: 0; border-top: 1px solid var(--line); }
+  /* ---------- Pillars ---------- */
+  .pillars { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+  .pillar { position: relative; padding: 28px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); overflow: hidden; min-width: 0; transition: border-color var(--t-base), box-shadow var(--t-base); }
+  .pillar::before { content: ''; position: absolute; inset: 0 0 auto; height: 2px; background: linear-gradient(90deg, var(--brand), var(--signal)); transform: scaleX(0); transform-origin: left; transition: transform 700ms var(--ease-expo); }
+  .pillar:hover { box-shadow: var(--shadow-2); }
+  .pillar:hover::before { transform: scaleX(1); }
+  .pillar .num-big { font: 600 13px/1 var(--font-mono); color: var(--brand); }
+  .pillar h3 { font-size: 24px; line-height: 1.2; margin-top: 14px; letter-spacing: -0.02em; }
+  .pillar > p { color: var(--ink-2); font-size: 15px; margin-top: 10px; }
+  .caps { list-style: none; margin: 22px 0 0; padding: 0; border-top: 1px solid var(--line); }
   .caps li { border-bottom: 1px solid var(--line); }
+  .caps li:last-child { border-bottom: 0; }
   .caps a { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 14px 0; text-decoration: none; color: var(--ink); }
-  .caps a b { font-size: 15px; font-weight: 600; }
+  .caps a b { font-size: 15px; font-weight: 600; transition: color var(--t-fast); }
   .caps a small { grid-column: 1; font-size: 13.5px; color: var(--ink-3); line-height: 1.45; }
-  .caps a svg { grid-row: 1 / span 2; grid-column: 2; align-self: center; width: 16px; height: 16px; color: var(--ink-3); transition: transform var(--t-fast) var(--ease-out); }
+  .caps a svg { grid-row: 1 / span 2; grid-column: 2; align-self: center; width: 16px; height: 16px; color: var(--ink-3); transition: transform 400ms var(--ease-expo), color var(--t-fast); }
   .caps a:hover b { color: var(--brand); }
-  .caps a:hover svg { transform: translateX(3px); color: var(--brand); }
-  @media (max-width: 960px) { .pillars { grid-template-columns: 1fr; gap: 40px; } }
+  .caps a:hover svg { transform: translateX(4px); color: var(--brand); }
+  @media (max-width: 960px) { .pillars { grid-template-columns: 1fr; } }
 
-  /* ---------- Product tour ---------- */
-  .tour-band { background: var(--night); color: var(--night-ink); }
-  .tour-band .eyebrow { color: var(--signal); }
-  .tour-band .lede { color: var(--night-ink-2); }
-  .tour { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); gap: 40px; }
-  .tour-tabs { display: grid; gap: 4px; align-content: start; }
-  .tour-tab { text-align: left; background: none; border: 0; border-left: 2px solid var(--night-line); padding: 14px 16px; color: var(--night-ink-2); cursor: pointer; font: inherit; transition: border-color var(--t-base), color var(--t-base), background var(--t-base); }
-  .tour-tab b { display: block; color: var(--night-ink); font-size: 15px; }
-  .tour-tab small { display: block; font-size: 13.5px; line-height: 1.5; margin-top: 4px; }
-  .tour-tab[aria-selected='true'] { border-left-color: var(--signal); background: rgba(255,255,255,0.03); }
-  .tour-tab:not([aria-selected='true']) small { display: none; }
-  .screen { background: #0a2240; border: 1px solid var(--night-line); border-radius: var(--r-3); overflow: hidden; min-width: 0; }
-  .screen-bar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--night-line); font: 12px/1 var(--font-mono); color: #7f97b2; }
-  .screen-body { padding: 18px; font-size: 13px; color: var(--night-ink-2); }
-  .screen-body h4 { color: var(--night-ink); font-size: 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-  .tl { list-style: none; margin: 16px 0 0; padding: 0; position: relative; }
-  .tl::before { content: ''; position: absolute; left: 107px; top: 6px; bottom: 6px; width: 1px; background: var(--night-line); }
-  .tl li { display: grid; grid-template-columns: 96px 22px 1fr; gap: 0 0; padding: 7px 0; align-items: start; }
-  .tl time { font: 11.5px/18px var(--font-mono); color: #7f97b2; }
-  .tl .dot { width: 9px; height: 9px; border-radius: 50%; background: #0a2240; border: 1.5px solid #7f97b2; margin: 4px 0 0 7px; position: relative; z-index: 1; }
+  /* ---------- Product tour (pinned) ---------- */
+  .tour { padding: 0; }
+  .tour.pinned { height: 420vh; }
+  .tour-sticky { padding-block: 112px; }
+  .tour.pinned .tour-sticky { position: sticky; top: 0; height: 100vh; min-height: 640px; display: flex; flex-direction: column; justify-content: center; padding-block: 80px 40px; }
+  .tour-head { display: flex; justify-content: space-between; align-items: end; gap: 32px; flex-wrap: wrap; margin-bottom: 40px; }
+  .tour-head .h2 { max-width: 18ch; }
+  .tour-head .lede { max-width: 44ch; }
+  .tour-grid { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); gap: 48px; align-items: center; }
+  .tour-tabs { display: grid; gap: 4px; }
+  .tour-tab { position: relative; text-align: left; background: none; border: 0; padding: 16px 18px 16px 22px; color: var(--band-ink-2); cursor: pointer; font: inherit; border-radius: 0 10px 10px 0; transition: background 400ms, color 300ms; }
+  .tour-tab::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: var(--band-line); }
+  .tour-tab .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: var(--signal); transform: scaleY(0); transform-origin: top; }
+  .tour-tab:not(.pinned *) .fill { transition: transform 300ms; }
+  .tour-tab[aria-selected='true'] { background: rgba(255, 255, 255, 0.04); color: var(--band-ink); }
+  .tour:not(.pinned) .tour-tab[aria-selected='true'] .fill { transform: scaleY(1); }
+  .tour-tab b { display: block; color: var(--band-ink); font-size: 16px; font-weight: 600; }
+  .tour-tab small { display: block; font-size: 14px; line-height: 1.5; margin-top: 6px; max-height: 0; opacity: 0; overflow: hidden; transition: max-height 500ms var(--ease-expo), opacity 400ms; }
+  .tour-tab[aria-selected='true'] small { max-height: 80px; opacity: 1; }
+  .screen { position: relative; background: var(--band-2); border: 1px solid var(--band-line); border-radius: 14px; overflow: hidden; box-shadow: 0 40px 100px -40px rgba(0, 0, 0, 0.6); }
+  .screen-bar { display: flex; align-items: center; gap: 8px; padding: 11px 16px; border-bottom: 1px solid var(--band-line); font: 12px/1 var(--font-mono); color: var(--band-ink-3); }
+  .screen-bar i { width: 9px; height: 9px; border-radius: 50%; background: var(--band-3); }
+  .screen-bar .screen-url { margin-left: 10px; }
+  .screen-body { position: relative; height: 430px; }
+  .pane { position: absolute; inset: 0; padding: 22px; color: var(--band-ink-2); font-size: 13px; opacity: 0; transform: translateY(18px) scale(0.985); filter: blur(6px); pointer-events: none; transition: opacity 500ms var(--ease-out), transform 700ms var(--ease-expo), filter 500ms; }
+  .pane.on { opacity: 1; transform: none; filter: none; pointer-events: auto; }
+  .pane h4 { color: var(--band-ink); font-size: 16px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .pane .seq-in > * { opacity: 0; transform: translateY(10px); transition: opacity 400ms, transform 600ms var(--ease-expo); }
+  .pane.on .seq-in > * { opacity: 1; transform: none; }
+  .pane.on .seq-in > *:nth-child(2) { transition-delay: 120ms; } .pane.on .seq-in > *:nth-child(3) { transition-delay: 240ms; }
+  .pane.on .seq-in > *:nth-child(4) { transition-delay: 360ms; } .pane.on .seq-in > *:nth-child(5) { transition-delay: 480ms; }
+  .pane.on .seq-in > *:nth-child(6) { transition-delay: 600ms; } .pane.on .seq-in > *:nth-child(7) { transition-delay: 720ms; }
+  .mini-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
+  .mini-kpis div { border: 1px solid var(--band-line); border-radius: 10px; padding: 12px 14px; }
+  .mini-kpis > div > span { font: 600 10.5px/1 var(--font-sans); font-stretch: 85%; letter-spacing: 0.08em; text-transform: uppercase; color: var(--band-ink-3); }
+  .mini-kpis b { display: block; font-size: 26px; line-height: 1.2; color: var(--band-ink); margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .mini-kpis b.crit { color: #ff7a6e; }
+  .spark { margin-top: 14px; border: 1px solid var(--band-line); border-radius: 10px; padding: 12px 14px; }
+  .spark svg { width: 100%; height: 120px; display: block; }
+  .spark .ln { fill: none; stroke: var(--signal); stroke-width: 2; stroke-dasharray: 900; stroke-dashoffset: 900; transition: stroke-dashoffset 1.6s var(--ease-data) 300ms; }
+  .spark .ar { fill: var(--signal); opacity: 0; transition: opacity 800ms 1.2s; }
+  .pane.on .spark .ln { stroke-dashoffset: 0; }
+  .pane.on .spark .ar { opacity: 0.1; }
+  .spark .avg { stroke: var(--band-ink-3); stroke-dasharray: 4 4; stroke-width: 1; }
+  .q-rows { margin-top: 14px; display: grid; gap: 6px; }
+  .q-row { display: grid; grid-template-columns: 76px 1fr 140px 76px; gap: 12px; align-items: center; padding: 10px 12px; border: 1px solid var(--band-line); border-radius: 8px; }
+  .q-row b { color: var(--band-ink); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .q-row code { color: var(--band-ink-3); font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .q-row.new { border-color: color-mix(in srgb, #ff7a6e 60%, transparent); background: rgba(255, 122, 110, 0.07); }
+  .tl { list-style: none; margin: 14px 0 0; padding: 0; position: relative; }
+  .tl::before { content: ''; position: absolute; left: 107px; top: 8px; bottom: 8px; width: 1px; background: var(--band-line); }
+  .tl li { display: grid; grid-template-columns: 96px 22px 1fr; padding: 7px 0; align-items: start; }
+  .tl time { font: 11.5px/18px var(--font-mono); color: var(--band-ink-3); }
+  .tl .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--band-2); border: 1.5px solid var(--band-ink-3); margin: 4px 0 0 7px; position: relative; z-index: 1; }
   .tl .dot.warn { border-color: #e8b84a; background: #e8b84a; }
-  .tl .dot.bad { border-color: #ff7a6e; background: #ff7a6e; border-radius: 1px; }
-  .tl b { color: var(--night-ink); font-weight: 500; }
-  .tl small { display: block; color: #7f97b2; font-size: 12px; }
+  .tl .dot.bad { border-color: #ff7a6e; background: #ff7a6e; border-radius: 1px; box-shadow: 0 0 0 4px rgba(255, 122, 110, 0.2); }
+  .tl b { color: var(--band-ink); font-weight: 500; }
+  .tl small { display: block; color: var(--band-ink-3); font-size: 12px; }
   .tl code { color: #b9cce0; }
-  .screen-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--night-line); }
-  .screen-actions span { font: 500 12px/1 var(--font-sans); padding: 7px 10px; border: 1px solid var(--night-line); border-radius: var(--r-1); color: var(--night-ink); }
-  .screen-actions span.primary { background: #1a7fca; border-color: #1a7fca; }
-  .tour-link { margin-top: 20px; display: inline-flex; gap: 8px; align-items: center; color: var(--signal); font-weight: 600; font-size: 14px; }
-  @media (max-width: 960px) { .tour { grid-template-columns: 1fr; } .tour-tabs { grid-auto-flow: column; overflow-x: auto; } .tour-tab { border-left: 0; border-bottom: 2px solid var(--night-line); white-space: nowrap; } .tour-tab[aria-selected='true'] { border-bottom-color: var(--signal); } .tour-tab small { display: none !important; } }
+  .pb { display: grid; grid-template-columns: 150px 1fr; gap: 12px; align-items: center; margin-top: 12px; }
+  .pb code { color: var(--band-ink); font-size: 12px; }
+  .pb .bars { display: grid; gap: 5px; }
+  .pb .b { height: 8px; border-radius: 0 4px 4px 0; transform: scaleX(0); transform-origin: left; transition: transform 1.1s var(--ease-data); }
+  .pb .b.base { background: var(--band-3); }
+  .pb .b.now { background: var(--signal); }
+  .pane.on .pb .b { transform: scaleX(1); }
+  .pane.on .pb:nth-child(3) .b { transition-delay: 120ms; } .pane.on .pb:nth-child(4) .b { transition-delay: 240ms; } .pane.on .pb:nth-child(5) .b { transition-delay: 360ms; } .pane.on .pb:nth-child(6) .b { transition-delay: 480ms; }
+  .pane-actions { position: absolute; left: 22px; right: 22px; bottom: 18px; display: flex; flex-wrap: wrap; gap: 8px; padding-top: 14px; border-top: 1px solid var(--band-line); }
+  .pane-actions span { font: 500 12px/1 var(--font-sans); padding: 8px 11px; border: 1px solid var(--band-line); border-radius: 6px; color: var(--band-ink); }
+  .pane-actions span.primary { background: #1a7fca; border-color: #1a7fca; }
+  @media (max-width: 960px) { .tour-grid { grid-template-columns: 1fr; } .tour-tabs { grid-auto-flow: column; overflow-x: auto; } .tour-tab { white-space: nowrap; border-radius: 0; } .tour-tab::before, .tour-tab .fill { left: 0; right: 0; top: auto; bottom: 0; width: auto; height: 2px; } .tour-tab small { display: none; } .screen-body { height: 470px; } .q-row { grid-template-columns: 70px 1fr; } .q-row code, .q-row .verdict { display: none; } }
 
   /* ---------- Solutions ---------- */
-  .solutions { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 24px; }
-  .sol-feature { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-3); padding: 28px; display: grid; gap: 14px; align-content: start; }
-  .sol-feature h3 { font-size: 22px; line-height: 1.25; }
-  .sol-feature p { color: var(--ink-2); }
-  .sol-feature ul { margin: 4px 0 0; padding: 0; list-style: none; display: grid; gap: 8px; font-size: 14px; }
+  .solutions { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 20px; }
+  .sol-feature { position: relative; overflow: hidden; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 32px; display: grid; gap: 16px; align-content: start; }
+  .sol-feature::after { content: ''; position: absolute; right: -120px; bottom: -120px; width: 320px; height: 320px; border-radius: 50%; background: radial-gradient(circle, var(--glow), transparent 65%); }
+  .sol-feature h3 { font-size: 26px; line-height: 1.2; letter-spacing: -0.02em; }
+  .sol-feature p { color: var(--ink-2); font-size: 15.5px; }
+  .sol-feature ul { margin: 4px 0 0; padding: 0; list-style: none; display: grid; gap: 10px; font-size: 14.5px; }
   .sol-feature li { display: flex; gap: 10px; }
-  .sol-feature li svg { width: 16px; height: 16px; color: var(--ok); flex: none; margin-top: 3px; }
-  .sol-list { display: grid; gap: 0; border: 1px solid var(--line); border-radius: var(--r-3); background: var(--surface); }
-  .sol-list .label { padding: 16px 20px 6px; }
-  .sol-list a { display: flex; justify-content: space-between; gap: 12px; padding: 12px 20px; border-top: 1px solid var(--line); text-decoration: none; color: var(--ink); font-size: 14.5px; }
-  .sol-list a small { color: var(--ink-3); font-size: 13px; }
-  .sol-list a:hover { background: var(--surface-2); }
+  .sol-feature li svg { width: 18px; height: 18px; color: var(--ok); flex: none; margin-top: 2px; }
+  .sol-list { display: grid; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); overflow: hidden; }
+  .sol-list .label { padding: 18px 22px 8px; }
+  .sol-list a { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 15px 22px; border-top: 1px solid var(--line); text-decoration: none; color: var(--ink); font-size: 15px; font-weight: 500; transition: background var(--t-fast), padding 400ms var(--ease-expo); }
+  .sol-list a small { color: var(--ink-3); font-size: 13px; font-weight: 400; }
+  .sol-list a:hover { background: var(--surface-2); padding-left: 28px; }
   @media (max-width: 960px) { .solutions { grid-template-columns: 1fr; } }
 
   /* ---------- Trust ---------- */
-  .trust { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 48px; align-items: start; }
-  .trust-table { width: 100%; border-collapse: separate; border-spacing: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-3); overflow: hidden; font-size: 14px; }
-  .trust-table th, .trust-table td { padding: 12px 16px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
-  .trust-table th { font-weight: 600; width: 46%; }
-  .trust-table th small { display: block; font-weight: 400; color: var(--ink-3); font-size: 12.5px; }
-  .trust-table tr:last-child th, .trust-table tr:last-child td { border-bottom: 0; }
-  @media (max-width: 960px) { .trust { grid-template-columns: 1fr; } }
+  .trust-sec { background: var(--surface); border-block: 1px solid var(--line); }
+  .trust { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 64px; align-items: start; }
+  .trust .lede { margin-top: 22px; }
+  .trust-list { display: grid; gap: 0; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--bg); }
+  .trust-list > div { display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--line); }
+  .trust-list > div:last-child { border-bottom: 0; }
+  .trust-list b { display: block; font-size: 15px; }
+  .trust-list small { display: block; color: var(--ink-3); font-size: 13px; }
+  @media (max-width: 960px) { .trust { grid-template-columns: 1fr; gap: 32px; } }
 
   /* ---------- FAQ ---------- */
-  .faq { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); gap: 48px; }
+  .faq { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); gap: 64px; }
   .faq details { border-bottom: 1px solid var(--line); }
   .faq details:first-of-type { border-top: 1px solid var(--line); }
-  .faq summary { list-style: none; cursor: pointer; padding: 18px 32px 18px 0; position: relative; font-weight: 600; font-size: 16px; }
+  .faq summary { list-style: none; cursor: pointer; padding: 22px 40px 22px 0; position: relative; font-weight: 600; font-size: 17px; transition: color var(--t-fast); }
+  .faq summary:hover { color: var(--brand); }
   .faq summary::-webkit-details-marker { display: none; }
-  .faq summary::after { content: ''; position: absolute; right: 4px; top: 24px; width: 10px; height: 10px; border-right: 1.5px solid var(--ink-3); border-bottom: 1.5px solid var(--ink-3); transform: rotate(45deg); transition: transform var(--t-base) var(--ease-out); }
-  .faq details[open] summary::after { transform: rotate(-135deg); top: 28px; }
-  .faq details p { padding-bottom: 18px; color: var(--ink-2); max-width: 64ch; }
+  .faq summary::before, .faq summary::after { content: ''; position: absolute; right: 6px; top: 50%; width: 14px; height: 1.5px; background: currentColor; transition: transform 400ms var(--ease-expo); }
+  .faq summary::after { transform: rotate(90deg); }
+  .faq details[open] summary::after { transform: rotate(0deg); }
+  .faq-body { overflow: hidden; }
+  .faq-body p { padding-bottom: 22px; color: var(--ink-2); max-width: 66ch; font-size: 15.5px; }
   @media (max-width: 880px) { .faq { grid-template-columns: 1fr; gap: 24px; } }
-
 </style>
 </head>
-<body class="notes-on">
+<body>
 <a class="skip" href="#main">Skip to content</a>
-<div class="mock-banner">Design mockup, phase 1. Sample data and placeholder claims are marked with pink notes. <a href="index.html">Back to the design direction</a></div>
+
+<!-- Loading intro: the mark draws itself, then the page is revealed -->
+<div class="intro" aria-hidden="true">
+  <div class="intro-inner">
+    <svg class="star" viewBox="0 0 24 24"><defs><linearGradient id="introGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#12b0f0"/><stop offset="1" stop-color="#0c6eb4"/></linearGradient></defs><path class="star-fill" style="transform-box:fill-box;transform-origin:center" d="M12 0C12.9 7.6 16.4 11.1 24 12 16.4 12.9 12.9 16.4 12 24 11.1 16.4 7.6 12.9 0 12 7.6 11.1 11.1 7.6 12 0Z"/><path class="star-stroke" d="M12 0C12.9 7.6 16.4 11.1 24 12 16.4 12.9 12.9 16.4 12 24 11.1 16.4 7.6 12.9 0 12 7.6 11.1 11.1 7.6 12 0Z"/></svg>
+    <div class="word"><span>Z</span><span>E</span><span>N</span><span>S</span><span>T</span><span>R</span><span>A</span></div>
+    <div class="bar"><i></i></div>
+  </div>
+</div>
+<div class="progress" aria-hidden="true"></div>
 
 <header class="site-head">
   <div class="wrap">
-    <a class="brand" href="#" aria-label="Zenstra home">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="zg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#12b0f0"/><stop offset="1" stop-color="#3d9be0"/></linearGradient></defs><path fill="url(#zg)" d="M12 0C12.9 7.6 16.4 11.1 24 12 16.4 12.9 12.9 16.4 12 24 11.1 16.4 7.6 12.9 0 12 7.6 11.1 11.1 7.6 12 0Z"/></svg>
+    <a class="brand" href="home.html" aria-label="Zenstra home">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="zg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#12b0f0"/><stop offset="1" stop-color="#0c6eb4"/></linearGradient></defs><path fill="url(#zg)" d="M12 0C12.9 7.6 16.4 11.1 24 12 16.4 12.9 12.9 16.4 12 24 11.1 16.4 7.6 12.9 0 12 7.6 11.1 11.1 7.6 12 0Z"/></svg>
       <span>ZENSTRA</span>
     </a>
     <ul class="nav" aria-label="Primary">
@@ -199,170 +241,200 @@
         <button class="nav-trigger" aria-haspopup="true">Platform <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
         <div class="mega" role="group" aria-label="Platform">
           <div><span class="label">Discover</span>
-            <a href="#"><b>Shadow AI discovery</b><small>Find agents and AI tools nobody registered</small></a>
-            <a href="#"><b>Agent inventory and identity</b><small>One record per agent, with an owner and a key</small></a>
+            <a href="platform.html#capabilities"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8Z"/><circle cx="8" cy="8" r="2"/></svg></span><b>Shadow AI discovery</b><small>Agents and AI tools nobody registered</small></a>
+            <a href="platform.html#capabilities"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="5.5" cy="8" r="3"/><path d="M8.5 8h6M12 8v2.5"/></svg></span><b>Agent identity</b><small>One key and one owner per agent</small></a>
+            <span class="label" style="margin-top:12px">Prove</span>
+            <a href="platform.html#capabilities"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 3.5h10M3 6.5h10M3 9.5h10M3 12.5h6"/></svg></span><b>Decision ledger</b><small>Tamper-evident record of every decision</small></a>
           </div>
           <div><span class="label">Enforce</span>
-            <a href="#"><b>Tool access</b><small>Scoped, expiring grants per call</small></a>
-            <a href="#"><b>Injection and memory defense</b><small>Untrusted content never steers the agent</small></a>
-            <a href="#"><b>Policy as code</b><small>Write a guardrail once, enforce it everywhere</small></a>
+            <a href="platform.html#capabilities"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg></span><b>Secure tool access</b><small>Scoped, expiring grants per call</small></a>
+            <a href="platform.html#capabilities"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 1.5 13.5 4v4c0 3.2-2.4 5.6-5.5 6.5C4.9 13.6 2.5 11.2 2.5 8V4Z"/></svg></span><b>Injection and memory defense</b><small>Untrusted content never steers the agent</small></a>
+            <a href="platform.html#capabilities"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 4 1.5 8 5 12M11 4l3.5 4-3.5 4"/></svg></span><b>Policy as code</b><small>One guardrail set for every agent</small></a>
           </div>
-          <div><span class="label">Prove</span>
-            <a href="#"><b>Decision ledger</b><small>Tamper-evident record of every decision</small></a>
-          </div>
-          <div><span class="label">Deploy</span>
-            <a href="#"><b>Architecture</b><small>SDK, gateway and endpoint modes</small></a>
-          </div>
-          <div class="foot"><a href="platform.html">Platform overview</a><a href="#">Integrations</a><a href="#">Documentation</a></div>
+          <div class="foot"><a href="platform.html">Platform overview</a><a href="platform.html#architecture">Architecture</a><a href="platform.html#integrations">Integrations</a><a href="#">Documentation</a></div>
         </div>
       </li>
       <li>
         <button class="nav-trigger" aria-haspopup="true">Solutions <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
         <div class="mega" role="group" aria-label="Solutions">
           <div><span class="label">By industry</span>
-            <a href="#"><b>Credit unions</b><small>NCUA-ready evidence for every agent</small></a>
-            <a href="#"><b>Banking and lending</b><small>Core, LOS and fraud agents</small></a>
-            <a href="#"><b>Healthcare</b><small>Clinical and claims agents</small></a>
+            <a href="#solutions"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 6 8 2.5 14 6M3.5 6.5v6M6.5 6.5v6M9.5 6.5v6M12.5 6.5v6M2 13.5h12"/></svg></span><b>Credit unions</b><small>Exam-ready evidence for every agent</small></a>
+            <a href="#solutions"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="4" width="12" height="9" rx="1.5"/><path d="M2 7h12"/></svg></span><b>Banking and lending</b><small>Core, LOS and fraud agents</small></a>
+            <a href="#solutions"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 3v10M3 8h10"/></svg></span><b>Healthcare</b><small>Clinical and claims agents</small></a>
           </div>
           <div><span class="label">By agent</span>
-            <a href="#"><b>Employee copilots</b><small>Copilot, ChatGPT and Gemini at work</small></a>
-            <a href="#"><b>Member- and customer-facing agents</b><small>Untrusted input all day</small></a>
-            <a href="#"><b>Coding agents</b><small>Repo, CI and shell access</small></a>
-            <a href="#"><b>MCP servers</b><small>Every connector is an access grant</small></a>
+            <a href="#solutions"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="6" r="3"/><path d="M3 14c.8-2.6 2.8-4 5-4s4.2 1.4 5 4"/></svg></span><b>Employee copilots</b><small>Copilot, ChatGPT and Gemini at work</small></a>
+            <a href="#solutions"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2Z"/></svg></span><b>Member-facing agents</b><small>Untrusted input all day</small></a>
+            <a href="#solutions"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5.5 2.5v3.5M10.5 2.5v3.5M3.5 6h9v2a4.5 4.5 0 0 1-9 0Z M8 12.5v1.5"/></svg></span><b>MCP servers</b><small>Every connector is an access grant</small></a>
           </div>
         </div>
       </li>
       <li><a class="nav-trigger" href="#">Resources</a></li>
-      <li><a class="nav-trigger" href="#">Trust center</a></li>
+      <li><a class="nav-trigger" href="#trust">Trust center</a></li>
       <li><a class="nav-trigger" href="#">Company</a></li>
     </ul>
     <div class="head-actions">
+      <button class="theme-toggle" data-theme-toggle aria-label="Switch between light and dark theme">
+        <svg class="moon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13 9.5A5.5 5.5 0 0 1 6.5 3a5.5 5.5 0 1 0 6.5 6.5Z"/></svg>
+        <svg class="sun" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="3"/><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"/></svg>
+      </button>
       <a class="btn btn-ghost btn-sm signin" href="console.html">Sign in</a>
-      <a class="btn btn-primary btn-sm" href="#demo" style="background:#1a7fca">Request a demo</a>
-      <button class="btn btn-ghost btn-sm menu-btn" aria-label="Open menu"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 4h12M2 8h12M2 12h12"/></svg></button>
+      <a class="btn btn-primary btn-sm" href="#demo">Request a demo</a>
+      <button class="btn btn-ghost btn-sm menu-btn" aria-label="Open menu" aria-expanded="false"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 4h12M2 8h12M2 12h12"/></svg></button>
     </div>
   </div>
 </header>
+<nav class="mobile-menu" aria-label="Mobile"><a href="platform.html">Platform</a><a href="#solutions">Solutions</a><a href="#">Resources</a><a href="#trust">Trust center</a><a href="#">Company</a><a href="console.html">Sign in</a><a href="#demo">Request a demo</a></nav>
 
 <main id="main">
   <!-- HERO -->
   <section class="hero" aria-labelledby="hero-h">
-    <div class="wrap hero-grid">
-      <div>
-        <span class="label eyebrow">Runtime security for AI agents<button class="note" data-note="Category named in the first 3 words, the way Semperis leads with 'The identity resilience platform'. Left-aligned, not centred: buyers scan F-pattern, and the product visual gets real width.">1</button></span>
-        <h1 id="hero-h">Every agent action checked before it runs.</h1>
-        <p class="sub">Zenstra sits inline between your AI agents and the tools, data and systems they reach. It verifies which agent is acting, checks the action against your policy, and blocks or escalates it before anything changes. Every decision becomes audit evidence.</p>
-        <div class="ctas">
-          <a class="btn btn-primary" href="#demo">Request a technical demo</a>
-          <a class="btn btn-secondary" href="platform.html#architecture">Read the architecture</a>
-          <button class="note" data-note="The old 'Get Started' scrolled to an anchor. A CTA must do what it says. Secondary CTA serves the architect who will not book a call before reading how it works.">2</button>
+    <canvas class="hero-canvas" aria-hidden="true"></canvas>
+    <div class="wrap">
+      <div class="hero-grid">
+        <div>
+          <span class="pill" data-hero><span class="dot"></span><b>Runtime security for AI agents</b><span class="pill-extra"> · inline, before execution</span></span>
+          <h1 id="hero-h"><span class="line"><span>Every agent action,</span></span><span class="line"><span>checked <span class="accent">before it runs.<svg viewBox="0 0 300 12" preserveAspectRatio="none" aria-hidden="true"><path d="M2 8 C 60 2, 140 2, 298 6"/></svg></span></span></span></h1>
+          <p class="sub" data-hero>Zenstra sits inline between your AI agents and the tools, data and systems they reach. It verifies which agent is acting, checks the action against your policy, and blocks or escalates it before anything changes. Every decision becomes audit evidence.</p>
+          <div class="ctas" data-hero>
+            <a class="btn btn-primary" href="#demo">Request a technical demo <svg class="arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+            <a class="btn btn-secondary" href="platform.html">See how it works</a>
+          </div>
+          <ul class="facts" data-hero>
+            <li><b>Inline</b>Before the tool call</li>
+            <li><b>Your cloud</b>Data stays with you</li>
+            <li><b>Fail-closed</b>Per agent and tool</li>
+            <li><b>No rewrite</b>SDK, gateway, endpoint</li>
+          </ul>
         </div>
-        <ul class="facts">
-          <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 1.5v13M1.5 8h13"/></svg><span><b>Inline</b>Enforced before the tool call executes</span></li>
-          <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M2 6h12"/></svg><span><b>Your cloud</b>Data plane runs in your environment</span></li>
-          <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 1.5 13.5 4v4c0 3.2-2.4 5.6-5.5 6.5C4.9 13.6 2.5 11.2 2.5 8V4Z"/></svg><span><b>Fail-closed</b>Configurable per agent and per tool</span></li>
-          <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 4 1.5 8 5 12M11 4l3.5 4-3.5 4"/></svg><span><b>No rewrite</b>SDK, gateway or endpoint app</span></li>
-        </ul>
+        <div class="ledger" aria-labelledby="ledger-h">
+          <div class="ledger-head">
+            <h2 id="ledger-h">Decision ledger</h2>
+            <span class="live"><i></i>Live</span>
+            <span class="spacer"></span>
+            <button class="pause" id="ledger-pause" aria-pressed="false">Pause</button>
+          </div>
+          <div class="ledger-stats">
+            <div><span>Decisions today</span><b class="num" id="lc-total" data-count="48213">48,213</b></div>
+            <div><span>Blocked</span><b class="num block" id="lc-block" data-count="214">214</b></div>
+            <div><span>Held for a person</span><b class="num step" id="lc-step" data-count="37">37</b></div>
+          </div>
+          <div class="ledger-scroll">
+            <table>
+              <thead><tr><th scope="col">Time</th><th scope="col">Agent</th><th scope="col">Action</th><th scope="col">Verdict</th><th scope="col" style="text-align:right">ms</th></tr></thead>
+              <tbody id="ledger-rows">
+                <tr><td>09:41:03</td><td class="agent">member-chat-assist</td><td>email.send → external</td><td><span class="verdict block"><i></i>Block</span></td><td class="ms">14</td></tr>
+                <tr><td>09:41:02</td><td class="agent">loan-doc-classifier</td><td>los.loanfile.read</td><td><span class="verdict allow"><i></i>Allow</span></td><td class="ms">6</td></tr>
+                <tr><td>09:41:01</td><td class="agent">sar-prep-agent</td><td>core.txn.query (90d)</td><td><span class="verdict stepup"><i></i>Step-up</span></td><td class="ms">11</td></tr>
+                <tr><td>09:40:59</td><td class="agent">copilot-hr-assist</td><td>hris.employee.read</td><td><span class="verdict allow"><i></i>Allow</span></td><td class="ms">5</td></tr>
+                <tr><td>09:40:58</td><td class="agent">n8n:card-dispute</td><td>core.account.update</td><td><span class="verdict block"><i></i>Block</span></td><td class="ms">9</td></tr>
+                <tr><td>09:40:57</td><td class="agent">dev-agent-ci</td><td>shell.exec (prod)</td><td><span class="verdict stepup"><i></i>Step-up</span></td><td class="ms">8</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
-      <div class="ledger" aria-labelledby="ledger-h">
-        <div class="ledger-head">
-          <h2 id="ledger-h">Decision ledger</h2>
-          <span class="live"><i></i>Live</span>
-          <span class="spacer"></span>
-          <button class="pause" id="ledger-pause" aria-pressed="false">Pause</button>
-          <button class="note" data-note="Replaces the decorative orb ('16,237 requests governed'). The hero shows the product's actual unit of work: agent, action, policy, verdict, latency. Pause button: moving content longer than 5s must be pausable (WCAG 2.2.2). Sample data.">3</button>
-        </div>
-        <div class="ledger-scroll">
-          <table>
-            <thead><tr><th scope="col">Time</th><th scope="col">Agent</th><th scope="col">Action</th><th scope="col">Policy</th><th scope="col">Verdict</th><th scope="col" style="text-align:right">ms</th></tr></thead>
-            <tbody id="ledger-rows">
-              <tr><td>09:41:03</td><td class="agent">member-chat-assist</td><td>email.send → external</td><td>POL-114</td><td><span class="verdict block"><i></i>Block</span></td><td class="ms">14</td></tr>
-              <tr><td>09:41:02</td><td class="agent">loan-doc-classifier</td><td>los.loanfile.read</td><td>POL-021</td><td><span class="verdict allow"><i></i>Allow</span></td><td class="ms">6</td></tr>
-              <tr><td>09:41:01</td><td class="agent">sar-prep-agent</td><td>core.txn.query (90d)</td><td>POL-087</td><td><span class="verdict stepup"><i></i>Step-up</span></td><td class="ms">11</td></tr>
-              <tr><td>09:40:59</td><td class="agent">copilot-hr-assist</td><td>hris.employee.read</td><td>POL-033</td><td><span class="verdict allow"><i></i>Allow</span></td><td class="ms">5</td></tr>
-              <tr><td>09:40:58</td><td class="agent">n8n:card-dispute</td><td>core.account.update</td><td>unregistered</td><td><span class="verdict block"><i></i>Block</span></td><td class="ms">9</td></tr>
-              <tr><td>09:40:57</td><td class="agent">dev-agent-ci</td><td>shell.exec (prod)</td><td>POL-009</td><td><span class="verdict stepup"><i></i>Step-up</span></td><td class="ms">8</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="ledger-foot">
-          <span>p95 decision latency <b>18 ms</b> <a href="#">methodology</a><button class="note" data-note="Keep a latency figure only with a published methodology (load, region, policy count). An unqualified number reads as marketing to an architect.">4</button></span>
-          <span>Fail mode <b>closed</b></span>
-          <span>Ledger <b>hash-chained</b></span>
+      <div class="marquee" data-hero>
+        <span class="label">Works with</span>
+        <div class="marquee-track" aria-label="Integrations: LangGraph, CrewAI, OpenAI Agents SDK, Model Context Protocol, A2A, Microsoft Entra ID, Okta, Splunk, Microsoft Sentinel, ServiceNow, Microsoft Copilot, Fiserv agentOS, n8n">
+          <div class="marquee-row" aria-hidden="true">
+            <span>LangGraph</span><span>CrewAI</span><span>OpenAI Agents SDK</span><span class="m">MCP</span><span class="m">A2A</span><span>Microsoft Entra ID</span><span>Okta</span><span>Splunk</span><span>Microsoft Sentinel</span><span>ServiceNow</span><span>Microsoft Copilot</span><span>Fiserv agentOS</span><span>n8n</span>
+            <span>LangGraph</span><span>CrewAI</span><span>OpenAI Agents SDK</span><span class="m">MCP</span><span class="m">A2A</span><span>Microsoft Entra ID</span><span>Okta</span><span>Splunk</span><span>Microsoft Sentinel</span><span>ServiceNow</span><span>Microsoft Copilot</span><span>Fiserv agentOS</span><span>n8n</span>
+          </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- PROOF BAR -->
-  <div class="proof" aria-label="Deployment facts">
+  <!-- METRICS -->
+  <section class="metrics" aria-label="How Zenstra performs">
     <div class="wrap">
-      <div><b>Model and framework agnostic</b><span>LangGraph, CrewAI, OpenAI Agents SDK, MCP, A2A</span></div>
-      <div><b>Built with credit unions</b><span>In production at regulated financial institutions</span></div>
-      <div><b>Standards first</b><span>OIDC, OAuth 2.1, SPIFFE agent identity</span></div>
-      <div><b>Evidence on request</b><span>Security review pack and architecture walkthrough<button class="note" data-note="Replaces '47+ protected agents / 2 enterprise customers'. Small absolute numbers lower trust. Until there are logos, prove maturity with how it is built and who it is built with. Every line here needs verification before launch.">5</button></span></div>
+      <div class="metric" data-reveal><b><span data-count="18">0</span><small>ms</small></b><span class="desc">p95 decision time, evaluated in your environment</span></div>
+      <div class="metric" data-reveal data-delay="0.08"><b><span data-count="4">0</span><small>checks</small></b><span class="desc">identity, content, policy and record on every call</span></div>
+      <div class="metric" data-reveal data-delay="0.16"><b><span data-count="3">0</span><small>modes</small></b><span class="desc">SDK, gateway and endpoint, one policy set</span></div>
+      <div class="metric" data-reveal data-delay="0.24"><b><span data-count="100">0</span><small>%</small></b><span class="desc">of decisions recorded, allowed or not</span></div>
     </div>
-  </div>
+  </section>
 
   <!-- PROBLEM -->
   <section aria-labelledby="problem-h">
-    <div class="wrap">
-      <div class="sec-head">
-        <div><span class="label eyebrow">The risk</span><h2 class="h2" id="problem-h">An agent is a privileged user nobody interviewed.</h2></div>
-        <p class="lede">Agents hold credentials, keep memory and take actions that cannot be undone. Network controls see an API call. Identity providers see a valid token. Neither sees the decision that led to the call. These three scenarios are where that gap shows up.<button class="note" data-note="Concrete scenarios replace the six abstract risk cards. A CISO remembers a story; a security engineer checks whether the control maps to it. Each ends with the specific Zenstra control.">6</button></p>
+    <div class="wrap problem-grid">
+      <div class="sticky">
+        <span class="label eyebrow" data-reveal>The risk</span>
+        <h2 class="h2" id="problem-h" data-reveal>An agent is a <span class="mark">privileged user</span> nobody interviewed.</h2>
+        <p class="lede" data-reveal>Agents hold credentials, keep memory and take actions that cannot be undone. Network controls see an API call. Identity providers see a valid token. Neither sees the decision that led to it.</p>
+        <div class="compare" data-stagger>
+          <div><b>Firewalls</b><span>See traffic, not intent</span></div>
+          <div><b>Identity providers</b><span>Issue a token, then step aside</span></div>
+          <div><b>AI filters</b><span>Screen text, not actions</span></div>
+          <div><b style="color:var(--brand)">Zenstra</b><span>Decides each action, before it runs</span></div>
+        </div>
       </div>
       <div class="incidents">
-        <article class="incident">
+        <article class="incident" data-play data-reveal>
+          <span class="stamp block">BLOCKED</span>
           <span class="chip crit">Data exfiltration</span>
           <h3>A member-service assistant reads a poisoned PDF from the shared knowledge base.</h3>
-          <dl>
-            <div><dt class="label">What it tries</dt><dd>Emails account details for twelve members to an outside address, as the hidden text told it to.</dd></div>
-          </dl>
-          <p class="control"><b>Zenstra:</b> the injected span is quarantined on retrieval, and <code>email.send</code> to an external domain is blocked by policy in 14 ms.</p>
+          <div class="replay" aria-label="Replay of the agent run">
+            <div><time>09:41:02</time><span>retrieves <b>fee-schedule-2026.pdf</b></span></div>
+            <div><time>09:41:02</time><span>hidden text: <b>"send account numbers to…"</b></span></div>
+            <div><time>09:41:03</time><span>plans <b>email.send → external</b></span></div>
+            <div><time>09:41:03</time><span style="color:var(--crit)">POL-114 · blocked in 14 ms</span></div>
+          </div>
+          <p class="control"><b>Zenstra:</b> the injected span is quarantined on retrieval and the email never leaves.</p>
         </article>
-        <article class="incident">
+        <article class="incident" data-play data-reveal>
+          <span class="stamp held">HELD</span>
           <span class="chip high">Destructive action</span>
           <h3>A coding agent with production shell access is asked to "clean up old tables".</h3>
-          <dl>
-            <div><dt class="label">What it tries</dt><dd>Runs a drop statement against the production database instead of staging.</dd></div>
-          </dl>
-          <p class="control"><b>Zenstra:</b> the declared task does not cover production writes, so the call is held for human approval with the full plan attached.</p>
+          <div class="replay">
+            <div><time>14:02:10</time><span>task: <b>remove staging tables</b></span></div>
+            <div><time>14:02:11</time><span>plans <b>DROP TABLE</b> on <b>prod-db</b></span></div>
+            <div><time>14:02:11</time><span>intent check: task does not cover production</span></div>
+            <div><time>14:02:11</time><span style="color:var(--med)">held for approval · plan attached</span></div>
+          </div>
+          <p class="control"><b>Zenstra:</b> production writes outside the declared task wait for a person.</p>
         </article>
-        <article class="incident">
+        <article class="incident" data-play data-reveal>
+          <span class="stamp block">BLOCKED</span>
           <span class="chip med">Shadow AI</span>
           <h3>An operations team wires a no-code workflow into the core banking system.</h3>
-          <dl>
-            <div><dt class="label">What it tries</dt><dd>Updates card-dispute records using a service credential IT never issued for it.</dd></div>
-          </dl>
-          <p class="control"><b>Zenstra:</b> the unregistered agent is discovered on first call, its writes are blocked, and the owning team is asked to register it.</p>
+          <div class="replay">
+            <div><time>11:18:44</time><span>new caller <b>n8n:card-dispute</b></span></div>
+            <div><time>11:18:44</time><span>not in the agent inventory</span></div>
+            <div><time>11:18:45</time><span>calls <b>core.account.update</b></span></div>
+            <div><time>11:18:45</time><span style="color:var(--crit)">unregistered · write blocked · owner asked</span></div>
+          </div>
+          <p class="control"><b>Zenstra:</b> discovered on its first call, blocked until it is registered.</p>
         </article>
       </div>
     </div>
   </section>
 
   <!-- ARCHITECTURE -->
-  <section class="arch-band" id="how" aria-labelledby="arch-h">
+  <section class="arch-sec" id="how" aria-labelledby="arch-h">
     <div class="wrap">
       <div class="sec-head">
-        <div><span class="label eyebrow">How it works</span><h2 class="h2" id="arch-h">One decision point between agents and everything they touch.</h2></div>
-        <p class="lede">Direct tool calls, MCP servers and agent-to-agent hops all pass through the same four checks. Nothing reaches a tool, an API or a system of record without them.<button class="note" data-note="Preserved and sharpened: the current site's caller → layer → surface diagram is its most credible section. Now the four checks are an ordered sequence with an output, so the diagram explains a mechanism, not a layout.">7</button></p>
+        <div><span class="label eyebrow" data-reveal>How it works</span><h2 class="h2" id="arch-h" data-reveal>One <span class="mark">decision point</span> between agents and everything they touch.</h2></div>
+        <p class="lede" data-reveal>Direct tool calls, MCP servers and agent-to-agent hops all pass through the same four checks. Nothing reaches a tool, an API or a system of record without them.</p>
       </div>
-      <div class="arch" role="img" aria-label="Callers (users, AI agents, peer agents) send requests to the Zenstra decision point, which identifies the agent, screens content, authorizes the action and records the decision, before the request reaches MCP servers, APIs, enterprise systems or external tools.">
+      <div class="arch" data-reveal="fade">
+        <svg class="arch-flow" aria-hidden="true"></svg>
         <div class="arch-col">
           <span class="label">Callers</span>
           <div class="node"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="6" r="3"/><path d="M3 16c.8-3 3.2-4.5 6-4.5s5.2 1.5 6 4.5"/></svg><div><b>Person</b><small>Request or task</small></div></div>
           <div class="node"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="12" height="9" rx="2"/><path d="M9 2v3M6.5 9.5h.01M11.5 9.5h.01"/></svg><div><b>AI agent</b><small>Plans, reasons, calls tools</small></div></div>
           <div class="node"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="5" cy="9" r="2.5"/><circle cx="13" cy="9" r="2.5"/><path d="M7.5 9h3"/></svg><div><b>Peer agent (A2A)</b><small>Delegated work</small></div></div>
         </div>
-        <div class="gate">
+        <div class="gate" role="img" aria-label="The Zenstra decision point identifies the agent, screens the content, authorizes the action and records the decision, then allows, steps up or blocks.">
           <div class="gate-title"><b>Zenstra decision point</b><code>inline · per call</code></div>
           <ol class="steps">
-            <li>Identify the agent <small>key + attestation</small></li>
+            <li>Identify the agent <small>key, attestation</small></li>
             <li>Screen the content <small>injection, provenance</small></li>
             <li>Authorize the action <small>policy, intent, scope</small></li>
-            <li>Record the decision <small>hash-chained ledger</small></li>
+            <li>Record the decision <small>hash-chained</small></li>
           </ol>
-          <div class="gate-out"><span class="verdict allow"><i></i>Allow</span><span class="verdict stepup"><i></i>Step-up to a person</span><span class="verdict block"><i></i>Block</span></div>
+          <div class="gate-out"><span class="verdict allow"><i></i>Allow</span><span class="verdict stepup"><i></i>Step-up</span><span class="verdict block"><i></i>Block</span></div>
         </div>
         <div class="arch-col">
           <span class="label">Protected surfaces</span>
@@ -372,99 +444,133 @@
           <div class="node"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2.5" y="3.5" width="13" height="11" rx="1.5"/><path d="m5.5 8 2 1.5-2 1.5M9.5 11.5h3"/></svg><div><b>External tools</b><small>Browsers, code, shells</small></div></div>
         </div>
       </div>
-      <div class="deploy">
-        <div><h3>SDK</h3><p>Wraps the agent's tool layer. Best for agents your teams build.</p><code>pip install zenstra</code></div>
-        <div><h3>Gateway</h3><p>Routes MCP and API traffic through a proxy in your VPC. No code change.</p><code>helm install zenstra-gw</code></div>
-        <div><h3>Endpoint app<button class="note" data-note="The credit-union page describes a desktop app 'like antivirus'; the homepage describes SDK + gateway. One architecture story, three named modes, shown everywhere. The current SDK name 'Khetaka' is unexplained; either explain it or use the product name.">8</button></h3><p>Watches employee AI tools such as Copilot and ChatGPT on managed devices.</p><code>MDM package</code></div>
+      <div class="deploy" data-stagger>
+        <div><span class="label">For agents you build</span><h3>SDK</h3><p>Wraps the agent's tool layer and sees the plan, retrieved content and memory.</p><code>pip install zenstra</code></div>
+        <div><span class="label">For MCP and API traffic</span><h3>Gateway</h3><p>A proxy in your VPC. Point MCP clients and agents at it; no code change.</p><code>helm install zenstra-gateway</code></div>
+        <div><span class="label">For employee AI tools</span><h3>Endpoint app</h3><p>Covers Copilot, ChatGPT and other AI tools on managed devices.</p><code>Deployed through MDM</code></div>
       </div>
     </div>
   </section>
 
-  <!-- CAPABILITIES -->
+  <!-- PLATFORM -->
   <section aria-labelledby="caps-h">
     <div class="wrap">
       <div class="sec-head">
-        <div><span class="label eyebrow">Platform</span><h2 class="h2" id="caps-h">Find every agent. Control what it does. Prove it.</h2></div>
-        <p class="lede">The eight controls, grouped by the job a security team is doing. Discovery comes first, because you cannot govern an agent you do not know exists.<button class="note" data-note="Eight equal cards had no hierarchy. Grouped into Discover / Enforce / Prove, the same lifecycle pattern Semperis (pre/during/post attack) and Astrix (discover/secure/deploy) use, so a buyer can map it to their programme.">9</button></p>
+        <div><span class="label eyebrow" data-reveal>Platform</span><h2 class="h2" id="caps-h" data-reveal>Find every agent. <span class="mark">Control what it does.</span> Prove it.</h2></div>
+        <p class="lede" data-reveal>Eight controls, grouped by the job a security team is doing. Discovery comes first, because you cannot govern an agent you do not know exists.</p>
       </div>
-      <div class="pillars">
+      <div class="pillars" data-stagger>
         <div class="pillar">
-          <span class="label">01 Discover</span>
+          <span class="num-big">01 · DISCOVER</span>
           <h3>Know which agents exist and who owns them.</h3>
           <p>One inventory across built, bought and shadow agents.</p>
           <ul class="caps">
-            <li><a href="#"><b>Shadow AI discovery</b><small>Unregistered agents and no-code workflows, with device, owner and signal</small><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3l5 5-5 5"/></svg></a></li>
-            <li><a href="#"><b>Agent identity</b><small>Per-agent keys, continuous attestation, instant revocation</small><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3l5 5-5 5"/></svg></a></li>
+            <li><a href="platform.html#capabilities"><b>Shadow AI discovery</b><small>Unregistered agents and no-code workflows, with owner and signal</small><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3l5 5-5 5"/></svg></a></li>
+            <li><a href="platform.html#capabilities"><b>Agent identity</b><small>Per-agent keys, continuous attestation, instant revocation</small><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3l5 5-5 5"/></svg></a></li>
           </ul>
         </div>
         <div class="pillar">
-          <span class="label">02 Enforce</span>
+          <span class="num-big">02 · ENFORCE</span>
           <h3>Decide every action before it lands.</h3>
           <p>Policy evaluated per call, in the agent loop.</p>
           <ul class="caps">
-            <li><a href="#"><b>Secure tool access</b><small>Scoped, expiring grants instead of standing credentials</small><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3l5 5-5 5"/></svg></a></li>
-            <li><a href="#"><b>Prompt injection defense</b><small>Untrusted content isolated before it can steer intent</small><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3l5 5-5 5"/></svg></a></li>
-            <li><a href="#"><b>Memory protection</b><small>Signed, provenance-tracked memory writes</small><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3l5 5-5 5"/></svg></a></li>
-            <li><a href="#"><b>Policy as code</b><small>One guardrail set across every model and framework</small><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3l5 5-5 5"/></svg></a></li>
+            <li><a href="platform.html#capabilities"><b>Secure tool access</b><small>Scoped, expiring grants instead of standing credentials</small><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3l5 5-5 5"/></svg></a></li>
+            <li><a href="platform.html#capabilities"><b>Prompt injection defense</b><small>Untrusted content isolated before it can steer intent</small><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3l5 5-5 5"/></svg></a></li>
+            <li><a href="platform.html#capabilities"><b>Memory protection</b><small>Signed, provenance-tracked memory writes</small><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3l5 5-5 5"/></svg></a></li>
+            <li><a href="platform.html#capabilities"><b>Policy as code</b><small>One guardrail set across every model and framework</small><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3l5 5-5 5"/></svg></a></li>
           </ul>
         </div>
         <div class="pillar">
-          <span class="label">03 Prove</span>
+          <span class="num-big">03 · PROVE</span>
           <h3>Show an examiner exactly what happened.</h3>
           <p>Evidence produced as agents work, not assembled before an audit.</p>
           <ul class="caps">
-            <li><a href="#"><b>Decision ledger</b><small>Every prompt, decision and tool call, tamper-evident and replayable</small><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3l5 5-5 5"/></svg></a></li>
-            <li><a href="#"><b>Runtime detection</b><small>Per-agent baselines that flag drift mid-task</small><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3l5 5-5 5"/></svg></a></li>
+            <li><a href="platform.html#capabilities"><b>Decision ledger</b><small>Every prompt, decision and tool call, tamper-evident and replayable</small><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3l5 5-5 5"/></svg></a></li>
+            <li><a href="platform.html#capabilities"><b>Runtime detection</b><small>Per-agent baselines that flag drift mid-task</small><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3l5 5-5 5"/></svg></a></li>
           </ul>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- PRODUCT TOUR -->
-  <section class="tour-band" aria-labelledby="tour-h">
-    <div class="wrap">
-      <div class="sec-head">
-        <div><span class="label eyebrow">Product</span><h2 class="h2" id="tour-h">From a blocked action to a closed investigation.</h2></div>
-        <p class="lede">The console is built around the analyst's question: what happened, how bad is it, and what do I do next.<button class="note" data-note="The current tour shows five screens of the same dark dashboard. One story (detection → evidence → action) is more persuasive than five screenshots, and shows depth instead of breadth.">10</button></p>
-      </div>
-      <div class="tour">
-        <div class="tour-tabs" role="tablist" aria-label="Console screens">
-          <button class="tour-tab" role="tab" aria-selected="false" data-href="console.html#overview"><b>Security overview</b><small>Coverage, open detections and what to decide this week.</small></button>
-          <button class="tour-tab" role="tab" aria-selected="true" data-href="console.html#investigate"><b>Investigation</b><small>The agent run, step by step, with the injected text and the policy that stopped it.</small></button>
-          <button class="tour-tab" role="tab" aria-selected="false" data-href="console.html#agent"><b>Agent record</b><small>Identity, owner, tool grants and behaviour against its own baseline.</small></button>
-          <button class="tour-tab" role="tab" aria-selected="false" data-href="console.html#detections"><b>Detection queue</b><small>Ranked by severity and blast radius, mapped to MITRE ATLAS.</small></button>
+  <!-- PRODUCT TOUR (pinned on scroll) -->
+  <section class="band tour" aria-labelledby="tour-h">
+    <div class="tour-sticky">
+      <div class="wrap">
+        <div class="tour-head">
+          <div><span class="label eyebrow">Product</span><h2 class="h2" id="tour-h">From a blocked action to a closed investigation.</h2></div>
+          <p class="lede">The console answers the analyst's three questions in order: what happened, how bad is it, and what do I do next.</p>
         </div>
-        <div>
-          <div class="screen" aria-label="Investigation screen preview">
-            <div class="screen-bar"><span>console.zenstra.ai / detections / DET-2291</span></div>
+        <div class="tour-grid">
+          <div class="tour-tabs" role="tablist" aria-label="Console screens">
+            <button class="tour-tab" role="tab" aria-selected="true"><span class="fill"></span><b>Security overview</b><small>Coverage, open detections and what to decide this week.</small></button>
+            <button class="tour-tab" role="tab" aria-selected="false"><span class="fill"></span><b>Detection queue</b><small>Ranked by severity and blast radius, live as decisions land.</small></button>
+            <button class="tour-tab" role="tab" aria-selected="false"><span class="fill"></span><b>Investigation</b><small>The agent run step by step, with the injected text and the policy that stopped it.</small></button>
+            <button class="tour-tab" role="tab" aria-selected="false"><span class="fill"></span><b>Agent record</b><small>Identity, owner, tool grants and behaviour against its own baseline.</small></button>
+          </div>
+          <div class="screen">
+            <div class="screen-bar"><i></i><i></i><i></i><span class="screen-url">console.zenstra.ai/overview</span></div>
             <div class="screen-body">
-              <h4>Injected instruction led to an external email attempt <span class="chip crit">Critical</span></h4>
-              <ol class="tl">
-                <li><time>09:41:02.114</time><span class="dot"></span><span><b>Member message received</b><small>session s-8f2a · member-chat-assist</small></span></li>
-                <li><time>09:41:02.380</time><span class="dot warn"></span><span><b>Retrieved <code>fee-schedule-2026.pdf</code></b><small>contains hidden instruction · injection score 0.94 · span quarantined</small></span></li>
-                <li><time>09:41:03.010</time><span class="dot"></span><span><b>Agent planned <code>email.send</code> to an external domain</b><small>declared task: answer a fee question</small></span></li>
-                <li><time>09:41:03.028</time><span class="dot bad"></span><span><b>Blocked by POL-114</b><small>member data may not leave approved domains · 14 ms</small></span></li>
-              </ol>
-              <div class="screen-actions"><span class="primary">Remove document from knowledge base</span><span>Revoke email grant</span><span>Open ticket</span></div>
+              <div class="pane" data-url="console.zenstra.ai/overview">
+                <div class="seq-in">
+                  <h4>Security overview <span class="chip crit">2 critical need an owner</span></h4>
+                  <div class="mini-kpis"><div><span>Agents governed</span><b><span data-count="38">38</span> / 47</b></div><div><span>Blocked, 7 days</span><b data-count="214">214</b></div><div><span>Open critical</span><b class="crit" data-count="2">2</b></div></div>
+                  <div class="spark"><span class="label" style="color:var(--band-ink-3)">Blocked actions per day · 30 days</span>
+                    <svg viewBox="0 0 600 120" preserveAspectRatio="none" aria-hidden="true"><line class="avg" x1="0" x2="600" y1="70" y2="70"/><path class="ar" d="M0 92 L20 86 L41 94 L62 84 L83 90 L103 80 L124 88 L145 82 L165 86 L186 78 L207 84 L228 92 L248 80 L269 76 L290 82 L310 72 L331 76 L352 70 L372 74 L393 80 L414 66 L434 62 L455 52 L476 44 L496 34 L517 40 L538 18 L558 28 L579 36 L600 40 L600 120 L0 120Z"/><path class="ln" d="M0 92 L20 86 L41 94 L62 84 L83 90 L103 80 L124 88 L145 82 L165 86 L186 78 L207 84 L228 92 L248 80 L269 76 L290 82 L310 72 L331 76 L352 70 L372 74 L393 80 L414 66 L434 62 L455 52 L476 44 L496 34 L517 40 L538 18 L558 28 L579 36 L600 40"/></svg>
+                  </div>
+                </div>
+              </div>
+              <div class="pane" data-url="console.zenstra.ai/detections">
+                <div class="seq-in">
+                  <h4>Detections <span class="chip crit live">1 new</span></h4>
+                  <div class="q-rows">
+                    <div class="q-row new"><span class="chip crit">Critical</span><b>Injected instruction led to an external email attempt</b><code>member-chat-assist</code><span class="verdict block"><i></i>Block</span></div>
+                    <div class="q-row"><span class="chip crit">Critical</span><b>Unregistered workflow wrote to core banking</b><code>n8n:card-dispute</code><span class="verdict block"><i></i>Block</span></div>
+                    <div class="q-row"><span class="chip high">High</span><b>Production shell command outside declared task</b><code>dev-agent-ci</code><span class="verdict stepup"><i></i>Held</span></div>
+                    <div class="q-row"><span class="chip high">High</span><b>Query scope widened from 30 to 90 days</b><code>sar-prep-agent</code><span class="verdict allow"><i></i>Allow</span></div>
+                    <div class="q-row"><span class="chip med">Medium</span><b>Agent key used from a new host</b><code>loan-doc-classifier</code><span class="verdict stepup"><i></i>Re-attest</span></div>
+                  </div>
+                </div>
+              </div>
+              <div class="pane" data-url="console.zenstra.ai/detections/DET-2291">
+                <h4>Injected instruction led to an external email attempt <span class="chip crit">Critical</span></h4>
+                <ol class="tl seq-in">
+                  <li><time>09:41:02.114</time><span class="dot"></span><span><b>Member message received</b><small>session s-8f2a · member-chat-assist</small></span></li>
+                  <li><time>09:41:02.380</time><span class="dot warn"></span><span><b>Retrieved <code>fee-schedule-2026.pdf</code></b><small>hidden instruction · score 0.94 · span quarantined</small></span></li>
+                  <li><time>09:41:03.010</time><span class="dot"></span><span><b>Agent planned <code>email.send</code> to an external domain</b><small>declared task: answer a fee question</small></span></li>
+                  <li><time>09:41:03.028</time><span class="dot bad"></span><span><b>Blocked by POL-114</b><small>member data may not leave approved domains · 14 ms</small></span></li>
+                </ol>
+                <div class="pane-actions"><span class="primary">Remove document from knowledge base</span><span>Revoke email grant</span><span>Open ticket</span></div>
+              </div>
+              <div class="pane" data-url="console.zenstra.ai/agents/member-chat-assist">
+                <h4><span class="mono" style="font-size:15px">member-chat-assist</span> <span class="chip ok">Governed</span></h4>
+                <p style="margin-top:6px">Tool calls, baseline against the last 24 hours</p>
+                <div>
+                  <div class="pb"><code>kb.search</code><div class="bars"><div class="b base" style="width:82%"></div><div class="b now" style="width:88%"></div></div></div>
+                  <div class="pb"><code>core.account.read</code><div class="bars"><div class="b base" style="width:37%"></div><div class="b now" style="width:40%"></div></div></div>
+                  <div class="pb"><code>memory.write</code><div class="bars"><div class="b base" style="width:6%"></div><div class="b now" style="width:14%"></div></div></div>
+                  <div class="pb"><code>crm.case.create</code><div class="bars"><div class="b base" style="width:8%"></div><div class="b now" style="width:9%"></div></div></div>
+                  <div class="pb"><code style="color:#ff9b91">email.send · new</code><div class="bars"><div class="b base" style="width:0.5%"></div><div class="b now" style="width:2%;background:#ff7a6e"></div></div></div>
+                </div>
+                <div class="pane-actions"><span>Remove unused grant</span><span>Compare baseline</span><span style="color:#ff9b91;border-color:rgba(255,122,110,.4)">Quarantine agent</span></div>
+              </div>
             </div>
           </div>
-          <a class="tour-link" href="console.html#investigate">Open the full console mockup <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3l5 5-5 5"/></svg></a>
         </div>
       </div>
     </div>
   </section>
 
   <!-- SOLUTIONS -->
-  <section aria-labelledby="sol-h">
+  <section id="solutions" aria-labelledby="sol-h">
     <div class="wrap">
       <div class="sec-head">
-        <div><span class="label eyebrow">Solutions</span><h2 class="h2" id="sol-h">Start where your agents already run.</h2></div>
-        <p class="lede">Most agents arrive inside platforms you already operate. Pick the one you are being asked to approve this quarter.</p>
+        <div><span class="label eyebrow" data-reveal>Solutions</span><h2 class="h2" id="sol-h" data-reveal>Start where your agents already run.</h2></div>
+        <p class="lede" data-reveal>Most agents arrive inside platforms you already operate. Pick the one you are being asked to approve this quarter.</p>
       </div>
       <div class="solutions">
-        <div class="sol-feature">
-          <span class="label">Credit unions<button class="note" data-note="The credit-union page is the sharpest content Zenstra has (NCUA, Fiserv agentOS, Jack Henry, Temenos, SAR prep). Today it is a lone header button. Feature it as the lead solution; it is the clearest reason to pick Zenstra over horizontal vendors.">11</button></span>
+        <div class="sol-feature" data-reveal="left">
+          <span class="label" style="color:var(--brand)">Credit unions and banks</span>
           <h3>Evidence for your examiner, produced while your agents work.</h3>
           <p>Core-banking agent platforms, lending and fraud agents, and employee copilots are already inside the institution. Zenstra gives you one inventory, one policy set and one audit trail across all of them.</p>
           <ul>
@@ -472,9 +578,9 @@
             <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m3 8.5 3 3 7-7"/></svg>Every MCP connector into core, LOS or CRM becomes a reviewed grant</li>
             <li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m3 8.5 3 3 7-7"/></svg>Exam-ready inventory, least-privilege proof and decision trail</li>
           </ul>
-          <div><a class="btn btn-secondary btn-sm" href="#">Zenstra for credit unions</a></div>
+          <div><a class="btn btn-secondary btn-sm" href="#">Zenstra for credit unions <svg class="arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a></div>
         </div>
-        <div class="sol-list">
+        <div class="sol-list" data-reveal="right">
           <span class="label">By agent type</span>
           <a href="#"><span>Employee copilots</span><small>Copilot, ChatGPT, Gemini</small></a>
           <a href="#"><span>Member- and customer-facing agents</span><small>Chat and voice</small></a>
@@ -487,56 +593,56 @@
   </section>
 
   <!-- TRUST -->
-  <section class="arch-band" aria-labelledby="trust-h">
+  <section class="trust-sec" id="trust" aria-labelledby="trust-h">
     <div class="wrap trust">
       <div>
-        <span class="label eyebrow">Trust center</span>
-        <h2 class="h2" id="trust-h">What your security review will ask for, in one place.</h2>
-        <p class="lede">Each item states its status and how to get it. Ask for the review pack and a solutions architect walks your team through the architecture line by line.</p>
-        <p style="margin-top:20px"><a class="btn btn-secondary" href="#">Open the trust center</a><button class="note" data-note="The current site shows six certification badges, including HIPAA, which has no certification, and ISO 42001 and ISO 27701:2025. A CISO asks for the reports on the first call. Show each item with its real status, auditor and date. An honest 'in progress' costs less than a claim that fails due diligence.">12</button></p>
+        <span class="label eyebrow" data-reveal>Trust center</span>
+        <h2 class="h2" id="trust-h" data-reveal>What your security review will ask for, in one place.</h2>
+        <p class="lede" data-reveal>Each item states its status and how to get it. Ask for the review pack and a solutions architect walks your team through the architecture line by line.</p>
+        <p style="margin-top:28px" data-reveal><a class="btn btn-secondary" href="#">Open the trust center <svg class="arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a></p>
       </div>
-      <table class="trust-table">
-        <tbody>
-          <tr><th>SOC 2 Type II<small>Security, availability, confidentiality</small></th><td><span class="chip ok">Report available</span><div style="font-size:12.5px;color:var(--ink-3);margin-top:6px">Under NDA · auditor and period listed</div></td></tr>
-          <tr><th>ISO/IEC 27001<small>Information security management</small></th><td><span class="chip ok">Certified</span><div style="font-size:12.5px;color:var(--ink-3);margin-top:6px">Certificate number and body listed</div></td></tr>
-          <tr><th>ISO/IEC 42001<small>AI management system</small></th><td><span class="chip med">In progress</span><div style="font-size:12.5px;color:var(--ink-3);margin-top:6px">Target date listed</div></td></tr>
-          <tr><th>HIPAA<small>Not a certification. Business associate agreement.</small></th><td><span class="chip info">BAA available</span></td></tr>
-          <tr><th>Penetration test<small>Independent, annual</small></th><td><span class="chip ok">Summary available</span></td></tr>
-          <tr><th>Architecture and data flow<small>What leaves your environment, and what never does</small></th><td><span class="chip ok">Public</span></td></tr>
-        </tbody>
-      </table>
+      <div class="trust-list" data-stagger>
+        <div><span><b>SOC 2 Type II</b><small>Security, availability, confidentiality · under NDA</small></span><span class="chip ok">Report available</span></div>
+        <div><span><b>ISO/IEC 27001</b><small>Information security management</small></span><span class="chip ok">Certified</span></div>
+        <div><span><b>ISO/IEC 42001</b><small>AI management system</small></span><span class="chip med">In progress</span></div>
+        <div><span><b>HIPAA</b><small>Business associate agreement</small></span><span class="chip info">BAA available</span></div>
+        <div><span><b>Penetration test</b><small>Independent, annual</small></span><span class="chip ok">Summary available</span></div>
+        <div><span><b>Architecture and data flow</b><small>What leaves your environment, and what never does</small></span><span class="chip ok">Public</span></div>
+      </div>
     </div>
   </section>
 
   <!-- FAQ -->
   <section aria-labelledby="faq-h">
     <div class="wrap faq">
-      <div><span class="label eyebrow">FAQ</span><h2 class="h2" id="faq-h">Questions security architects ask first.</h2></div>
-      <div>
-        <details open><summary>What happens to agent traffic if Zenstra is unavailable?</summary><p>Each agent and tool has a fail mode. The default is fail-closed: the action is held and the agent receives a refusal it can handle. You can set specific low-risk tools to fail-open, and every fail-open decision is still recorded once the decision point recovers.</p></details>
-        <details><summary>Does Zenstra see or store our prompts and data?</summary><p>The decision point runs in your environment. Prompt and tool payloads are evaluated there. The ledger stores decisions and redacted evidence by default, and full payload retention is a per-agent setting you control.</p></details>
-        <details><summary>How much latency does inspection add?</summary><p>Policy checks are evaluated locally. The published methodology lists the load, policy count and hardware behind the latency figures, so your team can reproduce them.</p></details>
-        <details><summary>Which frameworks, models and protocols do you support?</summary><p>Any framework through the SDK or gateway, including MCP and agent-to-agent traffic. The integrations page lists tested versions.</p></details>
-        <details><summary>How is this different from an AI firewall or an identity provider?</summary><p>An AI firewall filters text. An identity provider issues tokens. Zenstra decides whether a specific agent may take a specific action for a specific task, at the moment it tries, and records why.</p></details>
+      <div><span class="label eyebrow" data-reveal>FAQ</span><h2 class="h2" id="faq-h" data-reveal>Questions security architects ask first.</h2></div>
+      <div data-stagger>
+        <details><summary>What happens to agent traffic if Zenstra is unavailable?</summary><div class="faq-body"><p>Each agent and tool has a fail mode. The default is fail-closed: the action is held and the agent receives a refusal it can handle. You can set specific low-risk tools to fail-open, and every fail-open decision is still recorded once the decision point recovers.</p></div></details>
+        <details><summary>Does Zenstra see or store our prompts and data?</summary><div class="faq-body"><p>The decision point runs in your environment. Prompt and tool payloads are evaluated there. The ledger stores decisions and redacted evidence by default, and full payload retention is a per-agent setting you control.</p></div></details>
+        <details><summary>How much latency does inspection add?</summary><div class="faq-body"><p>Policy checks are evaluated locally. The published methodology lists the load, policy count and hardware behind the latency figures, so your team can reproduce them.</p></div></details>
+        <details><summary>Which frameworks, models and protocols do you support?</summary><div class="faq-body"><p>Any framework through the SDK or gateway, including MCP and agent-to-agent traffic. The integrations page lists tested versions.</p></div></details>
+        <details><summary>How is this different from an AI firewall or an identity provider?</summary><div class="faq-body"><p>An AI firewall filters text. An identity provider issues tokens. Zenstra decides whether a specific agent may take a specific action for a specific task, at the moment it tries, and records why.</p></div></details>
       </div>
     </div>
   </section>
 
   <!-- CTA -->
-  <section class="cta" id="demo" aria-labelledby="cta-h">
+  <section class="band cta" id="demo" aria-labelledby="cta-h">
+    <div class="aurora" aria-hidden="true"></div>
     <div class="wrap">
       <div>
-        <span class="label eyebrow" style="color:var(--signal)">Technical demo</span>
-        <h2 id="cta-h">Bring one real agent. Leave with the evidence.</h2>
-        <ol>
+        <span class="label eyebrow" data-reveal>Technical demo</span>
+        <h2 id="cta-h" data-reveal>Bring one real agent. <br>Leave with the evidence.</h2>
+        <ol data-stagger>
           <li><span><b>Connect your agent.</b> Any framework, any model provider.</span></li>
           <li><span><b>Watch a policy stop it.</b> Live injection and exfiltration attempts.</span></li>
           <li><span><b>Keep the ledger.</b> The decision record and a security review pack.</span></li>
         </ol>
       </div>
-      <div class="cta-box">
-        <a class="btn btn-primary" href="#">Request a technical demo</a>
-        <p>30 minutes with a security engineer. No slideware.<button class="note" data-note="Preserved from the current demo page: its copy is the most credible on the site. The form should drop the mobile-number field; security buyers abandon forms that ask for one.">13</button></p>
+      <div class="cta-box" data-reveal="scale">
+        <span class="label" style="color:var(--band-ink-3)">30 minutes · with a security engineer</span>
+        <a class="btn btn-primary" href="#">Request a technical demo <svg class="arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+        <p>No slideware. Runs against your own agent, in your own cloud.</p>
       </div>
     </div>
   </section>
@@ -546,73 +652,23 @@
   <div class="wrap">
     <div class="foot-grid">
       <div class="foot-brand">
-        <a class="brand" href="#"><svg viewBox="0 0 24 24" aria-hidden="true" width="20" height="20"><path fill="url(#zg)" d="M12 0C12.9 7.6 16.4 11.1 24 12 16.4 12.9 12.9 16.4 12 24 11.1 16.4 7.6 12.9 0 12 7.6 11.1 11.1 7.6 12 0Z"/></svg><span>ZENSTRA</span></a>
+        <a class="brand" href="home.html"><svg viewBox="0 0 24 24" aria-hidden="true" width="22" height="22"><path fill="url(#zg)" d="M12 0C12.9 7.6 16.4 11.1 24 12 16.4 12.9 12.9 16.4 12 24 11.1 16.4 7.6 12.9 0 12 7.6 11.1 11.1 7.6 12 0Z"/></svg><span>ZENSTRA</span></a>
         <p>Runtime security for AI agents: identity, policy and evidence for every autonomous action.</p>
       </div>
-      <div><span class="label">Platform</span><ul><li><a href="platform.html">Overview</a></li><li><a href="#">Architecture</a></li><li><a href="#">Integrations</a></li><li><a href="#">Console</a></li></ul></div>
+      <div><span class="label">Platform</span><ul><li><a href="platform.html">Overview</a></li><li><a href="platform.html#architecture">Architecture</a></li><li><a href="platform.html#integrations">Integrations</a></li><li><a href="console.html">Console</a></li></ul></div>
       <div><span class="label">Solutions</span><ul><li><a href="#">Credit unions</a></li><li><a href="#">Banking</a></li><li><a href="#">Healthcare</a></li><li><a href="#">MCP security</a></li></ul></div>
       <div><span class="label">Resources</span><ul><li><a href="#">Documentation</a></li><li><a href="#">Threat catalog</a></li><li><a href="#">Blog</a></li><li><a href="#">Glossary</a></li></ul></div>
-      <div><span class="label">Trust</span><ul><li><a href="#">Trust center</a></li><li><a href="#">Security reports</a></li><li><a href="#">Subprocessors</a></li><li><a href="#">Report a vulnerability</a></li><li><a href="#">Status</a></li></ul></div>
+      <div><span class="label">Trust</span><ul><li><a href="#">Trust center</a></li><li><a href="#">Security reports</a></li><li><a href="#">Subprocessors</a></li><li><a href="#">Report a vulnerability</a></li></ul></div>
       <div><span class="label">Company</span><ul><li><a href="#">About</a></li><li><a href="#">Leadership</a></li><li><a href="#">Careers</a></li><li><a href="#">Contact</a></li></ul></div>
     </div>
-    <div class="legal"><span>© 2026 Zenstra AI. All rights reserved.</span><span><a href="#">Privacy</a> · <a href="#">Terms</a> · <a href="#">Accessibility</a></span></div>
+    <div class="legal"><span>© 2026 Zenstra AI. All rights reserved.</span><span class="status"><i></i>All systems operational</span><span><a href="#">Privacy</a> · <a href="#">Terms</a> · <a href="#">Accessibility</a></span></div>
   </div>
 </footer>
 
-<button class="notes-toggle" id="notes-toggle" aria-pressed="true"><i></i>Design notes</button>
-
-<script>
-(function () {
-  var toggle = document.getElementById('notes-toggle');
-  toggle.addEventListener('click', function () {
-    var on = document.body.classList.toggle('notes-on');
-    toggle.setAttribute('aria-pressed', String(on));
-  });
-
-  // Tour tabs: switch selection; the preview links to the full console mockup.
-  document.querySelectorAll('.tour-tab').forEach(function (tab) {
-    tab.addEventListener('click', function () {
-      document.querySelectorAll('.tour-tab').forEach(function (t) { t.setAttribute('aria-selected', 'false'); });
-      tab.setAttribute('aria-selected', 'true');
-      document.querySelector('.tour-link').href = tab.dataset.href;
-    });
-  });
-
-  // Decision ledger: one new row every 2.4s, newest on top, six rows kept.
-  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var body = document.getElementById('ledger-rows');
-  var pauseBtn = document.getElementById('ledger-pause');
-  var feed = [
-    ['member-voice', 'kb.article.read', 'POL-021', 'allow', 4],
-    ['copilot-finance', 'gl.journal.post', 'POL-052', 'stepup', 12],
-    ['loan-doc-classifier', 'los.loanfile.read', 'POL-021', 'allow', 5],
-    ['zapier:lead-sync', 'crm.contact.export', 'unregistered', 'block', 7],
-    ['sar-prep-agent', 'case.note.write', 'POL-087', 'allow', 6],
-    ['member-chat-assist', 'memory.write (unsigned)', 'POL-140', 'block', 9],
-    ['dev-agent-ci', 'git.push main', 'POL-009', 'stepup', 10],
-    ['copilot-hr-assist', 'hris.salary.read', 'POL-033', 'block', 8]
-  ];
-  var label = { allow: 'Allow', stepup: 'Step-up', block: 'Block' };
-  var i = 0, paused = reduce, clock = new Date(2026, 9, 8, 9, 41, 3);
-  if (reduce) { pauseBtn.textContent = 'Play'; pauseBtn.setAttribute('aria-pressed', 'true'); }
-  function pad(n) { return String(n).padStart(2, '0'); }
-  function tick() {
-    if (paused || document.hidden) return;
-    var f = feed[i++ % feed.length];
-    clock = new Date(clock.getTime() + 1000 + Math.round(Math.random() * 1400));
-    var tr = document.createElement('tr');
-    tr.className = 'enter';
-    tr.innerHTML = '<td>' + pad(clock.getHours()) + ':' + pad(clock.getMinutes()) + ':' + pad(clock.getSeconds()) + '</td><td class="agent">' + f[0] + '</td><td>' + f[1] + '</td><td>' + f[2] + '</td><td><span class="verdict ' + f[3] + '"><i></i>' + label[f[3]] + '</span></td><td class="ms">' + f[4] + '</td>';
-    body.insertBefore(tr, body.firstChild);
-    while (body.children.length > 6) body.removeChild(body.lastChild);
-  }
-  setInterval(tick, 2400);
-  pauseBtn.addEventListener('click', function () {
-    paused = !paused;
-    pauseBtn.textContent = paused ? 'Play' : 'Pause';
-    pauseBtn.setAttribute('aria-pressed', String(paused));
-  });
-})();
-</script>
+<script src="assets/vendor/motion-11.11.13.js"></script>
+<script src="assets/vendor/anime-4.0.2.umd.min.js"></script>
+<script src="assets/vendor/lenis-1.1.13.min.js"></script>
+<script src="assets/zx-core.js"></script>
+<script src="assets/site-motion.js"></script>
 </body>
 </html>

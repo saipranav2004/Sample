@@ -3,135 +3,156 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Zenstra Platform Mockup</title>
+<title>Zenstra Platform · How it works</title>
+<script>try{var t=localStorage.getItem('zx-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}document.documentElement.classList.add('js');</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wdth,wght@0,75..100,400..700;1,75..100,400..700&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="assets/zx.css">
 <link rel="stylesheet" href="assets/site.css">
 <style>
-  .p-hero { padding-block: 56px 48px; background: var(--surface); border-bottom: 1px solid var(--line); }
-  .p-hero .grid { display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); gap: 48px; align-items: start; }
-  .p-hero h1 { font-size: clamp(30px, 3.6vw, 42px); line-height: 1.1; letter-spacing: -0.02em; max-width: 18ch; }
-  .p-hero .lede { font-size: 17px; }
-  .p-hero .ctas { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 28px; }
-  .crumb { font-size: 13px; color: var(--ink-3); margin-bottom: 16px; display: block; }
-  .crumb a { color: var(--ink-3); }
-  .spec { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13.5px; border: 1px solid var(--line); border-radius: var(--r-3); overflow: hidden; }
-  .spec caption { text-align: left; padding: 0 0 10px; }
-  .spec th, .spec td { padding: 10px 14px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+  .js:not(.reduce):not(.reveal-all) .hero [data-hero] { opacity: 0; }
+  .js:not(.reduce):not(.reveal-all) .hero h1 .line > span { transform: translateY(105%); }
+  .p-hero { padding-bottom: 88px; }
+  .p-hero .hero-grid { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); align-items: start; }
+  .p-hero h1 { font-size: clamp(36px, 4.4vw, 58px); }
+  .crumb { font-size: 13px; color: var(--hero-ink-2); display: block; margin-bottom: 10px; }
+  .crumb a { color: var(--hero-ink-2); }
+  .spec { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 14px; border: 1px solid var(--hero-panel-line); border-radius: 14px; overflow: hidden; background: var(--hero-panel); color: var(--hero-panel-ink); box-shadow: 0 30px 70px -40px rgba(4, 16, 36, 0.45); }
+  .spec caption { text-align: left; padding: 0 0 12px; color: var(--hero-ink-2); }
+  .spec th, .spec td { padding: 13px 18px; border-bottom: 1px solid var(--hero-panel-line); text-align: left; vertical-align: top; }
   .spec tr:last-child th, .spec tr:last-child td { border-bottom: 0; }
-  .spec th { color: var(--ink-3); font-weight: 500; width: 42%; background: var(--surface-2); }
-  .spec td { font-weight: 500; }
-  @media (max-width: 960px) { .p-hero .grid { grid-template-columns: 1fr; } }
+  .spec th { color: var(--hero-panel-ink-2); font-weight: 500; width: 44%; }
+  .spec td { font-weight: 600; }
 
-  .subnav { position: sticky; top: calc(64px + env(safe-area-inset-top, 0px)); z-index: 30; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
-  .subnav .wrap { display: flex; gap: 4px; overflow-x: auto; height: 48px; align-items: center; }
-  .subnav a { padding: 6px 12px; border-radius: var(--r-2); color: var(--ink-2); text-decoration: none; font-weight: 500; font-size: 14px; white-space: nowrap; }
-  .subnav a:hover { background: var(--surface-2); color: var(--ink); }
-  .subnav a.on { color: var(--ink); background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); }
-  section[id] { scroll-margin-top: 128px; }
+  .subnav { position: sticky; top: 0; z-index: 90; background: color-mix(in srgb, var(--bg) 86%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); transition: top 420ms var(--ease-expo); }
+  .site-head:not(.hide) ~ main .subnav { top: var(--header-h); }
+  .subnav .wrap { display: flex; gap: 4px; overflow-x: auto; height: 52px; align-items: center; }
+  .subnav a { position: relative; padding: 8px 12px; color: var(--ink-2); text-decoration: none; font-weight: 500; font-size: 14px; white-space: nowrap; transition: color var(--t-fast); }
+  .subnav a::after { content: ''; position: absolute; left: 12px; right: 12px; bottom: -9px; height: 2px; background: var(--brand); transform: scaleX(0); transition: transform 500ms var(--ease-expo); }
+  .subnav a:hover { color: var(--ink); }
+  .subnav a.on { color: var(--ink); }
+  .subnav a.on::after { transform: scaleX(1); }
+  section[id] { scroll-margin-top: 140px; }
 
   /* Sequence diagram */
-  .seq-wrap { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-3); padding: 20px; overflow-x: auto; }
+  .seq-wrap { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 24px; overflow-x: auto; }
+  .seq-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
   .seq { display: block; min-width: 760px; width: 100%; height: auto; }
   .seq .lane-head rect { fill: var(--surface-2); stroke: var(--line-strong); }
   .seq .lane-head.zx rect { fill: var(--brand-wash); stroke: var(--brand); }
   .seq .lane-head text { fill: var(--ink); font: 600 13px var(--font-sans); }
   .seq .lane-head text.sub { fill: var(--ink-3); font: 400 11px var(--font-mono); }
-  .seq .life { stroke: var(--line-strong); stroke-dasharray: 3 4; }
+  .seq .life { stroke: var(--line-strong); stroke-dasharray: 3 4; transform-box: fill-box; transform-origin: top; }
+  .seq .act { fill: var(--brand); opacity: 0.18; transform-box: fill-box; transform-origin: top; }
+  .seq .msg { transform-box: fill-box; transform-origin: center; }
   .seq .msg line { stroke: var(--ink-2); stroke-width: 1.5; }
   .seq .msg text { fill: var(--ink); font: 500 12.5px var(--font-sans); }
   .seq .msg text.code { fill: var(--ink-2); font: 400 11.5px var(--font-mono); }
   .seq .msg.ret line { stroke-dasharray: 5 4; stroke: var(--ink-3); }
-  .seq .msg.block line { stroke: var(--crit); }
-  .seq .msg.block text { fill: var(--crit); }
-  .seq .act { fill: var(--brand); opacity: 0.16; }
+  .seq .msg.block line { stroke: var(--crit); stroke-width: 2; }
+  .seq .msg.block text { fill: var(--crit); font-weight: 700; }
   .seq .t { fill: var(--ink-3); font: 400 11px var(--font-mono); }
   .seq .note-box rect { fill: var(--med-wash); stroke: var(--med); }
   .seq .note-box text { fill: var(--ink); font: 400 11.5px var(--font-sans); }
+  .seq .seq-end text { fill: var(--ink-3); font: 500 12.5px var(--font-sans); }
+  .seq .seq-end text.code { font: 400 11.5px var(--font-mono); }
   .arrowhead { fill: var(--ink-2); }
   .arrowhead.red { fill: var(--crit); }
   .seq-legend { display: flex; flex-wrap: wrap; gap: 8px 24px; margin-top: 14px; font-size: 13px; color: var(--ink-2); }
 
-  /* Matrix */
-  .matrix-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r-3); background: var(--surface); }
-  .matrix { width: 100%; min-width: 880px; border-collapse: collapse; font-size: 13.5px; }
-  .matrix th, .matrix td { padding: 12px 16px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+  .matrix-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+  .matrix { width: 100%; min-width: 880px; border-collapse: collapse; font-size: 14px; }
+  .matrix th, .matrix td { padding: 14px 18px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
   .matrix thead th { background: var(--surface-2); }
+  .matrix tbody tr:not(.group) { transition: background var(--t-fast); }
+  .matrix tbody tr:not(.group):hover { background: var(--surface-2); }
   .matrix tbody th { font-weight: 600; width: 19%; }
-  .matrix tbody th small { display: block; font-weight: 500; margin-top: 4px; }
-  .matrix tr.group td { background: var(--bg); padding: 8px 16px; }
-  .matrix code { color: var(--ink-2); }
-
-  .cmp { width: 100%; min-width: 720px; border-collapse: collapse; font-size: 14px; }
-  .cmp th, .cmp td { padding: 12px 16px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
-  .cmp thead th { font-size: 15px; }
+  .matrix tbody th small { display: block; font-weight: 500; margin-top: 4px; color: var(--ink-3); font-family: var(--font-mono); font-size: 11.5px; }
+  .matrix tr.group td { background: var(--bg); padding: 10px 18px; color: var(--brand); }
+  .cmp { width: 100%; min-width: 720px; border-collapse: collapse; font-size: 14.5px; }
+  .cmp th, .cmp td { padding: 14px 18px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+  .cmp tr:last-child th, .cmp tr:last-child td { border-bottom: 0; }
+  .cmp thead th { font-size: 16px; }
   .cmp thead th small { display: block; font-weight: 400; color: var(--ink-3); font-size: 13px; }
   .cmp tbody th { color: var(--ink-3); font-weight: 500; width: 22%; }
-
-  .integ { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; }
-  .integ h3 { font-size: 15px; margin-bottom: 10px; }
+  .integ { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+  .integ > div { padding: 22px; border: 1px solid var(--line); border-radius: 14px; background: var(--bg); }
+  .integ h3 { font-size: 15px; margin-bottom: 12px; }
   .integ ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
-  .integ li { font-size: 13px; padding: 4px 10px; border: 1px solid var(--line); border-radius: var(--r-1); background: var(--surface); }
-
-  .sec-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; border: 1px solid var(--line); border-radius: var(--r-3); background: var(--surface); }
-  .sec-grid div { padding: 22px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-  .sec-grid div:nth-child(3n) { border-right: 0; }
-  .sec-grid div:nth-last-child(-n+3) { border-bottom: 0; }
-  .sec-grid h3 { font-size: 15px; }
-  .sec-grid p { font-size: 14px; color: var(--ink-2); margin-top: 6px; }
-  @media (max-width: 900px) { .sec-grid { grid-template-columns: 1fr; } .sec-grid div { border-right: 0 !important; border-bottom: 1px solid var(--line) !important; } .sec-grid div:last-child { border-bottom: 0 !important; } }
+  .integ li { font-size: 13px; padding: 5px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); transition: border-color var(--t-fast), transform 300ms var(--ease-expo); }
+  .integ li:hover { border-color: var(--brand); transform: translateY(-2px); }
+  .alt { background: var(--surface); border-block: 1px solid var(--line); }
+  .sec-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .sec-grid > div { padding: 26px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); transition: border-color var(--t-base), transform 500ms var(--ease-expo), box-shadow var(--t-base); }
+  .sec-grid > div:hover { border-color: var(--brand); transform: translateY(-3px); box-shadow: var(--shadow-2); }
+  .sec-grid .ic { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: var(--brand-wash); color: var(--brand); margin-bottom: 16px; }
+  .sec-grid .ic svg { width: 18px; height: 18px; }
+  .sec-grid h3 { font-size: 16px; }
+  .sec-grid p { font-size: 14px; color: var(--ink-2); margin-top: 8px; }
+  @media (max-width: 900px) { .sec-grid { grid-template-columns: 1fr; } .p-hero .hero-grid { grid-template-columns: 1fr; } }
 </style>
 </head>
-<body class="notes-on">
+<body>
 <a class="skip" href="#main">Skip to content</a>
-<div class="mock-banner">Design mockup, phase 1. Placeholder claims are marked with pink notes. <a href="index.html">Back to the design direction</a></div>
+<div class="intro" aria-hidden="true">
+  <div class="intro-inner">
+    <svg class="star" viewBox="0 0 24 24"><defs><linearGradient id="introGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#12b0f0"/><stop offset="1" stop-color="#0c6eb4"/></linearGradient></defs><path class="star-fill" style="transform-box:fill-box;transform-origin:center" d="M12 0C12.9 7.6 16.4 11.1 24 12 16.4 12.9 12.9 16.4 12 24 11.1 16.4 7.6 12.9 0 12 7.6 11.1 11.1 7.6 12 0Z"/><path class="star-stroke" d="M12 0C12.9 7.6 16.4 11.1 24 12 16.4 12.9 12.9 16.4 12 24 11.1 16.4 7.6 12.9 0 12 7.6 11.1 11.1 7.6 12 0Z"/></svg>
+    <div class="word"><span>Z</span><span>E</span><span>N</span><span>S</span><span>T</span><span>R</span><span>A</span></div>
+    <div class="bar"><i></i></div>
+  </div>
+</div>
+<div class="progress" aria-hidden="true"></div>
 
 <header class="site-head">
   <div class="wrap">
     <a class="brand" href="home.html" aria-label="Zenstra home">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="zg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#12b0f0"/><stop offset="1" stop-color="#3d9be0"/></linearGradient></defs><path fill="url(#zg)" d="M12 0C12.9 7.6 16.4 11.1 24 12 16.4 12.9 12.9 16.4 12 24 11.1 16.4 7.6 12.9 0 12 7.6 11.1 11.1 7.6 12 0Z"/></svg>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="zg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#12b0f0"/><stop offset="1" stop-color="#0c6eb4"/></linearGradient></defs><path fill="url(#zg)" d="M12 0C12.9 7.6 16.4 11.1 24 12 16.4 12.9 12.9 16.4 12 24 11.1 16.4 7.6 12.9 0 12 7.6 11.1 11.1 7.6 12 0Z"/></svg>
       <span>ZENSTRA</span>
     </a>
     <ul class="nav" aria-label="Primary">
-      <li><a class="nav-trigger" href="platform.html" aria-current="page" style="color:var(--night-ink)">Platform</a></li>
-      <li><a class="nav-trigger" href="#">Solutions</a></li>
+      <li><a class="nav-trigger" href="platform.html" aria-current="page">Platform</a></li>
+      <li><a class="nav-trigger" href="home.html#solutions">Solutions</a></li>
       <li><a class="nav-trigger" href="#">Resources</a></li>
-      <li><a class="nav-trigger" href="#">Trust center</a></li>
+      <li><a class="nav-trigger" href="home.html#trust">Trust center</a></li>
       <li><a class="nav-trigger" href="#">Company</a></li>
     </ul>
     <div class="head-actions">
+      <button class="theme-toggle" data-theme-toggle aria-label="Switch between light and dark theme">
+        <svg class="moon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13 9.5A5.5 5.5 0 0 1 6.5 3a5.5 5.5 0 1 0 6.5 6.5Z"/></svg>
+        <svg class="sun" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="3"/><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"/></svg>
+      </button>
       <a class="btn btn-ghost btn-sm signin" href="console.html">Sign in</a>
-      <a class="btn btn-primary btn-sm" href="#demo" style="background:#1a7fca">Request a demo</a>
-      <button class="btn btn-ghost btn-sm menu-btn" aria-label="Open menu"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 4h12M2 8h12M2 12h12"/></svg></button>
+      <a class="btn btn-primary btn-sm" href="#demo">Request a demo</a>
+      <button class="btn btn-ghost btn-sm menu-btn" aria-label="Open menu" aria-expanded="false"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 4h12M2 8h12M2 12h12"/></svg></button>
     </div>
   </div>
 </header>
+<nav class="mobile-menu" aria-label="Mobile"><a href="home.html">Home</a><a href="platform.html">Platform</a><a href="home.html#solutions">Solutions</a><a href="home.html#trust">Trust center</a><a href="console.html">Sign in</a><a href="#demo">Request a demo</a></nav>
 
 <main id="main">
-  <div class="p-hero">
-    <div class="wrap grid">
+  <section class="hero p-hero" aria-labelledby="hero-h">
+    <canvas class="hero-canvas" aria-hidden="true"></canvas>
+    <div class="wrap hero-grid">
       <div>
-        <span class="crumb"><a href="home.html">Home</a> / Platform</span>
-        <h1>One decision point for every action an agent takes.</h1>
-        <p class="lede">Zenstra inventories every agent, gives each one a verifiable identity, checks each tool call against your policy before it runs, and records the decision as evidence. This page explains how, for the architects who will review it.<button class="note" data-note="Platform page audience is the security architect and the AI platform engineer, so it leads with mechanism and a spec sheet rather than benefits. Benefits live on solution pages for the CISO.">1</button></p>
-        <div class="ctas"><a class="btn btn-primary" href="#demo">Request a technical demo</a><a class="btn btn-secondary" href="#">Read the docs</a></div>
+        <span class="crumb" data-hero><a href="home.html">Home</a> / Platform</span>
+        <h1 id="hero-h"><span class="line"><span>One decision point</span></span><span class="line"><span>for every action</span></span><span class="line"><span class="accent">an agent takes.<svg viewBox="0 0 300 12" preserveAspectRatio="none" aria-hidden="true"><path d="M2 8 C 60 2, 140 2, 298 6"/></svg></span></span></h1>
+        <p class="sub" data-hero>Zenstra inventories every agent, gives each one a verifiable identity, checks each tool call against your policy before it runs, and records the decision as evidence. This page explains how, for the architects who will review it.</p>
+        <div class="ctas" data-hero><a class="btn btn-primary" href="#demo">Request a technical demo <svg class="arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a><a class="btn btn-secondary" href="#">Read the docs</a></div>
       </div>
-      <table class="spec">
-        <caption class="label">Specification<button class="note" data-note="A spec sheet is how infrastructure buyers compare vendors (Cloudflare, Datadog and Aembit all publish one). Every value here must be confirmed by engineering before launch.">2</button></caption>
+      <div data-hero><span class="label" style="display:block;margin-bottom:12px;color:var(--hero-ink-2)">Specification</span><table class="spec">
         <tbody>
           <tr><th scope="row">Enforcement point</th><td>Before the tool call executes</td></tr>
           <tr><th scope="row">Deployment</th><td>SDK, gateway, endpoint app</td></tr>
           <tr><th scope="row">Decision latency</th><td>18 ms p95 · <a href="#">methodology</a></td></tr>
           <tr><th scope="row">Default fail mode</th><td>Closed, set per agent and tool</td></tr>
           <tr><th scope="row">Where decisions run</th><td>Your cloud or your devices</td></tr>
-          <tr><th scope="row">Agent identity</th><td>Per-agent keys, SPIFFE-compatible IDs</td></tr>
+          <tr><th scope="row">Agent identity</th><td>Per-agent keys, SPIFFE-compatible</td></tr>
           <tr><th scope="row">Evidence</th><td>Hash-chained ledger, SIEM export</td></tr>
         </tbody>
-      </table>
+      </table></div>
     </div>
-  </div>
+  </section>
 
   <nav class="subnav" aria-label="On this page">
     <div class="wrap">
@@ -146,10 +167,11 @@
   <section id="architecture" aria-labelledby="arch-h">
     <div class="wrap">
       <div class="sec-head">
-        <div><span class="label eyebrow">Architecture</span><h2 class="h2" id="arch-h">What happens during one tool call.</h2></div>
-        <p class="lede">The agent asks to use a tool. Before the tool sees the request, Zenstra confirms the agent's identity, screens the content it is acting on, evaluates policy and intent, and writes the decision to the ledger. This example is the email attempt from the homepage.<button class="note" data-note="A sequence diagram is the standard way architects read request flows. It replaces abstract 'layer' diagrams with timing and order, which is what a reviewer actually checks.">3</button></p>
+        <div><span class="label eyebrow" data-reveal>Architecture</span><h2 class="h2" id="arch-h" data-reveal>What happens during <span class="mark">one tool call.</span></h2></div>
+        <p class="lede" data-reveal>The agent asks to use a tool. Before the tool sees the request, Zenstra confirms the agent's identity, screens the content it is acting on, evaluates policy and intent, and writes the decision to the ledger.</p>
       </div>
-      <div class="seq-wrap">
+      <div class="seq-wrap" data-reveal="fade">
+        <div class="seq-top"><span class="label">Example: an injected instruction tries to send member data by email</span><button class="btn btn-secondary btn-xs" id="seq-replay"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2.5 8a5.5 5.5 0 1 0 1.6-3.9M2.5 2.5v3h3"/></svg>Replay</button></div>
         <svg class="seq" viewBox="0 0 960 470" role="img" aria-labelledby="seq-t seq-d">
           <title id="seq-t">Sequence of one tool call through Zenstra</title>
           <desc id="seq-d">The agent requests email.send. The Zenstra SDK verifies the agent key, screens the retrieved content, and asks the policy engine for a decision. The policy engine returns block for POL-114. The SDK records the decision in the ledger and returns a refusal to the agent. The email tool is never called.</desc>
@@ -157,17 +179,16 @@
             <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="arrowhead" d="M0 0 10 5 0 10Z"/></marker>
             <marker id="ahr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="arrowhead red" d="M0 0 10 5 0 10Z"/></marker>
           </defs>
-          <g class="lane-head"><rect x="20" y="10" width="170" height="52" rx="6"/><text x="105" y="34" text-anchor="middle">AI agent</text><text class="sub" x="105" y="51" text-anchor="middle">member-chat-assist</text></g>
-          <g class="lane-head zx"><rect x="270" y="10" width="170" height="52" rx="6"/><text x="355" y="34" text-anchor="middle">Zenstra SDK</text><text class="sub" x="355" y="51" text-anchor="middle">in the agent process</text></g>
-          <g class="lane-head zx"><rect x="520" y="10" width="170" height="52" rx="6"/><text x="605" y="34" text-anchor="middle">Policy engine</text><text class="sub" x="605" y="51" text-anchor="middle">decision point, your VPC</text></g>
-          <g class="lane-head"><rect x="770" y="10" width="170" height="52" rx="6"/><text x="855" y="34" text-anchor="middle">Email tool</text><text class="sub" x="855" y="51" text-anchor="middle">email.send</text></g>
+          <g class="lane-head"><rect x="20" y="10" width="170" height="52" rx="8"/><text x="105" y="34" text-anchor="middle">AI agent</text><text class="sub" x="105" y="51" text-anchor="middle">member-chat-assist</text></g>
+          <g class="lane-head zx"><rect x="270" y="10" width="170" height="52" rx="8"/><text x="355" y="34" text-anchor="middle">Zenstra SDK</text><text class="sub" x="355" y="51" text-anchor="middle">in the agent process</text></g>
+          <g class="lane-head zx"><rect x="520" y="10" width="170" height="52" rx="8"/><text x="605" y="34" text-anchor="middle">Policy engine</text><text class="sub" x="605" y="51" text-anchor="middle">decision point, your VPC</text></g>
+          <g class="lane-head"><rect x="770" y="10" width="170" height="52" rx="8"/><text x="855" y="34" text-anchor="middle">Email tool</text><text class="sub" x="855" y="51" text-anchor="middle">email.send</text></g>
           <line class="life" x1="105" y1="62" x2="105" y2="455"/>
           <line class="life" x1="355" y1="62" x2="355" y2="455"/>
           <line class="life" x1="605" y1="62" x2="605" y2="455"/>
           <line class="life" x1="855" y1="62" x2="855" y2="455"/>
           <rect class="act" x="347" y="92" width="16" height="320"/>
           <rect class="act" x="597" y="226" width="16" height="92"/>
-
           <g class="msg"><line x1="105" y1="100" x2="345" y2="100" marker-end="url(#ah)"/><text x="120" y="92">1. call tool</text><text class="code" x="196" y="92">email.send(to, body)</text></g>
           <text class="t" x="20" y="104">+0 ms</text>
           <g class="msg"><line x1="363" y1="134" x2="400" y2="134"/><line x1="400" y1="134" x2="400" y2="152"/><line x1="400" y1="152" x2="365" y2="152" marker-end="url(#ah)"/><text x="412" y="140">2. verify agent key and attestation</text></g>
@@ -178,32 +199,32 @@
           <g class="msg"><line x1="363" y1="342" x2="400" y2="342"/><line x1="400" y1="342" x2="400" y2="360"/><line x1="400" y1="360" x2="365" y2="360" marker-end="url(#ah)"/><text x="412" y="348">6. append decision to ledger</text><text class="code" x="412" y="365">hash chained to previous entry</text></g>
           <g class="msg ret"><line x1="347" y1="396" x2="107" y2="396" marker-end="url(#ah)"/><text x="120" y="388">7. refusal the agent can handle</text></g>
           <text class="t" x="20" y="400">+18 ms</text>
-          <g class="msg"><text x="770" y="404" style="fill:var(--ink-3)">Never called.</text><text class="code" x="770" y="420">No request left</text><text class="code" x="770" y="435">the institution.</text></g>
+          <g class="seq-end"><text x="770" y="404">Never called.</text><text class="code" x="770" y="420">No request left</text><text class="code" x="770" y="435">the institution.</text></g>
         </svg>
         <div class="seq-legend"><span>Solid arrow: request</span><span>Dashed arrow: response</span><span>Blue bar: Zenstra is processing</span></div>
       </div>
     </div>
   </section>
 
-  <section id="capabilities" class="arch-band" aria-labelledby="cap-h">
+  <section id="capabilities" class="alt" aria-labelledby="cap-h">
     <div class="wrap">
       <div class="sec-head">
-        <div><span class="label eyebrow">Capabilities</span><h2 class="h2" id="cap-h">What each control stops, and what it leaves behind.</h2></div>
-        <p class="lede">For each capability: the attack or failure it addresses, where it is enforced, and the evidence an auditor can inspect afterwards.<button class="note" data-note="A matrix lets the security architect check coverage against their own threat model in one pass, which eight marketing cards cannot do. Technique references must be verified against MITRE ATLAS and the OWASP Top 10 for LLM Applications before publishing.">4</button></p>
+        <div><span class="label eyebrow" data-reveal>Capabilities</span><h2 class="h2" id="cap-h" data-reveal>What each control stops, and <span class="mark">what it leaves behind.</span></h2></div>
+        <p class="lede" data-reveal>For each capability: the attack or failure it addresses, where it is enforced, and the evidence an auditor can inspect afterwards.</p>
       </div>
-      <div class="matrix-wrap">
+      <div class="matrix-wrap" data-reveal>
         <table class="matrix">
           <thead><tr><th scope="col" class="label">Capability</th><th scope="col" class="label">Stops</th><th scope="col" class="label">Enforced at</th><th scope="col" class="label">Evidence produced</th></tr></thead>
           <tbody>
-            <tr class="group"><td colspan="4" class="label">Discover</td></tr>
+            <tr class="group"><td colspan="4" class="label">01 · Discover</td></tr>
             <tr><th scope="row">Shadow AI discovery</th><td>Agents, AI tools and no-code workflows operating without review</td><td>Endpoint app, gateway traffic, cloud and SaaS connectors</td><td>Living inventory with owner, device and detection signal</td></tr>
             <tr><th scope="row">Agent identity</th><td>Impersonation, stolen agent keys, agents acting as each other</td><td>SDK and gateway, on every call</td><td>Key, attestation and rotation history per agent</td></tr>
-            <tr class="group"><td colspan="4" class="label">Enforce</td></tr>
+            <tr class="group"><td colspan="4" class="label">02 · Enforce</td></tr>
             <tr><th scope="row">Secure tool access</th><td>Standing credentials, over-broad grants, excessive agency</td><td>Before tool execution</td><td>Grant, scope and expiry on each decision</td></tr>
-            <tr><th scope="row">Prompt injection defense<small class="tech">AML.T0051</small></th><td>Direct and indirect injection steering agent intent</td><td>On retrieval and before planning</td><td>Quarantined span, score and source document</td></tr>
+            <tr><th scope="row">Prompt injection defense<small>MITRE ATLAS AML.T0051</small></th><td>Direct and indirect injection steering agent intent</td><td>On retrieval and before planning</td><td>Quarantined span, score and source document</td></tr>
             <tr><th scope="row">Memory protection</th><td>Memory poisoning and cross-session contamination</td><td>On every memory write</td><td>Signature and provenance on each memory entry</td></tr>
             <tr><th scope="row">Policy as code</th><td>Inconsistent guardrails across models and frameworks</td><td>Decision point, per call</td><td>Policy version that produced each decision</td></tr>
-            <tr class="group"><td colspan="4" class="label">Prove</td></tr>
+            <tr class="group"><td colspan="4" class="label">03 · Prove</td></tr>
             <tr><th scope="row">Decision ledger</th><td>Disputed or missing records of what an agent did</td><td>Every decision, allowed or not</td><td>Tamper-evident, replayable trail; SIEM export</td></tr>
             <tr><th scope="row">Runtime detection</th><td>Gradual drift and anomalous behaviour mid-task</td><td>Per-agent baseline, continuously</td><td>Drift score history and the run that triggered it</td></tr>
           </tbody>
@@ -215,10 +236,10 @@
   <section id="deployment" aria-labelledby="dep-h">
     <div class="wrap">
       <div class="sec-head">
-        <div><span class="label eyebrow">Deployment</span><h2 class="h2" id="dep-h">Three ways in. Most institutions use two.</h2></div>
-        <p class="lede">Agents you build take the SDK. Agents you buy or connect over MCP go through the gateway. Copilots on employee devices are covered by the endpoint app. All three report to the same policy set and ledger.<button class="note" data-note="Resolves today's inconsistency: the homepage says SDK + gateway, the credit-union page says a desktop app 'like antivirus'. Same three modes, named identically, everywhere.">5</button></p>
+        <div><span class="label eyebrow" data-reveal>Deployment</span><h2 class="h2" id="dep-h" data-reveal>Three ways in. <span class="mark">Most institutions use two.</span></h2></div>
+        <p class="lede" data-reveal>Agents you build take the SDK. Agents you buy or connect over MCP go through the gateway. Copilots on employee devices are covered by the endpoint app. All three report to the same policy set and ledger.</p>
       </div>
-      <div class="matrix-wrap">
+      <div class="matrix-wrap" data-reveal>
         <table class="cmp">
           <thead><tr><th scope="col"></th><th scope="col">SDK<small>For agents you build</small></th><th scope="col">Gateway<small>For MCP and API traffic</small></th><th scope="col">Endpoint app<small>For employee AI tools</small></th></tr></thead>
           <tbody>
@@ -233,13 +254,13 @@
     </div>
   </section>
 
-  <section id="integrations" class="arch-band" aria-labelledby="int-h">
+  <section id="integrations" class="alt" aria-labelledby="int-h">
     <div class="wrap">
       <div class="sec-head">
-        <div><span class="label eyebrow">Integrations</span><h2 class="h2" id="int-h">Works with the stack you already run.</h2></div>
-        <p class="lede">Tested versions for each integration are listed in the documentation.<button class="note" data-note="Text list, not a logo wall: logos imply partnerships. Only list integrations engineering has tested, and link each to its doc page.">6</button></p>
+        <div><span class="label eyebrow" data-reveal>Integrations</span><h2 class="h2" id="int-h" data-reveal>Works with the stack you already run.</h2></div>
+        <p class="lede" data-reveal>Tested versions for each integration are listed in the documentation.</p>
       </div>
-      <div class="integ">
+      <div class="integ" data-stagger>
         <div><h3>Agent frameworks</h3><ul><li>LangGraph</li><li>CrewAI</li><li>OpenAI Agents SDK</li><li>Semantic Kernel</li><li>Custom Python and TypeScript</li></ul></div>
         <div><h3>Protocols</h3><ul><li>Model Context Protocol</li><li>Agent-to-agent (A2A)</li><li>OpenAPI tools</li></ul></div>
         <div><h3>Identity</h3><ul><li>Microsoft Entra ID</li><li>Okta</li><li>Ping Identity</li><li>Google Workspace</li></ul></div>
@@ -252,59 +273,51 @@
   <section id="security" aria-labelledby="sec-h">
     <div class="wrap">
       <div class="sec-head">
-        <div><span class="label eyebrow">Securing Zenstra</span><h2 class="h2" id="sec-h">A control in the path of every action has to be trustworthy itself.</h2></div>
-        <p class="lede">The first question a CISO asks about an inline control is what happens when it is wrong, slow or compromised. These are the answers.<button class="note" data-note="'Who guards the guard' is the objection every inline security product faces. Answering it on the product page, before the call, is a strong trust signal. Contents must match the real architecture.">7</button></p>
+        <div><span class="label eyebrow" data-reveal>Securing Zenstra</span><h2 class="h2" id="sec-h" data-reveal>A control in the path of every action has to be <span class="mark">trustworthy itself.</span></h2></div>
+        <p class="lede" data-reveal>The first question a CISO asks about an inline control is what happens when it is wrong, slow or compromised. These are the answers.</p>
       </div>
-      <div class="sec-grid">
-        <div><h3>Your data stays with you</h3><p>Prompts and tool payloads are evaluated inside your environment. The control plane receives decisions and redacted evidence only.</p></div>
-        <div><h3>Fail-closed, with an exit</h3><p>If a decision point is unreachable, actions are held. Low-risk tools can be set to fail-open, and those decisions are recorded on recovery.</p></div>
-        <div><h3>No single key opens everything</h3><p>Per-tenant encryption keys, per-agent identities, and console access through your identity provider with role-based permissions.</p></div>
-        <div><h3>A ledger you can verify</h3><p>Each entry is chained to the previous one. You can verify the chain independently with the open-source verifier.</p></div>
-        <div><h3>Tested from outside</h3><p>Annual independent penetration test and a public vulnerability disclosure policy with a security.txt.</p></div>
-        <div><h3>Software you can inspect</h3><p>A software bill of materials ships with every SDK, gateway and endpoint release.</p></div>
+      <div class="sec-grid" data-stagger>
+        <div><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M2 6h12"/></svg></span><h3>Your data stays with you</h3><p>Prompts and tool payloads are evaluated inside your environment. The control plane receives decisions and redacted evidence only.</p></div>
+        <div><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 1.5 13.5 4v4c0 3.2-2.4 5.6-5.5 6.5C4.9 13.6 2.5 11.2 2.5 8V4Z"/></svg></span><h3>Fail-closed, with an exit</h3><p>If a decision point is unreachable, actions are held. Low-risk tools can be set to fail-open, and those decisions are recorded on recovery.</p></div>
+        <div><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="5.5" cy="8" r="3"/><path d="M8.5 8h6M12 8v2.5"/></svg></span><h3>No single key opens everything</h3><p>Per-tenant encryption keys, per-agent identities, and console access through your identity provider with role-based permissions.</p></div>
+        <div><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 3.5h10M3 6.5h10M3 9.5h10M3 12.5h6"/></svg></span><h3>A ledger you can verify</h3><p>Each entry is chained to the previous one, so you can check the chain independently.</p></div>
+        <div><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg></span><h3>Tested from outside</h3><p>Annual independent penetration test and a public vulnerability disclosure policy.</p></div>
+        <div><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 1.5h5.5L12.5 4.5v10h-8.5Z M6 8.5h4.5M6 11h4.5"/></svg></span><h3>Software you can inspect</h3><p>A software bill of materials ships with every SDK, gateway and endpoint release.</p></div>
       </div>
     </div>
   </section>
 
-  <section class="cta" id="demo" aria-labelledby="cta-h">
+  <section class="band cta" id="demo" aria-labelledby="cta-h">
+    <div class="aurora" aria-hidden="true"></div>
     <div class="wrap">
       <div>
-        <span class="label eyebrow" style="color:var(--signal)">Technical demo</span>
-        <h2 id="cta-h">Bring one real agent. Leave with the evidence.</h2>
-        <ol>
+        <span class="label eyebrow" data-reveal>Technical demo</span>
+        <h2 id="cta-h" data-reveal>Bring one real agent. <br>Leave with the evidence.</h2>
+        <ol data-stagger>
           <li><span><b>Connect your agent.</b> Any framework, any model provider.</span></li>
           <li><span><b>Watch a policy stop it.</b> Live injection and exfiltration attempts.</span></li>
           <li><span><b>Keep the ledger.</b> The decision record and a security review pack.</span></li>
         </ol>
       </div>
-      <div class="cta-box"><a class="btn btn-primary" href="#">Request a technical demo</a><p>30 minutes with a security engineer.</p></div>
+      <div class="cta-box" data-reveal="scale">
+        <span class="label" style="color:var(--band-ink-3)">30 minutes · with a security engineer</span>
+        <a class="btn btn-primary" href="#">Request a technical demo <svg class="arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+        <p>No slideware. Runs against your own agent, in your own cloud.</p>
+      </div>
     </div>
   </section>
 </main>
 
 <footer>
   <div class="wrap">
-    <div class="legal" style="margin-top:0;border-top:0;padding-top:0"><span>© 2026 Zenstra AI. All rights reserved.</span><span><a href="home.html">Home</a> · <a href="console.html">Console</a> · <a href="index.html">Design direction</a></span></div>
+    <div class="legal" style="margin-top:0;border-top:0;padding-top:0"><span>© 2026 Zenstra AI. All rights reserved.</span><span class="status"><i></i>All systems operational</span><span><a href="home.html">Home</a> · <a href="console.html">Console</a> · <a href="#">Privacy</a></span></div>
   </div>
 </footer>
 
-<button class="notes-toggle" id="notes-toggle" aria-pressed="true"><i></i>Design notes</button>
-<script>
-(function () {
-  var toggle = document.getElementById('notes-toggle');
-  toggle.addEventListener('click', function () {
-    var on = document.body.classList.toggle('notes-on');
-    toggle.setAttribute('aria-pressed', String(on));
-  });
-  // Sub-navigation follows the section in view.
-  var links = Array.prototype.slice.call(document.querySelectorAll('.subnav a'));
-  var io = new IntersectionObserver(function (entries) {
-    entries.forEach(function (en) {
-      if (en.isIntersecting) links.forEach(function (a) { a.classList.toggle('on', a.getAttribute('href') === '#' + en.target.id); });
-    });
-  }, { rootMargin: '-40% 0px -55% 0px' });
-  links.forEach(function (a) { var t = document.querySelector(a.getAttribute('href')); if (t) io.observe(t); });
-})();
-</script>
+<script src="assets/vendor/motion-11.11.13.js"></script>
+<script src="assets/vendor/anime-4.0.2.umd.min.js"></script>
+<script src="assets/vendor/lenis-1.1.13.min.js"></script>
+<script src="assets/zx-core.js"></script>
+<script src="assets/site-motion.js"></script>
 </body>
 </html>

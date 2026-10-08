@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Zenstra Console Mockup</title>
+<title>Zenstra Console</title>
+<script>try{var t=localStorage.getItem('zx-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}document.documentElement.classList.add('js');</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wdth,wght@0,75..100,400..700;1,75..100,400..700&family=JetBrains+Mono:wght@400;500;600&display=swap">
@@ -13,8 +14,6 @@
   html, body { height: 100%; }
   body { font-size: 13px; line-height: 20px; }
   .shell { display: grid; grid-template-columns: 232px minmax(0, 1fr); grid-template-rows: 48px minmax(0, 1fr); height: 100%; }
-  .mock-banner { position: fixed; left: 50%; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 90; background: #2a0f1f; color: #fbe7f1; font-size: 12px; padding: 6px 12px; border-radius: 16px; box-shadow: var(--shadow-overlay); white-space: nowrap; }
-  .mock-banner a { color: #ffb3d6; }
 
   /* Top bar */
   .topbar { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; padding: 0 12px 0 16px; background: var(--surface); border-bottom: 1px solid var(--line); min-width: 0; }
@@ -85,7 +84,7 @@
   .kpi .v small { font-size: 14px; color: var(--ink-3); font-weight: 500; }
   .kpi .sub { color: var(--ink-3); font-size: 12px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
   .meter { height: 6px; border-radius: 3px; background: var(--surface-sunk); overflow: hidden; }
-  .meter i { display: block; height: 100%; background: var(--ink-2); border-radius: 3px; transform-origin: left; animation: grow 900ms var(--ease-data) both; }
+  .meter i { display: block; height: 100%; background: var(--ink-2); border-radius: 3px; transform-origin: left; }
   @keyframes grow { from { transform: scaleX(0); } }
   .delta-up-bad { color: var(--crit); font-weight: 600; }
 
@@ -146,6 +145,7 @@
   .sev-col { width: 96px; }
   #queue td.mono, #queue .verdict, #queue .tech { white-space: nowrap; }
   #queue td:nth-child(2) { min-width: 220px; }
+  @media (max-width: 1540px) { #queue th:nth-child(4), #queue td:nth-child(4) { display: none; } }
 
   /* Investigation */
   .impact { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: var(--r-3); background: var(--surface); }
@@ -210,7 +210,7 @@
   .pb { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 12px; align-items: center; font-size: 12.5px; }
   .pb code { font-size: 12px; color: var(--ink); }
   .pb .bars { display: grid; gap: 6px; }
-  .pb .b { height: 8px; border-radius: 0 4px 4px 0; transform-origin: left; animation: grow 900ms var(--ease-data) both; position: relative; }
+  .pb .b { height: 8px; border-radius: 0 4px 4px 0; transform-origin: left; position: relative; }
   .pb .b.base { background: var(--series-muted); }
   .pb .b.now { background: var(--series); }
   .pb .b span { position: absolute; left: calc(100% + 6px); top: -3px; line-height: 14px; font-size: 10.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -249,6 +249,47 @@
   .field small { color: var(--ink-3); font-size: 12px; }
   .dlg-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 20px; border-top: 1px solid var(--line); background: var(--surface-2); }
 
+  /* ---------- Console motion ---------- */
+  .theme-toggle { width: 30px; height: 30px; border: 0; background: none; }
+  .theme-toggle:hover { background: var(--surface-2); }
+  .page.entering .panel, .page.entering .brief, .page.entering .impact { opacity: 0; }
+  .page.loading .panel { position: relative; }
+  .page.loading .panel > * { visibility: hidden; }
+  .page.loading .panel::after { content: ''; position: absolute; inset: 16px; border-radius: 6px; background: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--surface) 80%, transparent) 50%, transparent 70%), repeating-linear-gradient(180deg, var(--surface-2) 0 11px, transparent 11px 24px); background-size: 220% 100%, 100% 100%; animation: skel 1.1s linear infinite; mask-image: linear-gradient(90deg, #000 70%, transparent); -webkit-mask-image: linear-gradient(90deg, #000 70%, transparent); }
+  .page.loading .panel.kpi::after { inset: 14px 16px; background-size: 220% 100%, 100% 100%; }
+  @keyframes skel { from { background-position: 160% 0, 0 0; } to { background-position: -60% 0, 0 0; } }
+  .topline { position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 300; background: linear-gradient(90deg, var(--brand), var(--signal)); transform-origin: left; transform: scaleX(0); opacity: 0; }
+  .chart-view[hidden] { display: none !important; }
+  .live-meta { display: flex; flex-wrap: wrap; gap: 6px 20px; align-items: baseline; margin-bottom: 8px; font-size: 12.5px; color: var(--ink-2); }
+  .live-meta b { font-size: 20px; color: var(--ink); font-weight: 600; margin-right: 2px; }
+  .live-meta .sw { display: inline-block; width: 8px; height: 8px; border-radius: 1px; margin-right: 6px; }
+  .live-chart svg { height: 200px; }
+  .live-dot-ring { transform-box: fill-box; transform-origin: center; animation: ring 1.6s var(--ease-out) infinite; }
+  @keyframes ring { from { transform: scale(1); opacity: 0.6; } to { transform: scale(3.2); opacity: 0; } }
+  .gauge-wrap { display: inline-flex; align-items: center; gap: 8px; }
+  .gauge { width: 64px; height: 36px; }
+  .gauge path { fill: none; stroke-width: 10; stroke-linecap: round; }
+  .g-track { stroke: var(--surface-sunk); }
+  .g-val { stroke: var(--crit); stroke-dasharray: 100; stroke-dashoffset: 18; }
+  .gauge-wrap b { display: block; font-size: 18px; line-height: 1; color: var(--crit); }
+  .gauge-wrap small { font-size: 11px; color: var(--ink-3); }
+  .step.pending { opacity: 0.18; }
+  .step.pending .m { border-color: var(--line-strong) !important; background: var(--surface) !important; }
+  .step.arrive { animation: stepIn 520ms var(--ease-expo); }
+  .step.bad.arrive .body { animation: shake 420ms 120ms; }
+  @keyframes stepIn { from { opacity: 0.18; transform: translateX(-6px); } }
+  @keyframes shake { 20%, 60% { transform: translateX(-4px); } 40%, 80% { transform: translateX(4px); } }
+  #queue tr.new-row td { animation: newRow 2.4s var(--ease-out); }
+  @keyframes newRow { 0% { background: var(--crit-wash); } 100% { background: transparent; } }
+  .count.bump { animation: bump 500ms var(--ease-expo); display: inline-block; }
+  @keyframes bump { 40% { transform: scale(1.5); } }
+  .toasts { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 120; display: grid; gap: 8px; width: min(380px, calc(100vw - 32px)); }
+  .toast { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: start; padding: 14px; background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--crit); border-radius: var(--r-3); box-shadow: var(--shadow-overlay); font-size: 13px; }
+  .toast b { display: block; }
+  .toast small { color: var(--ink-3); }
+  .preview > * { transition: opacity 180ms var(--ease-out), transform 260ms var(--ease-expo); }
+  .preview.swap > * { opacity: 0; transform: translateY(4px); }
+
   .placeholder { padding: 48px 24px; text-align: center; color: var(--ink-3); }
   .placeholder b { display: block; color: var(--ink); font-size: 15px; margin-bottom: 6px; }
 
@@ -284,7 +325,7 @@
     <button class="search" id="open-palette"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="4.5"/><path d="m10.5 10.5 3 3"/></svg><span>Search agents, detections, policies</span><kbd>Ctrl K</kbd></button>
     <span class="tb-spacer"></span>
     <button class="estop" id="open-estop" title="Stop agent actions"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="10" height="10" rx="1.5"/></svg><span class="txt">Emergency stop</span></button>
-    <button class="icon-btn" id="theme-toggle" aria-label="Switch theme"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13 9.5A5.5 5.5 0 0 1 6.5 3a5.5 5.5 0 1 0 6.5 6.5Z"/></svg></button>
+    <button class="theme-toggle" id="theme-toggle" data-theme-toggle aria-label="Switch between light and dark theme"><svg class="moon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13 9.5A5.5 5.5 0 0 1 6.5 3a5.5 5.5 0 1 0 6.5 6.5Z"/></svg><svg class="sun" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="3"/><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"/></svg></button>
     <button class="icon-btn" aria-label="Notifications, 3 unread"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 11V7a4 4 0 0 1 8 0v4l1 1.5H3Z M6.5 14h3"/></svg><span class="badge"></span></button>
     <span class="avatar" title="Priya Raman, Security analyst">PR</span>
   </header>
@@ -331,19 +372,26 @@
       </div>
 
       <div class="grid g-kpi" style="margin-bottom:16px">
-        <a class="panel kpi" href="#agents"><span class="label">Agents governed</span><span class="v num">38 <small>of 47</small></span><div class="meter" role="img" aria-label="81 percent governed"><i style="width:81%"></i></div><span class="sub">9 discovered, not yet governed</span></a>
-        <a class="panel kpi" href="#detections"><span class="label">Open detections</span><span class="v num">7</span><span class="sub"><span class="chip crit">2 critical</span><span class="chip high">3 high</span></span></a>
-        <a class="panel kpi" href="#ledger"><span class="label">Actions blocked</span><span class="v num">214</span><span class="sub"><span class="delta-up-bad">▲ 31%</span> vs previous 7 days</span></a>
-        <a class="panel kpi" href="#approvals"><span class="label">Awaiting approval</span><span class="v num">3</span><span class="sub">Oldest waiting 41 min</span></a>
-        <a class="panel kpi" href="#agents"><span class="label">Agents without owner</span><span class="v num">4</span><span class="sub">2 have write access</span></a>
+        <a class="panel kpi" href="#agents"><span class="label">Agents governed</span><span class="v num"><span data-count="38">38</span> <small>of 47</small></span><div class="meter" role="img" aria-label="81 percent governed"><i style="width:81%"></i></div><span class="sub">9 discovered, not yet governed</span></a>
+        <a class="panel kpi" href="#detections"><span class="label">Open detections</span><span class="v num"><span data-count="7" id="kpi-open">7</span></span><span class="sub"><span class="chip crit">2 critical</span><span class="chip high">3 high</span></span></a>
+        <a class="panel kpi" href="#ledger"><span class="label">Actions blocked</span><span class="v num"><span data-count="214">214</span></span><span class="sub"><span class="delta-up-bad">▲ 31%</span> vs previous 7 days</span></a>
+        <a class="panel kpi" href="#approvals"><span class="label">Awaiting approval</span><span class="v num"><span data-count="3">3</span></span><span class="sub">Oldest waiting 41 min</span></a>
+        <a class="panel kpi" href="#agents"><span class="label">Agents without owner</span><span class="v num"><span data-count="4">4</span></span><span class="sub">2 have write access</span></a>
       </div>
 
       <div class="grid g-2-1" style="margin-bottom:16px">
         <section class="panel" aria-labelledby="ch-h">
-          <div class="panel-head"><h3 id="ch-h">Blocked actions per day</h3><div class="legend"><span><i style="background:var(--series)"></i>Blocked</span><span><i style="background:var(--series-muted)"></i>Previous 30 days average</span></div></div>
+          <div class="panel-head"><h3 id="ch-h"><span id="ch-title">Decisions per second</span> <span class="chip info live" id="ch-live" style="margin-left:6px">Live</span></h3><div class="seg" role="group" aria-label="Chart view"><button aria-pressed="true" data-view="live">Live</button><button aria-pressed="false" data-view="days">30 days</button></div></div>
           <div class="panel-body">
+            <div class="chart-view" data-view="live">
+              <div class="live-meta"><span><b class="num" id="live-now">812</b> decisions/s</span><span><i class="sw" style="background:var(--crit)"></i><b class="num" id="live-blk">0</b> blocked in the last 60 s</span><span class="muted">Window 60 s · 3 decision points</span></div>
+              <div class="chart live-chart" id="live"><svg id="live-svg" role="img" aria-label="Live line chart of decisions per second over the last 60 seconds, currently around 800 per second. Red marks show seconds with blocked actions."></svg></div>
+            </div>
+            <div class="chart-view" data-view="days" hidden>
+            <div class="legend" style="margin-bottom:8px"><span><i style="background:var(--series)"></i>Blocked per day</span><span><i style="background:var(--series-muted)"></i>Previous 30 days average</span></div>
             <div class="chart" id="chart"><svg id="chart-svg" role="img" aria-label="Line chart of blocked actions per day for the last 30 days. Rises from about 18 to 41 per day, peak 52 on 6 October."></svg><div class="tip" id="chart-tip"></div></div>
             <p class="muted" style="font-size:12px;margin-top:8px">The rise from 2 October follows the rollout of the member chat assistant. <a href="#ledger">View in decision ledger</a></p>
+            </div>
           </div>
         </section>
         <section class="panel" aria-labelledby="dec-h">
@@ -463,7 +511,7 @@
           </section>
 
           <section class="panel">
-            <div class="panel-head"><h3>Agent run</h3><span class="muted" style="font-size:12px">session s-8f2a · 7 steps · 936 ms</span></div>
+            <div class="panel-head"><h3>Agent run</h3><div class="actions"><span class="muted" style="font-size:12px">session s-8f2a · 7 steps · 936 ms</span><button class="btn btn-secondary btn-xs" id="replay-run"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2.5 8a5.5 5.5 0 1 0 1.6-3.9M2.5 2.5v3h3"/></svg>Replay run</button></div></div>
             <div class="panel-body">
               <ol class="run">
                 <li class="step"><time>09:41:02.114</time><span class="m"></span><div class="body"><b>Member message received</b><small>"What's the overdraft fee if I'm over by less than $20?" · member hash m-41c9</small></div></li>
@@ -547,7 +595,7 @@ Returned item fee: $25.</div></details></div></li>
       <div class="grid g-main-rail">
         <div class="stack">
           <section class="panel">
-            <div class="panel-head"><h3>Needs attention</h3><span class="risk crit"><span class="bar"><i style="width:82%"></i></span>Risk 82</span></div>
+            <div class="panel-head"><h3>Needs attention</h3><span class="gauge-wrap"><svg class="gauge" viewBox="0 0 120 66" role="img" aria-label="Risk score 82 of 100"><path class="g-track" pathLength="100" d="M10 60 A50 50 0 0 1 110 60"/><path class="g-val" pathLength="100" d="M10 60 A50 50 0 0 1 110 60"/></svg><span><b class="num" data-count="82">82</b><small>Risk</small></span></span></div>
             <ul class="attn">
               <li><span class="chip crit">Critical</span><span><b>Open detection DET-2291</b><small>Injected instruction led to an external email attempt</small></span><a class="btn btn-secondary btn-xs" href="#investigate">Open</a></li>
               <li><span class="chip med">Medium</span><span><b>Grant <span class="mono">email.send</span> has not been used legitimately in 60 days</b><small>The only call in 60 days was the blocked one. Removing it shrinks the blast radius.</small></span><button class="btn btn-secondary btn-xs">Remove grant</button></li>
@@ -668,6 +716,8 @@ Returned item fee: $25.</div></details></div></li>
   </main>
 </div>
 
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
 <!-- Command palette -->
 <div class="scrim" id="palette" hidden>
   <div class="dialog palette" role="dialog" aria-modal="true" aria-label="Search and commands">
@@ -691,8 +741,10 @@ Returned item fee: $25.</div></details></div></li>
   </div>
 </div>
 
-<div class="mock-banner">Console mockup · sample data · <a href="index.html">design direction</a></div>
 
+<script src="assets/vendor/motion-11.11.13.js"></script>
+<script src="assets/vendor/anime-4.0.2.umd.min.js"></script>
+<script src="assets/zx-core.js"></script>
 <script>
 (function () {
   /* ---------- Routing ---------- */
@@ -710,26 +762,22 @@ Returned item fee: $25.</div></details></div></li>
     });
     document.body.classList.remove('rail-open');
     document.getElementById('content').scrollTop = 0;
-    if (target === 'overview') drawChart();
+    if (window.ZXC) ZXC.enter(target);
+    else if (target === 'overview') drawChart();
   }
   window.addEventListener('hashchange', route);
   document.querySelectorAll('tr[data-go]').forEach(function (tr) { tr.addEventListener('click', function () { location.hash = tr.dataset.go; }); });
   document.getElementById('rail-toggle').addEventListener('click', function () { document.body.classList.toggle('rail-open'); });
 
   /* ---------- Theme ---------- */
-  document.getElementById('theme-toggle').addEventListener('click', function () {
-    var root = document.documentElement;
-    var dark = root.dataset.theme ? root.dataset.theme === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
-    root.dataset.theme = dark ? 'light' : 'dark';
-    drawChart();
-  });
+  ZX.onTheme(function () { requestAnimationFrame(function () { drawChart(true); if (window.ZXC) ZXC.liveTheme(); }); });
 
   /* ---------- Chart: one series + reference line, hover crosshair ---------- */
   var data = [18,21,17,22,19,24,20,23,21,25,22,19,24,26,23,27,25,28,26,24,29,31,36,39,44,41,52,47,43,41];
   var avg = 26.3;
-  function drawChart() {
+  function drawChart(still) {
     var svg = document.getElementById('chart-svg');
-    if (!svg || svg.closest('.page').hidden) return;
+    if (!svg || svg.closest('.page').hidden || svg.closest('[hidden]')) return;
     var W = svg.clientWidth || 600, H = 220, L = 32, R = 8, T = 10, B = 24;
     var max = 60, x = function (i) { return L + i * (W - L - R) / (data.length - 1); }, y = function (v) { return T + (H - T - B) * (1 - v / max); };
     var cs = getComputedStyle(document.documentElement);
@@ -748,7 +796,7 @@ Returned item fee: $25.</div></details></div></li>
     svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
     svg.innerHTML = s;
     var line = svg.querySelector('#line');
-    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches && line.getTotalLength) {
+    if (!still && !ZX.reduce && line.getTotalLength) {
       var len = line.getTotalLength();
       line.style.strokeDasharray = len; line.style.strokeDashoffset = len;
       line.getBoundingClientRect();
@@ -767,7 +815,7 @@ Returned item fee: $25.</div></details></div></li>
     });
     svg.querySelector('#hit').addEventListener('mouseleave', function () { tip.style.opacity = 0; xh.setAttribute('opacity', 0); xd.setAttribute('opacity', 0); });
   }
-  window.addEventListener('resize', drawChart);
+  window.addEventListener('resize', function () { drawChart(true); });
 
   /* ---------- Detection queue: preview + J/K ---------- */
   var PV = [
@@ -779,22 +827,38 @@ Returned item fee: $25.</div></details></div></li>
     ['med', 'Medium', 'Agent key used from a new host', 'The agent key was presented from a host outside its attested set. The agent was re-attested before the call continued.', 'loan-doc-classifier', 'Lending Technology', 'Identity attestation', '1 host'],
     ['med', 'Medium', 'Jailbreak pattern in member message', 'A member message matched a known jailbreak pattern. The message was screened and the agent answered within policy.', 'member-voice', 'Dana Whitfield, Digital Banking', 'Injection screen', 'None']
   ];
-  var rows = Array.prototype.slice.call(document.querySelectorAll('#queue tbody tr'));
+  var qbody = document.querySelector('#queue tbody');
+  var rows = Array.prototype.slice.call(qbody.querySelectorAll('tr'));
   var sel = 0;
-  function select(i, focus) {
-    sel = (i + rows.length) % rows.length;
-    rows.forEach(function (r, j) { r.setAttribute('aria-selected', String(j === sel)); });
-    var p = PV[sel];
+  var preview = document.getElementById('preview');
+  function fillPreview(p) {
     document.getElementById('pv-chips').innerHTML = '<span class="chip ' + p[0] + '">' + p[1] + '</span><span class="chip no-dot">Open</span>';
     document.getElementById('pv-title').textContent = p[2];
     document.getElementById('pv-why').textContent = p[3];
     document.getElementById('pv-dl').innerHTML = '<dt>Agent</dt><dd class="mono">' + p[4] + '</dd><dt>Owner</dt><dd>' + p[5] + '</dd><dt>Policy</dt><dd class="mono">' + p[6] + '</dd><dt>Blast radius</dt><dd>' + p[7] + '</dd>';
+  }
+  function select(i, focus) {
+    sel = (i + rows.length) % rows.length;
+    rows.forEach(function (r, j) { r.setAttribute('aria-selected', String(j === sel)); });
+    var p = PV[sel];
+    if (ZX.reduce) fillPreview(p);
+    else { preview.classList.add('swap'); setTimeout(function () { fillPreview(p); preview.classList.remove('swap'); }, 140); }
     if (focus) rows[sel].focus();
   }
-  rows.forEach(function (r, i) {
-    r.addEventListener('click', function () { select(i); });
-    r.addEventListener('keydown', function (e) { if (e.key === 'Enter') location.hash = 'investigate'; });
-  });
+  qbody.addEventListener('click', function (e) { var r = e.target.closest('tr'); if (r) select(rows.indexOf(r)); });
+  qbody.addEventListener('keydown', function (e) { if (e.key === 'Enter') location.hash = 'investigate'; });
+  window.ZXQ = {
+    add: function (data, html) {
+      PV.unshift(data);
+      var tr = document.createElement('tr');
+      tr.className = 'clickable new-row'; tr.tabIndex = 0; tr.setAttribute('aria-selected', 'false');
+      tr.innerHTML = html;
+      qbody.insertBefore(tr, qbody.firstChild);
+      rows = Array.prototype.slice.call(qbody.querySelectorAll('tr'));
+      sel = sel + 1;
+      if (window.Motion && !ZX.reduce) Motion.animate(tr, { opacity: [0, 1], transform: ['translateY(-12px)', 'translateY(0px)'] }, { duration: 0.6, ease: [0.16, 1, 0.3, 1] });
+    }
+  };
 
   /* ---------- Command palette ---------- */
   var palette = document.getElementById('palette'), pin = document.getElementById('palette-input'), plist = document.getElementById('palette-list');
@@ -852,6 +916,162 @@ Returned item fee: $25.</div></details></div></li>
     }
   });
 
+  /* ================================================================== */
+  /* Console motion: loading, transitions, live data, replay            */
+  /* ================================================================== */
+  var M = window.Motion, A = window.anime, reduce = ZX.reduce;
+  var EASE = [0.16, 1, 0.3, 1];
+  var visited = {};
+  var topline = document.createElement('div'); topline.className = 'topline'; document.body.appendChild(topline);
+
+  function countIn(page) {
+    page.querySelectorAll('[data-count]').forEach(function (el) {
+      var to = parseFloat(el.getAttribute('data-count'));
+      if (reduce || !A) { el.textContent = to.toLocaleString('en-US'); return; }
+      var o = { v: 0 };
+      A.animate(o, { v: to, duration: 1200, ease: 'outExpo', onUpdate: function () { el.textContent = Math.round(o.v).toLocaleString('en-US'); } });
+    });
+  }
+  function growBars(page) {
+    var bars = page.querySelectorAll('.meter i, .pb .b');
+    if (reduce || !M || !bars.length) return;
+    M.animate(bars, { transform: ['scaleX(0)', 'scaleX(1)'] }, { duration: 1, delay: M.stagger(0.05, { start: 0.1 }), ease: [0.85, 0, 0.15, 1] });
+    var g = page.querySelector('.g-val');
+    if (g && A) A.animate(g, { strokeDashoffset: [100, 18], duration: 1400, ease: 'outExpo' });
+  }
+  function reveal(page) {
+    var blocks = page.querySelectorAll('.page-head, .crumbs, .ptabs, .brief, .impact, .grid > .panel, .grid > .stack > .panel, .grid > section.panel, .grid > aside > .panel, .panel.placeholder');
+    page.classList.remove('entering');
+    if (!reduce && M) M.animate(blocks, { opacity: [0, 1], transform: ['translateY(12px)', 'translateY(0px)'] }, { duration: 0.55, delay: M.stagger(0.035), ease: EASE });
+    countIn(page); growBars(page);
+    var name = page.dataset.page;
+    if (name === 'overview') { drawChart(); live.start(); } else live.stop();
+    if (name === 'investigate' && !visited.investigate_replayed) { visited.investigate_replayed = true; setTimeout(replayRun, 350); }
+    if (name === 'detections' && !visited.detections_alert) { visited.detections_alert = true; setTimeout(newDetection, 4200); }
+  }
+  function enter(name) {
+    var page = document.querySelector('.page[data-page="' + name + '"]');
+    if (!page) return;
+    if (reduce || !M) { reveal(page); return; }
+    var first = !visited[name];
+    visited[name] = true;
+    // Top progress line, as a request is "in flight"
+    M.animate(topline, { opacity: [1, 1, 0], transform: ['scaleX(0)', 'scaleX(0.8)', 'scaleX(1)'] }, { duration: first ? 0.9 : 0.5, ease: 'easeOut' });
+    page.classList.add('entering');
+    if (first) {
+      page.classList.add('loading');
+      M.animate(page.querySelectorAll('.panel'), { opacity: [0, 1] }, { duration: 0.25 });
+      page.classList.remove('entering');
+      setTimeout(function () { page.classList.remove('loading'); reveal(page); }, document.readyState === 'complete' && Object.keys(visited).length > 1 ? 520 : 900);
+    } else {
+      requestAnimationFrame(function () { reveal(page); });
+    }
+  }
+
+  /* ---------- Live decisions chart (sliding 60 s window) ---------- */
+  var live = (function () {
+    var svg = document.getElementById('live-svg'), nowEl = document.getElementById('live-now'), blkEl = document.getElementById('live-blk');
+    var N = 61, pts = [], blk = [], tPush = 0, raf = 0, running = false, v = 800;
+    for (var i = 0; i < N; i++) { v = next(v); pts.push(v); blk.push(Math.random() < 0.18 ? 1 + (Math.random() * 3 | 0) : 0); }
+    function next(x) { return Math.max(620, Math.min(980, x + (Math.random() - 0.5) * 70 + (800 - x) * 0.08)); }
+    var cs, W, H = 200, L = 38, R = 58, T = 12, B = 24;
+    function colors() { var c = getComputedStyle(document.documentElement); cs = { grid: c.getPropertyValue('--grid'), axis: c.getPropertyValue('--axis'), s: c.getPropertyValue('--series'), crit: c.getPropertyValue('--crit'), surf: c.getPropertyValue('--surface'), ink: c.getPropertyValue('--ink') }; }
+    colors();
+    var y = function (val) { return T + (H - T - B) * (1 - (val - 500) / 600); };
+    function frame(now) {
+      if (!running) return;
+      if (!tPush) tPush = now;
+      var f = Math.min(1, (now - tPush) / 1000);
+      if (f >= 1) {
+        pts.shift(); v = next(v); pts.push(v);
+        blk.shift(); blk.push(Math.random() < 0.18 ? 1 + (Math.random() * 3 | 0) : 0);
+        tPush = now; f = 0;
+        nowEl.textContent = Math.round(v).toLocaleString('en-US');
+        blkEl.textContent = blk.reduce(function (a, b) { return a + b; }, 0);
+      }
+      draw(f);
+      raf = requestAnimationFrame(frame);
+    }
+    function draw(f) {
+      W = svg.clientWidth || 600;
+      var step = (W - L - R) / (N - 2);
+      var x = function (i) { return L + (i - f) * step; };
+      var s = '<defs><clipPath id="lc"><rect x="' + L + '" y="0" width="' + (W - L - R) + '" height="' + H + '"/></clipPath><linearGradient id="lg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + cs.s + '" stop-opacity="0.22"/><stop offset="1" stop-color="' + cs.s + '" stop-opacity="0"/></linearGradient></defs>';
+      [600, 800, 1000].forEach(function (g) { s += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(g) + '" y2="' + y(g) + '" stroke="' + cs.grid + '"/><text x="' + (L - 8) + '" y="' + (y(g) + 4) + '" text-anchor="end" font-size="11" fill="' + cs.axis + '">' + g + '</text>'; });
+      ['-60 s', '-30 s', 'now'].forEach(function (t, k) { s += '<text x="' + (L + (W - L - R) * k / 2) + '" y="' + (H - 6) + '" text-anchor="' + (k === 0 ? 'start' : k === 2 ? 'end' : 'middle') + '" font-size="11" fill="' + cs.axis + '">' + t + '</text>'; });
+      var d = '';
+      for (var i = 0; i < N; i++) {
+        var px = x(i), py = y(pts[i]);
+        if (i === 0) d = 'M' + px.toFixed(1) + ' ' + py.toFixed(1);
+        else { var cx = (x(i - 1) + px) / 2; d += ' C' + cx.toFixed(1) + ' ' + y(pts[i - 1]).toFixed(1) + ' ' + cx.toFixed(1) + ' ' + py.toFixed(1) + ' ' + px.toFixed(1) + ' ' + py.toFixed(1); }
+      }
+      var lx = x(N - 1), ly = y(pts[N - 1]);
+      s += '<g clip-path="url(#lc)"><path d="' + d + ' L' + lx + ' ' + (H - B) + ' L' + x(0) + ' ' + (H - B) + 'Z" fill="url(#lg)"/><path d="' + d + '" fill="none" stroke="' + cs.s + '" stroke-width="2"/>';
+      for (var j = 0; j < N; j++) if (blk[j]) s += '<rect x="' + (x(j) - 1.5) + '" y="' + (H - B - 4 - blk[j] * 4) + '" width="3" height="' + (blk[j] * 4) + '" rx="1" fill="' + cs.crit + '"/>';
+      s += '</g>';
+      s += '<circle class="live-dot-ring" cx="' + Math.min(lx, W - R) + '" cy="' + ly + '" r="4" fill="' + cs.s + '"/><circle cx="' + Math.min(lx, W - R) + '" cy="' + ly + '" r="4" fill="' + cs.s + '" stroke="' + cs.surf + '" stroke-width="2"/>';
+      s += '<g transform="translate(' + (W - R + 8) + ' ' + (ly - 10) + ')"><rect width="48" height="20" rx="4" fill="' + cs.s + '"/><text x="24" y="14" text-anchor="middle" font-size="11" font-weight="600" fill="#fff">' + Math.round(pts[N - 1]) + '</text></g>';
+      svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+      svg.innerHTML = s;
+    }
+    return {
+      start: function () { if (running) return; if (reduce) { draw(0); return; } running = true; tPush = 0; raf = requestAnimationFrame(frame); },
+      stop: function () { running = false; cancelAnimationFrame(raf); },
+      theme: function () { colors(); draw(0); }
+    };
+  })();
+  document.addEventListener('visibilitychange', function () { if (document.hidden) live.stop(); else if (location.hash === '' || location.hash === '#overview') live.start(); });
+
+  // Live / 30 days switch
+  document.querySelectorAll('[data-view]').forEach(function (b) {
+    if (b.tagName !== 'BUTTON') return;
+    b.addEventListener('click', function () {
+      var view = b.dataset.view;
+      document.querySelectorAll('.seg [data-view]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+      document.querySelectorAll('.chart-view').forEach(function (v) { v.hidden = v.dataset.view !== view; });
+      document.getElementById('ch-title').textContent = view === 'live' ? 'Decisions per second' : 'Blocked actions per day';
+      document.getElementById('ch-live').hidden = view !== 'live';
+      var shown = document.querySelector('.chart-view[data-view="' + view + '"]');
+      if (M && !reduce) M.animate(shown, { opacity: [0, 1], transform: ['translateY(6px)', 'translateY(0px)'] }, { duration: 0.4, ease: EASE });
+      if (view === 'live') live.start(); else { live.stop(); drawChart(); }
+    });
+  });
+
+  /* ---------- Investigation: replay the agent run ---------- */
+  function replayRun() {
+    var steps = Array.prototype.slice.call(document.querySelectorAll('#p-investigate .step'));
+    if (reduce) return;
+    steps.forEach(function (s) { s.classList.add('pending'); s.classList.remove('arrive'); });
+    steps.forEach(function (s, i) {
+      setTimeout(function () { s.classList.remove('pending'); void s.offsetWidth; s.classList.add('arrive'); }, 260 + i * 420);
+    });
+  }
+  document.getElementById('replay-run').addEventListener('click', replayRun);
+
+  /* ---------- Detections: a new one arrives ---------- */
+  function newDetection() {
+    if (!window.ZXQ) return;
+    ZXQ.add(['crit', 'Critical', 'Agent attempted to export member records to a new domain', 'zapier:lead-sync tried crm.contact.export with 2,140 member records to a domain registered 3 days ago. Blocked by POL-114.', 'zapier:lead-sync', 'Marketing Operations', 'POL-114 member-data-egress', '2,140 records targeted'],
+      '<td><span class="chip crit">Critical</span></td><td><b>Agent attempted to export member records to a new domain</b></td><td class="mono">zapier:lead-sync</td><td class="tech">Exfiltration</td><td><span class="verdict block"><i></i>Blocked</span></td><td class="muted">Unassigned</td><td class="age r">now</td>');
+    var c = document.querySelector('.rail a[data-route="detections"] .count');
+    if (c) { c.textContent = '8'; c.classList.remove('bump'); void c.offsetWidth; c.classList.add('bump'); }
+    var k = document.getElementById('kpi-open'); if (k) { k.setAttribute('data-count', '8'); k.textContent = '8'; }
+    toast('New critical detection', 'zapier:lead-sync tried to export 2,140 member records. Blocked.', '#detections');
+  }
+  function toast(title, text, href) {
+    var box = document.getElementById('toasts');
+    var t = document.createElement('div');
+    t.className = 'toast'; t.setAttribute('role', 'status');
+    t.innerHTML = '<span class="chip crit">Critical</span><span><b>' + title + '</b><small>' + text + '</small></span><a class="btn btn-secondary btn-xs" href="' + href + '">View</a>';
+    box.appendChild(t);
+    if (M && !reduce) M.animate(t, { opacity: [0, 1], transform: ['translateX(40px) scale(0.98)', 'translateX(0px) scale(1)'] }, { duration: 0.6, ease: EASE });
+    setTimeout(function () {
+      if (M && !reduce) M.animate(t, { opacity: 0, transform: 'translateX(40px)' }, { duration: 0.35 }).then(function () { t.remove(); });
+      else t.remove();
+    }, 7000);
+  }
+
+  window.ZXC = { enter: enter, liveTheme: function () { live.theme(); } };
   route();
 })();
 </script>
