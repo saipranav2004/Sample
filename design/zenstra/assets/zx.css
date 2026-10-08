@@ -1,0 +1,236 @@
+/* ==========================================================================
+   Zenstra design system: direction v0.1 (tokens + core components)
+   Layout concept: one 12-column, 1200px marketing grid and one fluid console
+   shell (240px rail + content). Borders separate, shadows only lift overlays.
+   Colour: slate neutrals biased toward the brand blue carry everything that
+   is not a state. Brand blue = action. Signal cyan = "inline / live" only.
+   Red/amber/green are reserved for severity and enforcement verdicts.
+   ========================================================================== */
+
+:root {
+  color-scheme: light;
+  /* Neutrals */
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --surface-2: #f0f3f7;
+  --surface-sunk: #e8edf3;
+  --line: #dde4ec;
+  --line-strong: #c3cedb;
+  --ink: #0b1626;
+  --ink-2: #44546a;
+  --ink-3: #5f6f84;
+  /* Brand */
+  --brand: #0c6eb4;
+  --brand-strong: #095a95;
+  --brand-wash: #e6f0f9;
+  --signal: #12b0f0;
+  --signal-ink: #0a76a8;
+  /* Night band: the brand's deep navy, identical in both themes */
+  --night: #071b33;
+  --night-2: #0c2746;
+  --night-3: #12345a;
+  --night-line: rgba(173, 205, 238, 0.14);
+  --night-ink: #eaf2fa;
+  --night-ink-2: #a3b8cf;
+  /* Severity + verdict */
+  --crit: #b42318;
+  --crit-wash: #fdeceb;
+  --high: #b54a07;
+  --high-wash: #fdf0e6;
+  --med: #8a5b00;
+  --med-wash: #fdf5df;
+  --ok: #05734b;
+  --ok-wash: #e5f5ed;
+  --neutral-wash: #edf1f5;
+  /* Charts */
+  --grid: #e6ebf1;
+  --axis: #8a99ab;
+  --series: #0c6eb4;
+  --series-muted: #a9b7c7;
+  /* Elevation */
+  --shadow-overlay: 0 24px 56px -16px rgba(7, 27, 51, 0.32), 0 2px 8px rgba(7, 27, 51, 0.08);
+  --focus: 0 0 0 2px var(--surface), 0 0 0 4px var(--signal);
+  /* Type */
+  --font-sans: 'Instrument Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  /* Radius + motion */
+  --r-1: 4px;
+  --r-2: 6px;
+  --r-3: 8px;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-data: cubic-bezier(0.85, 0, 0.15, 1);
+  --t-fast: 120ms;
+  --t-base: 200ms;
+  --t-slow: 320ms;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --bg: #060d18;
+    --surface: #0c1626;
+    --surface-2: #111e32;
+    --surface-sunk: #09121f;
+    --line: #1d2d44;
+    --line-strong: #2b3f5b;
+    --ink: #e9f0f8;
+    --ink-2: #a6b6c9;
+    --ink-3: #8696ab;
+    --brand: #3d9be0;
+    --brand-strong: #63b0ea;
+    --brand-wash: #0f2640;
+    --signal: #2cc0f5;
+    --signal-ink: #62cff6;
+    --crit: #f2675d;
+    --crit-wash: rgba(242, 103, 93, 0.13);
+    --high: #f08c4e;
+    --high-wash: rgba(240, 140, 78, 0.13);
+    --med: #e0b440;
+    --med-wash: rgba(224, 180, 64, 0.12);
+    --ok: #41c48c;
+    --ok-wash: rgba(65, 196, 140, 0.12);
+    --neutral-wash: #16253a;
+    --grid: #182840;
+    --axis: #6f819a;
+    --series: #4aa6ea;
+    --series-muted: #3a4d66;
+    --shadow-overlay: 0 24px 56px -16px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(0, 0, 0, 0.4);
+  }
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #060d18;
+  --surface: #0c1626;
+  --surface-2: #111e32;
+  --surface-sunk: #09121f;
+  --line: #1d2d44;
+  --line-strong: #2b3f5b;
+  --ink: #e9f0f8;
+  --ink-2: #a6b6c9;
+  --ink-3: #8696ab;
+  --brand: #3d9be0;
+  --brand-strong: #63b0ea;
+  --brand-wash: #0f2640;
+  --signal: #2cc0f5;
+  --signal-ink: #62cff6;
+  --crit: #f2675d;
+  --crit-wash: rgba(242, 103, 93, 0.13);
+  --high: #f08c4e;
+  --high-wash: rgba(240, 140, 78, 0.13);
+  --med: #e0b440;
+  --med-wash: rgba(224, 180, 64, 0.12);
+  --ok: #41c48c;
+  --ok-wash: rgba(65, 196, 140, 0.12);
+  --neutral-wash: #16253a;
+  --grid: #182840;
+  --axis: #6f819a;
+  --series: #4aa6ea;
+  --series-muted: #3a4d66;
+  --shadow-overlay: 0 24px 56px -16px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* ---------- Base ---------- */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.6;
+  font-feature-settings: 'ss01', 'cv11';
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--brand); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a:hover { color: var(--brand-strong); }
+:focus-visible { outline: none; box-shadow: var(--focus); border-radius: var(--r-1); }
+h1, h2, h3, h4 { margin: 0; text-wrap: balance; font-weight: 600; letter-spacing: -0.012em; }
+p { margin: 0; }
+code, .mono { font-family: var(--font-mono); font-size: 0.86em; }
+.num { font-variant-numeric: tabular-nums; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.skip { position: absolute; left: 12px; top: -48px; z-index: 100; background: var(--surface); padding: 8px 12px; border-radius: var(--r-2); }
+.skip:focus { top: 12px; }
+
+/* Label: semi-condensed caps. Used for section eyebrows and table heads. */
+.label {
+  font-family: var(--font-sans);
+  font-stretch: 85%;
+  font-size: 11.5px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 40px; padding: 0 16px;
+  border-radius: var(--r-2); border: 1px solid transparent;
+  font: 600 14px/1 var(--font-sans); letter-spacing: 0;
+  text-decoration: none; cursor: pointer; white-space: nowrap;
+  transition: background var(--t-fast) var(--ease-out), border-color var(--t-fast) var(--ease-out), color var(--t-fast);
+}
+.btn svg { width: 16px; height: 16px; flex: none; }
+.btn-primary { background: var(--brand); color: #fff; }
+.btn-primary:hover { background: var(--brand-strong); color: #fff; }
+.btn-secondary { background: var(--surface); color: var(--ink); border-color: var(--line-strong); }
+.btn-secondary:hover { border-color: var(--ink-3); color: var(--ink); }
+.btn-ghost { background: transparent; color: var(--ink-2); }
+.btn-ghost:hover { background: var(--surface-2); color: var(--ink); }
+.btn-danger { background: var(--surface); color: var(--crit); border-color: var(--crit); }
+.btn-danger:hover { background: var(--crit-wash); color: var(--crit); }
+.btn-sm { height: 32px; padding: 0 12px; font-size: 13px; }
+.btn-xs { height: 26px; padding: 0 8px; font-size: 12px; border-radius: var(--r-1); }
+
+/* ---------- Chips: severity, verdict, status ---------- */
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 22px; padding: 0 8px; border-radius: var(--r-1);
+  font: 600 12px/1 var(--font-sans); white-space: nowrap;
+  background: var(--neutral-wash); color: var(--ink-2);
+}
+.chip::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
+.chip.no-dot::before { display: none; }
+.chip.crit { background: var(--crit-wash); color: var(--crit); }
+.chip.high { background: var(--high-wash); color: var(--high); }
+.chip.med { background: var(--med-wash); color: var(--med); }
+.chip.ok { background: var(--ok-wash); color: var(--ok); }
+.chip.info { background: var(--brand-wash); color: var(--brand); }
+/* Verdicts: the shape differs, not only the colour */
+.verdict { display: inline-flex; align-items: center; gap: 6px; font: 600 12px/1 var(--font-mono); text-transform: uppercase; letter-spacing: 0.04em; }
+.verdict i { width: 8px; height: 8px; display: inline-block; flex: none; }
+.verdict.allow { color: var(--ink-3); }
+.verdict.allow i { border-radius: 50%; border: 1.5px solid currentColor; }
+.verdict.stepup { color: var(--med); }
+.verdict.stepup i { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 9px solid currentColor; }
+.verdict.block { color: var(--crit); }
+.verdict.block i { background: currentColor; border-radius: 1px; }
+
+/* ---------- Panels + tables ---------- */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-3); min-width: 0; }
+.panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+.panel-head h3 { font-size: 14px; line-height: 20px; }
+.panel-body { padding: 16px; }
+.table-wrap { overflow-x: auto; }
+table.data { width: 100%; border-collapse: collapse; font-size: 13px; line-height: 18px; }
+table.data th { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; background: var(--surface); position: sticky; top: 0; }
+table.data td { padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+table.data tr:last-child td { border-bottom: 0; }
+table.data tbody tr { transition: background var(--t-fast); }
+table.data tbody tr.clickable { cursor: pointer; }
+table.data tbody tr.clickable:hover { background: var(--surface-2); }
+table.data tbody tr[aria-selected='true'] { background: var(--brand-wash); box-shadow: inset 2px 0 0 var(--brand); }
+table.data td.r, table.data th.r { text-align: right; }
+
+/* ---------- Keyboard hint ---------- */
+kbd { font: 500 11px/1 var(--font-mono); padding: 3px 5px; border: 1px solid var(--line-strong); border-bottom-width: 2px; border-radius: 4px; color: var(--ink-3); background: var(--surface); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
