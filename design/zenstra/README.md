@@ -1,50 +1,65 @@
-# Zenstra website and console mockups (phase 1, v2)
+# Zenstra website and console mockups (v3)
 
-Open the HTML files directly in a browser. Everything runs locally; only the
+Open `home.html` in a browser. Every link in the header, mega menus, mobile
+menu and footer goes to a working page. Everything runs locally; only the
 Google Fonts stylesheet is fetched from the network (system fonts are used if
 it is unavailable).
 
+## Pages
+
 | File | What it is |
 |---|---|
-| `home.html` | Homepage |
-| `platform.html` | Platform / how it works |
-| `console.html` | Product console: `#overview`, `#detections`, `#investigate`, `#agent`, `#deployment` |
-| `assets/zx.css` | Design tokens (light + dark), core components, skeletons |
-| `assets/site.css` | Marketing layout, header, hero, bands, footer |
-| `assets/zx-core.js` | Theme switching (stored per viewer, circular reveal) and motion preferences |
-| `assets/site-motion.js` | All marketing-site motion |
+| `home.html` | Homepage: product showcase with real console screens, trust center preview |
+| `platform.html` | Platform overview and the interactive architecture explorer |
+| `discover.html` | Shadow AI discovery, agent inventory and identity, coverage |
+| `enforce.html` | Verdicts, tool access, injection and memory defense, policy as code, approvals |
+| `prove.html` | Decision ledger, runtime detection, investigations, evidence packs |
+| `solutions.html` | By industry (banking, healthcare) and by agent type |
+| `credit-unions.html` | Credit union programme |
+| `resources.html` | Documentation, filterable library with search, glossary, newsletter |
+| `trust.html` | Trust center: compliance, controls, documents (request modal), data handling, subprocessors, status, disclosure |
+| `company.html` | About, leadership, careers, newsroom, contact |
+| `demo.html` | Technical demo request (validated form, success state) |
+| `legal.html` | Privacy, terms, cookies, accessibility |
+| `console.html` | Product console (unchanged in v3) |
+
+## Editing pages
+
+Marketing pages are generated so the header, menus and footer stay identical
+everywhere. Edit the page bodies in `_build/pages/*.html` and the shared parts
+in `_build/build.py`, then run:
+
+```
+python3 _build/build.py
+```
+
+The first line of each page body is a JSON comment with its title,
+description, active menu and extra scripts. `{{icon:name}}`,
+`{{shot:image|alt text}}` and `{{cta}}` are expanded at build time.
+
+## Assets
+
+| File | What it is |
+|---|---|
+| `assets/zx.css` | Design tokens (light + dark), core components |
+| `assets/site.css` | Header, mega menus, hero, bands, footer |
+| `assets/pages.css` | Shared page components (features, tables, forms, modals, trust, status, resources) |
+| `assets/zx-core.js` | Theme switching and motion preferences |
+| `assets/site-motion.js` | Site motion and interactions |
+| `assets/arch.js` | Platform architecture explorer and comparison diagrams |
+| `assets/img/` | Console screenshots in light and dark (WebP) |
 | `assets/vendor/` | Motion 11.11.13, anime.js 4.0.2, Lenis 1.1.13 (MIT) |
 
-## Themes
+## Themes and motion
+
 Light and dark on every page. The first visit follows the operating system;
-the sun/moon button switches and remembers the choice. The switch animates as
-a circular reveal from the button (View Transitions API) where supported.
+the sun/moon button switches and remembers the choice.
 
-## Motion
-- **Loading:** the Zenstra mark draws itself, the wordmark staggers in, and the
-  page wipes open (first page of a session; later pages fade). The console
-  shows shimmering skeletons on first visit to each screen, a top progress
-  line on every navigation, then panels rise in sequence and numbers count up.
-- **Background:** the hero canvas shows agent requests travelling to a policy
-  gate: most pass, amber ones are held for a person, red ones are blocked with
-  a ring at the gate. A slow glow drifts behind it; the CTA band has a rotating
-  aurora and grid.
-- **Scroll:** Lenis smooth scrolling, a reading-progress bar, a header that
-  hides on the way down, blur-and-rise reveals, staggered groups, highlighter
-  sweeps on key phrases, count-up metrics, incident replays that stamp
-  BLOCKED / HELD, flowing packets along the architecture wires, the four
-  checks lighting up in order, a pinned product tour that changes screens as
-  you scroll, and a sequence diagram on the platform page that draws one
-  message at a time (with Replay).
-- **Live data:** the hero decision ledger streams new rows; the console's
-  overview has a live decisions-per-second chart with a sliding 60 s window;
-  a new critical detection arrives in the queue with a toast; the
-  investigation replays the agent run step by step.
-- **Micro-interactions:** button sheen and arrow nudge, mega-menu spring,
-  card lift, ledger tilt toward the pointer, accordion height animation.
+Motion includes a loading sequence, smooth scrolling, a hero network animation
+kept to the right of the text, scroll reveals, a product showcase that cycles
+through console screens, an animated trust card, live ledger and status bars,
+and an architecture explorer that walks one tool call through each deployment
+mode. All motion stops under `prefers-reduced-motion`, and content is never
+left hidden if a script fails.
 
-All motion stops under `prefers-reduced-motion`; content is never left hidden
-if a script fails. Background animation pauses when off screen or when the tab
-is hidden. The live ledger has a pause button.
-
-All data is sample data for a fictional credit union.
+All figures, names and documents are sample content.

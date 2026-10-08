@@ -1,0 +1,139 @@
+<!--{"title": "Solutions · Zenstra", "description": "Zenstra for credit unions, banks and healthcare, and for every kind of AI agent: employee copilots, member-facing agents, coding agents, back-office automation and MCP servers.", "active": "solutions"}-->
+<style>
+  .ind { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 16px; }
+  .ind .card.feature-card h3 { font-size: 24px; }
+  @media (max-width: 1000px) { .ind { grid-template-columns: 1fr; } }
+  .modes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; }
+  .modes span { font: 600 11.5px/1 var(--font-sans); letter-spacing: 0.04em; padding: 6px 9px; border-radius: 6px; border: 1px solid var(--line-strong); color: var(--ink-2); background: var(--surface); }
+  .modes span.on { border-color: var(--brand); color: var(--brand); background: var(--brand-wash); }
+  .agent-index { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+  .agent-index a { display: grid; gap: 8px; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); text-decoration: none; color: var(--ink); font-weight: 600; font-size: 14.5px; transition: border-color var(--t-base), transform 400ms var(--ease-expo); }
+  .agent-index a:hover { border-color: var(--brand); transform: translateY(-2px); color: var(--ink); }
+  .agent-index .ic { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; background: var(--brand-wash); color: var(--brand); }
+  .agent-index .ic svg { width: 17px; height: 17px; }
+  @media (max-width: 1000px) { .agent-index { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+</style>
+  <section class="page-hero solo" aria-labelledby="hero-h">
+    <div class="wrap grid">
+      <div>
+        <nav class="crumbs" aria-label="Breadcrumb" data-hero><a href="home.html">Home</a><span aria-hidden="true">/</span><span>Solutions</span></nav>
+        <h1 id="hero-h"><span class="line"><span>Start where your agents</span></span><span class="line"><span class="accent">already run.</span></span></h1>
+        <p class="sub" data-hero>Most agents arrive inside platforms you already operate. Choose your industry, or the kind of agent you are being asked to approve this quarter.</p>
+        <div class="ctas" data-hero><a class="btn btn-primary" href="credit-unions.html">Zenstra for credit unions {{icon:arrow}}</a><a class="btn btn-secondary" href="#agents">By agent type</a></div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="ind-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><span class="label eyebrow" data-reveal>By industry</span><h2 class="h2" id="ind-h" data-reveal>Built first for <span class="mark">regulated institutions.</span></h2></div>
+        <p class="lede" data-reveal>Where an agent's mistake becomes a finding, Zenstra produces the inventory, the least-privilege proof and the decision trail as the agents work.</p>
+      </div>
+      <div class="ind" data-stagger>
+        <a class="card feature-card" href="credit-unions.html"><span class="ic">{{icon:bank}}</span><span class="label" style="color:var(--brand)">Lead programme</span><h3>Credit unions</h3><p>Core-banking agent platforms, lending and fraud agents, member-service assistants and employee copilots, governed under one policy set with evidence your examiner can read.</p><span class="go">Zenstra for credit unions {{icon:arrow}}</span></a>
+        <a class="card" href="#banking"><span class="ic">{{icon:card}}</span><h3>Banking and lending</h3><p>Underwriting, servicing and fraud agents with standing access to systems of record.</p><span class="go">Read more {{icon:arrow}}</span></a>
+        <a class="card" href="#healthcare"><span class="ic">{{icon:plus}}</span><h3>Healthcare</h3><p>Clinical documentation and claims agents handling protected health information.</p><span class="go">Read more {{icon:arrow}}</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="alt" aria-label="Industries">
+    <div class="wrap">
+      <div class="feature" id="banking">
+        <div>
+          <span class="label" data-reveal>Banking and lending</span>
+          <h3 data-reveal>Agents that touch money need a decision before every write.</h3>
+          <p data-reveal>Loan-file classifiers, servicing assistants and fraud agents increasingly act on systems of record. Zenstra scopes each one to the accounts and records its task needs, and holds unusual writes for a person.</p>
+          <ul class="checks" data-stagger>
+            <li>Writes to core and LOS systems decided per call</li>
+            <li>Model-risk and third-party evidence from the same ledger</li>
+            <li>Separation of duties enforced for approvals</li>
+          </ul>
+        </div>
+        <div data-reveal="right">{{shot:crop-riskiest|Highest-risk agents with risk scores, main factors and owners}}</div>
+      </div>
+      <div class="feature flip" id="healthcare">
+        <div>
+          <span class="label" data-reveal>Healthcare</span>
+          <h3 data-reveal>Keep protected health information inside the task.</h3>
+          <p data-reveal>Clinical and claims agents read sensitive records all day. Zenstra limits each agent to the patients and fields its task covers, blocks data leaving approved destinations, and records every access for your privacy office.</p>
+          <ul class="checks" data-stagger>
+            <li>Data-class aware policies for PHI</li>
+            <li>Every access recorded with the agent, task and policy</li>
+            <li>Business associate agreement available</li>
+          </ul>
+        </div>
+        <div data-reveal="left">{{shot:crop-secrets|Secrets an agent may use, each scoped and short-lived}}</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="agents" aria-labelledby="ag-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><span class="label eyebrow" data-reveal>By agent type</span><h2 class="h2" id="ag-h" data-reveal>Each kind of agent fails differently.</h2></div>
+        <p class="lede" data-reveal>Choose the one in front of you. Each shows the risk, the controls that apply, and which deployment mode covers it.</p>
+      </div>
+      <div class="agent-index" data-stagger>
+        <a href="#copilots"><span class="ic">{{icon:user}}</span>Employee copilots</a>
+        <a href="#member-facing"><span class="ic">{{icon:chat}}</span>Member-facing agents</a>
+        <a href="#coding"><span class="ic">{{icon:terminal}}</span>Coding agents</a>
+        <a href="#back-office"><span class="ic">{{icon:gear}}</span>Back-office automation</a>
+        <a href="#mcp"><span class="ic">{{icon:plug}}</span>MCP servers</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="alt" aria-label="Agent types" style="padding-top:72px">
+    <div class="wrap">
+      <div class="feature" id="copilots">
+        <div>
+          <span class="label" data-reveal>Employee copilots</span>
+          <h3 data-reveal>Copilot, ChatGPT and Gemini, governed where staff use them.</h3>
+          <p data-reveal>Copilots are often the first agentic tools live in an institution, rolled out before a policy existed. Zenstra finds them, applies your acceptable-use policy, and stops sensitive data leaving the device.</p>
+          <div class="modes" data-reveal><span>SDK</span><span>Gateway</span><span class="on">Endpoint app</span></div>
+        </div>
+        <div data-reveal="right">{{shot:crop-coverage|Coverage by platform including Microsoft Copilot}}</div>
+      </div>
+      <div class="feature flip" id="member-facing">
+        <div>
+          <span class="label" data-reveal>Member- and customer-facing agents</span>
+          <h3 data-reveal>Untrusted input all day, from anyone.</h3>
+          <p data-reveal>Chat and voice agents read whatever members type and whatever the knowledge base holds. One poisoned answer can reach both. Zenstra screens content before the agent plans and blocks actions outside the conversation's task.</p>
+          <div class="modes" data-reveal><span class="on">SDK</span><span class="on">Gateway</span><span>Endpoint app</span></div>
+        </div>
+        <div data-reveal="left">{{shot:crop-run|Agent run showing a hidden instruction quarantined and the email blocked}}</div>
+      </div>
+      <div class="feature" id="coding">
+        <div>
+          <span class="label" data-reveal>Coding agents</span>
+          <h3 data-reveal>Repo, CI and production shell, with a person on the risky calls.</h3>
+          <p data-reveal>Coding agents can merge, deploy and run commands. Zenstra lets routine work through, holds production writes outside the declared task for approval, and gives you a stop button scoped to one agent.</p>
+          <div class="modes" data-reveal><span class="on">SDK</span><span class="on">Gateway</span><span>Endpoint app</span></div>
+        </div>
+        <div data-reveal="right">{{shot:crop-estop|Emergency stop scoped to one agent with a recorded reason}}</div>
+      </div>
+      <div class="feature flip" id="back-office">
+        <div>
+          <span class="label" data-reveal>Back-office automation</span>
+          <h3 data-reveal>Standing write access, replaced by scoped grants.</h3>
+          <p data-reveal>Reconciliation, case-prep and workflow agents run unattended with broad access. Zenstra replaces standing credentials with grants scoped to the job and flags the ones that go unused.</p>
+          <div class="modes" data-reveal><span class="on">SDK</span><span class="on">Gateway</span><span>Endpoint app</span></div>
+        </div>
+        <div data-reveal="left">{{shot:crop-grants|Tool grants with scope, expiry and last use}}</div>
+      </div>
+      <div class="feature" id="mcp">
+        <div>
+          <span class="label" data-reveal>MCP servers and connectors</span>
+          <h3 data-reveal>Every connector is an access grant. Treat it like one.</h3>
+          <p data-reveal>Each MCP server exposes tools to any client that can reach it. Put the gateway in front, and every call is identified, authorized against policy and recorded, with no change to the server.</p>
+          <div class="modes" data-reveal><span>SDK</span><span class="on">Gateway</span><span>Endpoint app</span></div>
+          <a class="more" href="platform.html#architecture" data-reveal>See the gateway architecture {{icon:arrow}}</a>
+        </div>
+        <div data-reveal="right">{{shot:crop-decision-points|Decision points with mode, region, version, latency, fail mode and health}}</div>
+      </div>
+    </div>
+  </section>
+
+  {{cta}}

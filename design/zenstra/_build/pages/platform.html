@@ -1,0 +1,315 @@
+<!--{"title": "Platform · Zenstra", "description": "How Zenstra works: one decision point for every AI agent action, where it runs in your environment, and what it records.", "active": "platform", "scripts": ["arch.js"]}-->
+<style>
+  .spec { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 14px; border: 1px solid var(--hero-panel-line); border-radius: 14px; overflow: hidden; background: var(--hero-panel); color: var(--hero-panel-ink); box-shadow: 0 30px 70px -40px rgba(4, 16, 36, 0.45); }
+  .spec th, .spec td { padding: 13px 18px; border-bottom: 1px solid var(--hero-panel-line); text-align: left; vertical-align: top; }
+  .spec tr:last-child th, .spec tr:last-child td { border-bottom: 0; }
+  .spec th { color: var(--hero-panel-ink-2); font-weight: 500; width: 44%; }
+  .spec td { font-weight: 600; }
+
+  /* Today vs with Zenstra */
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 72px; }
+  .cmp-card { border: 1px solid var(--line); border-radius: 16px; background: var(--surface); padding: 24px; display: grid; gap: 14px; align-content: start; }
+  .cmp-card.with { border-color: color-mix(in srgb, var(--brand) 45%, var(--line)); box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand) 7%, transparent); }
+  .cmp-card h3 { font-size: 19px; display: flex; gap: 10px; align-items: center; }
+  .cmp-card ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; font-size: 14.5px; color: var(--ink-2); }
+  .cmp-card li { display: grid; grid-template-columns: 18px 1fr; gap: 8px; }
+  .cmp-card li svg { width: 16px; height: 16px; margin-top: 3px; }
+  .cmp-card:not(.with) li svg { color: var(--crit); }
+  .cmp-card.with li svg { color: var(--ok); }
+  .cmp-diagram { width: 100%; height: auto; display: block; background: var(--bg); border-radius: 12px; border: 1px solid var(--line); }
+  .cmp-diagram .box rect { fill: var(--surface); stroke: var(--line-strong); }
+  .cmp-diagram .box.z rect { fill: var(--brand-wash); stroke: var(--brand); }
+  .cmp-diagram .box text { fill: var(--ink); font: 600 12px var(--font-sans); }
+  .cmp-diagram .box text.s { fill: var(--ink-3); font: 400 10px var(--font-mono); }
+  .cmp-diagram path.flow { fill: none; stroke: var(--line-strong); stroke-width: 1.2; stroke-dasharray: 3 4; }
+  .cmp-diagram .hit, .cmp-diagram .gate-ring { fill: none; stroke: var(--crit); stroke-width: 2; opacity: 0; transform-box: fill-box; transform-origin: center; }
+  .cmp-diagram .flash { animation: flash 900ms var(--ease-out); }
+  @keyframes flash { 0% { opacity: 0.9; transform: scale(0.6); } 100% { opacity: 0; transform: scale(1.6); } }
+  .pk { stroke: var(--surface); stroke-width: 1.5; }
+  .pk.ok { fill: var(--signal); }
+  .pk.warn { fill: var(--med); }
+  .pk.bad { fill: var(--crit); }
+  @media (max-width: 900px) { .compare { grid-template-columns: 1fr; } }
+
+  /* Explorer */
+  .ax-bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 18px; }
+  .ax-modes { display: inline-flex; padding: 4px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); gap: 4px; }
+  .ax-mode { height: 38px; padding: 0 16px; border: 0; border-radius: 8px; background: none; color: var(--ink-2); font: 600 14px/1 var(--font-sans); cursor: pointer; transition: background 300ms, color 300ms; }
+  .ax-mode[aria-selected='true'] { background: var(--ink); color: var(--bg); }
+  .ax-mode small { font-weight: 400; opacity: 0.7; margin-left: 6px; }
+  .ax-grid { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); gap: 32px; align-items: start; }
+  .ax-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  .ax-step { position: relative; }
+  .ax-step button { display: grid; grid-template-columns: 30px 1fr auto; gap: 12px; align-items: start; width: 100%; text-align: left; padding: 14px 14px 14px 18px; border: 0; border-radius: 0 12px 12px 0; background: none; color: var(--ink-2); font: inherit; cursor: pointer; transition: background 300ms; }
+  .ax-step::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: var(--line); }
+  .ax-step .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: var(--brand); transform: scaleY(0); transform-origin: top; }
+  .ax-step .num { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--line-strong); display: grid; place-items: center; font: 600 12px/1 var(--font-mono); color: var(--ink-3); background: var(--surface); transition: all 300ms; }
+  .ax-step b { display: block; color: var(--ink); font-size: 15.5px; font-weight: 600; line-height: 1.35; padding-top: 3px; }
+  .ax-step p { font-size: 14px; line-height: 1.55; max-height: 0; opacity: 0; overflow: hidden; transition: max-height 500ms var(--ease-expo), opacity 400ms, margin 400ms; }
+  .ax-step time { font: 500 12px/28px var(--font-mono); color: var(--ink-3); }
+  .ax-step.on button { background: var(--surface); }
+  .ax-step.on .num { background: var(--brand); border-color: var(--brand); color: #fff; }
+  .ax-step.on p { max-height: 120px; opacity: 1; margin-top: 6px; }
+  .ax-step.done .num { border-color: var(--ok); color: var(--ok); }
+  .ax-card { border: 1px solid var(--line); border-radius: 16px; background: var(--surface); padding: 18px; box-shadow: var(--shadow-2); }
+  .ax-svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .ax-svg .boundary rect { fill: color-mix(in srgb, var(--brand) 3%, transparent); stroke: var(--brand); stroke-width: 1.2; stroke-dasharray: 6 5; }
+  .ax-svg .boundary text { fill: var(--brand); font: 600 10.5px var(--font-sans); letter-spacing: 0.08em; }
+  .ax-svg .boundary text.out { fill: var(--ink-3); }
+  .ax-svg .frame rect { fill: none; stroke: var(--line-strong); stroke-width: 1; }
+  .ax-svg .frame text { fill: var(--ink-3); font: 600 9.5px var(--font-sans); letter-spacing: 0.08em; }
+  .ax-svg .edge { fill: none; stroke: var(--line-strong); stroke-width: 1.4; transition: stroke 300ms, stroke-width 300ms, opacity 300ms; }
+  .ax-svg .edge.cross { stroke-dasharray: 5 4; }
+  .ax-svg .arrowhead { fill: var(--line-strong); }
+  .ax-svg .edge-label { fill: var(--ink-3); font: 500 10px var(--font-mono); }
+  .ax-svg .node rect { fill: var(--surface); stroke: var(--line-strong); stroke-width: 1.2; transition: stroke 300ms, fill 300ms, opacity 300ms; }
+  .ax-svg .node.host rect { fill: var(--bg); }
+  .ax-svg .node.zx rect { fill: var(--brand-wash); stroke: color-mix(in srgb, var(--brand) 55%, var(--line)); }
+  .ax-svg .node.ext rect { stroke-dasharray: 4 3; }
+  .ax-svg .node.zx.ext rect { stroke-dasharray: none; }
+  .ax-svg .node text { transition: opacity 300ms; }
+  .ax-svg .node .t { fill: var(--ink); font: 600 13px var(--font-sans); }
+  .ax-svg .node .s { fill: var(--ink-3); font: 400 10.5px var(--font-mono); }
+  .ax-svg.focus .node:not(.on) rect, .ax-svg.focus .node:not(.on) text { opacity: 0.38; }
+  .ax-svg.focus .edge:not(.on) { opacity: 0.35; }
+  .ax-svg .node.on rect { stroke: var(--brand); stroke-width: 2; }
+  .ax-svg .edge.on { stroke: var(--brand); stroke-width: 2; opacity: 1; }
+  .ax-svg .node.deny rect, .ax-svg .node.blocked rect { stroke: var(--crit); fill: var(--crit-wash); }
+  .ax-svg.show-x .edge[data-e='pep-email'] { stroke: var(--crit); }
+  .ax-svg .verdict-tag { opacity: 0; transition: opacity 300ms; }
+  .ax-svg.show-verdict .verdict-tag { opacity: 1; }
+  .ax-svg .verdict-tag rect { fill: var(--crit); }
+  .ax-svg .verdict-tag text { fill: #fff; font: 700 10px var(--font-mono); letter-spacing: 0.04em; }
+  .ax-svg .x-mark { opacity: 0; transition: opacity 300ms; }
+  .ax-svg.show-x .x-mark { opacity: 1; }
+  .ax-svg .x-mark circle { fill: var(--crit); }
+  .ax-svg .x-mark path { stroke: #fff; stroke-width: 2; stroke-linecap: round; }
+  .ax-legend { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 12.5px; color: var(--ink-3); }
+  .ax-legend span { display: inline-flex; align-items: center; gap: 8px; }
+  .ax-legend i { display: inline-block; width: 22px; height: 0; border-top: 2px solid var(--brand); }
+  .ax-legend i.d { border-top-style: dashed; border-color: var(--ink-3); }
+  .ax-legend i.b { width: 14px; height: 10px; border: 1.5px dashed var(--brand); border-radius: 3px; }
+  .ax-legend i.r { width: 8px; height: 8px; border: 0; border-radius: 50%; background: var(--crit); }
+  .ax-mode-copy { margin-top: 18px; font-size: 14.5px; color: var(--ink-2); }
+  .ax-mode-copy b { color: var(--ink); }
+  @media (max-width: 1000px) { .ax-grid { grid-template-columns: 1fr; } .ax-steps { order: 2; } }
+</style>
+
+  <section class="page-hero" aria-labelledby="hero-h">
+    <div class="wrap grid">
+      <div>
+        <nav class="crumbs" aria-label="Breadcrumb" data-hero><a href="home.html">Home</a><span aria-hidden="true">/</span><span>Platform</span></nav>
+        <h1 id="hero-h"><span class="line"><span>One decision point</span></span><span class="line"><span>for every action</span></span><span class="line"><span class="accent">an agent takes.</span></span></h1>
+        <p class="sub" data-hero>Zenstra inventories every agent, gives each one a verifiable identity, checks every tool call against your policy before it runs, and records the decision as evidence. This page shows how, for the architects who will review it.</p>
+        <div class="ctas" data-hero><a class="btn btn-primary" href="demo.html">Request a technical demo {{icon:arrow}}</a><a class="btn btn-secondary" href="#architecture">See the architecture</a></div>
+      </div>
+      <div data-hero>
+        <span class="label" style="display:block;margin-bottom:12px;color:var(--hero-ink-2)">Specification</span>
+        <table class="spec">
+          <tbody>
+            <tr><th scope="row">Enforcement point</th><td>Before the tool call executes</td></tr>
+            <tr><th scope="row">Deployment</th><td>SDK, gateway, endpoint app</td></tr>
+            <tr><th scope="row">Decision latency</th><td>18 ms p95 &middot; <a href="resources.html#docs">methodology</a></td></tr>
+            <tr><th scope="row">Default fail mode</th><td>Closed, set per agent and tool</td></tr>
+            <tr><th scope="row">Where decisions run</th><td>Your cloud or your devices</td></tr>
+            <tr><th scope="row">Agent identity</th><td>Per-agent keys, SPIFFE-compatible</td></tr>
+            <tr><th scope="row">Evidence</th><td>Hash-chained ledger, SIEM export</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <nav class="subnav" aria-label="On this page">
+    <div class="wrap">
+      <a href="#architecture" class="on">Architecture</a>
+      <a href="#pillars">Capabilities</a>
+      <a href="#deployment">Deployment</a>
+      <a href="#integrations">Integrations</a>
+      <a href="#security">Securing Zenstra</a>
+    </div>
+  </nav>
+
+  <section id="architecture" aria-labelledby="arch-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><span class="label eyebrow" data-reveal>Architecture</span><h2 class="h2" id="arch-h" data-reveal>Where Zenstra sits, and <span class="mark">what crosses the line.</span></h2></div>
+        <p class="lede" data-reveal>Today most agents call tools directly with standing credentials. Zenstra adds one decision point in your environment. Only decisions and redacted evidence leave it.</p>
+      </div>
+
+      <div class="compare">
+        <div class="cmp-card" data-reveal="left">
+          <span class="label">Today</span>
+          <h3>Agents call tools directly</h3>
+          <svg class="cmp-diagram" viewBox="0 0 420 170" role="img" aria-label="Without Zenstra, every request from the agent, including a malicious one, reaches the systems of record.">
+            <path class="flow" d="M110 50 C 200 50, 220 40, 300 40"/>
+            <path class="flow" d="M110 85 L 300 85"/>
+            <path class="flow" d="M110 120 C 200 120, 220 130, 300 130"/>
+            <g class="box"><rect x="16" y="55" width="94" height="60" rx="10"/><text x="30" y="82">AI agent</text><text class="s" x="30" y="98">standing keys</text></g>
+            <g class="box"><rect x="300" y="20" width="104" height="40" rx="8"/><text x="314" y="45">MCP tools</text></g>
+            <g class="box"><rect x="300" y="65" width="104" height="40" rx="8"/><text x="314" y="90">Core banking</text></g>
+            <g class="box"><rect x="300" y="110" width="104" height="40" rx="8"/><text x="314" y="135">Email</text></g>
+            <circle class="hit" cx="300" cy="85" r="14"/>
+            <g class="pk-layer"></g>
+          </svg>
+          <ul>
+            <li>{{icon:x}}<span>Every call goes through, including the one a poisoned document asked for</span></li>
+            <li>{{icon:x}}<span>Credentials stay valid for months, scoped to everything</span></li>
+            <li>{{icon:x}}<span>Logs show the API call, not the decision behind it</span></li>
+          </ul>
+        </div>
+        <div class="cmp-card with" data-reveal="right">
+          <span class="label" style="color:var(--brand)">With Zenstra</span>
+          <h3>Every call meets a decision first</h3>
+          <svg class="cmp-diagram with" viewBox="0 0 420 170" role="img" aria-label="With Zenstra, every request passes the decision point; the malicious one is stopped there and never reaches the systems of record.">
+            <path class="flow" d="M100 85 C 150 85, 150 85, 170 85 L 250 85 C 280 85, 270 40, 300 40"/>
+            <path class="flow" d="M100 85 L 300 85"/>
+            <path class="flow" d="M100 85 L 250 85 C 280 85, 270 130, 300 130"/>
+            <g class="box"><rect x="10" y="55" width="90" height="60" rx="10"/><text x="22" y="82">AI agent</text><text class="s" x="22" y="98">scoped grants</text></g>
+            <g class="box z"><rect x="150" y="55" width="100" height="60" rx="10"/><text x="164" y="82">Zenstra</text><text class="s" x="164" y="98">decision point</text></g>
+            <g class="box"><rect x="300" y="20" width="104" height="40" rx="8"/><text x="314" y="45">MCP tools</text></g>
+            <g class="box"><rect x="300" y="65" width="104" height="40" rx="8"/><text x="314" y="90">Core banking</text></g>
+            <g class="box"><rect x="300" y="110" width="104" height="40" rx="8"/><text x="314" y="135">Email</text></g>
+            <circle class="gate-ring" cx="200" cy="85" r="16"/>
+            <g class="pk-layer"></g>
+          </svg>
+          <ul>
+            <li>{{icon:check}}<span>The malicious call stops at the decision point, in 14 ms</span></li>
+            <li>{{icon:check}}<span>Grants are scoped to the task and expire per call or per session</span></li>
+            <li>{{icon:check}}<span>Every decision is recorded with the policy and evidence behind it</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div id="explorer">
+        <div class="ax-bar">
+          <div class="ax-modes" role="tablist" aria-label="Deployment mode">
+            <button class="ax-mode" role="tab" aria-selected="true" data-mode="sdk">SDK <small>agents you build</small></button>
+            <button class="ax-mode" role="tab" aria-selected="false" tabindex="-1" data-mode="gateway">Gateway <small>MCP and APIs</small></button>
+            <button class="ax-mode" role="tab" aria-selected="false" tabindex="-1" data-mode="endpoint">Endpoint app <small>employee AI tools</small></button>
+          </div>
+          <button class="btn btn-secondary btn-sm" id="ax-replay" data-pause="Pause walkthrough" data-play="Play walkthrough">Pause walkthrough</button>
+        </div>
+        <div class="ax-grid">
+          <ol class="ax-steps">
+            <li class="ax-step"><span class="fill"></span><button><span class="num">1</span><span><b>The agent calls a tool</b><p>member-chat-assist plans email.send with twelve account numbers in the body.</p></span><time>+0 ms</time></button></li>
+            <li class="ax-step"><span class="fill"></span><button><span class="num">2</span><span><b>Zenstra checks who is asking</b><p>The agent's key and attestation are verified against the inventory and the owner in your identity provider.</p></span><time>+2 ms</time></button></li>
+            <li class="ax-step"><span class="fill"></span><button><span class="num">3</span><span><b>It screens what the agent read</b><p>The retrieved PDF carried a hidden instruction. That span is quarantined before the agent can act on it.</p></span><time>+6 ms</time></button></li>
+            <li class="ax-step"><span class="fill"></span><button><span class="num">4</span><span><b>Policy and intent decide</b><p>POL-114: member data may not leave approved domains, and the declared task never included email. Verdict: block.</p></span><time>+14 ms</time></button></li>
+            <li class="ax-step"><span class="fill"></span><button><span class="num">5</span><span><b>The tool never sees the call</b><p>The email service is never contacted. The agent gets a refusal it can handle, and allowed calls carry on.</p></span><time>+16 ms</time></button></li>
+            <li class="ax-step"><span class="fill"></span><button><span class="num">6</span><span><b>The decision becomes evidence</b><p>Written to the hash-chained ledger in your storage and exported to your SIEM. Only the decision and redacted evidence go to the control plane.</p></span><time>+18 ms</time></button></li>
+          </ol>
+          <div>
+            <div class="ax-card">
+              <svg class="ax-svg" viewBox="0 0 760 470" role="img" aria-label="Architecture diagram: inside your environment, the AI agent, the Zenstra enforcement point and decision point, your tools and the decision ledger. Outside: the Zenstra control plane, your SIEM and your identity provider."></svg>
+              <div class="ax-legend"><span><i class="b"></i>Your environment</span><span><i></i>Active request</span><span><i class="d"></i>Leaves your environment</span><span><i class="r"></i>Blocked</span></div>
+            </div>
+            <p class="ax-mode-copy" data-mode-copy="sdk"><b>SDK.</b> Wraps the agent's tool layer, so it sees the plan, retrieved content and memory writes. Best for agents your teams build.</p>
+            <p class="ax-mode-copy" data-mode-copy="gateway" hidden><b>Gateway.</b> A proxy in your VPC. Point MCP clients and agents at it: no code change. Sees every tool and API call on the wire.</p>
+            <p class="ax-mode-copy" data-mode-copy="endpoint" hidden><b>Endpoint app.</b> Deployed by MDM to managed devices. Covers Copilot, ChatGPT and other AI tools employees already use.</p>
+            <p class="sr-only ax-live" aria-live="polite"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="pillars" class="alt" aria-labelledby="cap-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><span class="label eyebrow" data-reveal>Capabilities</span><h2 class="h2" id="cap-h" data-reveal>What each control stops, and <span class="mark">what it leaves behind.</span></h2></div>
+        <p class="lede" data-reveal>Grouped by the job a security team is doing. Each group has its own page with the screens behind it.</p>
+      </div>
+      <div class="table-card" data-reveal>
+        <table class="tbl wide">
+          <thead><tr><th scope="col" class="label">Capability</th><th scope="col" class="label">Stops</th><th scope="col" class="label">Enforced at</th><th scope="col" class="label">Evidence produced</th></tr></thead>
+          <tbody>
+            <tr class="group"><td colspan="4"><a class="label" href="discover.html" style="color:var(--brand)">01 &middot; Discover &rarr;</a></td></tr>
+            <tr><th scope="row"><a href="discover.html#shadow-ai">Shadow AI discovery</a></th><td>Agents, AI tools and no-code workflows operating without review</td><td>Endpoint app, gateway traffic, cloud and SaaS connectors</td><td>Living inventory with owner, device and detection signal</td></tr>
+            <tr><th scope="row"><a href="discover.html#identity">Agent identity</a></th><td>Impersonation, stolen agent keys, agents acting as each other</td><td>SDK and gateway, on every call</td><td>Key, attestation and rotation history per agent</td></tr>
+            <tr class="group"><td colspan="4"><a class="label" href="enforce.html" style="color:var(--brand)">02 &middot; Enforce &rarr;</a></td></tr>
+            <tr><th scope="row"><a href="enforce.html#tool-access">Secure tool access</a></th><td>Standing credentials, over-broad grants, excessive agency</td><td>Before tool execution</td><td>Grant, scope and expiry on each decision</td></tr>
+            <tr><th scope="row"><a href="enforce.html#injection">Prompt injection defense</a></th><td>Direct and indirect injection steering agent intent</td><td>On retrieval and before planning</td><td>Quarantined span, score and source document</td></tr>
+            <tr><th scope="row"><a href="enforce.html#memory">Memory protection</a></th><td>Memory poisoning and cross-session contamination</td><td>On every memory write</td><td>Signature and provenance on each memory entry</td></tr>
+            <tr><th scope="row"><a href="enforce.html#policy">Policy as code</a></th><td>Inconsistent guardrails across models and frameworks</td><td>Decision point, per call</td><td>Policy version that produced each decision</td></tr>
+            <tr class="group"><td colspan="4"><a class="label" href="prove.html" style="color:var(--brand)">03 &middot; Prove &rarr;</a></td></tr>
+            <tr><th scope="row"><a href="prove.html#ledger">Decision ledger</a></th><td>Disputed or missing records of what an agent did</td><td>Every decision, allowed or not</td><td>Tamper-evident, replayable trail; SIEM export</td></tr>
+            <tr><th scope="row"><a href="prove.html#detection">Runtime detection</a></th><td>Gradual drift and anomalous behaviour mid-task</td><td>Per-agent baseline, continuously</td><td>Drift score history and the run that triggered it</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="deployment" aria-labelledby="dep-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><span class="label eyebrow" data-reveal>Deployment</span><h2 class="h2" id="dep-h" data-reveal>Three ways in. <span class="mark">Most institutions use two.</span></h2></div>
+        <p class="lede" data-reveal>All three report to the same policy set and the same ledger, so an agent is governed the same way whichever path it takes.</p>
+      </div>
+      <div class="table-card" data-reveal>
+        <table class="tbl wide">
+          <thead><tr><th scope="col"></th><th scope="col">SDK<br><small style="font-weight:400;color:var(--ink-3)">For agents you build</small></th><th scope="col">Gateway<br><small style="font-weight:400;color:var(--ink-3)">For MCP and API traffic</small></th><th scope="col">Endpoint app<br><small style="font-weight:400;color:var(--ink-3)">For employee AI tools</small></th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Code change</th><td>Wrap the tool layer, a few lines</td><td>None, change the endpoint URL</td><td>None, deployed by MDM</td></tr>
+            <tr><th scope="row">What it sees</th><td>Plan, retrieved content, tool calls, memory</td><td>Tool and API calls on the wire</td><td>AI tool use on the device</td></tr>
+            <tr><th scope="row">Can block</th><td>Before planning and before each call</td><td>Before each call</td><td>Before data leaves the device</td></tr>
+            <tr><th scope="row">Runs in</th><td>The agent process</td><td>Your VPC or Kubernetes cluster</td><td>Managed Windows and macOS devices</td></tr>
+            <tr><th scope="row">Typical rollout</th><td>One agent in a day</td><td>One MCP server in an hour</td><td>A pilot group in a week</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="integrations" class="alt" aria-labelledby="int-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><span class="label eyebrow" data-reveal>Integrations</span><h2 class="h2" id="int-h" data-reveal>Works with the stack you already run.</h2></div>
+        <p class="lede" data-reveal>Tested versions for each integration are listed in the <a href="resources.html#docs">documentation</a>.</p>
+      </div>
+      <div class="cards four" data-stagger>
+        <div class="card"><span class="ic">{{icon:bot}}</span><h3>Agent frameworks</h3><p>LangGraph, CrewAI, OpenAI Agents SDK, Semantic Kernel, custom Python and TypeScript</p></div>
+        <div class="card"><span class="ic">{{icon:plug}}</span><h3>Protocols</h3><p>Model Context Protocol, agent-to-agent (A2A), OpenAPI tools</p></div>
+        <div class="card"><span class="ic">{{icon:key}}</span><h3>Identity</h3><p>Microsoft Entra ID, Okta, Ping Identity, Google Workspace</p></div>
+        <div class="card"><span class="ic">{{icon:pulse}}</span><h3>Security operations</h3><p>Splunk, Microsoft Sentinel, ServiceNow, webhooks</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="security" aria-labelledby="sec-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><span class="label eyebrow" data-reveal>Securing Zenstra</span><h2 class="h2" id="sec-h" data-reveal>A control in the path of every action has to be <span class="mark">trustworthy itself.</span></h2></div>
+        <p class="lede" data-reveal>The first question about any inline control is what happens when it is wrong, slow or compromised. These are the answers. The full detail is in the <a href="trust.html">trust center</a>.</p>
+      </div>
+      <div class="cards" data-stagger>
+        <div class="card"><span class="ic">{{icon:cloud}}</span><h3>Your data stays with you</h3><p>Prompts and tool payloads are evaluated inside your environment. The control plane receives decisions and redacted evidence only.</p></div>
+        <div class="card"><span class="ic">{{icon:shield}}</span><h3>Fail-closed, with an exit</h3><p>If a decision point is unreachable, actions are held. Low-risk tools can be set to fail-open, and those decisions are recorded on recovery.</p></div>
+        <div class="card"><span class="ic">{{icon:key}}</span><h3>No single key opens everything</h3><p>Per-tenant encryption keys, per-agent identities, and console access through your identity provider with role-based permissions.</p></div>
+        <div class="card"><span class="ic">{{icon:list}}</span><h3>A ledger you can verify</h3><p>Each entry is chained to the previous one, so the chain can be checked independently of Zenstra.</p></div>
+        <div class="card"><span class="ic">{{icon:target}}</span><h3>Tested from outside</h3><p>Annual independent penetration test and a public vulnerability disclosure policy.</p></div>
+        <div class="card"><span class="ic">{{icon:file}}</span><h3>Software you can inspect</h3><p>A software bill of materials ships with every SDK, gateway and endpoint release.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band cta" id="demo" aria-labelledby="cta-h">
+    <div class="aurora" aria-hidden="true"></div>
+    <div class="wrap">
+      <div>
+        <span class="label eyebrow" data-reveal>Technical demo</span>
+        <h2 id="cta-h" data-reveal>Bring one real agent. <br>Leave with the evidence.</h2>
+        <ol data-stagger>
+          <li><span><b>Connect your agent.</b> Any framework, any model provider.</span></li>
+          <li><span><b>Watch a policy stop it.</b> Live injection and exfiltration attempts.</span></li>
+          <li><span><b>Keep the ledger.</b> The decision record and a security review pack.</span></li>
+        </ol>
+      </div>
+      <div class="cta-box" data-reveal="scale">
+        <span class="label" style="color:var(--band-ink-3)">30 minutes &middot; with a security engineer</span>
+        <a class="btn btn-primary" href="demo.html">Request a technical demo {{icon:arrow}}</a>
+        <p>No slideware. Runs against your own agent, in your own cloud.</p>
+      </div>
+    </div>
+  </section>

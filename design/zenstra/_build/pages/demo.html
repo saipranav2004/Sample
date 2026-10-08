@@ -1,0 +1,83 @@
+<!--{"title": "Request a technical demo · Zenstra", "description": "A 30-minute technical demo with a Zenstra security engineer, run against one of your own AI agents.", "active": ""}-->
+<style>
+  .demo-sec { padding-top: 64px; }
+  .demo-card h2 { font-size: 22px; }
+  .demo-card > p { color: var(--ink-2); font-size: 14.5px; margin-top: 6px; }
+  .demo-form { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 24px; }
+  .demo-form .full { grid-column: 1 / -1; }
+  @media (max-width: 560px) { .demo-form { grid-template-columns: 1fr; } }
+  .bring { margin-top: 36px; padding: 22px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+  .bring h3 { font-size: 16px; }
+  .bring ul { margin: 12px 0 0; padding-left: 18px; display: grid; gap: 6px; font-size: 14.5px; color: var(--ink-2); }
+  .assure { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 18px; font-size: 13px; color: var(--ink-3); }
+  .assure span { display: inline-flex; align-items: center; gap: 6px; }
+  .assure svg { width: 14px; height: 14px; color: var(--ok); }
+  .page-hero.short { padding-bottom: 56px; }
+</style>
+  <section class="page-hero solo short" aria-labelledby="hero-h">
+    <div class="wrap grid">
+      <div>
+        <nav class="crumbs" aria-label="Breadcrumb" data-hero><a href="home.html">Home</a><span aria-hidden="true">/</span><span>Request a demo</span></nav>
+        <h1 id="hero-h"><span class="line"><span>Bring one real agent.</span></span><span class="line"><span class="accent">Leave with the evidence.</span></span></h1>
+        <p class="sub" data-hero>Thirty minutes with a security engineer, not a sales deck. We connect to one of your agents, show a policy stop a live attack, and send you the decision record.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="demo-sec" aria-label="Demo request">
+    <div class="wrap demo-grid">
+      <div>
+        <span class="label eyebrow" data-reveal>What happens in the 30 minutes</span>
+        <ol class="agenda" data-stagger>
+          <li><span class="n">01</span><span><time>0–5 min</time><b>Your agent, your questions</b><span>Tell us which agent you are being asked to approve and what worries you about it.</span></span></li>
+          <li><span class="n">02</span><span><time>5–12 min</time><b>Connect it to Zenstra</b><span>The SDK or gateway in front of a test copy of your agent. Any framework, any model provider.</span></span></li>
+          <li><span class="n">03</span><span><time>12–22 min</time><b>Watch a policy stop it</b><span>A live prompt injection and an exfiltration attempt, decided before the tool runs.</span></span></li>
+          <li><span class="n">04</span><span><time>22–30 min</time><b>Keep the record</b><span>The decision ledger from the session and a security review pack for your team.</span></span></li>
+        </ol>
+        <div class="bring" data-reveal>
+          <h3>Useful to have ready</h3>
+          <ul>
+            <li>One agent you can run in a test environment, or we will bring one</li>
+            <li>The tools or MCP servers it calls</li>
+            <li>Your acceptable-use policy, if you have one</li>
+          </ul>
+        </div>
+      </div>
+      <div class="demo-card" data-reveal="scale">
+        <form data-validate novalidate>
+          <h2>Request a technical demo</h2>
+          <p>A security engineer replies within one business day to schedule.</p>
+          <div class="demo-form">
+            <div class="field"><label for="f-first">First name</label><input id="f-first" name="first" required autocomplete="given-name"><span class="err" role="alert"></span></div>
+            <div class="field"><label for="f-last">Last name</label><input id="f-last" name="last" required autocomplete="family-name"><span class="err" role="alert"></span></div>
+            <div class="field full"><label for="f-email">Work email</label><input id="f-email" type="email" required data-work autocomplete="email" placeholder="name@company.com"><span class="err" role="alert"></span></div>
+            <div class="field"><label for="f-co">Company</label><input id="f-co" required autocomplete="organization"><span class="err" role="alert"></span></div>
+            <div class="field"><label for="f-role">Your role</label><select id="f-role" required><option value="">Choose one</option><option>CISO or security leader</option><option>Security architect or engineer</option><option>AI or platform engineering</option><option>Risk, compliance or audit</option><option>Other</option></select><span class="err" role="alert"></span></div>
+            <fieldset class="field full"><legend>Agents you are securing <span class="opt">(optional)</span></legend><div class="pills" style="margin-top:6px">
+              <label><input type="checkbox"> Employee copilots</label>
+              <label><input type="checkbox"> Member-facing agents</label>
+              <label><input type="checkbox"> Coding agents</label>
+              <label><input type="checkbox"> Back-office automation</label>
+              <label><input type="checkbox"> MCP servers</label>
+            </div></fieldset>
+            <div class="field full"><label for="f-msg">Anything we should prepare? <span class="opt">(optional)</span></label><textarea id="f-msg" placeholder="For example: our member-chat agent on Azure OpenAI calls three MCP tools"></textarea></div>
+            <label class="check-row full"><input type="checkbox" required><span>I agree that Zenstra may contact me about this request, as described in the <a href="legal.html#privacy">privacy notice</a>.</span></label>
+            <button class="btn btn-primary full" type="submit" style="height:48px">Request the demo {{icon:arrow}}</button>
+          </div>
+          <div class="assure"><span>{{icon:check}}No phone number needed</span><span>{{icon:check}}No slideware</span><span>{{icon:check}}Runs in your cloud</span></div>
+        </form>
+        <div class="success" data-success hidden><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24"/><path d="m15 25 6 6 12-13"/></svg><h2>Thanks, <span data-who></span>. Request received.</h2><p style="color:var(--ink-2)">A security engineer will email you within one business day with times. While you wait, see how a single tool call moves through Zenstra.</p><a class="btn btn-secondary" href="platform.html#architecture">Explore the architecture {{icon:arrow}}</a></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="alt" aria-labelledby="after-h">
+    <div class="wrap">
+      <div class="sec-head"><div><span class="label eyebrow" data-reveal>Before you meet</span><h2 class="h2" id="after-h" data-reveal>Do your homework on us.</h2></div></div>
+      <div class="cards" data-stagger>
+        <a class="card" href="trust.html"><span class="ic">{{icon:shield}}</span><h3>Trust center</h3><p>Compliance status, controls, subprocessors and the review pack.</p><span class="go">Visit the trust center {{icon:arrow}}</span></a>
+        <a class="card" href="platform.html#architecture"><span class="ic">{{icon:grid}}</span><h3>Architecture</h3><p>Where Zenstra runs, and what never leaves your environment.</p><span class="go">See the architecture {{icon:arrow}}</span></a>
+        <a class="card" href="credit-unions.html"><span class="ic">{{icon:bank}}</span><h3>For credit unions</h3><p>The controls and evidence examiners are starting to ask for.</p><span class="go">Zenstra for credit unions {{icon:arrow}}</span></a>
+      </div>
+    </div>
+  </section>

@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Zenstra for credit unions</title>
+<meta name="description" content="One governed identity and access layer for every AI agent at your credit union, with the inventory, least-privilege proof and audit trail your examiner expects.">
+<script>try{var t=localStorage.getItem('zx-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}document.documentElement.classList.add('js');</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wdth,wght@0,75..100,400..700;1,75..100,400..700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="assets/zx.css">
+<link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="assets/pages.css">
+<style>
+  .stat-card { border: 1px solid var(--hero-panel-line); border-radius: 16px; background: var(--hero-panel); color: var(--hero-panel-ink); overflow: hidden; box-shadow: 0 30px 70px -40px rgba(4, 16, 36, 0.45); }
+  .stat-card > div { display: grid; grid-template-columns: 136px 1fr; gap: 16px; align-items: center; padding: 22px 24px; border-bottom: 1px solid var(--hero-panel-line); }
+  .stat-card > div:last-of-type { border-bottom: 0; }
+  .stat-card b { white-space: nowrap; font: 600 40px/1 var(--font-sans); letter-spacing: -0.03em; color: var(--signal-ink); font-variant-numeric: tabular-nums; }
+  .stat-card > div > span { font-size: 15px; color: var(--hero-panel-ink-2); line-height: 1.45; }
+  .stat-card p { padding: 12px 24px; font-size: 12.5px; color: var(--hero-panel-ink-2); border-top: 1px solid var(--hero-panel-line); }
+  .gap { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .gap > div { padding: 28px; border-radius: 16px; border: 1px solid var(--line); background: var(--surface); }
+  .gap > div.ours { border-color: color-mix(in srgb, var(--brand) 45%, var(--line)); box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand) 7%, transparent); }
+  .gap h3 { font-size: 19px; margin-top: 8px; }
+  .gap ul { margin: 16px 0 0; padding: 0; list-style: none; display: grid; gap: 12px; font-size: 15px; color: var(--ink-2); }
+  .gap li { display: grid; grid-template-columns: 18px 1fr; gap: 10px; }
+  .gap li svg { width: 16px; height: 16px; margin-top: 3px; color: var(--ink-3); }
+  .gap .ours li svg { color: var(--ok); }
+  @media (max-width: 900px) { .gap { grid-template-columns: 1fr; } }
+  .connect { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 12px; align-items: center; }
+  .connect .card { text-align: left; }
+  .connect .arrow { color: var(--brand); }
+  .connect .arrow svg { width: 26px; height: 26px; }
+  .connect .card.zx { background: var(--brand-wash); border-color: color-mix(in srgb, var(--brand) 45%, var(--line)); }
+  @media (max-width: 900px) { .connect { grid-template-columns: 1fr; } .connect .arrow { transform: rotate(90deg); justify-self: center; } }
+  .ctl-map { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+  .ctl-map a { display: grid; gap: 8px; align-content: start; padding: 20px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); text-decoration: none; color: var(--ink); transition: border-color var(--t-base), transform 400ms var(--ease-expo); }
+  .ctl-map a:hover { border-color: var(--brand); transform: translateY(-2px); color: var(--ink); }
+  .ctl-map b { font-size: 15.5px; }
+  .ctl-map span { font-size: 14px; color: var(--ink-2); }
+  @media (max-width: 1000px) { .ctl-map { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 560px) { .ctl-map { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body data-page="credit-unions">
+<a class="skip" href="#main">Skip to content</a>
+<div class="intro" aria-hidden="true">
+  <div class="intro-inner">
+    <svg class="star" viewBox="0 0 24 24"><defs><linearGradient id="introGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#12b0f0"/><stop offset="1" stop-color="#0c6eb4"/></linearGradient></defs><path class="star-fill" style="transform-box:fill-box;transform-origin:center" d="M12 0C12.9 7.6 16.4 11.1 24 12 16.4 12.9 12.9 16.4 12 24 11.1 16.4 7.6 12.9 0 12 7.6 11.1 11.1 7.6 12 0Z"/><path class="star-stroke" d="M12 0C12.9 7.6 16.4 11.1 24 12 16.4 12.9 12.9 16.4 12 24 11.1 16.4 7.6 12.9 0 12 7.6 11.1 11.1 7.6 12 0Z"/></svg>
+    <div class="word"><span>Z</span><span>E</span><span>N</span><span>S</span><span>T</span><span>R</span><span>A</span></div>
+    <div class="bar"><i></i></div>
+  </div>
+</div>
+<div class="progress" aria-hidden="true"></div>
+<header class="site-head">
+  <div class="wrap">
+    <a class="brand" href="home.html" aria-label="Zenstra home">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="zg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#12b0f0"/><stop offset="1" stop-color="#0c6eb4"/></linearGradient></defs><path fill="url(#zg)" d="M12 0C12.9 7.6 16.4 11.1 24 12 16.4 12.9 12.9 16.4 12 24 11.1 16.4 7.6 12.9 0 12 7.6 11.1 11.1 7.6 12 0Z"/></svg>
+      <span>ZENSTRA</span>
+    </a>
+    <ul class="nav" aria-label="Primary">
+      <li>
+        <button class="nav-trigger" aria-haspopup="true" aria-expanded="false">Platform <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <div class="mega cols-3 " role="group" aria-label="Platform"><div><span class="label">Discover</span><a href="discover.html#shadow-ai"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8Z"/><circle cx="8" cy="8" r="2"/></svg></span><b>Shadow AI discovery</b><small>Agents and AI tools nobody registered</small></a><a href="discover.html#identity"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="8" r="3"/><path d="M8.5 8h6M12 8v2.5M14.5 8v2"/></svg></span><b>Agent inventory and identity</b><small>One record, one owner, one key per agent</small></a></div><div><span class="label">Enforce</span><a href="enforce.html#tool-access"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg></span><b>Secure tool access</b><small>Scoped, expiring grants per call</small></a><a href="enforce.html#injection"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 1.5 13.5 4v4c0 3.2-2.4 5.6-5.5 6.5C4.9 13.6 2.5 11.2 2.5 8V4Z"/></svg></span><b>Injection and memory defense</b><small>Untrusted content never steers the agent</small></a><a href="enforce.html#policy"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4 1.5 8 5 12M11 4l3.5 4-3.5 4"/></svg></span><b>Policy as code</b><small>One guardrail set for every agent</small></a><a href="enforce.html#approvals"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v6M5.5 4v5M10.5 4v5M3 7v3a5 5 0 0 0 10 0V6"/></svg></span><b>Approvals and emergency stop</b><small>A person decides the risky calls</small></a></div><div><span class="label">Prove</span><a href="prove.html#ledger"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3.5h10M3 6.5h10M3 9.5h10M3 12.5h6"/></svg></span><b>Decision ledger</b><small>Tamper-evident record of every decision</small></a><a href="prove.html#detection"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 8h3l2-4.5 3 9 2-4.5h3"/></svg></span><b>Runtime detection</b><small>Drift against each agent’s baseline</small></a><a href="prove.html#evidence"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 1.5h5.5L12.5 4.5v10h-8.5Z M9 1.5v3.5h3.5M6 8.5h4.5M6 11h4.5"/></svg></span><b>Compliance evidence</b><small>Exam-ready exports for auditors</small></a></div><div class="foot"><a href="platform.html">Platform overview</a><a href="platform.html#architecture">Architecture</a><a href="platform.html#integrations">Integrations</a><a href="resources.html#docs">Documentation</a></div></div>
+      </li>
+      <li>
+        <button class="nav-trigger" aria-haspopup="true" aria-expanded="false" aria-current="page">Solutions <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <div class="mega cols-2 " role="group" aria-label="Solutions"><div><span class="label">By industry</span><a href="credit-unions.html"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 6 8 2.5 14 6M3.5 6.5v6M6.5 6.5v6M9.5 6.5v6M12.5 6.5v6M2 13.5h12"/></svg></span><b>Credit unions</b><small>Exam-ready evidence for every agent</small></a><a href="solutions.html#banking"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="12" height="9" rx="1.5"/><path d="M2 7h12"/></svg></span><b>Banking and lending</b><small>Core, LOS and fraud agents</small></a><a href="solutions.html#healthcare"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg></span><b>Healthcare</b><small>Clinical and claims agents</small></a></div><div><span class="label">By agent type</span><a href="solutions.html#copilots"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="6" r="3"/><path d="M3 14c.8-2.6 2.8-4 5-4s4.2 1.4 5 4"/></svg></span><b>Employee copilots</b><small>Copilot, ChatGPT and Gemini at work</small></a><a href="solutions.html#member-facing"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2Z"/></svg></span><b>Member-facing agents</b><small>Untrusted input all day</small></a><a href="solutions.html#coding"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/><path d="m4.5 6.5 2 1.5-2 1.5M8.5 10h3"/></svg></span><b>Coding agents</b><small>Repo, CI and production shell access</small></a><a href="solutions.html#mcp"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 2.5v3.5M10.5 2.5v3.5M3.5 6h9v2a4.5 4.5 0 0 1-9 0Z M8 12.5v1.5"/></svg></span><b>MCP servers</b><small>Every connector is an access grant</small></a></div><div class="foot"><a href="solutions.html">All solutions</a><a href="demo.html">Request a demo</a></div></div>
+      </li>
+      <li>
+        <button class="nav-trigger" aria-haspopup="true" aria-expanded="false">Resources <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <div class="mega cols-2 " role="group" aria-label="Resources"><div><span class="label">Learn</span><a href="resources.html#docs"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 3h4a1.5 1.5 0 0 1 1.5 1.5V14a1.5 1.5 0 0 0-1.5-1.5h-4ZM13.5 3h-4A1.5 1.5 0 0 0 8 4.5V14a1.5 1.5 0 0 1 1.5-1.5h4Z"/></svg></span><b>Documentation</b><small>Quickstarts, deployment and API reference</small></a><a href="resources.html#research"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="5.5"/><circle cx="8" cy="8" r="2"/></svg></span><b>Threat research</b><small>How agents get attacked, with real techniques</small></a><a href="resources.html#guides"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 1.5h5.5L12.5 4.5v10h-8.5Z M9 1.5v3.5h3.5M6 8.5h4.5M6 11h4.5"/></svg></span><b>Guides and reports</b><small>Programme guides for security leaders</small></a></div><div><span class="label">Stay current</span><a href="resources.html#blog"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 2.5l3 3-8 8H2.5v-3Z"/></svg></span><b>Blog</b><small>Product and engineering notes</small></a><a href="resources.html#webinars"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1.5" y="3.5" width="9" height="9" rx="1.5"/><path d="m10.5 6.5 4-2v7l-4-2"/></svg></span><b>Webinars and events</b><small>Live sessions with our engineers</small></a><a href="resources.html#glossary"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12 4.5 4 7 12M3 9.5h3M9 4h2.5a2 2 0 0 1 0 4H9V4Zm0 4h3a2 2 0 0 1 0 4H9Z"/></svg></span><b>Glossary</b><small>Agentic AI security terms, defined</small></a></div><div class="foot"><a href="resources.html">Resource library</a><a href="trust.html">Trust center</a></div></div>
+      </li>
+      <li><a class="nav-trigger" href="trust.html">Trust center</a></li>
+      <li>
+        <button class="nav-trigger" aria-haspopup="true" aria-expanded="false">Company <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <div class="mega cols-2 right" role="group" aria-label="Company"><div><span class="label">About Zenstra</span><a href="company.html#about"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="2" width="10" height="12" rx="1"/><path d="M6 5h1M9 5h1M6 8h1M9 8h1M7 14v-3h2v3"/></svg></span><b>About us</b><small>Why we build runtime security for agents</small></a><a href="company.html#leadership"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="5.5" r="2.5"/><path d="M1.5 13.5c.6-2.3 2.4-3.5 4.5-3.5s3.9 1.2 4.5 3.5M11 3.5a2.5 2.5 0 0 1 0 4.5M12.5 10.3c1 .5 1.7 1.6 2 3.2"/></svg></span><b>Leadership</b><small>The team accountable for the product</small></a><a href="company.html#careers"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="12" height="8.5" rx="1.5"/><path d="M5.5 5V3.5h5V5M2 9h12"/></svg></span><b>Careers</b><small>Open roles</small></a></div><div><span class="label">Get in touch</span><a href="company.html#news"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M5 6h6M5 8.5h6M5 11h3"/></svg></span><b>Newsroom</b><small>Announcements and coverage</small></a><a href="company.html#contact"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3.5" width="12" height="9" rx="1.5"/><path d="m2.5 4.5 5.5 4 5.5-4"/></svg></span><b>Contact</b><small>Sales, security and press</small></a><a href="trust.html"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 1.5 13.5 4v4c0 3.2-2.4 5.6-5.5 6.5C4.9 13.6 2.5 11.2 2.5 8V4Z"/></svg></span><b>Trust center</b><small>Security, compliance and status</small></a></div><div class="foot"><a href="demo.html">Request a demo</a></div></div>
+      </li>
+    </ul>
+    <div class="head-actions">
+      <button class="theme-toggle" data-theme-toggle aria-label="Switch between light and dark theme">
+        <svg class="moon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13 9.5A5.5 5.5 0 0 1 6.5 3a5.5 5.5 0 1 0 6.5 6.5Z"/></svg>
+        <svg class="sun" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="3"/><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"/></svg>
+      </button>
+      <a class="btn btn-ghost btn-sm signin" href="console.html">Sign in</a>
+      <a class="btn btn-primary btn-sm" href="demo.html">Request a demo</a>
+      <button class="btn btn-ghost btn-sm menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12"/></svg></button>
+    </div>
+  </div>
+</header>
+<nav class="mobile-menu" id="mobile-menu" aria-label="Mobile"><details><summary>Platform</summary><div><a href="discover.html#shadow-ai">Shadow AI discovery</a><a href="discover.html#identity">Agent inventory and identity</a><a href="enforce.html#tool-access">Secure tool access</a><a href="enforce.html#injection">Injection and memory defense</a><a href="enforce.html#policy">Policy as code</a><a href="enforce.html#approvals">Approvals and emergency stop</a><a href="prove.html#ledger">Decision ledger</a><a href="prove.html#detection">Runtime detection</a><a href="prove.html#evidence">Compliance evidence</a></div></details><details><summary>Solutions</summary><div><a href="credit-unions.html">Credit unions</a><a href="solutions.html#banking">Banking and lending</a><a href="solutions.html#healthcare">Healthcare</a><a href="solutions.html#copilots">Employee copilots</a><a href="solutions.html#member-facing">Member-facing agents</a><a href="solutions.html#coding">Coding agents</a><a href="solutions.html#mcp">MCP servers</a></div></details><details><summary>Resources</summary><div><a href="resources.html#docs">Documentation</a><a href="resources.html#research">Threat research</a><a href="resources.html#guides">Guides and reports</a><a href="resources.html#blog">Blog</a><a href="resources.html#webinars">Webinars and events</a><a href="resources.html#glossary">Glossary</a></div></details><details><summary>Company</summary><div><a href="company.html#about">About us</a><a href="company.html#leadership">Leadership</a><a href="company.html#careers">Careers</a><a href="company.html#news">Newsroom</a><a href="company.html#contact">Contact</a><a href="trust.html">Trust center</a></div></details><a href="trust.html">Trust center</a><a href="console.html">Sign in</a><a class="btn btn-primary" href="demo.html">Request a demo</a></nav>
+<main id="main">
+<section class="page-hero" aria-labelledby="hero-h">
+    <div class="wrap grid">
+      <div>
+        <nav class="crumbs" aria-label="Breadcrumb" data-hero><a href="home.html">Home</a><span aria-hidden="true">/</span><a href="solutions.html">Solutions</a><span aria-hidden="true">/</span><span>Credit unions</span></nav>
+        <h1 id="hero-h"><span class="line"><span>Your credit union</span></span><span class="line"><span>already runs agentic AI.</span></span><span class="line"><span class="accent">Do you know what it can reach?</span></span></h1>
+        <p class="sub" data-hero>Core platforms, employee copilots, lending and fraud tools are moving fast across the institution. Zenstra gives your credit union one governed identity and access layer for every agent, without slowing any of it down.</p>
+        <div class="ctas" data-hero><a class="btn btn-primary" href="demo.html">Request a demo <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a><a class="btn btn-secondary" href="#connect">See how it maps to your stack</a></div>
+      </div>
+      <div class="stat-card" data-hero>
+        <div><b><span data-count="59">59</span>%</b><span>of credit unions run generative AI in production</span></div>
+        <div><b><span data-count="17">17</span>%</b><span>have already deployed agentic AI</span></div>
+        <div><b>&lt;1 in 5</b><span>call their deployment enterprise-ready</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="where-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><span class="label eyebrow" data-reveal>Where agents already run</span><h2 class="h2" id="where-h" data-reveal>Every part of the institution is <span class="mark">already touching agentic AI.</span></h2></div>
+        <p class="lede" data-reveal>Most of this was not a strategic decision. It shipped with the platforms you already run.</p>
+      </div>
+      <div class="cards" data-stagger>
+        <div class="card"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 6 8 2.5 14 6M3.5 6.5v6M6.5 6.5v6M9.5 6.5v6M12.5 6.5v6M2 13.5h12"/></svg></span><h3>Core-banking agent platforms</h3><p>Fiserv agentOS, Jack Henry and Temenos ship agent runtimes inside the core you already operate, widening your governance surface whether or not you asked.</p></div>
+        <div class="card"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="6" r="3"/><path d="M3 14c.8-2.6 2.8-4 5-4s4.2 1.4 5 4"/></svg></span><h3>Employee copilots</h3><p>Microsoft Copilot, ChatGPT and Gemini are usually the first agentic tools live, often before a formal policy exists.</p></div>
+        <div class="card"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 1.5h5.5L12.5 4.5v10h-8.5Z M9 1.5v3.5h3.5M6 8.5h4.5M6 11h4.5"/></svg></span><h3>Lending and underwriting agents</h3><p>Document classification, decisioning and indirect-lending agents touch loan files end to end, from application to approval.</p></div>
+        <div class="card"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="5.5"/><circle cx="8" cy="8" r="2"/></svg></span><h3>Fraud and AML agents</h3><p>Pattern-detection and SAR-prep agents run continuously against transaction data, often with standing access into core systems.</p></div>
+        <div class="card"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2Z"/></svg></span><h3>Member service and knowledge layers</h3><p>Member-facing chat and voice agents often share a knowledge base with an internal assistant. One poisoned answer can reach both.</p></div>
+        <div class="card"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 2.5v3.5M10.5 2.5v3.5M3.5 6h9v2a4.5 4.5 0 0 1-9 0Z M8 12.5v1.5"/></svg></span><h3>Shadow and no-code automation</h3><p>n8n, Zapier and similar tools let any team wire an agent into core systems without IT seeing the connector being created.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="alt" id="connect" aria-labelledby="con-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><span class="label eyebrow" data-reveal>How it connects</span><h2 class="h2" id="con-h" data-reveal>One quiet layer, wherever your agents run.</h2></div>
+        <p class="lede" data-reveal>A small app on each employee's computer, much like the antivirus already there, plus a gateway in front of your core and agent platforms. Nothing to rip out, nothing for staff to learn.</p>
+      </div>
+      <div class="connect" data-stagger>
+        <div class="card"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="12" height="8" rx="1.2"/><path d="M5.5 13.5h5M8 11v2.5"/></svg></span><h3>On every device</h3><p>The endpoint app watches AI activity in the background and stops risky actions on the spot.</p></div>
+        <span class="arrow"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></span>
+        <div class="card zx"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 1.5 13.5 4v4c0 3.2-2.4 5.6-5.5 6.5C4.9 13.6 2.5 11.2 2.5 8V4Z"/></svg></span><h3>Zenstra decision point</h3><p>One policy set and one ledger for every agent, in your environment.</p></div>
+        <span class="arrow"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></span>
+        <div class="card"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 6 8 2.5 14 6M3.5 6.5v6M6.5 6.5v6M9.5 6.5v6M12.5 6.5v6M2 13.5h12"/></svg></span><h3>What it plugs into</h3><p>Your identity provider (Okta, Microsoft Entra ID, Ping, Google Workspace) and your core and agent platforms (Fiserv, Jack Henry, Temenos).</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="gap-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><span class="label eyebrow" data-reveal>The gap</span><h2 class="h2" id="gap-h" data-reveal>Vendor defaults are not <span class="mark">institutional governance.</span></h2></div>
+        <p class="lede" data-reveal>Core platforms promise scoped permissions, human checkpoints and audit logging. Those describe what an agent can do. They do not say what your institution should allow, who owns the risk, or how drift is caught six months from now.</p>
+      </div>
+      <div class="gap">
+        <div data-reveal="left"><span class="label">What each vendor ships</span><h3>Controls inside one platform</h3>
+          <ul><li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg><span>Identity-bound execution and kill switches as vendor defaults you cannot independently verify</span></li><li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg><span>Acceptable-use policy written at the same time as rollout, with no live technical inventory</span></li><li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg><span>Every MCP connector into core, LOS or CRM is an access grant missing from the risk register</span></li></ul></div>
+        <div class="ours" data-reveal="right"><span class="label" style="color:var(--brand)">What Zenstra adds</span><h3>One layer under every platform</h3>
+          <ul><li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 8.5 3 3 7-7"/></svg><span>An inventory of every agent and connector, independent of any one core provider</span></li><li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 8.5 3 3 7-7"/></svg><span>A review and approval step before an agent reaches production</span></li><li><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 8.5 3 3 7-7"/></svg><span>A revocation switch that works across platforms, in seconds</span></li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="alt" aria-labelledby="map-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><span class="label eyebrow" data-reveal>What Zenstra provides</span><h2 class="h2" id="map-h" data-reveal>The same eight controls, mapped to how credit unions work.</h2></div>
+      </div>
+      <div class="ctl-map" data-stagger>
+        <a href="discover.html#shadow-ai"><b>Shadow AI discovery</b><span>Every Copilot, ChatGPT, Gemini and no-code workflow wired into core, LOS and CRM, found before an examiner finds it.</span></a>
+        <a href="enforce.html#tool-access"><b>Secure tool access</b><span>Each MCP connector into Fiserv, Jack Henry or Temenos becomes a scoped, expiring grant.</span></a>
+        <a href="discover.html#identity"><b>Agent identity</b><span>A cryptographic identity for every lending, fraud and member-service agent, revoked the moment access drifts.</span></a>
+        <a href="prove.html#detection"><b>Runtime detection</b><span>An underwriting or fraud agent reaching beyond its declared task is caught before a bad decision lands in a member's file.</span></a>
+        <a href="enforce.html#injection"><b>Prompt injection defense</b><span>Member-facing chat and voice agents stay isolated from malicious or malformed input.</span></a>
+        <a href="enforce.html#memory"><b>Memory protection</b><span>Knowledge layers shared by member and staff assistants cannot be poisoned across sessions.</span></a>
+        <a href="enforce.html#policy"><b>Policy enforcement</b><span>Your acceptable-use policy becomes enforced code, not a PDF staff are trusted to remember.</span></a>
+        <a href="prove.html#ledger"><b>Immutable audit trail</b><span>A tamper-evident record of every agent decision, ready for an NCUA examiner.</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="ex-h">
+    <div class="wrap">
+      <div class="feature">
+        <div>
+          <span class="label eyebrow" data-reveal>Built for examination</span>
+          <h3 data-reveal id="ex-h">There is no separate rulebook for AI, so the proof has to come from you.</h3>
+          <p data-reveal>Examiners already check that you run safely, treat members fairly, catch fraud and know what your vendors do. Those expectations apply to every agent your credit union uses. Zenstra creates the proof as your agents work.</p>
+          <ul class="checks" data-stagger>
+            <li><span><b>A living inventory.</b> Every agent and connection, tracked automatically.</span></li>
+            <li><span><b>Only the access it needs.</b> Least-privilege proof generated as grants are issued.</span></li>
+            <li><span><b>A complete audit trail.</b> Every action recorded, not just the flagged ones.</span></li>
+          </ul>
+          <a class="more" href="prove.html#evidence" data-reveal>See the examination pack <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+        </div>
+        <div class="shot-stack" data-reveal="right"><figure class="shot"><img class="th-light" src="assets/img/crop-riskiest-light.webp" alt="Highest-risk agents with their risk scores, main risk factors and named owners" width="1031" height="546" loading="lazy" decoding="async"><img class="th-dark" src="assets/img/crop-riskiest-dark.webp" alt="" width="1031" height="546" loading="lazy" decoding="async"></figure><figure class="shot"><img class="th-light" src="assets/img/crop-kpis-light.webp" alt="Overview figures: agents governed, open detections, actions blocked, approvals waiting and agents without owners" width="1740" height="186" loading="lazy" decoding="async"><img class="th-dark" src="assets/img/crop-kpis-dark.webp" alt="" width="1740" height="186" loading="lazy" decoding="async"></figure></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="alt" aria-labelledby="faq-h">
+    <div class="wrap faq">
+      <div><span class="label eyebrow" data-reveal>FAQ</span><h2 class="h2" id="faq-h" data-reveal>Questions credit unions ask first.</h2></div>
+      <div data-stagger>
+        <details><summary>Does Zenstra replace the controls in our core provider's agent platform?</summary><div class="faq-body"><p>No. It sits underneath them. Your core provider's controls still apply; Zenstra adds an inventory, a policy and a revocation switch that work across every platform, so your institution can verify them independently.</p></div></details>
+        <details><summary>What does deployment involve for our IT team?</summary><div class="faq-body"><p>The endpoint app is deployed through your existing device management. The gateway runs in your environment in front of core and agent platforms. Most credit unions start with a pilot group and one platform.</p></div></details>
+        <details><summary>Do staff need training?</summary><div class="faq-body"><p>No. Staff keep using the tools they already use. They only see Zenstra when an action needs approval or is blocked, with a plain explanation.</p></div></details>
+        <details><summary>Where does member data go?</summary><div class="faq-body"><p>Prompts and payloads are evaluated inside your environment. Only decisions and redacted evidence reach the Zenstra control plane. The trust center lists exactly what leaves and what never does.</p></div></details>
+      </div>
+    </div>
+  </section>
+
+  <section class="band cta" id="demo-cta" aria-labelledby="cta-h">
+    <div class="aurora" aria-hidden="true"></div>
+    <div class="wrap">
+      <div>
+        <span class="label eyebrow" data-reveal>Technical demo</span>
+        <h2 id="cta-h" data-reveal>Bring one real agent. <br>Leave with the evidence.</h2>
+        <ol data-stagger>
+          <li><span><b>Connect your agent.</b> Any framework, any model provider.</span></li>
+          <li><span><b>Watch a policy stop it.</b> Live injection and exfiltration attempts.</span></li>
+          <li><span><b>Keep the ledger.</b> The decision record and a security review pack.</span></li>
+        </ol>
+      </div>
+      <div class="cta-box" data-reveal="scale">
+        <span class="label" style="color:var(--band-ink-3)">30 minutes &middot; with a security engineer</span>
+        <a class="btn btn-primary" href="demo.html">Request a technical demo <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+        <p>No slideware. Runs against your own agent, in your own cloud.</p>
+      </div>
+    </div>
+  </section>
+</main>
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="home.html"><svg viewBox="0 0 24 24" aria-hidden="true" width="22" height="22"><path fill="url(#zg)" d="M12 0C12.9 7.6 16.4 11.1 24 12 16.4 12.9 12.9 16.4 12 24 11.1 16.4 7.6 12.9 0 12 7.6 11.1 11.1 7.6 12 0Z"/></svg><span>ZENSTRA</span></a>
+        <p>Runtime security for AI agents: identity, policy and evidence for every autonomous action.</p>
+        <a class="btn btn-secondary btn-sm" href="demo.html" style="margin-top:18px">Request a demo</a>
+      </div>
+      <div><span class="label">Platform</span><ul><li><a href="platform.html">Overview</a></li><li><a href="discover.html">Discover</a></li><li><a href="enforce.html">Enforce</a></li><li><a href="prove.html">Prove</a></li><li><a href="platform.html#architecture">Architecture</a></li><li><a href="platform.html#integrations">Integrations</a></li></ul></div><div><span class="label">Solutions</span><ul><li><a href="credit-unions.html">Credit unions</a></li><li><a href="solutions.html#banking">Banking and lending</a></li><li><a href="solutions.html#healthcare">Healthcare</a></li><li><a href="solutions.html#copilots">Employee copilots</a></li><li><a href="solutions.html#mcp">MCP servers</a></li></ul></div><div><span class="label">Resources</span><ul><li><a href="resources.html#docs">Documentation</a></li><li><a href="resources.html#research">Threat research</a></li><li><a href="resources.html#blog">Blog</a></li><li><a href="resources.html#webinars">Webinars</a></li><li><a href="resources.html#glossary">Glossary</a></li></ul></div><div><span class="label">Trust</span><ul><li><a href="trust.html">Trust center</a></li><li><a href="trust.html#compliance">Compliance</a></li><li><a href="trust.html#subprocessors">Subprocessors</a></li><li><a href="trust.html#status">System status</a></li><li><a href="trust.html#disclosure">Report a vulnerability</a></li></ul></div><div><span class="label">Company</span><ul><li><a href="company.html#about">About</a></li><li><a href="company.html#leadership">Leadership</a></li><li><a href="company.html#careers">Careers</a></li><li><a href="company.html#news">Newsroom</a></li><li><a href="company.html#contact">Contact</a></li></ul></div>
+    </div>
+    <div class="legal"><span>&copy; 2026 Zenstra AI. All rights reserved.</span><a class="status" href="trust.html#status"><i></i>All systems operational</a><span><a href="legal.html#privacy">Privacy</a> &middot; <a href="legal.html#terms">Terms</a> &middot; <a href="legal.html#cookies">Cookies</a> &middot; <a href="legal.html#accessibility">Accessibility</a></span></div>
+  </div>
+</footer>
+<script src="assets/vendor/motion-11.11.13.js"></script>
+<script src="assets/vendor/anime-4.0.2.umd.min.js"></script>
+<script src="assets/vendor/lenis-1.1.13.min.js"></script>
+<script src="assets/zx-core.js"></script>
+<script src="assets/site-motion.js"></script>
+</body>
+</html>

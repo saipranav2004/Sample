@@ -1,0 +1,104 @@
+<!--{"title": "Discover · Zenstra", "description": "Find every AI agent, MCP connector and no-code workflow in your environment, give each one an owner and a verifiable identity.", "active": "platform"}-->
+<style>
+  .sources { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .source { position: relative; padding: 26px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); overflow: hidden; }
+  .source .ic { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; background: var(--brand-wash); color: var(--brand); }
+  .source .ic svg { width: 19px; height: 19px; }
+  .source h3 { font-size: 18px; margin-top: 16px; }
+  .source p { font-size: 14.5px; color: var(--ink-2); margin-top: 8px; }
+  .source .finds { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .source .finds span { font: 500 12px/1 var(--font-mono); padding: 6px 8px; border-radius: 6px; background: var(--surface-2); color: var(--ink-2); }
+  @media (max-width: 900px) { .sources { grid-template-columns: 1fr; } }
+</style>
+  <section class="page-hero" aria-labelledby="hero-h">
+    <div class="wrap grid">
+      <div>
+        <nav class="crumbs" aria-label="Breadcrumb" data-hero><a href="home.html">Home</a><span aria-hidden="true">/</span><a href="platform.html">Platform</a><span aria-hidden="true">/</span><span>Discover</span></nav>
+        <h1 id="hero-h"><span class="line"><span>Know every agent,</span></span><span class="line"><span class="accent">and who answers for it.</span></span></h1>
+        <p class="sub" data-hero>Zenstra finds the agents, AI tools and no-code workflows already acting in your environment, including the ones nobody registered, and gives each one an owner and a verifiable identity.</p>
+        <div class="ctas" data-hero><a class="btn btn-primary" href="demo.html">Request a demo {{icon:arrow}}</a><a class="btn btn-secondary" href="#shadow-ai">How discovery works</a></div>
+      </div>
+      <div data-hero>{{shot:crop-coverage|Coverage by platform: governed agents against discovered agents for SDK agents, Fiserv agentOS, Microsoft Copilot, MCP servers and no-code tools}}</div>
+    </div>
+  </section>
+
+  <section aria-labelledby="q-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><span class="label eyebrow" data-reveal>01 · Discover</span><h2 class="h2" id="q-h" data-reveal>Three questions you should answer <span class="mark">before the examiner asks.</span></h2></div>
+        <p class="lede" data-reveal>You cannot govern an agent you do not know exists. Discovery is where every Zenstra deployment starts.</p>
+      </div>
+      <div class="q-cards" data-stagger>
+        <div><b>Q1</b><h3>Which agents are acting in our environment?</h3><p>Built, bought and shadow: custom agents, copilots, core-platform agents, MCP connectors and no-code flows.</p></div>
+        <div><b>Q2</b><h3>Who owns each one?</h3><p>Every agent gets a named owner, a declared purpose and an approval record before it reaches production.</p></div>
+        <div><b>Q3</b><h3>What can each one reach?</h3><p>Tool grants, credentials and data classes per agent, so the blast radius is known before something goes wrong.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="alt" aria-label="Discover capabilities">
+    <div class="wrap">
+      <div class="feature" id="shadow-ai">
+        <div>
+          <span class="label" data-reveal>Shadow AI discovery</span>
+          <h3 data-reveal>Find the agents nobody registered, on their first call.</h3>
+          <p data-reveal>Copilots rolled out before a policy existed, an n8n flow wired into core banking, an MCP connector a team added last week. Zenstra surfaces each one with the device, the owner and the signal that found it.</p>
+          <ul class="checks" data-stagger>
+            <li>Unregistered agents and AI tools found through the endpoint app and gateway traffic</li>
+            <li>Writes from unregistered agents blocked until an owner registers them</li>
+            <li>An alert to your team the moment a new one appears</li>
+          </ul>
+        </div>
+        <div data-reveal="right">{{shot:crop-riskiest|Highest-risk agents table including an unregistered n8n workflow with no owner writing to core banking}}</div>
+      </div>
+      <div class="feature flip" id="identity">
+        <div>
+          <span class="label" data-reveal>Agent inventory and identity</span>
+          <h3 data-reveal>One record, one owner and one key per agent.</h3>
+          <p data-reveal>Each agent gets a cryptographic identity, continuous attestation and instant revocation if its access drifts from what was approved. The record carries the owner, the declared purpose, the framework, the data classes it touches and who approved it.</p>
+          <ul class="checks" data-stagger>
+            <li>Per-agent keys with automatic rotation</li>
+            <li>Attestation on every call, from known hosts only</li>
+            <li>Owners and approvers synchronised from your identity provider</li>
+          </ul>
+        </div>
+        <div class="shot-stack" data-reveal="left">{{shot:crop-identity|Agent identity: agent ID, key fingerprint, last attestation and key rotation schedule}}{{shot:crop-secrets|Secrets the agent may use, each scoped and short-lived}}</div>
+      </div>
+      <div class="feature" id="coverage">
+        <div>
+          <span class="label" data-reveal>Coverage you can report</span>
+          <h3 data-reveal>Know how much of your agent estate is governed.</h3>
+          <p data-reveal>The overview shows governed against discovered agents, the ones without an owner, and which platforms are behind, so the security programme has a number to move.</p>
+          <a class="more" href="prove.html#evidence" data-reveal>See the evidence exports {{icon:arrow}}</a>
+        </div>
+        <div data-reveal="right">{{shot:screen-overview|Console overview: 38 of 47 agents governed, open detections, blocked actions, approvals waiting and agents without an owner}}</div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="src-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><span class="label eyebrow" data-reveal>How discovery works</span><h2 class="h2" id="src-h" data-reveal>Three sources, one inventory.</h2></div>
+        <p class="lede" data-reveal>Each source sees a different kind of agent. Together they cover agents you build, agents you buy and agents your staff bring.</p>
+      </div>
+      <div class="sources" data-stagger>
+        <div class="source"><span class="ic">{{icon:device}}</span><h3>Endpoint app</h3><p>On managed devices, it sees AI tools in use and the data leaving them.</p><div class="finds"><span>Copilot</span><span>ChatGPT</span><span>Gemini</span><span>browser agents</span></div></div>
+        <div class="source"><span class="ic">{{icon:plug}}</span><h3>Gateway traffic</h3><p>Every MCP and API call through the gateway names its caller, so unknown callers stand out.</p><div class="finds"><span>MCP servers</span><span>n8n</span><span>Zapier</span><span>API clients</span></div></div>
+        <div class="source"><span class="ic">{{icon:bot}}</span><h3>SDK registrations</h3><p>Agents your teams build register on first start with their owner, purpose and grants.</p><div class="finds"><span>LangGraph</span><span>CrewAI</span><span>OpenAI Agents SDK</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="alt" aria-labelledby="next-h">
+    <div class="wrap">
+      <div class="sec-head"><div><span class="label eyebrow" data-reveal>Next</span><h2 class="h2" id="next-h" data-reveal>Once you know every agent, control what it does.</h2></div></div>
+      <div class="next-steps" data-stagger>
+        <a class="card" href="enforce.html"><span class="ic">{{icon:shield}}</span><h3>Enforce</h3><p>Decide every action before it lands: tool access, injection defense, policy as code and approvals.</p><span class="go">Explore Enforce {{icon:arrow}}</span></a>
+        <a class="card" href="prove.html"><span class="ic">{{icon:list}}</span><h3>Prove</h3><p>A tamper-evident decision ledger, runtime detection and exam-ready evidence.</p><span class="go">Explore Prove {{icon:arrow}}</span></a>
+        <a class="card" href="platform.html#architecture"><span class="ic">{{icon:grid}}</span><h3>Architecture</h3><p>Where Zenstra runs, step by step, and what leaves your environment.</p><span class="go">See the architecture {{icon:arrow}}</span></a>
+      </div>
+    </div>
+  </section>
+
+  {{cta}}

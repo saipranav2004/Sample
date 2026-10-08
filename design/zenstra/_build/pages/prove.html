@@ -1,0 +1,130 @@
+<!--{"title": "Prove · Zenstra", "description": "A tamper-evident ledger of every AI agent decision, runtime detection against each agent's baseline, and exam-ready evidence exports.", "active": "platform"}-->
+<style>
+  .chain { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; position: relative; }
+  .entry { position: relative; padding: 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); font: 12.5px/1.7 var(--font-mono); color: var(--ink-2); }
+  .entry b { display: block; font: 600 13px/1.4 var(--font-sans); color: var(--ink); margin-bottom: 6px; }
+  .entry .h { color: var(--brand); word-break: break-all; }
+  .entry:not(:last-child)::after { content: ''; position: absolute; right: -28px; top: 50%; width: 28px; height: 2px; background: var(--brand); }
+  .entry:not(:last-child)::before { content: ''; position: absolute; right: -30px; top: calc(50% - 4px); width: 0; height: 0; border-left: 8px solid var(--brand); border-top: 5px solid transparent; border-bottom: 5px solid transparent; z-index: 1; }
+  .entry.tamper { border-color: var(--crit); }
+  .verify { display: flex; align-items: center; gap: 12px; margin-top: 18px; font-size: 14px; color: var(--ink-2); flex-wrap: wrap; }
+  @media (max-width: 900px) { .chain { grid-template-columns: 1fr; gap: 16px; } .entry::after, .entry::before { display: none; } }
+  .exports { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .export { display: grid; grid-template-columns: 40px 1fr auto; gap: 14px; align-items: center; padding: 18px 20px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+  .export .ic { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; background: var(--brand-wash); color: var(--brand); }
+  .export .ic svg { width: 18px; height: 18px; }
+  .export b { display: block; font-size: 15px; }
+  .export small { display: block; font-size: 13px; color: var(--ink-3); }
+  @media (max-width: 800px) { .exports { grid-template-columns: 1fr; } }
+</style>
+  <section class="page-hero" aria-labelledby="hero-h">
+    <div class="wrap grid">
+      <div>
+        <nav class="crumbs" aria-label="Breadcrumb" data-hero><a href="home.html">Home</a><span aria-hidden="true">/</span><a href="platform.html">Platform</a><span aria-hidden="true">/</span><span>Prove</span></nav>
+        <h1 id="hero-h"><span class="line"><span>Show an examiner</span></span><span class="line"><span class="accent">exactly what happened.</span></span></h1>
+        <p class="sub" data-hero>Every decision, allowed or not, is written to a tamper-evident ledger in your environment. Evidence is produced while agents work, not assembled the week before an audit.</p>
+        <div class="ctas" data-hero><a class="btn btn-primary" href="demo.html">Request a demo {{icon:arrow}}</a><a class="btn btn-secondary" href="#evidence">See the evidence exports</a></div>
+      </div>
+      <div class="ledger" aria-labelledby="ledger-h">
+        <div class="ledger-head"><h2 id="ledger-h">Decision ledger</h2><span class="live"><i></i>Live</span><span class="spacer"></span><button class="pause" id="ledger-pause" aria-pressed="false">Pause</button></div>
+        <div class="ledger-stats">
+          <div><span>Decisions today</span><b class="num" id="lc-total" data-count="48213">48,213</b></div>
+          <div><span>Blocked</span><b class="num block" id="lc-block" data-count="214">214</b></div>
+          <div><span>Held for a person</span><b class="num step" id="lc-step" data-count="37">37</b></div>
+        </div>
+        <div class="ledger-scroll"><table>
+          <thead><tr><th scope="col">Time</th><th scope="col">Agent</th><th scope="col">Action</th><th scope="col">Verdict</th><th scope="col" style="text-align:right">ms</th></tr></thead>
+          <tbody id="ledger-rows">
+            <tr><td>09:41:03</td><td class="agent">member-chat-assist</td><td>email.send → external</td><td><span class="verdict block"><i></i>Block</span></td><td class="ms">14</td></tr>
+            <tr><td>09:41:02</td><td class="agent">loan-doc-classifier</td><td>los.loanfile.read</td><td><span class="verdict allow"><i></i>Allow</span></td><td class="ms">6</td></tr>
+            <tr><td>09:41:01</td><td class="agent">sar-prep-agent</td><td>core.txn.query (90d)</td><td><span class="verdict stepup"><i></i>Step-up</span></td><td class="ms">11</td></tr>
+            <tr><td>09:40:59</td><td class="agent">copilot-hr-assist</td><td>hris.employee.read</td><td><span class="verdict allow"><i></i>Allow</span></td><td class="ms">5</td></tr>
+            <tr><td>09:40:58</td><td class="agent">n8n:card-dispute</td><td>core.account.update</td><td><span class="verdict block"><i></i>Block</span></td><td class="ms">9</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="ledger" aria-labelledby="l-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><span class="label eyebrow" data-reveal>03 · Prove · Decision ledger</span><h2 class="h2" id="l-h" data-reveal>A record you can verify <span class="mark">without trusting us.</span></h2></div>
+        <p class="lede" data-reveal>Each entry includes the hash of the one before it. Change or delete any entry and every later hash stops matching, so tampering is visible to anyone who checks.</p>
+      </div>
+      <div class="chain" data-stagger>
+        <div class="entry"><b>Entry 48,211 &middot; 09:41:02.403</b>agent loan-doc-classifier<br>action los.loanfile.read<br>verdict allow &middot; POL-021 v3<br>prev <span class="h">9f2c…a71e</span><br>hash <span class="h">41bd…0c9f</span></div>
+        <div class="entry"><b>Entry 48,212 &middot; 09:41:03.028</b>agent member-chat-assist<br>action email.send → external<br>verdict block &middot; POL-114 v7<br>prev <span class="h">41bd…0c9f</span><br>hash <span class="h">c07a…5d12</span></div>
+        <div class="entry"><b>Entry 48,213 &middot; 09:41:04.117</b>agent member-voice<br>action kb.article.read<br>verdict allow &middot; POL-021 v3<br>prev <span class="h">c07a…5d12</span><br>hash <span class="h">e3a9…b844</span></div>
+      </div>
+      <p class="verify" data-reveal><span class="chip ok">Chain verified</span>48,213 entries today &middot; stored in your environment &middot; exported to your SIEM as they are written</p>
+    </div>
+  </section>
+
+  <section class="alt" aria-label="Prove capabilities">
+    <div class="wrap">
+      <div class="feature" id="detection">
+        <div>
+          <span class="label" data-reveal>Runtime detection</span>
+          <h3 data-reveal>Each agent measured against its own baseline.</h3>
+          <p data-reveal>Agents change hour by hour. Zenstra learns each agent's normal tools, data reach and call volume, and flags drift mid-task, before a gradual widening of scope becomes an incident.</p>
+          <ul class="checks" data-stagger>
+            <li>Drift scores per agent, with the run that triggered them</li>
+            <li>New tools and new data classes flagged the first time they appear</li>
+            <li>Detections ranked by severity and blast radius</li>
+          </ul>
+        </div>
+        <div class="shot-stack" data-reveal="right">{{shot:crop-attention|Needs attention for member-chat-assist: an open critical detection, an unused email grant and behaviour drift above threshold}}{{shot:crop-impact|Investigation outcome: prevented, twelve members targeted, three agents in the blast radius}}</div>
+      </div>
+      <div class="feature flip" id="investigations">
+        <div>
+          <span class="label" data-reveal>Investigations</span>
+          <h3 data-reveal>What happened, how bad it is, what to do next.</h3>
+          <p data-reveal>Each detection opens on its outcome and blast radius, then the agent run step by step, then ranked response actions that say whether they can be undone.</p>
+          <a class="more" href="console.html#investigate" data-reveal>Open the investigation in the console {{icon:arrow}}</a>
+        </div>
+        <div data-reveal="left">{{shot:crop-response|Response actions: remove the poisoned document, scan the knowledge base, notify the agent owner}}</div>
+      </div>
+      <div class="feature" id="evidence">
+        <div>
+          <span class="label" data-reveal>Compliance evidence</span>
+          <h3 data-reveal>Exam-ready, because it was recorded as it happened.</h3>
+          <p data-reveal>Your inventory, least-privilege grants and decision trail export straight to your SIEM and into evidence packs mapped to the frameworks your auditors use.</p>
+          <ul class="checks" data-stagger>
+            <li>Streaming export to Splunk, Microsoft Sentinel and webhooks</li>
+            <li>Tickets opened in ServiceNow from detections</li>
+            <li>Delivery buffered locally if your SIEM is unreachable</li>
+          </ul>
+        </div>
+        <div data-reveal="right">{{shot:crop-integrations|Integrations: Microsoft Entra ID, Okta, Splunk, ServiceNow and Jack Henry with their status}}</div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="ex-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><span class="label eyebrow" data-reveal>Evidence packs</span><h2 class="h2" id="ex-h" data-reveal>Hand over the pack, not a spreadsheet.</h2></div>
+        <p class="lede" data-reveal>Each pack is generated from the ledger for a date range and signed, so the reader can check it was not edited afterwards.</p>
+      </div>
+      <div class="exports" data-stagger>
+        <div class="export"><span class="ic">{{icon:bank}}</span><span><b>Examination pack</b><small>Agent inventory, owners, approvals and decision trail for regulators</small></span><span class="chip no-dot">PDF + CSV</span></div>
+        <div class="export"><span class="ic">{{icon:shield}}</span><span><b>SOC 2 evidence</b><small>Access reviews, change history and control tests for your auditors</small></span><span class="chip no-dot">CSV</span></div>
+        <div class="export"><span class="ic">{{icon:people}}</span><span><b>Board summary</b><small>Coverage, blocked actions and open risks in one page</small></span><span class="chip no-dot">PDF</span></div>
+        <div class="export"><span class="ic">{{icon:code}}</span><span><b>Raw ledger</b><small>Every entry with its hash chain, for your own verification</small></span><span class="chip no-dot">JSON</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="alt" aria-labelledby="next-h">
+    <div class="wrap">
+      <div class="sec-head"><div><span class="label eyebrow" data-reveal>Next</span><h2 class="h2" id="next-h" data-reveal>See how it fits your programme.</h2></div></div>
+      <div class="next-steps" data-stagger>
+        <a class="card" href="trust.html"><span class="ic">{{icon:shield}}</span><h3>Trust center</h3><p>How Zenstra secures itself, with reports and controls.</p><span class="go">Visit the trust center {{icon:arrow}}</span></a>
+        <a class="card" href="credit-unions.html"><span class="ic">{{icon:bank}}</span><h3>For credit unions</h3><p>Evidence mapped to what examiners already check.</p><span class="go">Zenstra for credit unions {{icon:arrow}}</span></a>
+        <a class="card" href="enforce.html"><span class="ic">{{icon:lock}}</span><h3>Enforce</h3><p>How each verdict is decided before the tool runs.</p><span class="go">Explore Enforce {{icon:arrow}}</span></a>
+      </div>
+    </div>
+  </section>
+
+  {{cta}}

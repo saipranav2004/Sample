@@ -1,0 +1,125 @@
+<!--{"title": "Company · Zenstra", "description": "Zenstra builds runtime security for AI agents. Our mission, leadership, open roles, news and how to reach us.", "active": "company"}-->
+<style>
+  .about { display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); gap: 64px; align-items: start; }
+  .about .prose p { font-size: 17px; }
+  .beliefs { display: grid; gap: 0; border-top: 1px solid var(--line); }
+  .beliefs div { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 14px; padding: 20px 0; border-bottom: 1px solid var(--line); }
+  .beliefs b { font: 600 13px/1.6 var(--font-mono); color: var(--brand); }
+  .beliefs h3 { font-size: 17px; }
+  .beliefs p { font-size: 14.5px; color: var(--ink-2); margin-top: 4px; }
+  @media (max-width: 960px) { .about { grid-template-columns: 1fr; gap: 40px; } }
+  .person .av svg { width: 22px; height: 22px; }
+  .news-list { display: grid; gap: 0; border-top: 1px solid var(--line); }
+  .news-item { display: grid; grid-template-columns: 140px minmax(0, 1fr) auto; gap: 24px; align-items: baseline; padding: 22px 0; border-bottom: 1px solid var(--line); text-decoration: none; color: var(--ink); transition: padding 400ms var(--ease-expo); }
+  .news-item:hover { padding-left: 8px; color: var(--ink); }
+  .news-item time { font: 500 13px/1.6 var(--font-mono); color: var(--ink-3); }
+  .news-item h3 { font-size: 18px; line-height: 1.35; }
+  .news-item p { font-size: 14.5px; color: var(--ink-2); margin-top: 4px; }
+  @media (max-width: 720px) { .news-item { grid-template-columns: 1fr; gap: 6px; } }
+  .contact-cards .card .copy-line { justify-self: start; margin-top: 4px; }
+  .address { margin-top: 28px; display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 14px; padding: 22px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); font-size: 14.5px; color: var(--ink-2); }
+  .address .ic { width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; background: var(--brand-wash); color: var(--brand); }
+  .address .ic svg { width: 19px; height: 19px; }
+  .address b { color: var(--ink); display: block; }
+</style>
+  <section class="page-hero solo" aria-labelledby="hero-h">
+    <div class="wrap grid">
+      <div>
+        <nav class="crumbs" aria-label="Breadcrumb" data-hero><a href="home.html">Home</a><span aria-hidden="true">/</span><span>Company</span></nav>
+        <h1 id="hero-h"><span class="line"><span>Agents should be safe</span></span><span class="line"><span class="accent">to say yes to.</span></span></h1>
+        <p class="sub" data-hero>Zenstra builds runtime security for AI agents, so institutions that cannot afford a mistake can still put agents to work.</p>
+        <div class="ctas" data-hero><a class="btn btn-primary" href="#careers">See open roles {{icon:arrow}}</a><a class="btn btn-secondary" href="#contact">Contact us</a></div>
+      </div>
+    </div>
+  </section>
+
+  <nav class="subnav" aria-label="On this page">
+    <div class="wrap">
+      <a href="#about" class="on">About</a>
+      <a href="#leadership">Leadership</a>
+      <a href="#careers">Careers</a>
+      <a href="#news">News</a>
+      <a href="#contact">Contact</a>
+    </div>
+  </nav>
+
+  <section id="about" aria-labelledby="a-h">
+    <div class="wrap about">
+      <div>
+        <span class="label eyebrow" data-reveal>About us</span>
+        <h2 class="h2" id="a-h" data-reveal>Security teams were being asked to approve agents <span class="mark">they could not see.</span></h2>
+        <div class="prose" style="margin-top:24px" data-stagger>
+          <p>Agents now read member records, call internal tools and take actions on their own. The controls most institutions have were built for people and for text: identity providers issue tokens, AI firewalls filter prompts. Neither decides whether a specific agent should take a specific action at the moment it tries.</p>
+          <p>Zenstra makes that decision, in the customer's own environment, on every action, and keeps a record anyone can verify. We started with credit unions because their examiners ask the hardest questions about third-party automation, and the answers they need are the answers every regulated institution will need.</p>
+        </div>
+      </div>
+      <div class="beliefs" data-stagger>
+        <div><b>01</b><span><h3>Decide before the action, not after.</h3><p>Alerts about something that already happened do not protect a member.</p></span></div>
+        <div><b>02</b><span><h3>Run where the data lives.</h3><p>Our product sits inside your environment, so your data does not have to come to us.</p></span></div>
+        <div><b>03</b><span><h3>Evidence anyone can check.</h3><p>A record you have to trust us about is not evidence. The ledger can be verified without us.</p></span></div>
+        <div><b>04</b><span><h3>Say what is not done yet.</h3><p>Our trust center shows audits in progress as in progress. Our roadmap is labelled as roadmap.</p></span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="alt" id="leadership" aria-labelledby="l-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><span class="label eyebrow" data-reveal>Leadership</span><h2 class="h2" id="l-h" data-reveal>Accountable for what we ship.</h2></div>
+        <p class="lede" data-reveal>Each area has one owner your team can reach directly during evaluation and after go-live.</p>
+      </div>
+      <div class="people" data-stagger>
+        <div class="person"><span class="av" aria-hidden="true">{{icon:target}}</span><b>Chief Executive Officer</b><small>Company and customers</small><p>Sets direction and is the executive sponsor for every design partner.</p></div>
+        <div class="person"><span class="av" aria-hidden="true">{{icon:code}}</span><b>Chief Technology Officer</b><small>Product and engineering</small><p>Owns the decision engine, the SDK, the gateway and the endpoint app.</p></div>
+        <div class="person"><span class="av" aria-hidden="true">{{icon:shield}}</span><b>Head of Security</b><small>Trust and compliance</small><p>Owns Zenstra's own security programme, audits and disclosure process.</p></div>
+        <div class="person"><span class="av" aria-hidden="true">{{icon:people}}</span><b>Head of Customer Engineering</b><small>Deployments and support</small><p>Leads the engineers who deploy with you and answer your examiners' questions.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="careers" aria-labelledby="j-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><span class="label eyebrow" data-reveal>Careers</span><h2 class="h2" id="j-h" data-reveal>Help agents earn the trust they are given.</h2></div>
+        <p class="lede" data-reveal>A small team working on a problem that is new for everyone. Remote within US time zones, with time together in person each quarter.</p>
+      </div>
+      <div class="jobs" data-stagger>
+        <a class="job" href="mailto:careers@zenstra.ai?subject=Senior%20Software%20Engineer%2C%20Decision%20Engine"><span><b>Senior Software Engineer, Decision Engine</b><small>Engineering &middot; Rust, Go</small></span><span class="where">Remote, US</span><span class="chip no-dot">Full time</span></a>
+        <a class="job" href="mailto:careers@zenstra.ai?subject=Security%20Researcher%2C%20Agent%20Threats"><span><b>Security Researcher, Agent Threats</b><small>Research &middot; prompt injection, MCP</small></span><span class="where">Remote, US</span><span class="chip no-dot">Full time</span></a>
+        <a class="job" href="mailto:careers@zenstra.ai?subject=Customer%20Engineer%2C%20Financial%20Services"><span><b>Customer Engineer, Financial Services</b><small>Customer engineering &middot; deployments</small></span><span class="where">Remote, US</span><span class="chip no-dot">Full time</span></a>
+        <a class="job" href="mailto:careers@zenstra.ai?subject=Product%20Designer%2C%20Console"><span><b>Product Designer, Console</b><small>Design &middot; enterprise software</small></span><span class="where">Remote, US</span><span class="chip no-dot">Full time</span></a>
+      </div>
+      <p class="form-note" style="margin-top:16px" data-reveal>Not listed? Write to <a href="mailto:careers@zenstra.ai">careers@zenstra.ai</a> with what you would work on.</p>
+    </div>
+  </section>
+
+  <section class="alt" id="news" aria-labelledby="n-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><span class="label eyebrow" data-reveal>Newsroom</span><h2 class="h2" id="n-h" data-reveal>Announcements.</h2></div>
+        <p class="lede" data-reveal>For press enquiries, write to <a href="mailto:press@zenstra.ai">press@zenstra.ai</a>.</p>
+      </div>
+      <div class="news-list" data-stagger>
+        <a class="news-item" href="credit-unions.html"><time datetime="2026-09-30">30 Sep 2026</time><span><h3>Zenstra opens its credit union programme</h3><p>Inventory, policy enforcement and examination evidence for agents in core-banking platforms and employee copilots.</p></span><span class="chip no-dot">Product</span></a>
+        <a class="news-item" href="resources.html#library"><time datetime="2026-09-17">17 Sep 2026</time><span><h3>Research: tool descriptions that rewrite the agent's plan</h3><p>How malicious MCP tool metadata steers agents, and how to catch it at the gateway.</p></span><span class="chip no-dot">Research</span></a>
+        <a class="news-item" href="trust.html#compliance"><time datetime="2026-08-12">12 Aug 2026</time><span><h3>Zenstra begins its ISO/IEC 42001 audit</h3><p>The AI management system standard, added to SOC 2 Type II and ISO/IEC 27001.</p></span><span class="chip no-dot">Trust</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section id="contact" aria-labelledby="ct-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><span class="label eyebrow" data-reveal>Contact</span><h2 class="h2" id="ct-h" data-reveal>Reach the right person first time.</h2></div>
+        <p class="lede" data-reveal>Every address below goes to a person, not a queue.</p>
+      </div>
+      <div class="contact-cards" data-stagger>
+        <div class="card"><span class="ic">{{icon:chat}}</span><h3>Sales and demos</h3><p>Pricing, a technical demo or a pilot against your own agent.</p><button class="copy-line" type="button" data-copy="sales@zenstra.ai"><span>sales@zenstra.ai</span><span class="copy-label">Copy</span></button></div>
+        <div class="card"><span class="ic">{{icon:shield}}</span><h3>Security</h3><p>Vulnerability reports and security review questions.</p><button class="copy-line" type="button" data-copy="security@zenstra.ai"><span>security@zenstra.ai</span><span class="copy-label">Copy</span></button></div>
+        <div class="card"><span class="ic">{{icon:news}}</span><h3>Press</h3><p>Interviews, briefings and coverage.</p><button class="copy-line" type="button" data-copy="press@zenstra.ai"><span>press@zenstra.ai</span><span class="copy-label">Copy</span></button></div>
+      </div>
+      <div class="address" data-reveal><span class="ic">{{icon:mail}}</span><span><b>Zenstra AI</b>c/o Northwest Registered Agent Service, 8 The Green, Suite B, Dover, DE 19901, USA &middot; General enquiries: <a href="mailto:info@zenstra.ai">info@zenstra.ai</a></span></div>
+    </div>
+  </section>
+
+  {{cta}}

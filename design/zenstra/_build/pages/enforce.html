@@ -1,0 +1,139 @@
+<!--{"title": "Enforce · Zenstra", "description": "Decide every AI agent action before it runs: scoped tool access, prompt injection and memory defense, policy as code, approvals and emergency stop.", "active": "platform"}-->
+<style>
+  .verdicts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .vcard { padding: 26px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); }
+  .vcard .verdict { font-size: 14px; }
+  .vcard h3 { font-size: 18px; margin-top: 14px; }
+  .vcard p { font-size: 14.5px; color: var(--ink-2); margin-top: 8px; }
+  .vcard .eg { margin-top: 14px; font: 12.5px/1.6 var(--font-mono); color: var(--ink-2); padding: 10px 12px; border-radius: 8px; background: var(--surface-2); }
+  .vcard.block { border-color: color-mix(in srgb, var(--crit) 40%, var(--line)); }
+  .vcard.stepup { border-color: color-mix(in srgb, var(--med) 40%, var(--line)); }
+  @media (max-width: 900px) { .verdicts { grid-template-columns: 1fr; } }
+  .page-hero .code-card { box-shadow: 0 30px 70px -40px rgba(4, 16, 36, 0.45); }
+</style>
+  <section class="page-hero" aria-labelledby="hero-h">
+    <div class="wrap grid">
+      <div>
+        <nav class="crumbs" aria-label="Breadcrumb" data-hero><a href="home.html">Home</a><span aria-hidden="true">/</span><a href="platform.html">Platform</a><span aria-hidden="true">/</span><span>Enforce</span></nav>
+        <h1 id="hero-h"><span class="line"><span>Decide every action</span></span><span class="line"><span class="accent">before it lands.</span></span></h1>
+        <p class="sub" data-hero>Policy is evaluated in the agent loop, on every tool call, in your environment. Zenstra allows the call, holds it for a person, or blocks it, and the tool never sees a blocked request.</p>
+        <div class="ctas" data-hero><a class="btn btn-primary" href="demo.html">Request a demo {{icon:arrow}}</a><a class="btn btn-secondary" href="#policy">Read a policy</a></div>
+      </div>
+      <div class="code-card" data-hero>
+        <div class="bar"><span>policies/member-data-egress.zpl</span><span class="chip ok">v7 · active</span></div>
+<pre><span class="c"># POL-114 · owner: Information Security</span>
+<span class="k">policy</span> member-data-egress {
+  <span class="k">when</span> tool == <span class="s">"email.send"</span>
+   <span class="k">and</span> payload.contains(<span class="s">class: "member.account"</span>)
+<span class="hl">   <span class="k">and</span> recipient.domain <span class="k">not in</span> approved_domains</span>
+  <span class="k">then</span> block, notify(<span class="s">"#sec-agents"</span>)
+}
+
+<span class="c"># Evaluated 48,213 times today · 214 blocks · p95 14 ms</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="v-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><span class="label eyebrow" data-reveal>02 · Enforce</span><h2 class="h2" id="v-h" data-reveal>Three verdicts, <span class="mark">decided in milliseconds.</span></h2></div>
+        <p class="lede" data-reveal>Every decision carries the policy version, the evidence and the agent's declared task, so it can be explained later.</p>
+      </div>
+      <div class="verdicts" data-stagger>
+        <div class="vcard"><span class="verdict allow"><i></i>Allow</span><h3>Within policy and within the task</h3><p>The call continues with a scoped grant that expires with the call or the session.</p><div class="eg">los.loanfile.read · loan-doc-classifier · 6 ms</div></div>
+        <div class="vcard stepup"><span class="verdict stepup"><i></i>Step-up</span><h3>Risky, but possibly right</h3><p>The call is held and a named approver sees the plan, the evidence and the policy before deciding.</p><div class="eg">shell.exec (prod) · dev-agent-ci · held</div></div>
+        <div class="vcard block"><span class="verdict block"><i></i>Block</span><h3>Outside policy or outside the task</h3><p>The tool is never contacted. The agent receives a refusal it can handle and carries on safely.</p><div class="eg">email.send → external · member-chat-assist · 14 ms</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="alt" aria-label="Enforce capabilities">
+    <div class="wrap">
+      <div class="feature" id="tool-access">
+        <div>
+          <span class="label" data-reveal>Secure tool access</span>
+          <h3 data-reveal>Scoped, expiring grants instead of standing credentials.</h3>
+          <p data-reveal>Each agent receives only the tools its job needs, scoped to the data it should touch, for as long as the call or session lasts. The secrets themselves stay in the Context Vault and never reach the model.</p>
+          <ul class="checks" data-stagger>
+            <li>Grants scoped per tool, per collection, per member</li>
+            <li>Unused grants flagged so the blast radius keeps shrinking</li>
+            <li>Every MCP connector into core, LOS or CRM becomes a reviewed grant</li>
+          </ul>
+        </div>
+        <div data-reveal="right">{{shot:crop-grants|Tool grants for member-chat-assist with scope, expiry, last use and calls in the last seven days}}</div>
+      </div>
+      <div class="feature flip" id="injection">
+        <div>
+          <span class="label" data-reveal>Prompt injection defense</span>
+          <h3 data-reveal>Untrusted content never steers the agent.</h3>
+          <p data-reveal>Retrieved documents, web pages and member messages are screened before the agent plans. Injected instructions are quarantined, and the agent's intended action is checked against the task it declared.</p>
+          <ul class="checks" data-stagger>
+            <li>Direct and indirect injection, mapped to MITRE ATLAS AML.T0051</li>
+            <li>Intent verification: declared task against the actual tool call</li>
+            <li>The full run, with the injected span, kept for the investigation</li>
+          </ul>
+        </div>
+        <div data-reveal="left">{{shot:crop-run|Agent run timeline showing the retrieved PDF with a hidden instruction quarantined and the email blocked by policy}}</div>
+      </div>
+      <div class="feature" id="memory">
+        <div>
+          <span class="label" data-reveal>Memory protection</span>
+          <h3 data-reveal>Signed memory, so poison does not persist.</h3>
+          <p data-reveal>Every write to long-term memory is signed by the agent's key and carries its provenance. Unsigned or out-of-pattern writes are rejected, and a jump in memory writes shows up against the agent's baseline.</p>
+          <ul class="checks" data-stagger>
+            <li>Provenance on every memory entry</li>
+            <li>Cross-session contamination blocked between member and staff assistants</li>
+          </ul>
+        </div>
+        <div data-reveal="right">{{shot:crop-baseline|Tool calls against the agent's baseline, showing memory.write more than doubling and a new email.send call}}</div>
+      </div>
+      <div class="feature flip" id="policy">
+        <div>
+          <span class="label" data-reveal>Policy as code</span>
+          <h3 data-reveal>Write a guardrail once, enforce it everywhere.</h3>
+          <p data-reveal>Policies are versioned files reviewed like any other change. The same policy applies whatever the model, framework or deployment mode, and every decision records the version that made it.</p>
+          <ul class="checks" data-stagger>
+            <li>Review, test and simulate a policy against last week's decisions before it goes live</li>
+            <li>Owners per policy, with change history in the ledger</li>
+            <li>Your acceptable-use policy, enforced instead of remembered</li>
+          </ul>
+        </div>
+        <div class="code-card" data-reveal="left">
+          <div class="bar"><span>Simulation · last 7 days</span><span class="chip info">dry run</span></div>
+<pre><span class="c"># What would change if POL-114 v8 went live?</span>
+decisions evaluated     <span class="k">337,491</span>
+newly blocked           <span class="k">  12</span>   <span class="c"># external email + account data</span>
+newly allowed           <span class="k">   0</span>
+agents affected         <span class="k">   2</span>   <span class="c"># member-chat-assist, member-voice</span>
+<span class="s">ready to promote</span></pre>
+        </div>
+      </div>
+      <div class="feature" id="approvals">
+        <div>
+          <span class="label" data-reveal>Approvals and emergency stop</span>
+          <h3 data-reveal>A person decides the risky calls.</h3>
+          <p data-reveal>Step-up verdicts go to a named approver with the plan attached. If something goes wrong, emergency stop halts one agent, one tool or the whole environment, with a reason recorded in the ledger.</p>
+          <ul class="checks" data-stagger>
+            <li>Approvers and separation of duties from your identity provider</li>
+            <li>Stops scoped to the narrowest blast radius first</li>
+            <li>Typed confirmation, so it is never one accidental click</li>
+          </ul>
+        </div>
+        <div data-reveal="right">{{shot:crop-estop|Emergency stop dialog with scope, reason and typed confirmation}}</div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="next-h">
+    <div class="wrap">
+      <div class="sec-head"><div><span class="label eyebrow" data-reveal>Next</span><h2 class="h2" id="next-h" data-reveal>Every decision becomes evidence.</h2></div></div>
+      <div class="next-steps" data-stagger>
+        <a class="card" href="prove.html"><span class="ic">{{icon:list}}</span><h3>Prove</h3><p>The decision ledger, runtime detection and exam-ready evidence.</p><span class="go">Explore Prove {{icon:arrow}}</span></a>
+        <a class="card" href="discover.html"><span class="ic">{{icon:eye}}</span><h3>Discover</h3><p>Find every agent and give each one an owner and an identity.</p><span class="go">Explore Discover {{icon:arrow}}</span></a>
+        <a class="card" href="platform.html#architecture"><span class="ic">{{icon:grid}}</span><h3>Architecture</h3><p>Follow one tool call through Zenstra, step by step.</p><span class="go">See the architecture {{icon:arrow}}</span></a>
+      </div>
+    </div>
+  </section>
+
+  {{cta}}

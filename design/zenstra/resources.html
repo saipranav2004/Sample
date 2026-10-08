@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Resources · Zenstra</title>
+<meta name="description" content="Documentation, threat research, guides, webinars and a glossary for securing AI agents.">
+<script>try{var t=localStorage.getItem('zx-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}document.documentElement.classList.add('js');</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wdth,wght@0,75..100,400..700;1,75..100,400..700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="assets/zx.css">
+<link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="assets/pages.css">
+<style>
+  .docs-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .doc-card { display: grid; grid-template-columns: 44px 1fr; gap: 14px; padding: 22px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); text-decoration: none; color: var(--ink); transition: border-color var(--t-base), transform 400ms var(--ease-expo); }
+  .doc-card:hover { border-color: var(--brand); transform: translateY(-2px); color: var(--ink); }
+  .doc-card .ic { width: 44px; height: 44px; border-radius: 10px; display: grid; place-items: center; background: var(--brand-wash); color: var(--brand); }
+  .doc-card .ic svg { width: 20px; height: 20px; }
+  .doc-card b { display: block; font-size: 16px; }
+  .doc-card small { display: block; font-size: 14px; color: var(--ink-2); margin-top: 4px; line-height: 1.5; }
+  .doc-card code { display: inline-block; margin-top: 10px; font-size: 12px; color: var(--ink-3); }
+  @media (max-width: 900px) { .docs-grid { grid-template-columns: 1fr; } }
+  .lib-head { display: flex; justify-content: space-between; align-items: end; gap: 20px; flex-wrap: wrap; margin-bottom: 24px; }
+  .lib-head .h2 { max-width: none; }
+</style>
+</head>
+<body data-page="resources">
+<a class="skip" href="#main">Skip to content</a>
+<div class="intro" aria-hidden="true">
+  <div class="intro-inner">
+    <svg class="star" viewBox="0 0 24 24"><defs><linearGradient id="introGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#12b0f0"/><stop offset="1" stop-color="#0c6eb4"/></linearGradient></defs><path class="star-fill" style="transform-box:fill-box;transform-origin:center" d="M12 0C12.9 7.6 16.4 11.1 24 12 16.4 12.9 12.9 16.4 12 24 11.1 16.4 7.6 12.9 0 12 7.6 11.1 11.1 7.6 12 0Z"/><path class="star-stroke" d="M12 0C12.9 7.6 16.4 11.1 24 12 16.4 12.9 12.9 16.4 12 24 11.1 16.4 7.6 12.9 0 12 7.6 11.1 11.1 7.6 12 0Z"/></svg>
+    <div class="word"><span>Z</span><span>E</span><span>N</span><span>S</span><span>T</span><span>R</span><span>A</span></div>
+    <div class="bar"><i></i></div>
+  </div>
+</div>
+<div class="progress" aria-hidden="true"></div>
+<header class="site-head">
+  <div class="wrap">
+    <a class="brand" href="home.html" aria-label="Zenstra home">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="zg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#12b0f0"/><stop offset="1" stop-color="#0c6eb4"/></linearGradient></defs><path fill="url(#zg)" d="M12 0C12.9 7.6 16.4 11.1 24 12 16.4 12.9 12.9 16.4 12 24 11.1 16.4 7.6 12.9 0 12 7.6 11.1 11.1 7.6 12 0Z"/></svg>
+      <span>ZENSTRA</span>
+    </a>
+    <ul class="nav" aria-label="Primary">
+      <li>
+        <button class="nav-trigger" aria-haspopup="true" aria-expanded="false">Platform <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <div class="mega cols-3 " role="group" aria-label="Platform"><div><span class="label">Discover</span><a href="discover.html#shadow-ai"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8Z"/><circle cx="8" cy="8" r="2"/></svg></span><b>Shadow AI discovery</b><small>Agents and AI tools nobody registered</small></a><a href="discover.html#identity"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="8" r="3"/><path d="M8.5 8h6M12 8v2.5M14.5 8v2"/></svg></span><b>Agent inventory and identity</b><small>One record, one owner, one key per agent</small></a></div><div><span class="label">Enforce</span><a href="enforce.html#tool-access"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg></span><b>Secure tool access</b><small>Scoped, expiring grants per call</small></a><a href="enforce.html#injection"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 1.5 13.5 4v4c0 3.2-2.4 5.6-5.5 6.5C4.9 13.6 2.5 11.2 2.5 8V4Z"/></svg></span><b>Injection and memory defense</b><small>Untrusted content never steers the agent</small></a><a href="enforce.html#policy"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4 1.5 8 5 12M11 4l3.5 4-3.5 4"/></svg></span><b>Policy as code</b><small>One guardrail set for every agent</small></a><a href="enforce.html#approvals"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v6M5.5 4v5M10.5 4v5M3 7v3a5 5 0 0 0 10 0V6"/></svg></span><b>Approvals and emergency stop</b><small>A person decides the risky calls</small></a></div><div><span class="label">Prove</span><a href="prove.html#ledger"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3.5h10M3 6.5h10M3 9.5h10M3 12.5h6"/></svg></span><b>Decision ledger</b><small>Tamper-evident record of every decision</small></a><a href="prove.html#detection"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 8h3l2-4.5 3 9 2-4.5h3"/></svg></span><b>Runtime detection</b><small>Drift against each agent’s baseline</small></a><a href="prove.html#evidence"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 1.5h5.5L12.5 4.5v10h-8.5Z M9 1.5v3.5h3.5M6 8.5h4.5M6 11h4.5"/></svg></span><b>Compliance evidence</b><small>Exam-ready exports for auditors</small></a></div><div class="foot"><a href="platform.html">Platform overview</a><a href="platform.html#architecture">Architecture</a><a href="platform.html#integrations">Integrations</a><a href="resources.html#docs">Documentation</a></div></div>
+      </li>
+      <li>
+        <button class="nav-trigger" aria-haspopup="true" aria-expanded="false">Solutions <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <div class="mega cols-2 " role="group" aria-label="Solutions"><div><span class="label">By industry</span><a href="credit-unions.html"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 6 8 2.5 14 6M3.5 6.5v6M6.5 6.5v6M9.5 6.5v6M12.5 6.5v6M2 13.5h12"/></svg></span><b>Credit unions</b><small>Exam-ready evidence for every agent</small></a><a href="solutions.html#banking"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="12" height="9" rx="1.5"/><path d="M2 7h12"/></svg></span><b>Banking and lending</b><small>Core, LOS and fraud agents</small></a><a href="solutions.html#healthcare"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg></span><b>Healthcare</b><small>Clinical and claims agents</small></a></div><div><span class="label">By agent type</span><a href="solutions.html#copilots"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="6" r="3"/><path d="M3 14c.8-2.6 2.8-4 5-4s4.2 1.4 5 4"/></svg></span><b>Employee copilots</b><small>Copilot, ChatGPT and Gemini at work</small></a><a href="solutions.html#member-facing"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2Z"/></svg></span><b>Member-facing agents</b><small>Untrusted input all day</small></a><a href="solutions.html#coding"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/><path d="m4.5 6.5 2 1.5-2 1.5M8.5 10h3"/></svg></span><b>Coding agents</b><small>Repo, CI and production shell access</small></a><a href="solutions.html#mcp"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 2.5v3.5M10.5 2.5v3.5M3.5 6h9v2a4.5 4.5 0 0 1-9 0Z M8 12.5v1.5"/></svg></span><b>MCP servers</b><small>Every connector is an access grant</small></a></div><div class="foot"><a href="solutions.html">All solutions</a><a href="demo.html">Request a demo</a></div></div>
+      </li>
+      <li>
+        <button class="nav-trigger" aria-haspopup="true" aria-expanded="false" aria-current="page">Resources <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <div class="mega cols-2 " role="group" aria-label="Resources"><div><span class="label">Learn</span><a href="resources.html#docs"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 3h4a1.5 1.5 0 0 1 1.5 1.5V14a1.5 1.5 0 0 0-1.5-1.5h-4ZM13.5 3h-4A1.5 1.5 0 0 0 8 4.5V14a1.5 1.5 0 0 1 1.5-1.5h4Z"/></svg></span><b>Documentation</b><small>Quickstarts, deployment and API reference</small></a><a href="resources.html#research"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="5.5"/><circle cx="8" cy="8" r="2"/></svg></span><b>Threat research</b><small>How agents get attacked, with real techniques</small></a><a href="resources.html#guides"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 1.5h5.5L12.5 4.5v10h-8.5Z M9 1.5v3.5h3.5M6 8.5h4.5M6 11h4.5"/></svg></span><b>Guides and reports</b><small>Programme guides for security leaders</small></a></div><div><span class="label">Stay current</span><a href="resources.html#blog"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 2.5l3 3-8 8H2.5v-3Z"/></svg></span><b>Blog</b><small>Product and engineering notes</small></a><a href="resources.html#webinars"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1.5" y="3.5" width="9" height="9" rx="1.5"/><path d="m10.5 6.5 4-2v7l-4-2"/></svg></span><b>Webinars and events</b><small>Live sessions with our engineers</small></a><a href="resources.html#glossary"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12 4.5 4 7 12M3 9.5h3M9 4h2.5a2 2 0 0 1 0 4H9V4Zm0 4h3a2 2 0 0 1 0 4H9Z"/></svg></span><b>Glossary</b><small>Agentic AI security terms, defined</small></a></div><div class="foot"><a href="resources.html">Resource library</a><a href="trust.html">Trust center</a></div></div>
+      </li>
+      <li><a class="nav-trigger" href="trust.html">Trust center</a></li>
+      <li>
+        <button class="nav-trigger" aria-haspopup="true" aria-expanded="false">Company <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <div class="mega cols-2 right" role="group" aria-label="Company"><div><span class="label">About Zenstra</span><a href="company.html#about"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="2" width="10" height="12" rx="1"/><path d="M6 5h1M9 5h1M6 8h1M9 8h1M7 14v-3h2v3"/></svg></span><b>About us</b><small>Why we build runtime security for agents</small></a><a href="company.html#leadership"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="5.5" r="2.5"/><path d="M1.5 13.5c.6-2.3 2.4-3.5 4.5-3.5s3.9 1.2 4.5 3.5M11 3.5a2.5 2.5 0 0 1 0 4.5M12.5 10.3c1 .5 1.7 1.6 2 3.2"/></svg></span><b>Leadership</b><small>The team accountable for the product</small></a><a href="company.html#careers"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="12" height="8.5" rx="1.5"/><path d="M5.5 5V3.5h5V5M2 9h12"/></svg></span><b>Careers</b><small>Open roles</small></a></div><div><span class="label">Get in touch</span><a href="company.html#news"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M5 6h6M5 8.5h6M5 11h3"/></svg></span><b>Newsroom</b><small>Announcements and coverage</small></a><a href="company.html#contact"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3.5" width="12" height="9" rx="1.5"/><path d="m2.5 4.5 5.5 4 5.5-4"/></svg></span><b>Contact</b><small>Sales, security and press</small></a><a href="trust.html"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 1.5 13.5 4v4c0 3.2-2.4 5.6-5.5 6.5C4.9 13.6 2.5 11.2 2.5 8V4Z"/></svg></span><b>Trust center</b><small>Security, compliance and status</small></a></div><div class="foot"><a href="demo.html">Request a demo</a></div></div>
+      </li>
+    </ul>
+    <div class="head-actions">
+      <button class="theme-toggle" data-theme-toggle aria-label="Switch between light and dark theme">
+        <svg class="moon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13 9.5A5.5 5.5 0 0 1 6.5 3a5.5 5.5 0 1 0 6.5 6.5Z"/></svg>
+        <svg class="sun" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="3"/><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"/></svg>
+      </button>
+      <a class="btn btn-ghost btn-sm signin" href="console.html">Sign in</a>
+      <a class="btn btn-primary btn-sm" href="demo.html">Request a demo</a>
+      <button class="btn btn-ghost btn-sm menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12"/></svg></button>
+    </div>
+  </div>
+</header>
+<nav class="mobile-menu" id="mobile-menu" aria-label="Mobile"><details><summary>Platform</summary><div><a href="discover.html#shadow-ai">Shadow AI discovery</a><a href="discover.html#identity">Agent inventory and identity</a><a href="enforce.html#tool-access">Secure tool access</a><a href="enforce.html#injection">Injection and memory defense</a><a href="enforce.html#policy">Policy as code</a><a href="enforce.html#approvals">Approvals and emergency stop</a><a href="prove.html#ledger">Decision ledger</a><a href="prove.html#detection">Runtime detection</a><a href="prove.html#evidence">Compliance evidence</a></div></details><details><summary>Solutions</summary><div><a href="credit-unions.html">Credit unions</a><a href="solutions.html#banking">Banking and lending</a><a href="solutions.html#healthcare">Healthcare</a><a href="solutions.html#copilots">Employee copilots</a><a href="solutions.html#member-facing">Member-facing agents</a><a href="solutions.html#coding">Coding agents</a><a href="solutions.html#mcp">MCP servers</a></div></details><details><summary>Resources</summary><div><a href="resources.html#docs">Documentation</a><a href="resources.html#research">Threat research</a><a href="resources.html#guides">Guides and reports</a><a href="resources.html#blog">Blog</a><a href="resources.html#webinars">Webinars and events</a><a href="resources.html#glossary">Glossary</a></div></details><details><summary>Company</summary><div><a href="company.html#about">About us</a><a href="company.html#leadership">Leadership</a><a href="company.html#careers">Careers</a><a href="company.html#news">Newsroom</a><a href="company.html#contact">Contact</a><a href="trust.html">Trust center</a></div></details><a href="trust.html">Trust center</a><a href="console.html">Sign in</a><a class="btn btn-primary" href="demo.html">Request a demo</a></nav>
+<main id="main">
+<section class="page-hero solo" aria-labelledby="hero-h">
+    <div class="wrap grid">
+      <div>
+        <nav class="crumbs" aria-label="Breadcrumb" data-hero><a href="home.html">Home</a><span aria-hidden="true">/</span><span>Resources</span></nav>
+        <h1 id="hero-h"><span class="line"><span>Learn how agents get attacked,</span></span><span class="line"><span class="accent">and how to stop it.</span></span></h1>
+        <p class="sub" data-hero>Documentation for the engineers deploying Zenstra, research for the analysts defending agents, and guides for the leaders deciding what to allow.</p>
+        <label class="search" data-hero for="res-search"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="5.5"/><circle cx="8" cy="8" r="2"/></svg><input id="res-search" type="search" placeholder="Search guides, research and posts" autocomplete="off"></label>
+      </div>
+    </div>
+  </section>
+
+  <section id="docs" aria-labelledby="docs-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><span class="label eyebrow" data-reveal>Documentation</span><h2 class="h2" id="docs-h" data-reveal>Start with the part you are deploying.</h2></div>
+        <p class="lede" data-reveal>Each guide lists the versions it was tested with. The latency methodology explains how the published numbers were measured, so your team can reproduce them.</p>
+      </div>
+      <div class="docs-grid" data-stagger>
+        <a class="doc-card" href="#docs"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4 1.5 8 5 12M11 4l3.5 4-3.5 4"/></svg></span><span><b>SDK quickstart</b><small>Wrap an agent's tool layer and see its first decision in the console.</small><code>pip install zenstra</code></span></a>
+        <a class="doc-card" href="#docs"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 2.5v3.5M10.5 2.5v3.5M3.5 6h9v2a4.5 4.5 0 0 1-9 0Z M8 12.5v1.5"/></svg></span><span><b>Deploy the gateway</b><small>Run the MCP and API proxy in your VPC or Kubernetes cluster.</small><code>helm install zenstra-gateway</code></span></a>
+        <a class="doc-card" href="#docs"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="12" height="8" rx="1.2"/><path d="M5.5 13.5h5M8 11v2.5"/></svg></span><span><b>Endpoint app with MDM</b><small>Package, deploy and verify the endpoint app on managed devices.</small><code>Intune · Jamf · Kandji</code></span></a>
+        <a class="doc-card" href="#docs"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 1.5h5.5L12.5 4.5v10h-8.5Z M9 1.5v3.5h3.5M6 8.5h4.5M6 11h4.5"/></svg></span><span><b>Policy reference</b><small>Conditions, verdicts, approvals and how to simulate a change.</small><code>policies/*.zpl</code></span></a>
+        <a class="doc-card" href="#docs"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 3h4a1.5 1.5 0 0 1 1.5 1.5V14a1.5 1.5 0 0 0-1.5-1.5h-4ZM13.5 3h-4A1.5 1.5 0 0 0 8 4.5V14a1.5 1.5 0 0 1 1.5-1.5h4Z"/></svg></span><span><b>API reference</b><small>Inventory, decisions, detections and ledger export endpoints.</small><code>REST · webhooks</code></span></a>
+        <a class="doc-card" href="#docs"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 8h3l2-4.5 3 9 2-4.5h3"/></svg></span><span><b>Latency methodology</b><small>Load, policy count and hardware behind the decision latency figures.</small><code>p50 · p95 · p99</code></span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="alt" id="library" aria-labelledby="lib-h">
+    <div class="wrap">
+      <div class="lib-head">
+        <div><span class="label eyebrow" data-reveal>Library</span><h2 class="h2" id="lib-h" data-reveal>Research, guides and conversations.</h2></div>
+      </div>
+      <div class="chips" role="group" aria-label="Filter by type">
+        <button class="chip-btn" data-filter="all" aria-pressed="true">All<span class="c"></span></button>
+        <button class="chip-btn" data-filter="research" aria-pressed="false">Threat research<span class="c"></span></button>
+        <button class="chip-btn" data-filter="guides" aria-pressed="false">Guides and reports<span class="c"></span></button>
+        <button class="chip-btn" data-filter="blog" aria-pressed="false">Blog<span class="c"></span></button>
+        <button class="chip-btn" data-filter="webinars" aria-pressed="false">Webinars and events<span class="c"></span></button>
+      </div>
+      <span id="research" aria-hidden="true"></span><span id="guides" aria-hidden="true"></span><span id="blog" aria-hidden="true"></span><span id="webinars" aria-hidden="true"></span>
+      <div class="res-grid">
+        <a class="res featured" href="#library" data-type="research"><div class="thumb t2"><span class="big">Indirect prompt injection in shared knowledge bases</span><span class="tk"><span>Threat research</span><span>14 min read</span></span></div><div class="res-body"><span class="meta"><span>Threat research</span><span>2 Oct 2026</span></span><h3>How one poisoned document reached three agents</h3><p>We traced an injected instruction from a shared knowledge base through a member-service assistant, a voice agent and an HR copilot, and the controls that stopped each one.</p></div></a>
+        <a class="res" href="#library" data-type="guides"><div class="thumb"><span class="big">Agent inventory checklist</span><span class="tk"><span>Guide</span><span>PDF</span></span></div><div class="res-body"><span class="meta"><span>Guide</span><span>24 Sep 2026</span></span><h3>The agent inventory checklist for examiners</h3><p>What to record for every agent, and where each field comes from.</p></div></a>
+        <a class="res" href="#library" data-type="research" ><div class="thumb t2"><span class="big">MCP tool poisoning</span><span class="tk"><span>Research</span><span>9 min</span></span></div><div class="res-body"><span class="meta"><span>Threat research</span><span>17 Sep 2026</span></span><h3>Tool descriptions that rewrite the agent's plan</h3><p>How malicious MCP tool metadata steers agents, and how to catch it at the gateway.</p></div></a>
+        <a class="res" href="#library" data-type="blog"><div class="thumb t4"><span class="big">Fail-closed, without the outage</span><span class="tk"><span>Engineering</span><span>7 min</span></span></div><div class="res-body"><span class="meta"><span>Blog</span><span>11 Sep 2026</span></span><h3>Designing an inline control that fails safely</h3><p>Fail modes per agent and per tool, and why the default is closed.</p></div></a>
+        <a class="res" href="#library" data-type="webinars"><div class="thumb t3"><span class="big">Live: stopping an injection</span><span class="tk"><span>Webinar</span><span>45 min</span></span></div><div class="res-body"><span class="meta"><span>Webinar</span><span>On demand</span></span><h3>Watch a policy stop a real exfiltration attempt</h3><p>Our engineers run an injected document against a test agent, step by step.</p></div></a>
+        <a class="res" href="#library" data-type="guides"><div class="thumb"><span class="big">Board briefing on agentic AI</span><span class="tk"><span>Guide</span><span>PDF</span></span></div><div class="res-body"><span class="meta"><span>Guide</span><span>3 Sep 2026</span></span><h3>Briefing your board on AI agent risk</h3><p>Five questions directors ask, and the evidence that answers each one.</p></div></a>
+        <a class="res" href="#library" data-type="blog"><div class="thumb t4"><span class="big">Decision ledger</span><span class="tk"><span>Product</span><span>5 min</span></span></div><div class="res-body"><span class="meta"><span>Blog</span><span>28 Aug 2026</span></span><h3>Why every decision is hash-chained</h3><p>How the ledger lets you verify the record without trusting the vendor.</p></div></a>
+        <a class="res" href="#library" data-type="research"><div class="thumb t2"><span class="big">Memory poisoning</span><span class="tk"><span>Research</span><span>11 min</span></span></div><div class="res-body"><span class="meta"><span>Threat research</span><span>20 Aug 2026</span></span><h3>When an agent remembers the wrong thing</h3><p>Cross-session contamination between member-facing and staff assistants.</p></div></a>
+        <a class="res" href="#library" data-type="webinars"><div class="thumb t3"><span class="big">Credit union roundtable</span><span class="tk"><span>Event</span><span>Virtual</span></span></div><div class="res-body"><span class="meta"><span>Event</span><span>12 Nov 2026</span></span><h3>Credit union security leaders on governing copilots</h3><p>A closed-door session on inventory, approvals and examination.</p></div></a>
+        <a class="res" href="#library" data-type="guides"><div class="thumb"><span class="big">Acceptable-use to policy-as-code</span><span class="tk"><span>Guide</span><span>Template</span></span></div><div class="res-body"><span class="meta"><span>Guide</span><span>6 Aug 2026</span></span><h3>Turning your AI acceptable-use policy into code</h3><p>A template that maps common clauses to enforceable policies.</p></div></a>
+      </div>
+      <p class="empty-state">No resources match. Try another word or choose All.</p>
+    </div>
+  </section>
+
+  <section id="glossary" aria-labelledby="gl-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><span class="label eyebrow" data-reveal>Glossary</span><h2 class="h2" id="gl-h" data-reveal>Agentic AI security, defined.</h2></div>
+        <p class="lede" data-reveal>Plain definitions for the terms in this site, our documentation and your next security review.</p>
+      </div>
+      <dl class="glossary">
+        <div><dt>AI agent</dt><dd>Software that uses a model to plan and take actions, such as calling tools, on its own or on a person's behalf.</dd></div>
+        <div><dt>Agent identity</dt><dd>A verifiable identity for a specific agent, separate from the person or service account it acts for.</dd></div>
+        <div><dt>Agent-to-agent (A2A)</dt><dd>Agents delegating tasks to other agents. Each hop is a new caller that needs its own decision.</dd></div>
+        <div><dt>Decision point</dt><dd>The component that evaluates identity, content, policy and intent and returns allow, step-up or block.</dd></div>
+        <div><dt>Excessive agency</dt><dd>An agent holding more tools, data or permissions than its task needs.</dd></div>
+        <div><dt>Fail-closed</dt><dd>When the decision point is unavailable, actions are held rather than allowed.</dd></div>
+        <div><dt>Indirect prompt injection</dt><dd>Instructions hidden in content an agent reads, such as a document or web page, that try to change what it does.</dd></div>
+        <div><dt>Model Context Protocol (MCP)</dt><dd>An open protocol that exposes tools and data to agents. Each MCP server is an access grant.</dd></div>
+        <div><dt>Non-human identity</dt><dd>Any identity that is not a person: service accounts, API keys, workloads and agents.</dd></div>
+        <div><dt>Shadow AI</dt><dd>AI tools and agents operating without the security team's knowledge or approval.</dd></div>
+        <div><dt>Step-up</dt><dd>A verdict that holds an action until a named person approves it.</dd></div>
+        <div><dt>Tamper-evident ledger</dt><dd>A record where each entry includes the hash of the previous one, so any change is detectable.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section aria-label="Newsletter" style="padding-top:0">
+    <div class="wrap">
+      <div class="newsletter" data-reveal="scale">
+        <div><h2>New research, once a month.</h2><p>Agent attack techniques and the controls that stop them. No marketing in between.</p></div>
+        <div>
+          <form data-validate novalidate><div class="field" style="flex:1;min-width:220px"><label for="nl-email" class="sr-only">Work email</label><input id="nl-email" type="email" required placeholder="name@company.com"><span class="err" role="alert"></span></div><button class="btn btn-primary" type="submit">Subscribe</button></form>
+          <div data-success hidden><p style="color:var(--band-ink)"><b>You're subscribed.</b> The next issue arrives early next month.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="home.html"><svg viewBox="0 0 24 24" aria-hidden="true" width="22" height="22"><path fill="url(#zg)" d="M12 0C12.9 7.6 16.4 11.1 24 12 16.4 12.9 12.9 16.4 12 24 11.1 16.4 7.6 12.9 0 12 7.6 11.1 11.1 7.6 12 0Z"/></svg><span>ZENSTRA</span></a>
+        <p>Runtime security for AI agents: identity, policy and evidence for every autonomous action.</p>
+        <a class="btn btn-secondary btn-sm" href="demo.html" style="margin-top:18px">Request a demo</a>
+      </div>
+      <div><span class="label">Platform</span><ul><li><a href="platform.html">Overview</a></li><li><a href="discover.html">Discover</a></li><li><a href="enforce.html">Enforce</a></li><li><a href="prove.html">Prove</a></li><li><a href="platform.html#architecture">Architecture</a></li><li><a href="platform.html#integrations">Integrations</a></li></ul></div><div><span class="label">Solutions</span><ul><li><a href="credit-unions.html">Credit unions</a></li><li><a href="solutions.html#banking">Banking and lending</a></li><li><a href="solutions.html#healthcare">Healthcare</a></li><li><a href="solutions.html#copilots">Employee copilots</a></li><li><a href="solutions.html#mcp">MCP servers</a></li></ul></div><div><span class="label">Resources</span><ul><li><a href="resources.html#docs">Documentation</a></li><li><a href="resources.html#research">Threat research</a></li><li><a href="resources.html#blog">Blog</a></li><li><a href="resources.html#webinars">Webinars</a></li><li><a href="resources.html#glossary">Glossary</a></li></ul></div><div><span class="label">Trust</span><ul><li><a href="trust.html">Trust center</a></li><li><a href="trust.html#compliance">Compliance</a></li><li><a href="trust.html#subprocessors">Subprocessors</a></li><li><a href="trust.html#status">System status</a></li><li><a href="trust.html#disclosure">Report a vulnerability</a></li></ul></div><div><span class="label">Company</span><ul><li><a href="company.html#about">About</a></li><li><a href="company.html#leadership">Leadership</a></li><li><a href="company.html#careers">Careers</a></li><li><a href="company.html#news">Newsroom</a></li><li><a href="company.html#contact">Contact</a></li></ul></div>
+    </div>
+    <div class="legal"><span>&copy; 2026 Zenstra AI. All rights reserved.</span><a class="status" href="trust.html#status"><i></i>All systems operational</a><span><a href="legal.html#privacy">Privacy</a> &middot; <a href="legal.html#terms">Terms</a> &middot; <a href="legal.html#cookies">Cookies</a> &middot; <a href="legal.html#accessibility">Accessibility</a></span></div>
+  </div>
+</footer>
+<script src="assets/vendor/motion-11.11.13.js"></script>
+<script src="assets/vendor/anime-4.0.2.umd.min.js"></script>
+<script src="assets/vendor/lenis-1.1.13.min.js"></script>
+<script src="assets/zx-core.js"></script>
+<script src="assets/site-motion.js"></script>
+</body>
+</html>
