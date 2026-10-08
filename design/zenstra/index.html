@@ -121,25 +121,20 @@
       <span class="label">Phase 1 · Research, strategy and mockups · 8 October 2026</span>
       <h1>Zenstra enterprise design direction</h1>
       <p>How Zenstra's website and console should look and behave so that a CISO, a security architect and an analyst each trust it, understand it, and can operate it. Nothing here is implemented in production code yet.</p>
-      <div class="meta-row"><span>Evidence labels: <span class="ev v">Verified</span> seen on zenstra.ai on 8 Oct 2026 · <span class="ev c">Code</span> found in this repository · <span class="ev i">Inferred</span> reasoned from evidence · <span class="ev h">Hypothesis</span> proposed, not a current capability</span></div>
+      <div class="meta-row"><span>Evidence labels: <span class="ev v">Verified</span> seen on zenstra.ai on 8 Oct 2026 · <span class="ev i">Inferred</span> reasoned from evidence · <span class="ev h">Hypothesis</span> proposed, not a current capability</span></div>
     </header>
 
     <!-- 0 -->
     <section class="s" id="first">
       <h2><span class="n">00</span>Read this first</h2>
-      <p>Three findings change the brief. They matter more than any visual decision in this document.</p>
+      <p>Two findings change the brief. They matter more than any visual decision in this document.</p>
       <div class="callout">
         <b>1. The proof on the website does not survive a security review.</b>
         <p><span class="ev v">Verified</span> The homepage shows <b>2 enterprise customers</b> and <b>47+ protected agents</b> next to six certification badges: ISO 27001, SOC 2 Type II, HIPAA, GDPR, ISO/IEC 42001 and ISO/IEC 27701:2025. HIPAA has no certification. The company address is a registered-agent service in Dover, Delaware, and there is no About, team or trust-center page.</p>
         <p><span class="ev i">Inferred</span> A CISO reads that combination as a credibility gap and asks for the audit reports on the first call. If any badge is not backed by a current report or certificate, it is a misrepresentation risk, not a design problem. The redesign replaces badges with a trust table that states each item's real status. Confirm every claim before launch.</p>
       </div>
-      <div class="callout warn">
-        <b>2. The code in this repository is not the product the website sells.</b>
-        <p><span class="ev v">Verified</span> zenstra.ai sells runtime security for AI agents: inline enforcement, prompt-injection defense, a decision ledger. <span class="ev c">Code</span> This repository contains a Go API and two React consoles for <b>AWS non-human identity (NHI) discovery</b>, branded "Deep Algorithms": IAM identities, credentials, hygiene, dormancy, exposure. There is no endpoint for agents, decisions, detections or policies.</p>
-        <p><span class="ev i">Inferred</span> The two are related: an AI agent is a non-human identity, and its cloud role is what it can reach if its tool layer is bypassed. The console mockups therefore design the agent-runtime product the website describes, and show the NHI data as one clearly labelled panel. You need to confirm which product the console is for (decision 1 in section 12).</p>
-      </div>
       <div class="callout info">
-        <b>3. The category consolidated this year. Differentiation now beats polish.</b>
+        <b>2. The category consolidated this year. Differentiation now beats polish.</b>
         <p><span class="ev v">Verified</span> on competitor sites, 8 Oct 2026: Astrix is now part of Cisco and stopped standalone sales on 30 June 2026. Palo Alto Networks completed its acquisition of Portkey to secure AI agents. Zenity and Noma both cite Gartner "Market Shaper" recognition. Semperis and Tenable both lead their homepages with agentic AI. Zenstra's eight capability names are close to identical to theirs.</p>
         <p><span class="ev i">Inferred</span> A better-looking horizontal "agentic AI security" site still loses to vendors with logos and analyst reports. The sharpest assets Zenstra already has are its credit-union page (NCUA, Fiserv agentOS, Jack Henry, Temenos) and its inline, before-execution enforcement story. The direction below leads with those.</p>
       </div>
@@ -274,10 +269,10 @@
       </ol>
       <h3>Component and motion references</h3>
       <ul>
-        <li><b>shadcn/ui:</b> the useful part is its architecture: accessible primitives (Radix) copied into the codebase and styled with CSS variables. The existing console already follows that model with its own <code>ui/</code> folder, so adopt the primitives under the existing components rather than migrating.</li>
-        <li><b>Motion (motion.dev):</b> already a dependency of the newer console. Use it for layout transitions, drawers and list reordering with critically damped springs.</li>
-        <li><b>Anime.js:</b> timeline sequencing for one explanatory SVG at a time (the sign-in illustration today; the architecture sequence on the marketing site). Not for interface movement.</li>
-        <li><b>bklit:</b> chart behaviour already referenced by the console's UX audit: grow from the baseline, hover dims the others, skeletons that respect reduced motion.</li>
+        <li><b>shadcn/ui:</b> the useful part is its architecture: accessible primitives (Radix) copied into the codebase and styled with CSS variables. Use it as the pattern for Zenstra's own component package: own the code, keep the accessibility of the primitives, theme through tokens.</li>
+        <li><b>Motion (motion.dev):</b> use it for layout transitions, drawers and list reordering with critically damped springs.</li>
+        <li><b>Anime.js:</b> timeline sequencing for one explanatory SVG at a time (the architecture sequence on the marketing site). Not for interface movement.</li>
+        <li><b>bklit:</b> chart behaviour worth adopting: grow from the baseline, hover dims the others, skeletons that respect reduced motion.</li>
       </ul>
     </section>
 
@@ -290,7 +285,7 @@
         <li><b>The credit-union page.</b> Specific, informed and regulator-aware (NCUA, Fiserv agentOS, Jack Henry, Temenos, SAR prep, LOS). The best content on the site.</li>
         <li><b>The demo page promise:</b> "Bring one real agent · Watch a policy stop it · Leave with the evidence." Kept verbatim as the closing CTA.</li>
         <li><b>The FAQ</b> answers the questions security teams ask. Kept, made more technical.</li>
-        <li><b>Brand mark and colours.</b> The four-point star and the blue-to-cyan pair are distinctive and match the console tokens already in this repository.</li>
+        <li><b>Brand mark and colours.</b> The four-point star and the blue-to-cyan pair are distinctive and worth keeping.</li>
         <li><b>Dark mode</b> exists on the site.</li>
       </ul>
       <h3>What does not work</h3>
@@ -311,9 +306,7 @@
           <tr><td><span class="sev p2">P2</span></td><td>Footer has two product links and no company, trust or resource links</td><td>Procurement and researchers look in the footer first</td></tr>
         </tbody>
       </table></div>
-      <h3>Existing console (in this repository)</h3>
-      <p><span class="ev c">Code</span> The console is already well considered: its own UX audit (<code>docs/UX-AUDIT.md</code>), decision-first dashboard, preview drawers with J/K stepping, filters in the URL, per-panel errors, reduced-motion support, restrained tokens. <b>Keep its principles and tokens.</b> The gaps are scope and identity: it is branded Deep Algorithms, covers AWS NHI only, and two divergent versions exist (<code>frontend.zip</code>, 25 Sep, with demo-data features; <code>frontend-v6.1.zip</code>, 6 Oct, trimmed to real endpoints).</p>
-    </section>
+</section>
 
     <!-- 5 -->
     <section class="s" id="strategy">
@@ -335,7 +328,7 @@
         <li><b>The run timeline:</b> millisecond timestamps, one row per agent step, with the evidence inline.</li>
       </ul>
       <h3>Component strategy</h3>
-      <p>Keep the console's own <code>ui/</code> primitives and their names. Underneath, use Radix primitives for dialog, popover, menu, tabs and tooltip to get focus management and ARIA right. Publish tokens once and consume them in both apps. New components are added only when two screens need them.</p>
+      <p>Build one Zenstra component package. Underneath, use Radix primitives for dialog, popover, menu, tabs and tooltip to get focus management and ARIA right. Publish tokens once and consume them in both apps. New components are added only when two screens need them.</p>
     </section>
 
     <!-- 6 -->
@@ -375,17 +368,17 @@
       <h3>Console</h3>
 <div class="tree"><b>Overview</b>     Security overview (role-aware: lead and executive see posture; analyst lands on queue)
 <b>Respond</b>      Detections → Investigation · Approvals (step-up queue) · Decision ledger
-<b>Inventory</b>    Agents → Agent record · Shadow AI · Tools and MCP servers · Cloud identities (NHI, existing code)
+<b>Inventory</b>    Agents → Agent record · Shadow AI · Tools and MCP servers · Credentials and secrets (Context Vault)
 <b>Govern</b>       Policies (with simulation) · Evidence and reports
 <b>Settings</b>     Deployment health · Integrations · Users and roles
 <b>Global</b>       Org and environment scope · Ctrl/Cmd K search and commands · Emergency stop (scoped, confirmed) · Notifications</div>
-      <p>Grouped by the job the operator is doing, the same principle as the existing console's navigation. <b>Approvals</b> is new and essential: every Step-up verdict waits on a person, so that queue needs its own home.</p>
+      <p>Grouped by the job the operator is doing, not by the API surface. <b>Approvals</b> is new and essential: every Step-up verdict waits on a person, so that queue needs its own home.</p>
     </section>
 
     <!-- 7 -->
     <section class="s" id="system">
       <h2><span class="n">07</span>Design system</h2>
-      <p>Tokens live in <a href="assets/zx.css"><code>assets/zx.css</code></a>. They extend the console's existing tokens (<code>src/styles/tokens.css</code>) rather than replacing them: same brand blue <code>#0C6EB4</code>, cyan <code>#12B0F0</code> and slate neutrals.</p>
+      <p>Tokens live in <a href="assets/zx.css"><code>assets/zx.css</code></a>. They keep Zenstra's current brand blue <code>#0C6EB4</code> and cyan <code>#12B0F0</code> and add slate neutrals biased toward that blue.</p>
       <h3>Colour</h3>
       <div class="swatches">
         <div class="sw"><i style="background:var(--bg)"></i><div><b>--bg</b><span>Canvas</span></div></div>
@@ -447,7 +440,7 @@
           <tr><th scope="row">Facts list</th><td>Two-column definition list; identifiers wrap, never truncate</td><td>Agent record</td></tr>
           <tr><th scope="row">Command palette</th><td>Grouped results, arrow keys, Enter, Esc; commands alongside records</td><td>Console (Ctrl K)</td></tr>
           <tr><th scope="row">Guarded action</th><td>Scope picker, reason recorded in the ledger, typed confirmation</td><td>Emergency stop</td></tr>
-          <tr><th scope="row">Empty, loading, error</th><td>Empty states name the first step; skeletons shaped like content; errors per panel with Retry, never raw server text (already in the console)</td><td>Existing code</td></tr>
+          <tr><th scope="row">Empty, loading, error</th><td>Empty states name the first step; skeletons shaped like content; errors per panel with Retry, never raw server text</td><td>All screens</td></tr>
         </tbody>
       </table></div>
 
@@ -468,7 +461,7 @@
         <thead><tr><th scope="col">Moment</th><th scope="col">Motion</th><th scope="col">Why</th></tr></thead>
         <tbody>
           <tr><th scope="row">New ledger entry</th><td>Row slides 6px and fades in, brief cyan wash; 320ms ease-out</td><td>Shows that decisions are happening now, without a counter ticking up</td></tr>
-          <tr><th scope="row">Chart load</th><td>Line draws from left, 1.1s <code>cubic-bezier(0.85,0,0.15,1)</code>; bars grow from the baseline</td><td>Reads as data arriving, matches the console's current behaviour</td></tr>
+          <tr><th scope="row">Chart load</th><td>Line draws from left, 1.1s <code>cubic-bezier(0.85,0,0.15,1)</code>; bars grow from the baseline</td><td>Reads as data arriving, not as decoration</td></tr>
           <tr><th scope="row">Risk score change</th><td>Meter width tweens; number swaps, never counts up</td><td>Counting animations delay the reading of the value</td></tr>
           <tr><th scope="row">Drawers and dialogs</th><td>Critically damped spring, no bounce, about 300ms</td><td>Arrives and stops; no playful overshoot in a security tool</td></tr>
           <tr><th scope="row">Timeline step expand</th><td>Height auto with 200ms fade of the evidence</td><td>Keeps the reader's place in the sequence</td></tr>
@@ -487,7 +480,7 @@
         <tbody>
           <tr><th scope="row">Site navigation</th><td>Mega menus</td><td colspan="2">Menu button opens a full-height sheet with the same groups</td></tr>
           <tr><th scope="row">Console rail</th><td>Fixed 232px</td><td colspan="2">Hidden; opens as a drawer from the menu button</td></tr>
-          <tr><th scope="row">Tables</th><td>Full columns</td><td>Lower-priority columns hidden</td><td>Two-line cards: name, then severity and one signal (as the current console does)</td></tr>
+          <tr><th scope="row">Tables</th><td>Full columns</td><td>Lower-priority columns hidden</td><td>Two-line cards: name, then severity and one signal</td></tr>
           <tr><th scope="row">Queue and preview</th><td>Side by side</td><td colspan="2">Preview below the list, or opens as a full-screen sheet</td></tr>
           <tr><th scope="row">KPI tiles</th><td>5 across</td><td>3 across</td><td>1 across, brief first</td></tr>
           <tr><th scope="row">Investigation</th><td>Story plus right rail</td><td colspan="2">Rail moves below; response actions pinned at the bottom</td></tr>
@@ -517,61 +510,49 @@
         <a class="mock-card" href="console.html#overview"><b>Security overview</b><span>Brief, five linked KPIs, blocked-actions trend, ranked decisions, riskiest agents, coverage by platform.</span><em>console.html#overview</em></a>
         <a class="mock-card" href="console.html#detections"><b>Detection queue</b><span>Saved views, filters, ATLAS mapping, preview panel, J/K navigation.</span><em>console.html#detections</em></a>
         <a class="mock-card" href="console.html#investigate"><b>Investigation</b><span>Impact strip, written summary, millisecond run timeline with the injected text, policy that matched, blast radius, response actions.</span><em>console.html#investigate</em></a>
-        <a class="mock-card" href="console.html#agent"><b>Agent record</b><span>Needs attention, behaviour against baseline, tool grants, identity, and the cloud identity behind the agent (NHI hypothesis).</span><em>console.html#agent</em></a>
+        <a class="mock-card" href="console.html#agent"><b>Agent record</b><span>Needs attention, behaviour against baseline, tool grants, identity, and the secrets the agent is allowed to use.</span><em>console.html#agent</em></a>
         <a class="mock-card" href="console.html#deployment"><b>Deployment health</b><span>Administrator view: decision points, fail modes, integrations, SDK versions.</span><em>console.html#deployment</em></a>
       </div>
       <p class="muted">The console mockups also show the navigation system: rail, scope switcher, Ctrl/Cmd K palette, theme switch and the guarded emergency stop. The rail's other items lead to a placeholder that names them.</p>
-      <div class="callout warn"><b>Capabilities shown that are not evidenced yet</b><p><span class="ev h">Hypothesis</span> Approvals queue, MITRE ATLAS mapping, the written investigation summary, blast-radius analysis, the knowledge-base scan, the open-source ledger verifier, and the cloud-identity panel are design proposals. <span class="ev v">Verified</span> as claimed on the website: shadow AI discovery, behavioural drift, intent verification, kill switch, tamper-evident ledger, scoped tool grants.</p></div>
+      <div class="callout warn"><b>Capabilities shown that are not evidenced yet</b><p><span class="ev h">Hypothesis</span> Approvals queue, MITRE ATLAS mapping, the written investigation summary, blast-radius analysis, the knowledge-base scan, the open-source ledger verifier are design proposals. <span class="ev v">Verified</span> as claimed on the website: shadow AI discovery, behavioural drift, intent verification, kill switch, tamper-evident ledger, scoped tool grants.</p></div>
     </section>
 
     <!-- 11 -->
     <section class="s" id="build">
       <h2><span class="n">11</span>Implementation plan</h2>
-      <h3>What the repository contains</h3>
-      <div class="tw"><table class="t">
-        <tbody>
-          <tr><th scope="row">Frontends</th><td>Two zipped React 19 + Vite 8 + Tailwind 4 + React Router 7 apps. <code>frontend-v6.1</code> (newest, real API only, Motion and anime.js). <code>frontend</code> (older, adds posture, alerts, access graph on React Flow, NHI Genome, reports, integrations, partly on demo data, Recharts).</td></tr>
-          <tr><th scope="row">Styling</th><td>CSS custom properties in <code>src/styles/tokens.css</code> with light and dark themes; Tailwind for layout. A tokenised system already exists.</td></tr>
-          <tr><th scope="row">Components</th><td>Own primitives in <code>src/ui/</code>: DataGrid, FacetRail, Overlay, Tabs, Menu, Toast, States, Skeleton, Verdict, Meter. Shell in <code>src/shell/</code> with command palette and data-driven navigation and breadcrumbs.</td></tr>
-          <tr><th scope="row">Backend</th><td>Go API for AWS NHI inventory and dashboards. No agent, decision, detection or policy endpoints.</td></tr>
-          <tr><th scope="row">Marketing site</th><td>Not in this repository. The live site is a client-rendered Vite build.</td></tr>
-          <tr><th scope="row">Constraint</th><td>Code is stored as zip uploads, so there is no history, diff or review. Each version replaces the last by hand.</td></tr>
-        </tbody>
-      </table></div>
+      <p>The current marketing site is a client-rendered Vite build. The plan below is a target architecture for Zenstra, to be checked against Zenstra's real codebase before work starts.</p>
 
       <h3>Recommended architecture</h3>
-      <div class="tree"><b>zenstra/</b>                 one repository, real source, no zips
-  <b>apps/web</b>               marketing site, statically generated (Astro or Next.js static export)
-  <b>apps/console</b>           the existing Vite console, unzipped, v6.1 as the base
-  <b>packages/tokens</b>        tokens.css + zx.css merged; one source for both apps
-  <b>packages/ui</b>            src/ui primitives moved here, Radix underneath
-  <b>packages/icons</b>         one icon set (lucide) with the verdict glyphs added
-  <b>services/nhi-api</b>       the Go API, unchanged</div>
+      <div class="tree"><b>zenstra-web/</b>             one repository for both front ends
+  <b>apps/site</b>              marketing site, statically generated (Astro or Next.js static export)
+  <b>apps/console</b>           React + Vite single-page app behind sign-in
+  <b>packages/tokens</b>        zx.css as the single source for colour, type, spacing, motion
+  <b>packages/ui</b>            Zenstra components on Radix primitives
+  <b>packages/icons</b>         one icon set (lucide) with the verdict glyphs added</div>
       <ul>
         <li><b>Static generation for the site</b> fixes the empty-HTML problem: content is in the page for crawlers, link previews and screen readers before JavaScript runs.</li>
-        <li><b>Keep the console as a SPA.</b> It is behind sign-in; SEO does not matter there, and its architecture is sound.</li>
+        <li><b>The console stays a SPA.</b> It is behind sign-in, so SEO does not matter there.</li>
         <li><b>One animation library per job:</b> Motion for interface movement, anime.js only for explanatory SVG timelines, CSS for the rest.</li>
-        <li><b>Pick one chart approach.</b> v6.1 hand-builds SVG charts and the older build uses Recharts. Keep the hand-built charts; there are few, and they follow the motion rules.</li>
+        <li><b>Hand-built SVG charts.</b> There are few of them; a small component per chart type keeps bundle size down and follows the motion rules.</li>
       </ul>
 
       <h3>Roadmap</h3>
-      <div class="phase"><span class="when">Week 0</span><div><h4>Unblock</h4><ul><li>Decide the questions in section 12.</li><li>Confirm every certification, number and latency figure; remove what cannot be backed.</li><li>Move the code from zips into a repository with real files.</li></ul></div></div>
-      <div class="phase"><span class="when">Weeks 1–2</span><div><h4>Foundation</h4><ul><li><code>packages/tokens</code>: merge the console tokens with this direction; swap fonts.</li><li>Site skeleton with the new navigation, footer, trust center and static generation.</li></ul></div></div>
+      <div class="phase"><span class="when">Week 0</span><div><h4>Unblock</h4><ul><li>Decide the questions in section 12.</li><li>Confirm every certification, number and latency figure; remove what cannot be backed.</li></ul></div></div>
+      <div class="phase"><span class="when">Weeks 1–2</span><div><h4>Foundation</h4><ul><li><code>packages/tokens</code> from this direction; swap fonts on the live site.</li><li>Site skeleton with the new navigation, footer, trust center and static generation.</li></ul></div></div>
       <div class="phase"><span class="when">Weeks 3–4</span><div><h4>Site pages</h4><ul><li>Homepage, Platform, Credit unions, Trust center, Request demo (form without the phone field).</li><li>Docs entry point, even if it starts as the architecture guide.</li></ul></div></div>
-      <div class="phase"><span class="when">Weeks 3–6</span><div><h4>Console shell</h4><ul><li>Rebrand to Zenstra; new rail grouping; scope switcher; palette commands; guarded emergency stop.</li><li>Fold the NHI screens in under Inventory → Cloud identities.</li></ul></div></div>
-      <div class="phase"><span class="when">After API</span><div><h4>Agent screens</h4><ul><li>Overview, Detections, Investigation, Agent record, Approvals, Deployment health, built as each endpoint exists. The console rule "no invented data on live screens" stays.</li></ul></div></div>
+      <div class="phase"><span class="when">Weeks 3–6</span><div><h4>Console shell</h4><ul><li>Rail grouping, scope switcher, palette commands, guarded emergency stop.</li></ul></div></div>
+      <div class="phase"><span class="when">After API</span><div><h4>Agent screens</h4><ul><li>Overview, Detections, Investigation, Agent record, Approvals, Deployment health, built as each endpoint exists. No invented data on live screens.</li></ul></div></div>
     </section>
 
     <!-- 12 -->
     <section class="s" id="decisions">
       <h2><span class="n">12</span>Decisions needed</h2>
       <ol class="q">
-        <li><span><b>Which product is the console for?</b> The agent-runtime product on the website, the AWS NHI product in this repository, or both under one brand. The mockups assume both, with NHI as an inventory module.</span></li>
         <li><span><b>Which certifications and numbers are real today?</b> For each badge: certificate or report, auditor, date. Anything without one comes off the site.</span></li>
         <li><span><b>Vertical or horizontal lead?</b> Recommended: credit unions and regulated financial institutions as the lead solution, horizontal homepage behind it.</span></li>
         <li><span><b>What is the SDK called?</b> "Khetaka" or "Zenstra SDK". One name across site, docs and console.</span></li>
         <li><span><b>Which deployment modes ship today?</b> SDK, gateway, endpoint app: confirm each, with tested frameworks.</span></li>
-        <li><span><b>Is Deep Algorithms the parent company?</b> It decides whether the console keeps any of that branding, and what the About page says.</span></li>
+        <li><span><b>Who is on the About page?</b> Named founders and engineers do more for trust at this stage than any badge.</span></li>
       </ol>
     </section>
   </main>
