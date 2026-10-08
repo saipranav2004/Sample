@@ -62,7 +62,8 @@ section[id] { scroll-margin-top: 96px; }
   .menu-btn { display: inline-flex; }
   .head-actions { margin-left: auto; }
 }
-.mobile-menu { position: fixed; inset: 0; z-index: 150; background: var(--bg); padding: calc(var(--header-h) + 16px) 16px 32px; overflow-y: auto; display: none; }
+.mobile-menu { position: fixed; inset: 0; z-index: 95; background: var(--bg); padding: calc(var(--header-h) + 16px) 16px 32px; overflow-y: auto; display: none; }
+body.menu-open .site-head { background: var(--bg); border-bottom-color: var(--line); transform: none; }
 .mobile-menu.open { display: block; animation: menuIn 360ms var(--ease-expo); }
 @keyframes menuIn { from { opacity: 0; transform: translateY(-8px); } }
 .mobile-menu a { display: block; padding: 14px 4px; border-bottom: 1px solid var(--line); color: var(--ink); text-decoration: none; font-size: 18px; font-weight: 600; }
