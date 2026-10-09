@@ -9,7 +9,7 @@ it is unavailable).
 
 | File | What it is |
 |---|---|
-| `home.html` | Homepage: product showcase with real console screens, trust center preview |
+| `home.html` | Homepage: product showcase with real console screens, Security & Compliance summary |
 | `platform.html` | Platform overview and the interactive architecture explorer |
 | `discover.html` | Shadow AI discovery, agent inventory and identity, coverage |
 | `enforce.html` | Verdicts, tool access, injection and memory defense, policy as code, approvals |
@@ -17,7 +17,7 @@ it is unavailable).
 | `solutions.html` | By industry (banking, healthcare) and by agent type |
 | `credit-unions.html` | Credit union programme |
 | `resources.html` | Documentation, filterable library with search, glossary, newsletter |
-| `trust.html` | Trust center: compliance, controls, documents (request modal), data handling, subprocessors, status, disclosure |
+| `security.html` | Security & Compliance: verifiable certifications, privacy agreements, data handling, security practices, subprocessors, documentation (SOC 2 report under NDA), service status, disclosure |
 | `company.html` | About, leadership, careers, newsroom, contact |
 | `demo.html` | Technical demo request (validated form, success state) |
 | `legal.html` | Privacy, terms, cookies, accessibility |
@@ -43,7 +43,7 @@ description, active menu and extra scripts. `{{icon:name}}`,
 |---|---|
 | `assets/zx.css` | Design tokens (light + dark), core components |
 | `assets/site.css` | Header, mega menus, hero, bands, footer |
-| `assets/pages.css` | Shared page components (features, tables, forms, modals, trust, status, resources) |
+| `assets/pages.css` | Shared page components (features, tables, forms, modals, security, status, resources) |
 | `assets/zx-core.js` | Theme switching and motion preferences |
 | `assets/site-motion.js` | Site motion and interactions |
 | `assets/arch.js` | Platform architecture explorer and comparison diagrams |
@@ -57,7 +57,7 @@ the sun/moon button switches and remembers the choice.
 
 Motion includes a loading sequence, smooth scrolling, a hero network animation
 kept to the right of the text, scroll reveals, a product showcase that cycles
-through console screens, an animated trust card, live ledger and status bars,
+through console screens, live ledger and status bars,
 and an architecture explorer that walks one tool call through each deployment
 mode. All motion stops under `prefers-reduced-motion`, and content is never
 left hidden if a script fails.

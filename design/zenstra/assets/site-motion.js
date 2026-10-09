@@ -171,7 +171,7 @@
       }, { amount: 0.12 });
     });
     $$('.mark').forEach(function (m) { if (!m.closest('.hero, .page-hero')) M.inView(m, function () { m.classList.add('on'); }, { amount: 0.8 }); });
-    $$('[data-count]').forEach(function (el) { if (!el.closest('.ledger, [data-trust]')) M.inView(el, function () { countUp(el); }, { amount: 0.6 }); });
+    $$('[data-count]').forEach(function (el) { if (!el.closest('.ledger')) M.inView(el, function () { countUp(el); }, { amount: 0.6 }); });
     $$('[data-play]').forEach(function (el) { M.inView(el, function () { el.classList.add('play'); }, { amount: 0.45 }); });
   } else {
     $$('.mark, [data-play]').forEach(function (el) { el.classList.add('on', 'play'); });
@@ -428,24 +428,6 @@
     }
     show(0);
   }
-
-  /* ------------------------------------------------------------------ */
-  /* Trust center card: frameworks pop in, controls tick, counts rise   */
-  /* ------------------------------------------------------------------ */
-  $$('[data-trust]').forEach(function (tc) {
-    var fws = $$('.fw-card', tc), ctls = $$('.ctl-row', tc), docs = $$('.doc', tc);
-    var seals = $$('.seal .d', tc), ticks = $$('.tick path', tc), tracks = $$('.track i', tc);
-    if (reduce || !M || !A) { $$('[data-count]', tc).forEach(countUp); return; }
-    M.inView(tc, function () {
-      if (fws.length) M.animate(fws, { opacity: [0, 1], transform: ['translateY(14px) scale(0.94)', 'translateY(0px) scale(1)'] }, { duration: 0.7, delay: M.stagger(0.08, { start: 0.2 }), ease: EASE });
-      if (seals.length) A.animate(seals, { rotate: [-90, 0], duration: 1600, delay: A.stagger(80, { start: 300 }), ease: 'outExpo' });
-      if (ctls.length) M.animate(ctls, { opacity: [0, 1], transform: ['translateX(-10px)', 'translateX(0px)'] }, { duration: 0.6, delay: M.stagger(0.09, { start: 0.6 }), ease: EASE });
-      if (ticks.length) A.animate(A.svg.createDrawable(ticks), { draw: ['0 0', '0 1'], duration: 500, delay: A.stagger(90, { start: 900 }), ease: 'outQuad' });
-      if (tracks.length) M.animate(tracks, { transform: ['scaleX(0)', 'scaleX(1)'] }, { duration: 1.1, delay: M.stagger(0.09, { start: 0.8 }), ease: [0.85, 0, 0.15, 1] });
-      $$('[data-count]', tc).forEach(function (el, i) { setTimeout(function () { countUp(el); }, 700 + i * 60); });
-      if (docs.length) M.animate(docs, { opacity: [0, 1], transform: ['translateY(8px)', 'translateY(0px)'] }, { duration: 0.6, delay: M.stagger(0.1, { start: 1.3 }), ease: EASE });
-    }, { amount: 0.3 });
-  });
 
   /* ------------------------------------------------------------------ */
   /* FAQ: animated height                                               */

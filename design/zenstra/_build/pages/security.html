@@ -1,0 +1,279 @@
+<!--{"title": "Security & Compliance · Zenstra", "description": "Zenstra's independent certifications, data handling, security practices, subprocessors, service status and vulnerability disclosure.", "active": "security"}-->
+<style>
+  .glance { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; margin-top: 44px; border-top: 1px solid var(--hero-panel-line); max-width: 960px; }
+  .glance div { padding: 18px 20px 0 0; }
+  .glance b { display: block; font-size: 15px; color: var(--hero-ink); }
+  .glance span { display: block; font-size: 13.5px; color: var(--hero-ink-2); margin-top: 4px; line-height: 1.45; }
+  @media (max-width: 760px) { .glance { grid-template-columns: 1fr 1fr; } }
+
+  .certs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+  .cert { display: grid; grid-template-rows: auto 1fr auto; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+  .cert-head { display: flex; align-items: center; gap: 16px; padding: 24px 24px 20px; }
+  .cert-head .seal { width: 52px; height: 52px; flex: none; }
+  .cert-head h3 { font-size: 19px; line-height: 1.25; }
+  .cert-head small { display: block; font-size: 13px; color: var(--ink-3); margin-top: 3px; }
+  .cert dl { display: grid; grid-template-columns: 128px minmax(0, 1fr); gap: 10px 16px; margin: 0; padding: 0 24px 22px; font-size: 14.5px; }
+  .cert dt { color: var(--ink-3); }
+  .cert dd { margin: 0; color: var(--ink); }
+  .cert-foot { padding: 16px 24px; border-top: 1px solid var(--line); font-size: 14px; color: var(--ink-2); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .cert-foot a { font-weight: 600; text-decoration: none; display: inline-flex; gap: 6px; align-items: center; }
+  .cert-foot a svg { width: 13px; height: 13px; }
+  @media (max-width: 860px) { .certs { grid-template-columns: 1fr; } .cert dl { grid-template-columns: 1fr; gap: 2px; } .cert dd { margin-bottom: 8px; } }
+
+  .agreements { margin-top: 48px; }
+  .agreements h3 { font-size: 17px; }
+  .agreements > p { color: var(--ink-2); font-size: 15px; margin-top: 6px; max-width: 70ch; }
+  .agree-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; margin-top: 18px; border-top: 1px solid var(--line); }
+  .agree-list div { padding: 18px 24px 0 0; }
+  .agree-list b { display: block; font-size: 15px; }
+  .agree-list span { display: block; font-size: 14px; color: var(--ink-2); margin-top: 4px; }
+  @media (max-width: 860px) { .agree-list { grid-template-columns: 1fr; } }
+
+  .flow3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .flow3 > div { padding: 24px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); }
+  .flow3 h3 { font-size: 17px; }
+  .flow3 ul { margin: 14px 0 0; padding-left: 18px; display: grid; gap: 8px; font-size: 14.5px; color: var(--ink-2); }
+  @media (max-width: 900px) { .flow3 { grid-template-columns: 1fr; } }
+
+  .practices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 56px; }
+  .practices > div { padding: 28px 0; border-top: 1px solid var(--line); }
+  .practices h3 { font-size: 18px; display: flex; align-items: center; gap: 12px; }
+  .practices h3 .ic { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; background: var(--brand-wash); color: var(--brand); flex: none; }
+  .practices h3 .ic svg { width: 17px; height: 17px; }
+  .practices ul { margin: 14px 0 0; padding-left: 18px; display: grid; gap: 8px; font-size: 15px; color: var(--ink-2); }
+  @media (max-width: 860px) { .practices { grid-template-columns: 1fr; } }
+
+  .doc-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+  .doc-box { border: 1px solid var(--line); border-radius: 14px; background: var(--surface); padding: 22px 24px; }
+  .doc-box h3 { font-size: 17px; }
+  .doc-box > p { font-size: 14.5px; color: var(--ink-2); margin-top: 6px; }
+  .doc-box .docs { margin-top: 16px; }
+  .doc-box .doc { padding: 12px 0; }
+  .doc-box .doc:first-child { border-top: 1px solid var(--line); padding-top: 12px; }
+  .doc-box .doc a { font-size: 14px; font-weight: 600; text-decoration: none; }
+  .doc-box .btn { margin-top: 18px; }
+  @media (max-width: 860px) { .doc-cols { grid-template-columns: 1fr; } }
+
+  .status-card { border: 1px solid var(--line); border-radius: 14px; background: var(--surface); padding: 8px 22px; }
+  .status-row .nm b { display: block; font-weight: 600; }
+  .status-row .nm small { color: var(--ink-3); font-size: 12.5px; }
+  .uptime-legend { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-3); margin-top: 10px; }
+  .incidents { display: grid; gap: 0; margin-top: 28px; }
+  .incident { display: grid; grid-template-columns: 120px minmax(0, 1fr) auto; gap: 18px; padding: 16px 0; border-top: 1px solid var(--line); font-size: 14.5px; }
+  .incident time { font: 500 12.5px/1.6 var(--font-mono); color: var(--ink-3); }
+  .incident p { color: var(--ink-2); margin-top: 4px; font-size: 14px; }
+  @media (max-width: 720px) { .incident { grid-template-columns: 1fr; gap: 6px; } }
+
+  .disclose { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 48px; align-items: start; }
+  .disclose .box { padding: 28px; border-radius: 16px; border: 1px solid var(--line); background: var(--surface); }
+  .disclose dl { display: grid; grid-template-columns: 140px 1fr; gap: 12px 18px; margin: 18px 0 0; font-size: 14.5px; }
+  .disclose dt { color: var(--ink-3); }
+  .disclose dd { margin: 0; color: var(--ink); }
+  @media (max-width: 900px) { .disclose { grid-template-columns: 1fr; gap: 28px; } .disclose dl { grid-template-columns: 1fr; gap: 2px; } .disclose dd { margin-bottom: 8px; } }
+</style>
+  <section class="page-hero solo" aria-labelledby="hero-h">
+    <div class="wrap grid">
+      <div>
+        <nav class="crumbs" aria-label="Breadcrumb" data-hero><a href="home.html">Home</a><span aria-hidden="true">/</span><span>Security &amp; Compliance</span></nav>
+        <h1 id="hero-h"><span class="line"><span>Security &amp; Compliance</span></span><span class="line"><span class="accent">at Zenstra.</span></span></h1>
+        <p class="sub" data-hero>Zenstra sits in the path of your agents' actions, so we hold ourselves to the standard you will review us against. This page sets out how we are audited, how we handle your data and how to reach our security team.</p>
+        <div class="glance" data-hero>
+          <div><b>SOC 2 Type II</b><span>Audited annually by an independent CPA firm</span></div>
+          <div><b>ISO/IEC 27001:2022</b><span>Certified by an accredited certification body</span></div>
+          <div><b>Your environment</b><span>Prompts and payloads stay with you</span></div>
+          <div><b>No model training</b><span>Customer data is never used to train models</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <nav class="subnav" aria-label="On this page">
+    <div class="wrap">
+      <a href="#compliance" class="on">Certifications</a>
+      <a href="#privacy">Data handling</a>
+      <a href="#practices">Security practices</a>
+      <a href="#subprocessors">Subprocessors</a>
+      <a href="#documents">Documentation</a>
+      <a href="#status">Status</a>
+      <a href="#disclosure">Disclosure</a>
+    </div>
+  </nav>
+
+  <section id="compliance" aria-labelledby="c-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><span class="label eyebrow" data-reveal>Certifications</span><h2 class="h2" id="c-h" data-reveal>Independently audited, <span class="mark">and verifiable.</span></h2></div>
+        <p class="lede" data-reveal>Each certification below was issued by an independent auditor. You can confirm the ISO certificate yourself with the public accreditation register, without asking us.</p>
+      </div>
+      <div class="certs" data-stagger>
+        <article class="cert">
+          <div class="cert-head"><svg class="seal" viewBox="0 0 54 54" aria-hidden="true"><circle class="o" cx="27" cy="27" r="25"/><circle class="d" cx="27" cy="27" r="21"/><circle class="i" cx="27" cy="27" r="17"/><text x="27" y="28" text-anchor="middle">SOC 2</text><text class="s" x="27" y="37" text-anchor="middle">TYPE II</text></svg><div><h3>SOC 2 Type II</h3><small>AICPA attestation</small></div></div>
+          <dl>
+            <dt>Scope</dt><dd>Security, availability and confidentiality of the Zenstra platform</dd>
+            <dt>Audited by</dt><dd>Independent licensed CPA firm</dd>
+            <dt>Period</dt><dd>Twelve months, renewed every year</dd>
+          </dl>
+          <div class="cert-foot"><span>SOC 2 reports are restricted-use by design. Ours is shared with customers and prospects under NDA.</span><a href="#documents">How to get the report {{icon:arrow}}</a></div>
+        </article>
+        <article class="cert">
+          <div class="cert-head"><svg class="seal" viewBox="0 0 54 54" aria-hidden="true"><circle class="o" cx="27" cy="27" r="25"/><circle class="d" cx="27" cy="27" r="21"/><circle class="i" cx="27" cy="27" r="17"/><text x="27" y="28" text-anchor="middle">ISO</text><text class="s" x="27" y="37" text-anchor="middle">27001</text></svg><div><h3>ISO/IEC 27001:2022</h3><small>Information security management system</small></div></div>
+          <dl>
+            <dt>Scope</dt><dd>Development, operation and support of the Zenstra platform</dd>
+            <dt>Certified by</dt><dd>Accredited certification body</dd>
+            <dt>Status</dt><dd>Certified, with annual surveillance audits</dd>
+          </dl>
+          <div class="cert-foot"><span>Search for Zenstra in the accreditation register.</span><a href="https://www.iafcertsearch.org/" target="_blank" rel="noopener">Verify on IAF CertSearch {{icon:arrow}}</a></div>
+        </article>
+      </div>
+      <div class="agreements" data-reveal>
+        <h3>Privacy and sector agreements</h3>
+        <p>These are legal commitments we sign with each customer, not certifications.</p>
+        <div class="agree-list">
+          <div><b>GDPR and UK GDPR</b><span>Data processing agreement with standard contractual clauses</span></div>
+          <div><b>HIPAA</b><span>Business associate agreement for customers that handle protected health information</span></div>
+          <div><b>CCPA</b><span>Service provider terms for California personal information</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="alt" id="privacy" aria-labelledby="p-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><span class="label eyebrow" data-reveal>Data handling</span><h2 class="h2" id="p-h" data-reveal>What stays with you, <span class="mark">and what never leaves.</span></h2></div>
+        <p class="lede" data-reveal>The decision point runs in your environment. This is the full list of what reaches Zenstra's cloud, so your privacy office can check it against the data flow diagram.</p>
+      </div>
+      <div class="flow3" data-stagger>
+        <div><h3>Stays in your environment</h3><ul><li>Prompts, tool inputs and tool outputs</li><li>Retrieved documents and memory contents</li><li>Secrets and credentials in the Context Vault</li><li>The decision ledger and its hash chain</li></ul></div>
+        <div><h3>Sent to Zenstra cloud</h3><ul><li>Agent names, owners and policy versions</li><li>Decision counts and latency, without payloads</li><li>Health of each decision point</li><li>Console sign-in events</li></ul></div>
+        <div><h3>Never collected</h3><ul><li>Member or patient records</li><li>Model weights or training data</li><li>Any data for training models, ours or a provider's</li><li>Anything you have not enabled for export</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="practices" aria-labelledby="pr-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><span class="label eyebrow" data-reveal>Security practices</span><h2 class="h2" id="pr-h" data-reveal>How we protect the platform.</h2></div>
+        <p class="lede" data-reveal>A summary of the controls behind the certifications. The SOC 2 report describes each one and how the auditor tested it.</p>
+      </div>
+      <div class="practices" data-stagger>
+        <div><h3><span class="ic">{{icon:lock}}</span>Data security</h3><ul><li>Encryption at rest with AES-256 and in transit with TLS 1.2 or later</li><li>Each customer tenant isolated, with its own keys</li><li>Data residency in the US or EU</li></ul></div>
+        <div><h3><span class="ic">{{icon:code}}</span>Secure development</h3><ul><li>Every change reviewed by a second engineer before release</li><li>Dependency and container scanning on every pull request</li><li>Signed releases for the SDK, gateway and endpoint app</li></ul></div>
+        <div><h3><span class="ic">{{icon:key}}</span>Access control</h3><ul><li>Phishing-resistant MFA for every employee and contractor</li><li>Production access is just-in-time, approved and recorded</li><li>Access reviewed quarterly and removed the day someone leaves</li></ul></div>
+        <div><h3><span class="ic">{{icon:alert}}</span>Testing and response</h3><ul><li>Annual third-party penetration test, with every finding retested</li><li>Incident response plan exercised twice a year</li><li>Customers notified of a security incident affecting their data without undue delay</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="alt" id="subprocessors" aria-labelledby="s-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><span class="label eyebrow" data-reveal>Subprocessors</span><h2 class="h2" id="s-h" data-reveal>Who processes data on our behalf.</h2></div>
+        <p class="lede" data-reveal>Customers are told 30 days before a subprocessor is added. None of these receives prompts, payloads or ledger contents.</p>
+      </div>
+      <div class="table-card" data-reveal>
+        <table class="tbl wide">
+          <thead><tr><th scope="col">Subprocessor</th><th scope="col">Purpose</th><th scope="col">Data</th><th scope="col">Location</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Amazon Web Services</th><td>Hosting of the Zenstra console and metadata service</td><td>Agent metadata, decision counts</td><td>US, EU</td></tr>
+            <tr><th scope="row">Microsoft Azure</th><td>Hosting for customers who choose Azure regions</td><td>Agent metadata, decision counts</td><td>US, EU</td></tr>
+            <tr><th scope="row">Okta</th><td>Console single sign-on</td><td>Names and work email of console users</td><td>US</td></tr>
+            <tr><th scope="row">Datadog</th><td>Monitoring of Zenstra's own services</td><td>Service logs, with payloads removed</td><td>US, EU</td></tr>
+            <tr><th scope="row">Zendesk</th><td>Customer support tickets</td><td>Contact details and ticket contents</td><td>US</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="documents" aria-labelledby="d-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><span class="label eyebrow" data-reveal>Documentation</span><h2 class="h2" id="d-h" data-reveal>Documents for your security review.</h2></div>
+        <p class="lede" data-reveal>Most of what a review needs is public. Two documents are confidential by nature and are shared under NDA.</p>
+      </div>
+      <div class="doc-cols" data-stagger>
+        <div class="doc-box">
+          <h3>Public</h3>
+          <p>Open to anyone, no sign-up.</p>
+          <div class="docs">
+            <div class="doc"><span class="ic">{{icon:grid}}</span><span><b>Architecture and data flow</b><small>Where Zenstra runs and what leaves your environment</small></span><a href="platform.html#architecture">View</a></div>
+            <div class="doc"><span class="ic">{{icon:file}}</span><span><b>Data processing agreement</b><small>With standard contractual clauses</small></span><a href="legal.html#privacy">View</a></div>
+            <div class="doc"><span class="ic">{{icon:people}}</span><span><b>Subprocessor list</b><small>Updated 30 days before any change</small></span><a href="#subprocessors">View</a></div>
+            <div class="doc"><span class="ic">{{icon:shield}}</span><span><b>Vulnerability disclosure policy</b><small>Scope, timelines and safe harbor</small></span><a href="#disclosure">View</a></div>
+          </div>
+        </div>
+        <div class="doc-box">
+          <h3>Under NDA</h3>
+          <p>For customers and prospects in an active evaluation. Existing customers receive these through their account team.</p>
+          <div class="docs">
+            <div class="doc"><span class="ic">{{icon:lock}}</span><span><b>SOC 2 Type II report</b><small>Full report, including the auditor's opinion and tests</small></span></div>
+            <div class="doc"><span class="ic">{{icon:lock}}</span><span><b>Penetration test summary</b><small>Executive summary from the most recent independent test</small></span></div>
+          </div>
+          <button class="btn btn-secondary" type="button" data-modal-open="doc-modal">Request under NDA</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="alt" id="status" aria-labelledby="st-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><span class="label eyebrow" data-reveal>Service status</span><h2 class="h2" id="st-h" data-reveal>Availability over the last 90 days.</h2></div>
+        <p class="lede" data-reveal>Decision points in your environment keep enforcing if the Zenstra cloud is unavailable. The status below covers the services we run.</p>
+      </div>
+      <div class="status-card" data-reveal>
+        <div class="status-list">
+          <div class="status-row"><span class="nm"><b>Console</b><small>console.zenstra.ai</small></span><div><div class="uptime"></div></div><span class="pct">100%</span></div>
+          <div class="status-row"><span class="nm"><b>Policy distribution</b><small>Push to decision points</small></span><div><div class="uptime" data-warn="5"></div></div><span class="pct">99.99%</span></div>
+          <div class="status-row"><span class="nm"><b>Metadata API</b><small>Inventory and counts</small></span><div><div class="uptime"></div></div><span class="pct">100%</span></div>
+          <div class="status-row"><span class="nm"><b>SIEM export relay</b><small>Splunk, Sentinel, webhooks</small></span><div><div class="uptime" data-bad="43"></div></div><span class="pct">99.97%</span></div>
+          <div class="status-row"><span class="nm"><b>Update service</b><small>SDK, gateway and endpoint releases</small></span><div><div class="uptime"></div></div><span class="pct">100%</span></div>
+        </div>
+        <div class="uptime-legend" aria-hidden="true"><span>90 days ago</span><span>Today</span></div>
+      </div>
+      <div class="incidents" data-stagger>
+        <div class="incident"><time datetime="2026-08-22">22 Aug 2026</time><div><b>SIEM export relay delayed for 41 minutes</b><p>A certificate rotation stalled delivery to one region. Events were buffered at each decision point and delivered in order once the relay recovered. No events were lost.</p></div><span class="chip ok">Resolved</span></div>
+        <div class="incident"><time datetime="2026-07-15">15 Jul 2026</time><div><b>Policy updates slow to reach decision points</b><p>Distribution took up to six minutes instead of seconds. Policies already in place kept enforcing throughout.</p></div><span class="chip ok">Resolved</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="disclosure" aria-labelledby="vd-h">
+    <div class="wrap disclose">
+      <div>
+        <span class="label eyebrow" data-reveal>Vulnerability disclosure</span>
+        <h2 class="h2" id="vd-h" data-reveal>Found something? Tell us first.</h2>
+        <p class="lede" data-reveal style="margin-top:20px">We welcome reports from researchers and customers. Good-faith research under this policy will not lead to legal action from us, and we will credit you if you want to be named.</p>
+        <div data-reveal style="margin-top:24px"><button class="copy-line" type="button" data-copy="security@zenstra.ai"><span>security@zenstra.ai</span><span class="copy-label">Copy</span></button></div>
+      </div>
+      <div class="box" data-reveal="right">
+        <h3 style="font-size:18px">How we handle a report</h3>
+        <dl>
+          <dt>Acknowledged</dt><dd>Within one business day</dd>
+          <dt>First assessment</dt><dd>Within five business days, with severity</dd>
+          <dt>Fix target</dt><dd>Critical in 7 days, high in 30 days</dd>
+          <dt>In scope</dt><dd>Console, SDK, gateway, endpoint app, public APIs</dd>
+          <dt>Out of scope</dt><dd>Denial of service, social engineering, physical attacks, third-party services</dd>
+          <dt>Safe harbor</dt><dd>Research within scope that avoids customer data and service disruption</dd>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  {{cta}}
+
+  <div class="modal" id="doc-modal" hidden role="dialog" aria-modal="true" aria-labelledby="doc-modal-h">
+    <div class="modal-card">
+      <div class="modal-head"><div><span class="label">Under NDA</span><h2 id="doc-modal-h" style="margin-top:6px">SOC 2 report and penetration test summary</h2></div><button class="icon-close" type="button" data-modal-close aria-label="Close">{{icon:x}}</button></div>
+      <p>Tell us who you are and our security team will send the NDA and the documents from security@zenstra.ai.</p>
+      <form data-validate novalidate style="display:grid;gap:14px;margin-top:20px">
+        <div class="field"><label for="dm-name">Full name</label><input id="dm-name" name="name" required autocomplete="name"><span class="err" role="alert"></span></div>
+        <div class="field"><label for="dm-email">Work email</label><input id="dm-email" type="email" required data-work autocomplete="email" placeholder="name@company.com"><span class="err" role="alert"></span></div>
+        <div class="field"><label for="dm-co">Company</label><input id="dm-co" required autocomplete="organization"><span class="err" role="alert"></span></div>
+        <button class="btn btn-primary" type="submit">Send request</button>
+      </form>
+      <div class="success" data-success hidden><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24"/><path d="m15 25 6 6 12-13"/></svg><h3>Thanks, <span data-who></span>.</h3><p style="color:var(--ink-2)">The security team will email you the NDA within one business day.</p><button class="btn btn-secondary" type="button" data-modal-close>Close</button></div>
+    </div>
+  </div>

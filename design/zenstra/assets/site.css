@@ -40,7 +40,7 @@ section[id] { scroll-margin-top: 96px; }
 .brand span { font: 600 15px/1 var(--font-sans); letter-spacing: 0.34em; }
 .nav { display: flex; align-items: center; gap: 2px; flex: 1; margin: 0; padding: 0; }
 .nav > li { list-style: none; position: relative; }
-.nav-trigger { display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 12px; border: 0; background: none; color: var(--ink-2); font: 500 14.5px/1 var(--font-sans); border-radius: var(--r-2); cursor: pointer; text-decoration: none; transition: color var(--t-fast), background var(--t-fast); }
+.nav-trigger { white-space: nowrap;  display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 12px; border: 0; background: none; color: var(--ink-2); font: 500 14.5px/1 var(--font-sans); border-radius: var(--r-2); cursor: pointer; text-decoration: none; transition: color var(--t-fast), background var(--t-fast); }
 .nav-trigger:hover, .nav li:focus-within > .nav-trigger, .nav li:hover > .nav-trigger, .nav-trigger[aria-current='page'] { color: var(--ink); background: color-mix(in srgb, var(--ink) 6%, transparent); }
 .nav-trigger svg { width: 12px; height: 12px; opacity: 0.7; transition: transform var(--t-base) var(--ease-expo); }
 .nav li:hover > .nav-trigger svg, .nav li:focus-within > .nav-trigger svg { transform: rotate(180deg); }
@@ -60,7 +60,7 @@ section[id] { scroll-margin-top: 96px; }
 .mega .foot { grid-column: 1 / -1; border-top: 1px solid var(--line); margin-top: 10px; padding-top: 14px; display: flex; gap: 22px; font-size: 13px; flex-wrap: wrap; }
 .head-actions { display: flex; align-items: center; gap: 8px; }
 .menu-btn { display: none; }
-@media (max-width: 1040px) {
+@media (max-width: 1179px) {
   .nav, .head-actions .signin { display: none; }
   .menu-btn { display: inline-flex; }
   .head-actions { margin-left: auto; }
@@ -73,6 +73,7 @@ section[id] { scroll-margin-top: 96px; }
 .mobile-menu { position: fixed; inset: 0; z-index: 95; background: var(--bg); padding: calc(var(--header-h) + 16px) 16px 32px; overflow-y: auto; display: none; }
 body.menu-open .site-head { background: var(--bg); border-bottom-color: var(--line); transform: none; }
 .mobile-menu.open { display: block; animation: menuIn 360ms var(--ease-expo); }
+@media (min-width: 1180px) { .mobile-menu.open { display: none; } }
 @keyframes menuIn { from { opacity: 0; transform: translateY(-8px); } }
 .mobile-menu > a, .mobile-menu summary { display: block; padding: 15px 4px; border-bottom: 1px solid var(--line); color: var(--ink); text-decoration: none; font-size: 18px; font-weight: 600; list-style: none; cursor: pointer; }
 .mobile-menu summary::-webkit-details-marker { display: none; }

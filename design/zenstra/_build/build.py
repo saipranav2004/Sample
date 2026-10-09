@@ -95,7 +95,7 @@ MEGA = {
                         ('Webinars and events', 'Live sessions with our engineers', 'video', 'resources.html#webinars'),
                         ('Glossary', 'Agentic AI security terms, defined', 'abc', 'resources.html#glossary')]),
     ],
-    'foot': [('Resource library', 'resources.html'), ('Trust center', 'trust.html')],
+    'foot': [('Resource library', 'resources.html'), ('Security & Compliance', 'security.html')],
   },
   'company': {
     'label': 'Company', 'cols': 2, 'cls': 'right',
@@ -105,7 +105,7 @@ MEGA = {
                          ('Careers', 'Open roles', 'brief', 'company.html#careers')]),
       ('Get in touch', [('Newsroom', 'Announcements and coverage', 'news', 'company.html#news'),
                         ('Contact', 'Sales, security and press', 'mail', 'company.html#contact'),
-                        ('Trust center', 'Security, compliance and status', 'shield', 'trust.html')]),
+                        ('Security & Compliance', 'Certifications, data handling and status', 'shield', 'security.html')]),
     ],
     'foot': [('Request a demo', 'demo.html')],
   },
@@ -115,7 +115,7 @@ FOOT = [
   ('Platform', [('Overview', 'platform.html'), ('Discover', 'discover.html'), ('Enforce', 'enforce.html'), ('Prove', 'prove.html'), ('Architecture', 'platform.html#architecture'), ('Integrations', 'platform.html#integrations')]),
   ('Solutions', [('Credit unions', 'credit-unions.html'), ('Banking and lending', 'solutions.html#banking'), ('Healthcare', 'solutions.html#healthcare'), ('Employee copilots', 'solutions.html#copilots'), ('MCP servers', 'solutions.html#mcp')]),
   ('Resources', [('Documentation', 'resources.html#docs'), ('Threat research', 'resources.html#research'), ('Blog', 'resources.html#blog'), ('Webinars', 'resources.html#webinars'), ('Glossary', 'resources.html#glossary')]),
-  ('Trust', [('Trust center', 'trust.html'), ('Compliance', 'trust.html#compliance'), ('Subprocessors', 'trust.html#subprocessors'), ('System status', 'trust.html#status'), ('Report a vulnerability', 'trust.html#disclosure')]),
+  ('Security', [('Security & Compliance', 'security.html'), ('Certifications', 'security.html#compliance'), ('Subprocessors', 'security.html#subprocessors'), ('Service status', 'security.html#status'), ('Report a vulnerability', 'security.html#disclosure')]),
   ('Company', [('About', 'company.html#about'), ('Leadership', 'company.html#leadership'), ('Careers', 'company.html#careers'), ('Newsroom', 'company.html#news'), ('Contact', 'company.html#contact')]),
 ]
 
@@ -168,8 +168,8 @@ def mega(key, active):
 
 def header(active):
     nav = mega('platform', active) + mega('solutions', active) + mega('resources', active)
-    tcur = ' aria-current="page"' if active == 'trust' else ''
-    nav += f'      <li><a class="nav-trigger" href="trust.html"{tcur}>Trust center</a></li>\n'
+    tcur = ' aria-current="page"' if active == 'security' else ''
+    nav += f'      <li><a class="nav-trigger" href="security.html"{tcur}>Security &amp; Compliance</a></li>\n'
     nav += mega('company', active)
     groups = ''
     for key in ['platform', 'solutions', 'resources', 'company']:
@@ -195,7 +195,7 @@ def header(active):
     </div>
   </div>
 </header>
-<nav class="mobile-menu" id="mobile-menu" aria-label="Mobile">{groups}<a href="trust.html">Trust center</a><a href="console.html">Sign in</a><a class="btn btn-primary" href="demo.html">Request a demo</a></nav>
+<nav class="mobile-menu" id="mobile-menu" aria-label="Mobile">{groups}<a href="security.html">Security &amp; Compliance</a><a href="console.html">Sign in</a><a class="btn btn-primary" href="demo.html">Request a demo</a></nav>
 '''
 
 def footer():
@@ -210,7 +210,7 @@ def footer():
       </div>
       {cols}
     </div>
-    <div class="legal"><span>&copy; 2026 Zenstra AI. All rights reserved.</span><a class="status" href="trust.html#status"><i></i>All systems operational</a><span><a href="legal.html#privacy">Privacy</a> &middot; <a href="legal.html#terms">Terms</a> &middot; <a href="legal.html#cookies">Cookies</a> &middot; <a href="legal.html#accessibility">Accessibility</a></span></div>
+    <div class="legal"><span>&copy; 2026 Zenstra AI. All rights reserved.</span><a class="status" href="security.html#status"><i></i>All systems operational</a><span><a href="legal.html#privacy">Privacy</a> &middot; <a href="legal.html#terms">Terms</a> &middot; <a href="legal.html#cookies">Cookies</a> &middot; <a href="legal.html#accessibility">Accessibility</a></span></div>
   </div>
 </footer>
 '''

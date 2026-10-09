@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Security & Compliance · Zenstra</title>
+<meta name="description" content="Zenstra's independent certifications, data handling, security practices, subprocessors, service status and vulnerability disclosure.">
+<script>try{var t=localStorage.getItem('zx-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}document.documentElement.classList.add('js');</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wdth,wght@0,75..100,400..700;1,75..100,400..700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="assets/zx.css">
+<link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="assets/pages.css">
+<style>
+  .glance { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; margin-top: 44px; border-top: 1px solid var(--hero-panel-line); max-width: 960px; }
+  .glance div { padding: 18px 20px 0 0; }
+  .glance b { display: block; font-size: 15px; color: var(--hero-ink); }
+  .glance span { display: block; font-size: 13.5px; color: var(--hero-ink-2); margin-top: 4px; line-height: 1.45; }
+  @media (max-width: 760px) { .glance { grid-template-columns: 1fr 1fr; } }
+
+  .certs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+  .cert { display: grid; grid-template-rows: auto 1fr auto; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+  .cert-head { display: flex; align-items: center; gap: 16px; padding: 24px 24px 20px; }
+  .cert-head .seal { width: 52px; height: 52px; flex: none; }
+  .cert-head h3 { font-size: 19px; line-height: 1.25; }
+  .cert-head small { display: block; font-size: 13px; color: var(--ink-3); margin-top: 3px; }
+  .cert dl { display: grid; grid-template-columns: 128px minmax(0, 1fr); gap: 10px 16px; margin: 0; padding: 0 24px 22px; font-size: 14.5px; }
+  .cert dt { color: var(--ink-3); }
+  .cert dd { margin: 0; color: var(--ink); }
+  .cert-foot { padding: 16px 24px; border-top: 1px solid var(--line); font-size: 14px; color: var(--ink-2); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .cert-foot a { font-weight: 600; text-decoration: none; display: inline-flex; gap: 6px; align-items: center; }
+  .cert-foot a svg { width: 13px; height: 13px; }
+  @media (max-width: 860px) { .certs { grid-template-columns: 1fr; } .cert dl { grid-template-columns: 1fr; gap: 2px; } .cert dd { margin-bottom: 8px; } }
+
+  .agreements { margin-top: 48px; }
+  .agreements h3 { font-size: 17px; }
+  .agreements > p { color: var(--ink-2); font-size: 15px; margin-top: 6px; max-width: 70ch; }
+  .agree-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; margin-top: 18px; border-top: 1px solid var(--line); }
+  .agree-list div { padding: 18px 24px 0 0; }
+  .agree-list b { display: block; font-size: 15px; }
+  .agree-list span { display: block; font-size: 14px; color: var(--ink-2); margin-top: 4px; }
+  @media (max-width: 860px) { .agree-list { grid-template-columns: 1fr; } }
+
+  .flow3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .flow3 > div { padding: 24px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); }
+  .flow3 h3 { font-size: 17px; }
+  .flow3 ul { margin: 14px 0 0; padding-left: 18px; display: grid; gap: 8px; font-size: 14.5px; color: var(--ink-2); }
+  @media (max-width: 900px) { .flow3 { grid-template-columns: 1fr; } }
+
+  .practices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 56px; }
+  .practices > div { padding: 28px 0; border-top: 1px solid var(--line); }
+  .practices h3 { font-size: 18px; display: flex; align-items: center; gap: 12px; }
+  .practices h3 .ic { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; background: var(--brand-wash); color: var(--brand); flex: none; }
+  .practices h3 .ic svg { width: 17px; height: 17px; }
+  .practices ul { margin: 14px 0 0; padding-left: 18px; display: grid; gap: 8px; font-size: 15px; color: var(--ink-2); }
+  @media (max-width: 860px) { .practices { grid-template-columns: 1fr; } }
+
+  .doc-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+  .doc-box { border: 1px solid var(--line); border-radius: 14px; background: var(--surface); padding: 22px 24px; }
+  .doc-box h3 { font-size: 17px; }
+  .doc-box > p { font-size: 14.5px; color: var(--ink-2); margin-top: 6px; }
+  .doc-box .docs { margin-top: 16px; }
+  .doc-box .doc { padding: 12px 0; }
+  .doc-box .doc:first-child { border-top: 1px solid var(--line); padding-top: 12px; }
+  .doc-box .doc a { font-size: 14px; font-weight: 600; text-decoration: none; }
+  .doc-box .btn { margin-top: 18px; }
+  @media (max-width: 860px) { .doc-cols { grid-template-columns: 1fr; } }
+
+  .status-card { border: 1px solid var(--line); border-radius: 14px; background: var(--surface); padding: 8px 22px; }
+  .status-row .nm b { display: block; font-weight: 600; }
+  .status-row .nm small { color: var(--ink-3); font-size: 12.5px; }
+  .uptime-legend { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-3); margin-top: 10px; }
+  .incidents { display: grid; gap: 0; margin-top: 28px; }
+  .incident { display: grid; grid-template-columns: 120px minmax(0, 1fr) auto; gap: 18px; padding: 16px 0; border-top: 1px solid var(--line); font-size: 14.5px; }
+  .incident time { font: 500 12.5px/1.6 var(--font-mono); color: var(--ink-3); }
+  .incident p { color: var(--ink-2); margin-top: 4px; font-size: 14px; }
+  @media (max-width: 720px) { .incident { grid-template-columns: 1fr; gap: 6px; } }
+
+  .disclose { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 48px; align-items: start; }
+  .disclose .box { padding: 28px; border-radius: 16px; border: 1px solid var(--line); background: var(--surface); }
+  .disclose dl { display: grid; grid-template-columns: 140px 1fr; gap: 12px 18px; margin: 18px 0 0; font-size: 14.5px; }
+  .disclose dt { color: var(--ink-3); }
+  .disclose dd { margin: 0; color: var(--ink); }
+  @media (max-width: 900px) { .disclose { grid-template-columns: 1fr; gap: 28px; } .disclose dl { grid-template-columns: 1fr; gap: 2px; } .disclose dd { margin-bottom: 8px; } }
+</style>
+</head>
+<body data-page="security">
+<a class="skip" href="#main">Skip to content</a>
+<div class="intro" aria-hidden="true">
+  <div class="intro-inner">
+    <svg class="star" viewBox="0 0 24 24"><defs><linearGradient id="introGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#12b0f0"/><stop offset="1" stop-color="#0c6eb4"/></linearGradient></defs><path class="star-fill" style="transform-box:fill-box;transform-origin:center" d="M12 0C12.9 7.6 16.4 11.1 24 12 16.4 12.9 12.9 16.4 12 24 11.1 16.4 7.6 12.9 0 12 7.6 11.1 11.1 7.6 12 0Z"/><path class="star-stroke" d="M12 0C12.9 7.6 16.4 11.1 24 12 16.4 12.9 12.9 16.4 12 24 11.1 16.4 7.6 12.9 0 12 7.6 11.1 11.1 7.6 12 0Z"/></svg>
+    <div class="word"><span>Z</span><span>E</span><span>N</span><span>S</span><span>T</span><span>R</span><span>A</span></div>
+    <div class="bar"><i></i></div>
+  </div>
+</div>
+<div class="progress" aria-hidden="true"></div>
+<header class="site-head">
+  <div class="wrap">
+    <a class="brand" href="home.html" aria-label="Zenstra home">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="zg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#12b0f0"/><stop offset="1" stop-color="#0c6eb4"/></linearGradient></defs><path fill="url(#zg)" d="M12 0C12.9 7.6 16.4 11.1 24 12 16.4 12.9 12.9 16.4 12 24 11.1 16.4 7.6 12.9 0 12 7.6 11.1 11.1 7.6 12 0Z"/></svg>
+      <span>ZENSTRA</span>
+    </a>
+    <ul class="nav" aria-label="Primary">
+      <li>
+        <button class="nav-trigger" aria-haspopup="true" aria-expanded="false">Platform <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <div class="mega cols-3 " role="group" aria-label="Platform"><div><span class="label">Discover</span><a href="discover.html#shadow-ai"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8Z"/><circle cx="8" cy="8" r="2"/></svg></span><b>Shadow AI discovery</b><small>Agents and AI tools nobody registered</small></a><a href="discover.html#identity"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="8" r="3"/><path d="M8.5 8h6M12 8v2.5M14.5 8v2"/></svg></span><b>Agent inventory and identity</b><small>One record, one owner, one key per agent</small></a></div><div><span class="label">Enforce</span><a href="enforce.html#tool-access"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg></span><b>Secure tool access</b><small>Scoped, expiring grants per call</small></a><a href="enforce.html#injection"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 1.5 13.5 4v4c0 3.2-2.4 5.6-5.5 6.5C4.9 13.6 2.5 11.2 2.5 8V4Z"/></svg></span><b>Injection and memory defense</b><small>Untrusted content never steers the agent</small></a><a href="enforce.html#policy"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4 1.5 8 5 12M11 4l3.5 4-3.5 4"/></svg></span><b>Policy as code</b><small>One guardrail set for every agent</small></a><a href="enforce.html#approvals"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v6M5.5 4v5M10.5 4v5M3 7v3a5 5 0 0 0 10 0V6"/></svg></span><b>Approvals and emergency stop</b><small>A person decides the risky calls</small></a></div><div><span class="label">Prove</span><a href="prove.html#ledger"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3.5h10M3 6.5h10M3 9.5h10M3 12.5h6"/></svg></span><b>Decision ledger</b><small>Tamper-evident record of every decision</small></a><a href="prove.html#detection"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 8h3l2-4.5 3 9 2-4.5h3"/></svg></span><b>Runtime detection</b><small>Drift against each agent’s baseline</small></a><a href="prove.html#evidence"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 1.5h5.5L12.5 4.5v10h-8.5Z M9 1.5v3.5h3.5M6 8.5h4.5M6 11h4.5"/></svg></span><b>Compliance evidence</b><small>Exam-ready exports for auditors</small></a></div><div class="foot"><a href="platform.html">Platform overview</a><a href="platform.html#architecture">Architecture</a><a href="platform.html#integrations">Integrations</a><a href="resources.html#docs">Documentation</a></div></div>
+      </li>
+      <li>
+        <button class="nav-trigger" aria-haspopup="true" aria-expanded="false">Solutions <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <div class="mega cols-2 " role="group" aria-label="Solutions"><div><span class="label">By industry</span><a href="credit-unions.html"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 6 8 2.5 14 6M3.5 6.5v6M6.5 6.5v6M9.5 6.5v6M12.5 6.5v6M2 13.5h12"/></svg></span><b>Credit unions</b><small>Exam-ready evidence for every agent</small></a><a href="solutions.html#banking"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="12" height="9" rx="1.5"/><path d="M2 7h12"/></svg></span><b>Banking and lending</b><small>Core, LOS and fraud agents</small></a><a href="solutions.html#healthcare"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg></span><b>Healthcare</b><small>Clinical and claims agents</small></a></div><div><span class="label">By agent type</span><a href="solutions.html#copilots"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="6" r="3"/><path d="M3 14c.8-2.6 2.8-4 5-4s4.2 1.4 5 4"/></svg></span><b>Employee copilots</b><small>Copilot, ChatGPT and Gemini at work</small></a><a href="solutions.html#member-facing"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2Z"/></svg></span><b>Member-facing agents</b><small>Untrusted input all day</small></a><a href="solutions.html#coding"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/><path d="m4.5 6.5 2 1.5-2 1.5M8.5 10h3"/></svg></span><b>Coding agents</b><small>Repo, CI and production shell access</small></a><a href="solutions.html#mcp"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 2.5v3.5M10.5 2.5v3.5M3.5 6h9v2a4.5 4.5 0 0 1-9 0Z M8 12.5v1.5"/></svg></span><b>MCP servers</b><small>Every connector is an access grant</small></a></div><div class="foot"><a href="solutions.html">All solutions</a><a href="demo.html">Request a demo</a></div></div>
+      </li>
+      <li>
+        <button class="nav-trigger" aria-haspopup="true" aria-expanded="false">Resources <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <div class="mega cols-2 " role="group" aria-label="Resources"><div><span class="label">Learn</span><a href="resources.html#docs"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 3h4a1.5 1.5 0 0 1 1.5 1.5V14a1.5 1.5 0 0 0-1.5-1.5h-4ZM13.5 3h-4A1.5 1.5 0 0 0 8 4.5V14a1.5 1.5 0 0 1 1.5-1.5h4Z"/></svg></span><b>Documentation</b><small>Quickstarts, deployment and API reference</small></a><a href="resources.html#research"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="5.5"/><circle cx="8" cy="8" r="2"/></svg></span><b>Threat research</b><small>How agents get attacked, with real techniques</small></a><a href="resources.html#guides"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 1.5h5.5L12.5 4.5v10h-8.5Z M9 1.5v3.5h3.5M6 8.5h4.5M6 11h4.5"/></svg></span><b>Guides and reports</b><small>Programme guides for security leaders</small></a></div><div><span class="label">Stay current</span><a href="resources.html#blog"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 2.5l3 3-8 8H2.5v-3Z"/></svg></span><b>Blog</b><small>Product and engineering notes</small></a><a href="resources.html#webinars"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1.5" y="3.5" width="9" height="9" rx="1.5"/><path d="m10.5 6.5 4-2v7l-4-2"/></svg></span><b>Webinars and events</b><small>Live sessions with our engineers</small></a><a href="resources.html#glossary"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12 4.5 4 7 12M3 9.5h3M9 4h2.5a2 2 0 0 1 0 4H9V4Zm0 4h3a2 2 0 0 1 0 4H9Z"/></svg></span><b>Glossary</b><small>Agentic AI security terms, defined</small></a></div><div class="foot"><a href="resources.html">Resource library</a><a href="security.html">Security & Compliance</a></div></div>
+      </li>
+      <li><a class="nav-trigger" href="security.html" aria-current="page">Security &amp; Compliance</a></li>
+      <li>
+        <button class="nav-trigger" aria-haspopup="true" aria-expanded="false">Company <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <div class="mega cols-2 right" role="group" aria-label="Company"><div><span class="label">About Zenstra</span><a href="company.html#about"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="2" width="10" height="12" rx="1"/><path d="M6 5h1M9 5h1M6 8h1M9 8h1M7 14v-3h2v3"/></svg></span><b>About us</b><small>Why we build runtime security for agents</small></a><a href="company.html#leadership"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="5.5" r="2.5"/><path d="M1.5 13.5c.6-2.3 2.4-3.5 4.5-3.5s3.9 1.2 4.5 3.5M11 3.5a2.5 2.5 0 0 1 0 4.5M12.5 10.3c1 .5 1.7 1.6 2 3.2"/></svg></span><b>Leadership</b><small>The team accountable for the product</small></a><a href="company.html#careers"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="12" height="8.5" rx="1.5"/><path d="M5.5 5V3.5h5V5M2 9h12"/></svg></span><b>Careers</b><small>Open roles</small></a></div><div><span class="label">Get in touch</span><a href="company.html#news"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M5 6h6M5 8.5h6M5 11h3"/></svg></span><b>Newsroom</b><small>Announcements and coverage</small></a><a href="company.html#contact"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3.5" width="12" height="9" rx="1.5"/><path d="m2.5 4.5 5.5 4 5.5-4"/></svg></span><b>Contact</b><small>Sales, security and press</small></a><a href="security.html"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 1.5 13.5 4v4c0 3.2-2.4 5.6-5.5 6.5C4.9 13.6 2.5 11.2 2.5 8V4Z"/></svg></span><b>Security & Compliance</b><small>Certifications, data handling and status</small></a></div><div class="foot"><a href="demo.html">Request a demo</a></div></div>
+      </li>
+    </ul>
+    <div class="head-actions">
+      <button class="theme-toggle" data-theme-toggle aria-label="Switch between light and dark theme">
+        <svg class="moon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13 9.5A5.5 5.5 0 0 1 6.5 3a5.5 5.5 0 1 0 6.5 6.5Z"/></svg>
+        <svg class="sun" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="3"/><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"/></svg>
+      </button>
+      <a class="btn btn-ghost btn-sm signin" href="console.html">Sign in</a>
+      <a class="btn btn-primary btn-sm" href="demo.html">Request a demo</a>
+      <button class="btn btn-ghost btn-sm menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12"/></svg></button>
+    </div>
+  </div>
+</header>
+<nav class="mobile-menu" id="mobile-menu" aria-label="Mobile"><details><summary>Platform</summary><div><a href="discover.html#shadow-ai">Shadow AI discovery</a><a href="discover.html#identity">Agent inventory and identity</a><a href="enforce.html#tool-access">Secure tool access</a><a href="enforce.html#injection">Injection and memory defense</a><a href="enforce.html#policy">Policy as code</a><a href="enforce.html#approvals">Approvals and emergency stop</a><a href="prove.html#ledger">Decision ledger</a><a href="prove.html#detection">Runtime detection</a><a href="prove.html#evidence">Compliance evidence</a></div></details><details><summary>Solutions</summary><div><a href="credit-unions.html">Credit unions</a><a href="solutions.html#banking">Banking and lending</a><a href="solutions.html#healthcare">Healthcare</a><a href="solutions.html#copilots">Employee copilots</a><a href="solutions.html#member-facing">Member-facing agents</a><a href="solutions.html#coding">Coding agents</a><a href="solutions.html#mcp">MCP servers</a></div></details><details><summary>Resources</summary><div><a href="resources.html#docs">Documentation</a><a href="resources.html#research">Threat research</a><a href="resources.html#guides">Guides and reports</a><a href="resources.html#blog">Blog</a><a href="resources.html#webinars">Webinars and events</a><a href="resources.html#glossary">Glossary</a></div></details><details><summary>Company</summary><div><a href="company.html#about">About us</a><a href="company.html#leadership">Leadership</a><a href="company.html#careers">Careers</a><a href="company.html#news">Newsroom</a><a href="company.html#contact">Contact</a><a href="security.html">Security & Compliance</a></div></details><a href="security.html">Security &amp; Compliance</a><a href="console.html">Sign in</a><a class="btn btn-primary" href="demo.html">Request a demo</a></nav>
+<main id="main">
+<section class="page-hero solo" aria-labelledby="hero-h">
+    <div class="wrap grid">
+      <div>
+        <nav class="crumbs" aria-label="Breadcrumb" data-hero><a href="home.html">Home</a><span aria-hidden="true">/</span><span>Security &amp; Compliance</span></nav>
+        <h1 id="hero-h"><span class="line"><span>Security &amp; Compliance</span></span><span class="line"><span class="accent">at Zenstra.</span></span></h1>
+        <p class="sub" data-hero>Zenstra sits in the path of your agents' actions, so we hold ourselves to the standard you will review us against. This page sets out how we are audited, how we handle your data and how to reach our security team.</p>
+        <div class="glance" data-hero>
+          <div><b>SOC 2 Type II</b><span>Audited annually by an independent CPA firm</span></div>
+          <div><b>ISO/IEC 27001:2022</b><span>Certified by an accredited certification body</span></div>
+          <div><b>Your environment</b><span>Prompts and payloads stay with you</span></div>
+          <div><b>No model training</b><span>Customer data is never used to train models</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <nav class="subnav" aria-label="On this page">
+    <div class="wrap">
+      <a href="#compliance" class="on">Certifications</a>
+      <a href="#privacy">Data handling</a>
+      <a href="#practices">Security practices</a>
+      <a href="#subprocessors">Subprocessors</a>
+      <a href="#documents">Documentation</a>
+      <a href="#status">Status</a>
+      <a href="#disclosure">Disclosure</a>
+    </div>
+  </nav>
+
+  <section id="compliance" aria-labelledby="c-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><span class="label eyebrow" data-reveal>Certifications</span><h2 class="h2" id="c-h" data-reveal>Independently audited, <span class="mark">and verifiable.</span></h2></div>
+        <p class="lede" data-reveal>Each certification below was issued by an independent auditor. You can confirm the ISO certificate yourself with the public accreditation register, without asking us.</p>
+      </div>
+      <div class="certs" data-stagger>
+        <article class="cert">
+          <div class="cert-head"><svg class="seal" viewBox="0 0 54 54" aria-hidden="true"><circle class="o" cx="27" cy="27" r="25"/><circle class="d" cx="27" cy="27" r="21"/><circle class="i" cx="27" cy="27" r="17"/><text x="27" y="28" text-anchor="middle">SOC 2</text><text class="s" x="27" y="37" text-anchor="middle">TYPE II</text></svg><div><h3>SOC 2 Type II</h3><small>AICPA attestation</small></div></div>
+          <dl>
+            <dt>Scope</dt><dd>Security, availability and confidentiality of the Zenstra platform</dd>
+            <dt>Audited by</dt><dd>Independent licensed CPA firm</dd>
+            <dt>Period</dt><dd>Twelve months, renewed every year</dd>
+          </dl>
+          <div class="cert-foot"><span>SOC 2 reports are restricted-use by design. Ours is shared with customers and prospects under NDA.</span><a href="#documents">How to get the report <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a></div>
+        </article>
+        <article class="cert">
+          <div class="cert-head"><svg class="seal" viewBox="0 0 54 54" aria-hidden="true"><circle class="o" cx="27" cy="27" r="25"/><circle class="d" cx="27" cy="27" r="21"/><circle class="i" cx="27" cy="27" r="17"/><text x="27" y="28" text-anchor="middle">ISO</text><text class="s" x="27" y="37" text-anchor="middle">27001</text></svg><div><h3>ISO/IEC 27001:2022</h3><small>Information security management system</small></div></div>
+          <dl>
+            <dt>Scope</dt><dd>Development, operation and support of the Zenstra platform</dd>
+            <dt>Certified by</dt><dd>Accredited certification body</dd>
+            <dt>Status</dt><dd>Certified, with annual surveillance audits</dd>
+          </dl>
+          <div class="cert-foot"><span>Search for Zenstra in the accreditation register.</span><a href="https://www.iafcertsearch.org/" target="_blank" rel="noopener">Verify on IAF CertSearch <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a></div>
+        </article>
+      </div>
+      <div class="agreements" data-reveal>
+        <h3>Privacy and sector agreements</h3>
+        <p>These are legal commitments we sign with each customer, not certifications.</p>
+        <div class="agree-list">
+          <div><b>GDPR and UK GDPR</b><span>Data processing agreement with standard contractual clauses</span></div>
+          <div><b>HIPAA</b><span>Business associate agreement for customers that handle protected health information</span></div>
+          <div><b>CCPA</b><span>Service provider terms for California personal information</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="alt" id="privacy" aria-labelledby="p-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><span class="label eyebrow" data-reveal>Data handling</span><h2 class="h2" id="p-h" data-reveal>What stays with you, <span class="mark">and what never leaves.</span></h2></div>
+        <p class="lede" data-reveal>The decision point runs in your environment. This is the full list of what reaches Zenstra's cloud, so your privacy office can check it against the data flow diagram.</p>
+      </div>
+      <div class="flow3" data-stagger>
+        <div><h3>Stays in your environment</h3><ul><li>Prompts, tool inputs and tool outputs</li><li>Retrieved documents and memory contents</li><li>Secrets and credentials in the Context Vault</li><li>The decision ledger and its hash chain</li></ul></div>
+        <div><h3>Sent to Zenstra cloud</h3><ul><li>Agent names, owners and policy versions</li><li>Decision counts and latency, without payloads</li><li>Health of each decision point</li><li>Console sign-in events</li></ul></div>
+        <div><h3>Never collected</h3><ul><li>Member or patient records</li><li>Model weights or training data</li><li>Any data for training models, ours or a provider's</li><li>Anything you have not enabled for export</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="practices" aria-labelledby="pr-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><span class="label eyebrow" data-reveal>Security practices</span><h2 class="h2" id="pr-h" data-reveal>How we protect the platform.</h2></div>
+        <p class="lede" data-reveal>A summary of the controls behind the certifications. The SOC 2 report describes each one and how the auditor tested it.</p>
+      </div>
+      <div class="practices" data-stagger>
+        <div><h3><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg></span>Data security</h3><ul><li>Encryption at rest with AES-256 and in transit with TLS 1.2 or later</li><li>Each customer tenant isolated, with its own keys</li><li>Data residency in the US or EU</li></ul></div>
+        <div><h3><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4 1.5 8 5 12M11 4l3.5 4-3.5 4"/></svg></span>Secure development</h3><ul><li>Every change reviewed by a second engineer before release</li><li>Dependency and container scanning on every pull request</li><li>Signed releases for the SDK, gateway and endpoint app</li></ul></div>
+        <div><h3><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="8" r="3"/><path d="M8.5 8h6M12 8v2.5M14.5 8v2"/></svg></span>Access control</h3><ul><li>Phishing-resistant MFA for every employee and contractor</li><li>Production access is just-in-time, approved and recorded</li><li>Access reviewed quarterly and removed the day someone leaves</li></ul></div>
+        <div><h3><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2 14.5 13.5h-13Z M8 6.5v3M8 11.5h.01"/></svg></span>Testing and response</h3><ul><li>Annual third-party penetration test, with every finding retested</li><li>Incident response plan exercised twice a year</li><li>Customers notified of a security incident affecting their data without undue delay</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="alt" id="subprocessors" aria-labelledby="s-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><span class="label eyebrow" data-reveal>Subprocessors</span><h2 class="h2" id="s-h" data-reveal>Who processes data on our behalf.</h2></div>
+        <p class="lede" data-reveal>Customers are told 30 days before a subprocessor is added. None of these receives prompts, payloads or ledger contents.</p>
+      </div>
+      <div class="table-card" data-reveal>
+        <table class="tbl wide">
+          <thead><tr><th scope="col">Subprocessor</th><th scope="col">Purpose</th><th scope="col">Data</th><th scope="col">Location</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Amazon Web Services</th><td>Hosting of the Zenstra console and metadata service</td><td>Agent metadata, decision counts</td><td>US, EU</td></tr>
+            <tr><th scope="row">Microsoft Azure</th><td>Hosting for customers who choose Azure regions</td><td>Agent metadata, decision counts</td><td>US, EU</td></tr>
+            <tr><th scope="row">Okta</th><td>Console single sign-on</td><td>Names and work email of console users</td><td>US</td></tr>
+            <tr><th scope="row">Datadog</th><td>Monitoring of Zenstra's own services</td><td>Service logs, with payloads removed</td><td>US, EU</td></tr>
+            <tr><th scope="row">Zendesk</th><td>Customer support tickets</td><td>Contact details and ticket contents</td><td>US</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="documents" aria-labelledby="d-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><span class="label eyebrow" data-reveal>Documentation</span><h2 class="h2" id="d-h" data-reveal>Documents for your security review.</h2></div>
+        <p class="lede" data-reveal>Most of what a review needs is public. Two documents are confidential by nature and are shared under NDA.</p>
+      </div>
+      <div class="doc-cols" data-stagger>
+        <div class="doc-box">
+          <h3>Public</h3>
+          <p>Open to anyone, no sign-up.</p>
+          <div class="docs">
+            <div class="doc"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg></span><span><b>Architecture and data flow</b><small>Where Zenstra runs and what leaves your environment</small></span><a href="platform.html#architecture">View</a></div>
+            <div class="doc"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 1.5h5.5L12.5 4.5v10h-8.5Z M9 1.5v3.5h3.5M6 8.5h4.5M6 11h4.5"/></svg></span><span><b>Data processing agreement</b><small>With standard contractual clauses</small></span><a href="legal.html#privacy">View</a></div>
+            <div class="doc"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="5.5" r="2.5"/><path d="M1.5 13.5c.6-2.3 2.4-3.5 4.5-3.5s3.9 1.2 4.5 3.5M11 3.5a2.5 2.5 0 0 1 0 4.5M12.5 10.3c1 .5 1.7 1.6 2 3.2"/></svg></span><span><b>Subprocessor list</b><small>Updated 30 days before any change</small></span><a href="#subprocessors">View</a></div>
+            <div class="doc"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 1.5 13.5 4v4c0 3.2-2.4 5.6-5.5 6.5C4.9 13.6 2.5 11.2 2.5 8V4Z"/></svg></span><span><b>Vulnerability disclosure policy</b><small>Scope, timelines and safe harbor</small></span><a href="#disclosure">View</a></div>
+          </div>
+        </div>
+        <div class="doc-box">
+          <h3>Under NDA</h3>
+          <p>For customers and prospects in an active evaluation. Existing customers receive these through their account team.</p>
+          <div class="docs">
+            <div class="doc"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg></span><span><b>SOC 2 Type II report</b><small>Full report, including the auditor's opinion and tests</small></span></div>
+            <div class="doc"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg></span><span><b>Penetration test summary</b><small>Executive summary from the most recent independent test</small></span></div>
+          </div>
+          <button class="btn btn-secondary" type="button" data-modal-open="doc-modal">Request under NDA</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="alt" id="status" aria-labelledby="st-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <div><span class="label eyebrow" data-reveal>Service status</span><h2 class="h2" id="st-h" data-reveal>Availability over the last 90 days.</h2></div>
+        <p class="lede" data-reveal>Decision points in your environment keep enforcing if the Zenstra cloud is unavailable. The status below covers the services we run.</p>
+      </div>
+      <div class="status-card" data-reveal>
+        <div class="status-list">
+          <div class="status-row"><span class="nm"><b>Console</b><small>console.zenstra.ai</small></span><div><div class="uptime"></div></div><span class="pct">100%</span></div>
+          <div class="status-row"><span class="nm"><b>Policy distribution</b><small>Push to decision points</small></span><div><div class="uptime" data-warn="5"></div></div><span class="pct">99.99%</span></div>
+          <div class="status-row"><span class="nm"><b>Metadata API</b><small>Inventory and counts</small></span><div><div class="uptime"></div></div><span class="pct">100%</span></div>
+          <div class="status-row"><span class="nm"><b>SIEM export relay</b><small>Splunk, Sentinel, webhooks</small></span><div><div class="uptime" data-bad="43"></div></div><span class="pct">99.97%</span></div>
+          <div class="status-row"><span class="nm"><b>Update service</b><small>SDK, gateway and endpoint releases</small></span><div><div class="uptime"></div></div><span class="pct">100%</span></div>
+        </div>
+        <div class="uptime-legend" aria-hidden="true"><span>90 days ago</span><span>Today</span></div>
+      </div>
+      <div class="incidents" data-stagger>
+        <div class="incident"><time datetime="2026-08-22">22 Aug 2026</time><div><b>SIEM export relay delayed for 41 minutes</b><p>A certificate rotation stalled delivery to one region. Events were buffered at each decision point and delivered in order once the relay recovered. No events were lost.</p></div><span class="chip ok">Resolved</span></div>
+        <div class="incident"><time datetime="2026-07-15">15 Jul 2026</time><div><b>Policy updates slow to reach decision points</b><p>Distribution took up to six minutes instead of seconds. Policies already in place kept enforcing throughout.</p></div><span class="chip ok">Resolved</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="disclosure" aria-labelledby="vd-h">
+    <div class="wrap disclose">
+      <div>
+        <span class="label eyebrow" data-reveal>Vulnerability disclosure</span>
+        <h2 class="h2" id="vd-h" data-reveal>Found something? Tell us first.</h2>
+        <p class="lede" data-reveal style="margin-top:20px">We welcome reports from researchers and customers. Good-faith research under this policy will not lead to legal action from us, and we will credit you if you want to be named.</p>
+        <div data-reveal style="margin-top:24px"><button class="copy-line" type="button" data-copy="security@zenstra.ai"><span>security@zenstra.ai</span><span class="copy-label">Copy</span></button></div>
+      </div>
+      <div class="box" data-reveal="right">
+        <h3 style="font-size:18px">How we handle a report</h3>
+        <dl>
+          <dt>Acknowledged</dt><dd>Within one business day</dd>
+          <dt>First assessment</dt><dd>Within five business days, with severity</dd>
+          <dt>Fix target</dt><dd>Critical in 7 days, high in 30 days</dd>
+          <dt>In scope</dt><dd>Console, SDK, gateway, endpoint app, public APIs</dd>
+          <dt>Out of scope</dt><dd>Denial of service, social engineering, physical attacks, third-party services</dd>
+          <dt>Safe harbor</dt><dd>Research within scope that avoids customer data and service disruption</dd>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <section class="band cta" id="demo-cta" aria-labelledby="cta-h">
+    <div class="aurora" aria-hidden="true"></div>
+    <div class="wrap">
+      <div>
+        <span class="label eyebrow" data-reveal>Technical demo</span>
+        <h2 id="cta-h" data-reveal>Bring one real agent. <br>Leave with the evidence.</h2>
+        <ol data-stagger>
+          <li><span><b>Connect your agent.</b> Any framework, any model provider.</span></li>
+          <li><span><b>Watch a policy stop it.</b> Live injection and exfiltration attempts.</span></li>
+          <li><span><b>Keep the ledger.</b> The decision record and a security review pack.</span></li>
+        </ol>
+      </div>
+      <div class="cta-box" data-reveal="scale">
+        <span class="label" style="color:var(--band-ink-3)">30 minutes &middot; with a security engineer</span>
+        <a class="btn btn-primary" href="demo.html">Request a technical demo <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+        <p>No slideware. Runs against your own agent, in your own cloud.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="modal" id="doc-modal" hidden role="dialog" aria-modal="true" aria-labelledby="doc-modal-h">
+    <div class="modal-card">
+      <div class="modal-head"><div><span class="label">Under NDA</span><h2 id="doc-modal-h" style="margin-top:6px">SOC 2 report and penetration test summary</h2></div><button class="icon-close" type="button" data-modal-close aria-label="Close"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div>
+      <p>Tell us who you are and our security team will send the NDA and the documents from security@zenstra.ai.</p>
+      <form data-validate novalidate style="display:grid;gap:14px;margin-top:20px">
+        <div class="field"><label for="dm-name">Full name</label><input id="dm-name" name="name" required autocomplete="name"><span class="err" role="alert"></span></div>
+        <div class="field"><label for="dm-email">Work email</label><input id="dm-email" type="email" required data-work autocomplete="email" placeholder="name@company.com"><span class="err" role="alert"></span></div>
+        <div class="field"><label for="dm-co">Company</label><input id="dm-co" required autocomplete="organization"><span class="err" role="alert"></span></div>
+        <button class="btn btn-primary" type="submit">Send request</button>
+      </form>
+      <div class="success" data-success hidden><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24"/><path d="m15 25 6 6 12-13"/></svg><h3>Thanks, <span data-who></span>.</h3><p style="color:var(--ink-2)">The security team will email you the NDA within one business day.</p><button class="btn btn-secondary" type="button" data-modal-close>Close</button></div>
+    </div>
+  </div>
+</main>
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="home.html"><svg viewBox="0 0 24 24" aria-hidden="true" width="22" height="22"><path fill="url(#zg)" d="M12 0C12.9 7.6 16.4 11.1 24 12 16.4 12.9 12.9 16.4 12 24 11.1 16.4 7.6 12.9 0 12 7.6 11.1 11.1 7.6 12 0Z"/></svg><span>ZENSTRA</span></a>
+        <p>Runtime security for AI agents: identity, policy and evidence for every autonomous action.</p>
+        <a class="btn btn-secondary btn-sm" href="demo.html" style="margin-top:18px">Request a demo</a>
+      </div>
+      <div><span class="label">Platform</span><ul><li><a href="platform.html">Overview</a></li><li><a href="discover.html">Discover</a></li><li><a href="enforce.html">Enforce</a></li><li><a href="prove.html">Prove</a></li><li><a href="platform.html#architecture">Architecture</a></li><li><a href="platform.html#integrations">Integrations</a></li></ul></div><div><span class="label">Solutions</span><ul><li><a href="credit-unions.html">Credit unions</a></li><li><a href="solutions.html#banking">Banking and lending</a></li><li><a href="solutions.html#healthcare">Healthcare</a></li><li><a href="solutions.html#copilots">Employee copilots</a></li><li><a href="solutions.html#mcp">MCP servers</a></li></ul></div><div><span class="label">Resources</span><ul><li><a href="resources.html#docs">Documentation</a></li><li><a href="resources.html#research">Threat research</a></li><li><a href="resources.html#blog">Blog</a></li><li><a href="resources.html#webinars">Webinars</a></li><li><a href="resources.html#glossary">Glossary</a></li></ul></div><div><span class="label">Security</span><ul><li><a href="security.html">Security & Compliance</a></li><li><a href="security.html#compliance">Certifications</a></li><li><a href="security.html#subprocessors">Subprocessors</a></li><li><a href="security.html#status">Service status</a></li><li><a href="security.html#disclosure">Report a vulnerability</a></li></ul></div><div><span class="label">Company</span><ul><li><a href="company.html#about">About</a></li><li><a href="company.html#leadership">Leadership</a></li><li><a href="company.html#careers">Careers</a></li><li><a href="company.html#news">Newsroom</a></li><li><a href="company.html#contact">Contact</a></li></ul></div>
+    </div>
+    <div class="legal"><span>&copy; 2026 Zenstra AI. All rights reserved.</span><a class="status" href="security.html#status"><i></i>All systems operational</a><span><a href="legal.html#privacy">Privacy</a> &middot; <a href="legal.html#terms">Terms</a> &middot; <a href="legal.html#cookies">Cookies</a> &middot; <a href="legal.html#accessibility">Accessibility</a></span></div>
+  </div>
+</footer>
+<script src="assets/vendor/motion-11.11.13.js"></script>
+<script src="assets/vendor/anime-4.0.2.umd.min.js"></script>
+<script src="assets/vendor/lenis-1.1.13.min.js"></script>
+<script src="assets/zx-core.js"></script>
+<script src="assets/site-motion.js"></script>
+</body>
+</html>
