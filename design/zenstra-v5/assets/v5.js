@@ -243,15 +243,15 @@
     anim(line, [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 600 });
     var seq = wait(350);
     words.forEach(function (w, i) {
-      seq = seq.then(function () { if (!done) return scramble(word, w, 520); })
-        .then(function () { if (!done) return wait(i === words.length - 1 ? 650 : 520); })
-        .then(function () { if (!done && i < words.length - 1) return unscramble(word, 260); });
+      seq = seq.then(function () { if (!done) return scramble(word, w, 480); })
+        .then(function () { if (!done) return wait(i === words.length - 1 ? 900 : 760); })
+        .then(function () { if (!done && i < words.length - 1) return unscramble(word, 240); });
     });
     seq.then(function () {
       if (done) return;
       anim(line, [{ opacity: 1, filter: 'blur(0)' }, { opacity: 0, filter: 'blur(8px)' }], { duration: 420 });
       anim(logo, [{ opacity: 0, transform: 'scale(0.94)', filter: 'blur(8px)' }, { opacity: 1, transform: 'scale(1)', filter: 'blur(0)' }], { duration: 700, delay: 250 });
-      return wait(1250);
+      return wait(1050);
     }).then(open);
   }
 
