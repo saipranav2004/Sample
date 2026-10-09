@@ -1,0 +1,184 @@
+<!--{"title": "Zenstra AI · Runtime security for agentic AI", "description": "Zenstra checks every AI agent action before it runs: across workflows, inside your cloud and on every device. Workflow Security, Cloud Security and Zenstra EDR on one platform.", "active": ""}-->
+  <section class="hero rails" aria-labelledby="hero-h">
+    <div class="stream" data-gate="0.74" aria-hidden="true"></div>
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <a class="chip-live" href="#products" data-after><i></i>Runtime security for agentic AI</a>
+        <h1 class="display" id="hero-h" data-scan><span class="scanline"><span class="in">Your AI agents</span><i class="bar"></i></span><span class="scanline"><span class="in">act on their own.</span><i class="bar"></i></span><span class="scanline"><span class="in grad">Give them a perimeter.</span><i class="bar"></i></span></h1>
+        <p class="lede sub" data-after>Zenstra checks every agent action before it runs, across your workflows, inside your cloud and on every device, and records why.</p>
+        <p class="switch" data-after><span class="muted" aria-hidden="true">One platform for</span> <span class="scramble" data-switch="workflow security.|cloud security.|EDR for AI agents." aria-hidden="true">workflow security.</span><span class="sr-only">One platform for workflow security, cloud security and EDR for AI agents.</span></p>
+        <div class="ctas" data-after><a class="btn primary lg" href="demo.html">Request a demo {{icon:arrow}}</a><a class="btn secondary lg" href="#how">How a decision happens</a></div>
+      </div>
+      <div class="hero-side" aria-hidden="true">
+        <div class="dchips"><div class="dchip" style="top:10%;left:0"></div><div class="dchip" style="top:42%;left:22%"></div><div class="dchip" style="top:74%;left:4%"></div></div>
+      </div>
+    </div>
+    <div class="wrap">
+      <div class="works" data-after>
+        <span class="mono-label">Works with</span>
+        <div class="marquee" aria-label="Microsoft Copilot, ChatGPT Enterprise, Claude, Gemini, Model Context Protocol, n8n, Zapier, LangGraph, CrewAI, AWS Bedrock, Azure OpenAI, Vertex AI, Fiserv, Jack Henry, Temenos"><div class="marquee-track" aria-hidden="true"><span>Microsoft Copilot</span><span>ChatGPT Enterprise</span><span>Claude</span><span>Gemini</span><span>MCP</span><span>n8n</span><span>Zapier</span><span>LangGraph</span><span>CrewAI</span><span>AWS Bedrock</span><span>Azure OpenAI</span><span>Vertex AI</span><span>Fiserv</span><span>Jack Henry</span><span>Temenos</span><span>Microsoft Copilot</span><span>ChatGPT Enterprise</span><span>Claude</span><span>Gemini</span><span>MCP</span><span>n8n</span><span>Zapier</span><span>LangGraph</span><span>CrewAI</span><span>AWS Bedrock</span><span>Azure OpenAI</span><span>Vertex AI</span><span>Fiserv</span><span>Jack Henry</span><span>Temenos</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec rails" id="products" aria-labelledby="prod-h">
+    <i class="xmark" style="top:-6px;left:max(14px,calc(50% - 646px))"></i><i class="xmark" style="top:-6px;right:max(14px,calc(50% - 646px))"></i>
+    <div class="wrap">
+      <div class="sec-head split">
+        <div style="display:grid;gap:20px"><span class="eyebrow" data-reveal>The platform</span><h2 class="h2" id="prod-h" data-reveal>One platform.<br>Three ways in.</h2></div>
+        <p class="lede" data-words>Start with the risk in front of you. Every product shares one agent inventory, one policy engine and one decision record.</p>
+      </div>
+      <div class="products" data-reveal>
+        <article class="prod" id="workflow" data-viz="workflow" tabindex="0" aria-expanded="false" aria-label="Workflow Security">
+          <div class="viz" aria-hidden="true"></div><i class="timer" aria-hidden="true"></i>
+          <div class="prod-top"><span class="num">01</span><span class="ic">{{icon:flow}}</span></div>
+          <div class="prod-vt" aria-hidden="true">Workflow<br>Security</div>
+          <div class="prod-body">
+            <span class="mono-label" style="color:#5cd2ff">Zenstra Workflow Security</span>
+            <h3>Every hop in every agent workflow, <span>decided.</span></h3>
+            <p>Multi-agent pipelines fail one hop at a time. Zenstra checks each hop against policy and the task the workflow declared, before the next step runs.</p>
+            <ul><li><b>Workflow graph</b>Every agent, tool and MCP hop in n8n, Zapier, LangGraph and CrewAI, mapped and owned.</li><li><b>Per-hop decisions</b>Allow, hold for a person, or block before the next step executes.</li><li><b>Intent across agents</b>Agent-to-agent hand-offs checked against the original task.</li></ul>
+            <a class="link" href="../zenstra/enforce.html">Explore Workflow Security {{icon:arrow}}</a>
+          </div>
+        </article>
+        <article class="prod" id="cloud" data-viz="cloud" tabindex="0" aria-expanded="false" aria-label="Cloud Security">
+          <div class="viz" aria-hidden="true"></div><i class="timer" aria-hidden="true"></i>
+          <div class="prod-top"><span class="num">02</span><span class="ic">{{icon:cloud}}</span></div>
+          <div class="prod-vt" aria-hidden="true">Cloud<br>Security</div>
+          <div class="prod-body">
+            <span class="mono-label" style="color:#5cd2ff">Zenstra Cloud Security</span>
+            <h3>Runtime protection, <span>inside your cloud.</span></h3>
+            <p>A gateway in your VPC or Kubernetes cluster sits in front of every MCP server, model and API your agents call. Payloads never leave your environment.</p>
+            <ul><li><b>Gateway for MCP and APIs</b>Deployed with Helm or Terraform in AWS, Azure or Google Cloud.</li><li><b>Scoped credentials</b>Per-agent identity and short-lived grants for Bedrock, Azure OpenAI and Vertex AI.</li><li><b>Fail-closed, fast</b>Decisions at 18 ms p95. If Zenstra is unreachable, actions are held.</li></ul>
+            <a class="link" href="../zenstra/platform.html#deployment">Explore Cloud Security {{icon:arrow}}</a>
+          </div>
+        </article>
+        <article class="prod" id="edr" data-viz="edr" tabindex="0" aria-expanded="false" aria-label="Zenstra EDR">
+          <div class="viz" aria-hidden="true"></div><i class="timer" aria-hidden="true"></i>
+          <div class="prod-top"><span class="num">03</span><span class="ic">{{icon:scan}}</span></div>
+          <div class="prod-vt" aria-hidden="true">Zenstra<br>EDR</div>
+          <div class="prod-body">
+            <span class="mono-label" style="color:#5cd2ff">Zenstra EDR</span>
+            <h3>Endpoint detection and response <span>for AI agents.</span></h3>
+            <p>Classic EDR sees a coding agent read credentials and cannot tell help from hijack. Zenstra EDR sees the prompt, the tool call and the device together.</p>
+            <ul><li><b>Every AI, every device</b>Copilot, ChatGPT, Claude Code, Cursor and unregistered agents on Windows and macOS.</li><li><b>Context, not noise</b>Prompt-to-action lineage tells a helpful agent from a hijacked one.</li><li><b>Contain in seconds</b>Stop one agent on one device. Deployed with Intune, Jamf or Kandji.</li></ul>
+            <a class="link" href="../zenstra/discover.html#shadow-ai">Explore Zenstra EDR {{icon:arrow}}</a>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="path alt" id="how" data-path aria-labelledby="how-h">
+    <div class="path-pin">
+      <div class="wrap path-head">
+        <div style="display:grid;gap:20px"><span class="eyebrow" data-reveal>How a decision happens</span><h2 class="h2" id="how-h" data-reveal>Four checks.<br>Under 20 milliseconds.</h2></div>
+        <div class="path-prog" aria-hidden="true"><i></i></div>
+      </div>
+      <div class="path-stage">
+        <i class="path-line" aria-hidden="true"></i><i class="path-dot" aria-hidden="true"></i>
+        <div class="path-track">
+          <article class="pcard"><div><span class="n">01 · IDENTITY</span><h3>Who is acting?</h3><p>Every agent carries its own cryptographic identity, attested on each call. Stolen tokens and impersonated agents stop here.</p></div>
+            <div class="term"><span class="row"><span class="c">agent</span>   loan-doc-classifier</span><span class="row"><span class="c">owner</span>   Lending Ops · attested 2 ms ago</span><span class="row"><span class="c">key</span>     zx_k9…a71e · rotated 14 h ago</span><span class="row ok">✓ identity verified</span></div></article>
+          <article class="pcard"><div><span class="n">02 · INTENT</span><h3>Is this the task it declared?</h3><p>The task the agent declared is compared with the tool call it is about to make.</p></div>
+            <div class="term"><span class="row"><span class="c">task</span>    "summarise dispute #4471"</span><span class="row"><span class="c">call</span>    email.send → external domain</span><span class="row"><span class="c">scope</span>   outside declared task</span><span class="row wn">! intent mismatch</span></div></article>
+          <article class="pcard"><div><span class="n">03 · POLICY</span><h3>Allow, hold or block.</h3><p>Guardrails written once as code, evaluated inline for every model, framework and product.</p></div>
+            <div class="term"><span class="row"><span class="k">policy</span>  POL-114 member-data-egress v7</span><span class="row"><span class="k">when</span>    payload.class = member.account</span><span class="row"><span class="k">then</span>    block · notify #sec-agents</span><span class="row bad">✕ blocked in 14 ms</span></div></article>
+          <article class="pcard"><div><span class="n">04 · RECORD</span><h3>Prove it later.</h3><p>Each decision is hash-chained to the last and kept in your environment, ready for your SIEM and your examiner.</p></div>
+            <div class="term"><span class="row"><span class="c">entry</span>   48,213 · 09:41:03.028</span><span class="row"><span class="c">prev</span>    9f2c…a71e</span><span class="row"><span class="c">hash</span>    c07a…5d12</span><span class="row ok">✓ chain verified</span></div></article>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="console" data-show aria-labelledby="con-h">
+    <div class="wrap">
+      <div class="sec-head split">
+        <div style="display:grid;gap:20px"><span class="eyebrow" data-reveal>The console</span><h2 class="h2" id="con-h" data-reveal>Your entire agent fleet,<br>on one screen.</h2></div>
+        <p class="lede" data-words>Fleet, detections, investigations and the decision record, where your analysts already triage.</p>
+      </div>
+      <div class="show-tabs" role="tablist" aria-label="Console screens" data-reveal>
+        <button class="show-tab" role="tab" aria-selected="true" data-cap="Governed agents, open detections, blocked actions and approvals waiting.">Overview<i></i></button>
+        <button class="show-tab" role="tab" aria-selected="false" data-cap="Detections ranked by severity, with the agent and the policy that caught them.">Detections<i></i></button>
+        <button class="show-tab" role="tab" aria-selected="false" data-cap="An investigation that opens on the outcome, the blast radius and the agent run.">Investigation<i></i></button>
+        <button class="show-tab" role="tab" aria-selected="false" data-cap="One agent's identity, grants, baseline and history.">Agent profile<i></i></button>
+      </div>
+      <div class="show-stage" data-reveal>
+        <div class="show-frame">
+          <div class="show-bar"><i></i><i></i><i></i><span>console.zenstra.ai</span><span class="live">Live</span></div>
+          <div class="show-view">
+            <div class="show-slide">{{shot:screen-overview|Console overview with governed agents, detections, blocked actions and approvals}}</div>
+            <div class="show-slide">{{shot:screen-detections|Detections queue ranked by severity}}</div>
+            <div class="show-slide">{{shot:screen-investigation|Investigation showing outcome, blast radius and the agent run}}</div>
+            <div class="show-slide">{{shot:screen-agent|Agent profile with identity, grants and behavior baseline}}</div>
+            <i class="show-scan" aria-hidden="true"></i>
+          </div>
+        </div>
+      </div>
+      <div class="show-caption"><span data-caption aria-live="polite"></span><a class="link" href="../zenstra/console.html">Open the interactive console {{icon:arrow}}</a></div>
+    </div>
+  </section>
+
+  <section aria-label="Zenstra in numbers" style="padding-bottom:clamp(96px,11vw,160px)">
+    <div class="wrap">
+      <div class="gauges">
+        <div class="gauge" data-gauge="0.18" data-reveal><svg viewBox="0 0 76 76" aria-hidden="true"><circle class="t" cx="38" cy="38" r="32"/><circle class="v" cx="38" cy="38" r="32"/></svg><div><b><span data-count="18">18</span> ms</b><span>p95 decision latency, of a 100 ms budget</span></div></div>
+        <div class="gauge" data-gauge="1" data-reveal data-delay="80"><svg viewBox="0 0 76 76" aria-hidden="true"><circle class="t" cx="38" cy="38" r="32"/><circle class="v" cx="38" cy="38" r="32"/></svg><div><b><span data-count="8">8</span> of 8</b><span>Security controls enforced inline</span></div></div>
+        <div class="gauge" data-gauge="1" data-reveal data-delay="160"><svg viewBox="0 0 76 76" aria-hidden="true"><circle class="t" cx="38" cy="38" r="32"/><circle class="v" cx="38" cy="38" r="32"/></svg><div><b><span data-count="100">100</span>%</b><span>Of tool calls decided before they run</span></div></div>
+        <div class="gauge" data-gauge="0" data-reveal data-delay="240"><svg viewBox="0 0 76 76" aria-hidden="true"><circle class="t" cx="38" cy="38" r="32"/><circle class="v" cx="38" cy="38" r="32"/></svg><div><b>0</b><span>Prompts or payloads that leave your cloud</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band sec" aria-labelledby="cu-h">
+    <div class="wrap cu-grid">
+      <div style="display:grid;gap:22px;justify-items:start">
+        <span class="eyebrow" data-reveal>For credit unions</span>
+        <h2 class="h2" id="cu-h" data-reveal>Ready for the examiner's first question.</h2>
+        <p class="lede" data-reveal>Core platforms, copilots, lending and fraud agents are already live. Zenstra gives every one an owner, a scope and a record your NCUA examiner can read.</p>
+        <a class="btn white" href="credit-unions.html" data-reveal>Zenstra for credit unions {{icon:arrow}}</a>
+      </div>
+      <div class="vs" data-reveal>
+        <div class="vs-row"><div>The examiner asks</div><div>Vendor defaults</div><div class="y">With Zenstra</div></div>
+        <div class="vs-row"><div class="q">Which agents do you run?</div><div class="n">Per platform, if at all</div><div class="y">Every agent, one inventory</div></div>
+        <div class="vs-row"><div class="q">What can each one reach?</div><div class="n">Standing credentials</div><div class="y">Scoped, expiring grants</div></div>
+        <div class="vs-row"><div class="q">How do you stop one?</div><div class="n">A switch per vendor</div><div class="y">One revocation, in seconds</div></div>
+        <div class="vs-row"><div class="q">Show me what it did.</div><div class="n">Logs spread across vendors</div><div class="y">One tamper-evident record</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="trust" aria-labelledby="trust-h">
+    <div class="wrap trust-row">
+      <div style="display:grid;gap:18px;justify-items:start">
+        <span class="eyebrow" data-reveal>Trust Center</span>
+        <h2 class="h3" id="trust-h" style="font-size:clamp(26px,2.6vw,36px)" data-reveal>Audited the way you will audit us.</h2>
+        <p class="lede" style="font-size:16.5px" data-reveal>Independent audits every year, reports under NDA, and certificates you can verify with the issuing body.</p>
+        <a class="link" href="../zenstra/trust-center.html" data-reveal>Visit the Trust Center {{icon:arrow}}</a>
+      </div>
+      <div>
+        <div class="certs">
+          <div class="cert" data-reveal><svg viewBox="0 0 54 54" aria-hidden="true"><circle class="o" cx="27" cy="27" r="25"/><circle class="d" cx="27" cy="27" r="21"/><circle class="i" cx="27" cy="27" r="17"/><text x="27" y="28" text-anchor="middle">SOC 2</text><text class="s" x="27" y="37" text-anchor="middle">TYPE II</text></svg><b>SOC 2 Type II</b><small>Security, availability, confidentiality</small></div>
+          <div class="cert" data-reveal data-delay="70"><svg viewBox="0 0 54 54" aria-hidden="true"><circle class="o" cx="27" cy="27" r="25"/><circle class="d" cx="27" cy="27" r="21"/><circle class="i" cx="27" cy="27" r="17"/><text x="27" y="28" text-anchor="middle">ISO</text><text class="s" x="27" y="37" text-anchor="middle">27001</text></svg><b>ISO/IEC 27001</b><small>Information security</small></div>
+          <div class="cert" data-reveal data-delay="140"><svg viewBox="0 0 54 54" aria-hidden="true"><circle class="o" cx="27" cy="27" r="25"/><circle class="d" cx="27" cy="27" r="21"/><circle class="i" cx="27" cy="27" r="17"/><text x="27" y="28" text-anchor="middle">ISO</text><text class="s" x="27" y="37" text-anchor="middle">42001</text></svg><b>ISO/IEC 42001</b><small>AI management system</small></div>
+          <div class="cert" data-reveal data-delay="210"><svg viewBox="0 0 54 54" aria-hidden="true"><circle class="o" cx="27" cy="27" r="25"/><circle class="d" cx="27" cy="27" r="21"/><circle class="i" cx="27" cy="27" r="17"/><text x="27" y="28" text-anchor="middle">ISO</text><text class="s" x="27" y="37" text-anchor="middle">27701</text></svg><b>ISO/IEC 27701</b><small>Privacy information</small></div>
+        </div>
+        <p class="trust-note" data-reveal>HIPAA and GDPR programmes · Reports under NDA · Security review pack on request</p>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="cta-h" style="padding-bottom:clamp(80px,9vw,128px)">
+    <div class="wrap">
+      <div class="cta">
+        <div class="stream" aria-hidden="true"></div>
+        <div class="cta-inner">
+          <span class="eyebrow" style="color:#5cd2ff" data-reveal>30-minute technical session</span>
+          <h2 class="h2" id="cta-h" data-reveal>Deploy agents your board can sign off on.</h2>
+          <p data-reveal>See Zenstra enforce a live policy against your own agent, in your own cloud.</p>
+          <div class="ctas" data-reveal><a class="btn white lg" href="demo.html">Request a demo {{icon:arrow}}</a><a class="btn glass lg" href="../zenstra/trust-center.html">Visit the Trust Center</a></div>
+          <p class="fine" data-reveal>No agent rewrite · Runs in your cloud · Security review pack included</p>
+        </div>
+      </div>
+    </div>
+  </section>
