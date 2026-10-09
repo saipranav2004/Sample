@@ -1,0 +1,101 @@
+<!--{"title": "Request a demo · Zenstra", "description": "A 30-minute technical demo with a Zenstra security engineer, run against one of your own AI agents.", "active": ""}-->
+<style>
+  .hero.short { min-height: 560px; height: 72svh; padding-bottom: 40px; }
+  .hero.short h1 { max-width: 13ch; }
+  .demo { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: clamp(40px, 6vw, 96px); align-items: start; }
+  .agenda { list-style: none; margin: 36px 0 0; padding: 0; position: relative; }
+  .agenda::before { content: ''; position: absolute; left: 7px; top: 10px; bottom: 10px; width: 1px; background: var(--line-2); }
+  .agenda .prog { position: absolute; left: 7px; top: 10px; width: 1px; height: calc(100% - 20px); background: linear-gradient(var(--brand), var(--cyan)); transform-origin: top; transform: scaleY(0); }
+  .agenda li { position: relative; display: grid; grid-template-columns: 15px 1fr; gap: 22px; padding: 0 0 34px; }
+  .agenda li:last-child { padding-bottom: 0; }
+  .agenda .dot { width: 15px; height: 15px; border-radius: 50%; background: var(--bg); border: 1px solid var(--line-2); margin-top: 5px; position: relative; z-index: 1; transition: border-color 400ms, background-color 400ms; }
+  .agenda li.in .dot { border-color: var(--brand); background: var(--brand); box-shadow: 0 0 0 5px color-mix(in srgb, var(--brand) 16%, transparent); }
+  .agenda time { font: 500 12px/1 var(--mono); color: var(--ink-3); letter-spacing: 0.04em; }
+  .agenda b { display: block; font-weight: 500; font-size: 21px; letter-spacing: -0.02em; margin-top: 8px; }
+  .agenda p { color: var(--ink-2); margin-top: 6px; font-size: 16px; }
+  .leave { margin-top: 48px; padding-top: 28px; border-top: 1px solid var(--line); display: grid; gap: 14px; }
+  .leave div { display: flex; gap: 12px; align-items: center; font-size: 16px; }
+  .leave .ticon { width: 36px; height: 36px; }
+  .form-card { position: sticky; top: calc(var(--head-h) + 24px); border-radius: 28px; padding: clamp(24px, 3.4vw, 40px); background: var(--bg); border: 1px solid var(--line); box-shadow: var(--shadow); }
+  .form-card h2 { font-weight: 500; font-size: 28px; letter-spacing: -0.03em; }
+  .form-card > form > p, .form-card .note { color: var(--ink-3); font-size: 15px; margin-top: 6px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 26px; }
+  .form-grid .full { grid-column: 1 / -1; }
+  .form-card .pill { width: 100%; justify-content: center; }
+  .assure { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 16px; font: 500 12px/1.4 var(--mono); color: var(--ink-3); letter-spacing: 0.02em; }
+  .success { display: grid; gap: 14px; justify-items: start; padding: 12px 0; }
+  .success .check { width: 56px; height: 56px; }
+  .success .check circle { fill: color-mix(in srgb, var(--ok) 14%, transparent); }
+  .success .check path { fill: none; stroke: var(--ok); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  .success h2 { font-size: 30px; }
+  .success p { color: var(--ink-2); }
+  @media (max-width: 960px) { .demo { grid-template-columns: 1fr; } .form-card { position: static; } }
+  @media (max-width: 560px) { .form-grid { grid-template-columns: 1fr; } }
+</style>
+  <section class="hero short" aria-labelledby="hero-h">
+    <div class="field" aria-hidden="true" data-radius="0.95" data-cy="0"></div>
+    <div class="wrap">
+      <div data-mask style="display:grid;justify-items:center">
+        <p class="hero-brand" data-after-type>{{mark}}<span>Technical demo · 30 minutes</span></p>
+        <h1 class="display" id="hero-h" data-typed="48">See it stop a real attack.</h1>
+        <p class="sub" data-after-type>Bring one agent. Leave with <span class="rot" data-rot="2600"><span>the decision record.</span><span>a security review pack.</span><span>a plan for your cloud.</span></span></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" aria-label="Request a demo" style="padding-top:clamp(40px,6vw,80px)">
+    <div class="wrap demo">
+      <div>
+        <span class="eyebrow" data-reveal>What happens in the 30 minutes</span>
+        <ol class="agenda" data-agenda>
+          <i class="prog" aria-hidden="true"></i>
+          <li data-reveal><span class="dot"></span><div><time>00 – 05</time><b>Your agent, your concerns</b><p>Which agent you are being asked to approve, and what worries you about it.</p></div></li>
+          <li data-reveal><span class="dot"></span><div><time>05 – 12</time><b>Connect it</b><p>SDK or gateway in front of a test copy. Any framework, any model.</p></div></li>
+          <li data-reveal><span class="dot"></span><div><time>12 – 22</time><b>Watch a policy stop it</b><p>A live prompt injection and an exfiltration attempt, decided before the tool runs.</p></div></li>
+          <li data-reveal><span class="dot"></span><div><time>22 – 30</time><b>Keep the record</b><p>The decision ledger from the session, and a plan for your environment.</p></div></li>
+        </ol>
+        <div class="leave" data-reveal>
+          <div><span class="ticon">{{icon:check}}</span>No slideware. A security engineer, not a sales deck.</div>
+          <div><span class="ticon">{{icon:cloud}}</span>Runs against your agent, in your own cloud.</div>
+          <div><span class="ticon">{{icon:lock}}</span>Nothing leaves your environment during the demo.</div>
+        </div>
+      </div>
+      <div class="form-card" data-reveal>
+        <form data-validate novalidate>
+          <h2>Request a technical demo</h2>
+          <p>A security engineer replies within one business day.</p>
+          <div class="form-grid">
+            <div class="field"><label for="f-first">First name</label><input id="f-first" name="first" required autocomplete="given-name"><span class="err" role="alert"></span></div>
+            <div class="field"><label for="f-last">Last name</label><input id="f-last" name="last" required autocomplete="family-name"><span class="err" role="alert"></span></div>
+            <div class="field full"><label for="f-email">Work email</label><input id="f-email" type="email" required data-work autocomplete="email" placeholder="name@company.com"><span class="err" role="alert"></span></div>
+            <div class="field"><label for="f-co">Company</label><input id="f-co" required autocomplete="organization"><span class="err" role="alert"></span></div>
+            <div class="field"><label for="f-role">Role</label><select id="f-role" required><option value="">Choose one</option><option>CISO or security leader</option><option>Security architect or engineer</option><option>AI or platform engineering</option><option>Risk, compliance or audit</option><option>Other</option></select><span class="err" role="alert"></span></div>
+            <fieldset class="field full"><legend>Agents you are securing <span class="opt">(optional)</span></legend><div class="chips" style="margin-top:6px">
+              <label><input type="checkbox">Copilots</label><label><input type="checkbox">Member-facing</label><label><input type="checkbox">Coding</label><label><input type="checkbox">Back office</label><label><input type="checkbox">MCP servers</label>
+            </div></fieldset>
+            <label class="consent full"><input type="checkbox" required><span>I agree that Zenstra may contact me about this request, as described in the <a href="../zenstra/legal.html#privacy">privacy notice</a>.</span></label>
+            <button class="pill dark lg full" type="submit">Request the demo {{icon:arrow}}</button>
+          </div>
+          <div class="assure"><span>No phone number needed</span><span>Reply within one business day</span></div>
+        </form>
+        <div class="success" data-success hidden>
+          <svg class="check" viewBox="0 0 56 56" aria-hidden="true"><circle cx="28" cy="28" r="28"/><path d="m18 29 7 7 14-15"/></svg>
+          <h2>Thanks, <span data-who></span>.</h2>
+          <p>A security engineer will email you within one business day with times. While you wait, see how one tool call moves through Zenstra.</p>
+          <a class="pill line" href="../zenstra/platform.html#architecture">Explore the architecture {{icon:arrow}}</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="faq-h" style="padding-top:0">
+    <div class="wrap faq">
+      <div><span class="eyebrow" data-reveal>Before you book</span><h2 class="h2" id="faq-h" style="margin-top:18px;font-size:clamp(30px,3.4vw,46px)" data-reveal>Common questions.</h2></div>
+      <div data-reveal>
+        <details><summary>Do we need to prepare an agent?</summary><div class="a"><p>It helps, but it is not required. If you cannot run one in a test environment yet, we bring a sample agent that matches yours: a member-service assistant, a coding agent or a copilot.</p></div></details>
+        <details><summary>Does any of our data leave our environment?</summary><div class="a"><p>No. The decision point runs in your environment. The demo uses the same deployment, so prompts and payloads stay with you.</p></div></details>
+        <details><summary>Who joins from Zenstra?</summary><div class="a"><p>A security engineer who has deployed Zenstra with customers. Bring your security architect; they will have questions only an engineer can answer.</p></div></details>
+        <details><summary>What happens after the demo?</summary><div class="a"><p>You keep the decision record and a security review pack. If it fits, we plan a pilot with one platform and a small group of users.</p></div></details>
+      </div>
+    </div>
+  </section>

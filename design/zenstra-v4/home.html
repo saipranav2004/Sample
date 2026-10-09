@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zenstra · Runtime security for AI agents</title>
+<meta name="description" content="Zenstra decides every AI agent action before it runs, in your environment, and keeps a record anyone can verify.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script>(function(){var r=document.documentElement;r.classList.add('js');try{var t=localStorage.getItem('zx-theme');if(t)r.setAttribute('data-theme',t);}catch(e){}var red=matchMedia('(prefers-reduced-motion: reduce)').matches;if(red)r.classList.add('reduce');var seen=false;try{seen=sessionStorage.getItem('zx4-intro')==='1';}catch(e){}if(!red&&(!seen||/[?&]intro=1/.test(location.search)))r.classList.add('intro-play');setTimeout(function(){if(!window.__v4ok){r.classList.remove('intro-play');r.classList.add('reveal-all');}},6000);})();</script>
+<link rel="stylesheet" href="assets/v4.css">
+
+</head>
+<body data-page="home">
+<a class="skip" href="#main">Skip to content</a>
+<svg class="svg-defs" aria-hidden="true" focusable="false"><defs><linearGradient id="zgrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#12b0f0"/><stop offset="1" stop-color="#1667d9"/></linearGradient></defs></svg>
+<div class="intro" aria-hidden="true">
+  <div class="intro-line"><span class="intro-brand"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><path fill="url(#zgrad)" d="M12 0C12.9 7.6 16.4 11.1 24 12 16.4 12.9 12.9 16.4 12 24 11.1 16.4 7.6 12.9 0 12 7.6 11.1 11.1 7.6 12 0Z"/></svg><b>Zenstra</b></span><span class="intro-for">for</span><span class="intro-words"><span>credit unions</span><span>banks</span><span>healthcare</span></span></div>
+  <button class="intro-skip" type="button" tabindex="-1">Skip</button>
+</div>
+<header class="head">
+  <div class="wrap head-row">
+    <a class="logo" href="home.html" aria-label="Zenstra home"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><path fill="url(#zgrad)" d="M12 0C12.9 7.6 16.4 11.1 24 12 16.4 12.9 12.9 16.4 12 24 11.1 16.4 7.6 12.9 0 12 7.6 11.1 11.1 7.6 12 0Z"/></svg><span>Zenstra</span></a>
+    <nav class="nav" aria-label="Main"><a href="../zenstra/platform.html">Platform</a><a href="credit-unions.html">Credit unions</a><a href="../zenstra/resources.html">Resources</a><a href="../zenstra/trust-center.html">Trust Center</a><a href="../zenstra/company.html">Company</a></nav>
+    <div class="head-actions">
+      <button class="icon-btn theme" type="button" data-theme-toggle aria-label="Switch between light and dark theme"><svg class="moon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13 9.5A5.5 5.5 0 0 1 6.5 3a5.5 5.5 0 1 0 6.5 6.5Z"/></svg><svg class="sun" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="3"/><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"/></svg></button>
+      <a class="signin" href="../zenstra/console.html">Sign in</a>
+      <a class="pill dark" href="demo.html">Request a demo</a>
+      <button class="icon-btn menu-btn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="menu"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12"/></svg></button>
+    </div>
+  </div>
+</header>
+<nav class="menu" id="menu" aria-label="Mobile"><a href="../zenstra/platform.html">Platform</a><a href="credit-unions.html">Credit unions</a><a href="../zenstra/resources.html">Resources</a><a href="../zenstra/trust-center.html">Trust Center</a><a href="../zenstra/company.html">Company</a><a href="../zenstra/console.html">Sign in</a><a class="pill dark" href="demo.html">Request a demo</a></nav>
+<main id="main">
+<section class="hero" aria-labelledby="hero-h">
+    <div class="field" aria-hidden="true" data-radius="0.74" data-cy="0.02"></div>
+    <div class="wrap">
+      <div data-mask style="display:grid;justify-items:center">
+        <p class="hero-brand" data-after-type><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><path fill="url(#zgrad)" d="M12 0C12.9 7.6 16.4 11.1 24 12 16.4 12.9 12.9 16.4 12 24 11.1 16.4 7.6 12.9 0 12 7.6 11.1 11.1 7.6 12 0Z"/></svg><span>Runtime security for AI agents</span></p>
+        <h1 class="display" id="hero-h" data-typed="44">Every agent action, checked before it runs.</h1>
+        <p class="sub" data-after-type>Runtime security that <span class="rot" data-rot="2800"><span>credit unions rely on.</span><span>examiners can verify.</span><span>agents can't talk past.</span></span></p>
+      </div>
+      <div class="ctas" data-after-type><a class="pill dark lg" href="demo.html">Request a demo <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a><a class="pill ghost lg" href="#how">See how it works</a></div>
+    </div>
+    <div class="hero-foot" data-after-type aria-label="Product principles"><span><i></i>Inline, before the tool runs</span><span><i></i>Runs in your cloud</span><span><i></i>Fail-closed by default</span><span><i></i>Every decision recorded</span></div>
+  </section>
+
+  <section class="statement" aria-label="What Zenstra is">
+    <div class="wrap">
+      <p data-scrub>Zenstra sits between your AI agents and everything they touch. It decides every action before it runs, in your environment, and keeps a record anyone can verify.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="agents-h" style="padding-bottom:clamp(80px,10vw,140px)">
+    <div class="wrap sec-head center">
+      <span class="eyebrow" data-reveal>Coverage</span>
+      <h2 class="h2" id="agents-h" data-reveal>Every agent. Every tool. Every call.</h2>
+    </div>
+    <div class="bubbles" data-bubbles aria-hidden="true">
+      <div class="bubble-row">
+        <span class="bubble"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="6" r="3"/><path d="M3 14c.8-2.6 2.8-4 5-4s4.2 1.4 5 4"/></svg><em>Copilots</em></span><span class="bubble k"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2Z"/></svg><em>Member chat</em></span><span class="bubble"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/><path d="m4.5 6.5 2 1.5-2 1.5M8.5 10h3"/></svg><em>Coding agents</em></span><span class="bubble"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 2.5v3.5M10.5 2.5v3.5M3.5 6h9v2a4.5 4.5 0 0 1-9 0Z M8 12.5v1.5"/></svg><em>MCP servers</em></span><span class="bubble"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 6 8 2.5 14 6M3.5 6.5v6M6.5 6.5v6M9.5 6.5v6M12.5 6.5v6M2 13.5h12"/></svg><em>Core banking</em></span><span class="bubble k"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 1.5h5.5L12.5 4.5v10h-8.5Z M9 1.5v3.5h3.5M6 8.5h4.5M6 11h4.5"/></svg><em>Loan files</em></span><span class="bubble"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="5.5"/><circle cx="8" cy="8" r="2"/></svg><em>Fraud and AML</em></span><span class="bubble"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="2.5"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4"/></svg><em>Automation</em></span><span class="bubble"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3.5" width="12" height="9" rx="1.5"/><path d="m2.5 4.5 5.5 4 5.5-4"/></svg><em>Email</em></span><span class="bubble k"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="8" r="3"/><path d="M8.5 8h6M12 8v2.5M14.5 8v2"/></svg><em>Secrets</em></span><span class="bubble"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="4.5" width="11" height="8" rx="2"/><path d="M8 2v2.5M6 8.5h.01M10 8.5h.01"/></svg><em>Agent to agent</em></span><span class="bubble"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="12" height="8" rx="1.2"/><path d="M5.5 13.5h5M8 11v2.5"/></svg><em>Endpoints</em></span><span class="bubble"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.5h7a3 3 0 0 0 .3-6A4 4 0 0 0 4.2 6 3.3 3.3 0 0 0 4.5 12.5Z"/></svg><em>Cloud APIs</em></span><span class="bubble k"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 3h4a1.5 1.5 0 0 1 1.5 1.5V14a1.5 1.5 0 0 0-1.5-1.5h-4ZM13.5 3h-4A1.5 1.5 0 0 0 8 4.5V14a1.5 1.5 0 0 1 1.5-1.5h4Z"/></svg><em>Knowledge bases</em></span>
+      </div>
+    </div>
+    <p class="wrap platforms" data-reveal>Microsoft Copilot · ChatGPT Enterprise · Gemini · MCP · n8n · LangGraph · CrewAI · Fiserv agentOS · Jack Henry · Temenos</p>
+  </section>
+
+  <section class="sec" id="platform" aria-labelledby="pl-h" style="padding-top:0">
+    <div class="wrap">
+      <div class="sec-head" style="margin-bottom:clamp(40px,6vw,80px)">
+        <span class="eyebrow" data-reveal>Platform</span>
+        <h2 class="h2" id="pl-h" data-reveal>One decision point.<br><span class="muted">For every agent you run.</span></h2>
+      </div>
+      <div class="explore" data-explore>
+        <div class="ex-list">
+          <article class="ex-item" data-ex-item>
+            <span class="num">01 · Discover</span>
+            <h3>Find every agent, including the ones nobody registered.</h3>
+            <p data-chars>Endpoint, gateway and SDK signals become one inventory, with an owner and a verifiable identity for each agent.</p>
+            <ul><li>Shadow AI on managed devices</li><li>Agent identity and ownership</li><li>Coverage you can report</li></ul>
+            <a class="link" href="../zenstra/discover.html">Explore Discover <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+            <div class="ex-inline"><img class="th-light" src="assets/img/crop-riskiest-light.webp" alt="Highest-risk agents with risk scores, main factors and owners" width="1031" height="546" loading="lazy" decoding="async"><img class="th-dark" src="assets/img/crop-riskiest-dark.webp" alt="" width="1031" height="546" loading="lazy" decoding="async"></div>
+          </article>
+          <article class="ex-item" data-ex-item>
+            <span class="num">02 · Enforce</span>
+            <h3>Allow, hold for a person, or block. Before the tool runs.</h3>
+            <p data-chars>Every tool call is checked against policy and the agent's declared task. A blocked call never reaches the tool.</p>
+            <ul><li>Scoped, expiring tool grants</li><li>Prompt injection and memory defense</li><li>Policy as code, tested before release</li></ul>
+            <a class="link" href="../zenstra/enforce.html">Explore Enforce <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+            <div class="ex-inline"><img class="th-light" src="assets/img/crop-run-light.webp" alt="Agent run showing an injected instruction quarantined and the email blocked" width="1206" height="1025" loading="lazy" decoding="async"><img class="th-dark" src="assets/img/crop-run-dark.webp" alt="" width="1206" height="1025" loading="lazy" decoding="async"></div>
+          </article>
+          <article class="ex-item" data-ex-item>
+            <span class="num">03 · Prove</span>
+            <h3>A record of every decision you can verify yourself.</h3>
+            <p data-chars>Each decision is written to a hash-chained ledger in your environment, with the policy and evidence behind it.</p>
+            <ul><li>Tamper-evident decision ledger</li><li>Detection against each agent's baseline</li><li>Exam-ready evidence packs</li></ul>
+            <a class="link" href="../zenstra/prove.html">Explore Prove <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+            <div class="ex-inline"><img class="th-light" src="assets/img/screen-investigation-light.webp" alt="Investigation showing outcome, blast radius and the agent run" width="1600" height="1000" loading="lazy" decoding="async"><img class="th-dark" src="assets/img/screen-investigation-dark.webp" alt="" width="1600" height="1000" loading="lazy" decoding="async"></div>
+          </article>
+          <article class="ex-item" data-ex-item>
+            <span class="num">04 · Respond</span>
+            <h3>Contain an agent in seconds, not meetings.</h3>
+            <p data-chars>Investigations open on the outcome and blast radius. Stop one agent or one tool, with the reason recorded.</p>
+            <ul><li>Ranked response actions</li><li>Emergency stop, narrowest scope first</li><li>Export to your SIEM and ticketing</li></ul>
+            <a class="link" href="../zenstra/console.html">Open the console <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+            <div class="ex-inline"><img class="th-light" src="assets/img/crop-estop-light.webp" alt="Emergency stop scoped to one agent, with a recorded reason" width="840" height="665" loading="lazy" decoding="async"><img class="th-dark" src="assets/img/crop-estop-dark.webp" alt="" width="840" height="665" loading="lazy" decoding="async"></div>
+          </article>
+        </div>
+        <div class="ex-media">
+          <a class="glow-frame" href="../zenstra/console.html" data-cursor="Open" aria-label="Open the Zenstra console">
+            <div class="ex-stage">
+              <div class="ex-shot"><img class="th-light" src="assets/img/crop-riskiest-light.webp" alt="Highest-risk agents with risk scores, main factors and owners" width="1031" height="546" loading="lazy" decoding="async"><img class="th-dark" src="assets/img/crop-riskiest-dark.webp" alt="" width="1031" height="546" loading="lazy" decoding="async"></div>
+              <div class="ex-shot"><img class="th-light" src="assets/img/crop-run-light.webp" alt="Agent run showing an injected instruction quarantined and the email blocked" width="1206" height="1025" loading="lazy" decoding="async"><img class="th-dark" src="assets/img/crop-run-dark.webp" alt="" width="1206" height="1025" loading="lazy" decoding="async"></div>
+              <div class="ex-shot full"><img class="th-light" src="assets/img/screen-investigation-light.webp" alt="Investigation showing outcome, blast radius and the agent run" width="1600" height="1000" loading="lazy" decoding="async"><img class="th-dark" src="assets/img/screen-investigation-dark.webp" alt="" width="1600" height="1000" loading="lazy" decoding="async"></div>
+              <div class="ex-shot"><img class="th-light" src="assets/img/crop-estop-light.webp" alt="Emergency stop scoped to one agent, with a recorded reason" width="840" height="665" loading="lazy" decoding="async"><img class="th-dark" src="assets/img/crop-estop-dark.webp" alt="" width="840" height="665" loading="lazy" decoding="async"></div>
+            </div>
+          </a>
+          <div class="ex-dots" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="how" aria-labelledby="how-h" style="padding-bottom:clamp(96px,12vw,170px)">
+    <div class="wrap">
+      <div class="morph" data-morph data-reveal>
+        <div class="morph-copy">
+          <div style="display:grid;gap:18px">
+            <span class="eyebrow">How it works</span>
+            <h2 class="h2" id="how-h">Three steps.<br>One control.</h2>
+          </div>
+          <div class="steps" role="tablist" aria-label="How Zenstra works">
+            <button class="step" type="button" role="tab" data-shape="radar"><i class="bar"></i><span class="n">01</span><b>Discover</b><p>Every agent and connector, found across devices, gateways and SDKs.</p></button>
+            <button class="step" type="button" role="tab" data-shape="shield"><i class="bar"></i><span class="n">02</span><b>Enforce</b><p>Each tool call is decided in milliseconds. Unsafe calls are stopped before they land.</p></button>
+            <button class="step" type="button" role="tab" data-shape="chain"><i class="bar"></i><span class="n">03</span><b>Prove</b><p>Every decision is chained to the last, so the record can be checked by anyone.</p></button>
+          </div>
+          <a class="link" style="color:#fff" href="../zenstra/platform.html#architecture">See the architecture <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+        </div>
+        <div class="field" aria-hidden="true"></div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-label="Zenstra in numbers" style="padding-bottom:clamp(96px,12vw,170px)">
+    <div class="wrap">
+      <div class="nums">
+        <div data-reveal><b data-count="3">3</b><span>Ways to deploy: SDK, gateway or endpoint app</span></div>
+        <div data-reveal data-delay="80"><b>0</b><span>Prompts or payloads that leave your environment</span></div>
+        <div data-reveal data-delay="160"><b>&lt;20 ms</b><span>Decision latency at p95, measured in your environment</span></div>
+        <div data-reveal data-delay="240"><b data-count="100" data-suf="%">100%</b><span>Of tool calls decided before they run, not reviewed after</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="trust-h" style="padding-bottom:clamp(96px,12vw,170px)">
+    <div class="wrap">
+      <div class="trust" data-reveal>
+        <div style="display:grid;gap:16px;justify-items:start">
+          <span class="eyebrow">Trust Center</span>
+          <h2 class="h3" id="trust-h" style="font-size:clamp(26px,2.6vw,36px)">Independently audited, and verifiable without asking us.</h2>
+          <a class="link" href="../zenstra/trust-center.html">Visit the Trust Center <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+        </div>
+        <div class="trust-items">
+          <div><svg class="seal" viewBox="0 0 54 54" aria-hidden="true"><circle class="o" cx="27" cy="27" r="25"/><circle class="d" cx="27" cy="27" r="21"/><circle class="i" cx="27" cy="27" r="17"/><text x="27" y="28" text-anchor="middle">SOC 2</text><text class="s" x="27" y="37" text-anchor="middle">TYPE II</text></svg><span><b>SOC 2 Type II</b><small>Annual independent audit</small></span></div>
+          <div><svg class="seal" viewBox="0 0 54 54" aria-hidden="true"><circle class="o" cx="27" cy="27" r="25"/><circle class="d" cx="27" cy="27" r="21"/><circle class="i" cx="27" cy="27" r="17"/><text x="27" y="28" text-anchor="middle">ISO</text><text class="s" x="27" y="37" text-anchor="middle">27001</text></svg><span><b>ISO/IEC 27001:2022</b><small>Verifiable in the public register</small></span></div>
+          <div><span class="ticon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.5h7a3 3 0 0 0 .3-6A4 4 0 0 0 4.2 6 3.3 3.3 0 0 0 4.5 12.5Z"/></svg></span><span><b>Runs in your environment</b><small>Payloads stay with you</small></span></div>
+          <div><span class="ticon"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg></span><span><b>No model training</b><small>Your data never trains a model</small></span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="duo" aria-label="Where to go next">
+    <a href="credit-unions.html"><canvas data-dots aria-hidden="true"></canvas><span class="tag">Lead programme</span><h3>For credit unions<span>Built for examination</span></h3><span class="pill dark">Zenstra for credit unions <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></span></a>
+    <a href="demo.html"><canvas data-dots aria-hidden="true"></canvas><span class="tag">30-minute technical demo</span><h3>For security teams<span>See it stop a live attack</span></h3><span class="pill ghost">Request a demo <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></span></a>
+  </section>
+
+  <section aria-labelledby="cta-h" style="padding:clamp(96px,12vw,170px) 0 0">
+    <div class="wrap">
+      <div class="cta-panel">
+        <div class="field" aria-hidden="true"></div>
+        <div class="inner">
+          <h2 class="h2" id="cta-h" data-reveal>Bring one real agent.<br>Leave with the evidence.</h2>
+          <p data-reveal data-delay="100">A security engineer connects Zenstra to one of your agents and shows a policy stop a live injection, in your own cloud.</p>
+          <div class="ctas" data-reveal data-delay="200"><a class="pill light lg" href="demo.html">Request a demo <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a><a class="pill on-dark lg" href="../zenstra/trust-center.html">Visit the Trust Center</a></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<footer class="foot" data-foot>
+  <div class="wrap">
+    <div class="foot-top">
+      <p class="foot-line">Every agent action,<br>checked before it runs.</p>
+      <div class="foot-cols"><div><h2>Platform</h2><a href="../zenstra/discover.html">Discover</a><a href="../zenstra/enforce.html">Enforce</a><a href="../zenstra/prove.html">Prove</a><a href="../zenstra/platform.html#architecture">Architecture</a><a href="../zenstra/console.html">Console</a></div><div><h2>Solutions</h2><a href="credit-unions.html">Credit unions</a><a href="../zenstra/solutions.html#banking">Banking and lending</a><a href="../zenstra/solutions.html#healthcare">Healthcare</a><a href="../zenstra/solutions.html#agents">Agent types</a></div><div><h2>Trust</h2><a href="../zenstra/trust-center.html">Trust Center</a><a href="../zenstra/trust-center.html#compliance">Certifications</a><a href="../zenstra/trust-center.html#subprocessors">Subprocessors</a><a href="../zenstra/trust-center.html#disclosure">Report a vulnerability</a></div><div><h2>Company</h2><a href="../zenstra/company.html#about">About</a><a href="../zenstra/company.html#careers">Careers</a><a href="../zenstra/company.html#contact">Contact</a><a href="demo.html">Request a demo</a></div></div>
+    </div>
+    <div class="wordmark" aria-hidden="true"><span>Zenstra</span><svg class="lift-star" viewBox="0 0 24 24"><path d="M12 0C12.9 7.6 16.4 11.1 24 12 16.4 12.9 12.9 16.4 12 24 11.1 16.4 7.6 12.9 0 12 7.6 11.1 11.1 7.6 12 0Z"/></svg></div>
+    <div class="foot-legal"><span>&copy; 2026 Zenstra AI</span><a href="../zenstra/legal.html#privacy">Privacy</a><a href="../zenstra/legal.html#terms">Terms</a><a href="../zenstra/legal.html#cookies">Cookies</a><a href="../zenstra/legal.html#accessibility">Accessibility</a><a class="status" href="../zenstra/trust-center.html#status"><i></i>All systems operational</a></div>
+  </div>
+</footer>
+<script src="assets/vendor/lenis-1.1.13.min.js"></script>
+<script src="assets/particles.js"></script>
+<script src="assets/v4.js"></script>
+</body>
+</html>

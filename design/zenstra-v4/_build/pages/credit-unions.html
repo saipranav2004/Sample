@@ -1,0 +1,204 @@
+<!--{"title": "Zenstra for credit unions", "description": "Inventory, scoped access and an examiner-ready record for every AI agent in your credit union, across core platforms, copilots, lending and fraud tools.", "active": "solutions"}-->
+<style>
+  .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--line); }
+  .stats > div { padding: 30px 24px 0 0; }
+  .stats b { display: block; font-weight: 500; font-size: clamp(48px, 6vw, 88px); letter-spacing: -0.05em; line-height: 1; font-variant-numeric: tabular-nums; }
+  .stats span { display: block; margin-top: 14px; color: var(--ink-3); max-width: 24ch; }
+  @media (max-width: 760px) { .stats { grid-template-columns: 1fr; gap: 24px; } }
+  .areas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; border-top: 1px solid var(--line); margin-top: clamp(40px, 5vw, 64px); }
+  .areas > div { padding: 28px 28px 30px 0; border-bottom: 1px solid var(--line); }
+  .areas b { display: flex; gap: 12px; align-items: center; font-weight: 500; font-size: 18px; letter-spacing: -0.015em; }
+  .areas b svg { width: 18px; height: 18px; color: var(--brand); }
+  .areas p { margin-top: 8px; color: var(--ink-2); font-size: 15.5px; max-width: 34ch; }
+  @media (max-width: 900px) { .areas { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 600px) { .areas { grid-template-columns: 1fr; } }
+  .controls { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: clamp(40px, 5vw, 64px); }
+  .ctl { position: relative; padding: 24px; border-radius: 20px; background: var(--bg-2); min-height: 200px; display: grid; align-content: space-between; gap: 20px; overflow: hidden; isolation: isolate; transition: transform 500ms var(--ease); }
+  .ctl::before { content: ''; position: absolute; inset: auto -30% -60% auto; width: 80%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--cyan) 30%, transparent), transparent 65%); opacity: 0; transition: opacity 500ms; z-index: -1; }
+  .ctl:hover { transform: translateY(-4px); }
+  .ctl:hover::before { opacity: 1; }
+  .ctl .n { font: 500 12px/1 var(--mono); color: var(--ink-3); letter-spacing: 0.06em; }
+  .ctl b { display: block; font-weight: 500; font-size: 19px; letter-spacing: -0.02em; }
+  .ctl p { margin-top: 8px; font-size: 14.5px; color: var(--ink-2); }
+  @media (max-width: 1000px) { .controls { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 560px) { .controls { grid-template-columns: 1fr; } }
+</style>
+  <section class="hero" aria-labelledby="hero-h">
+    <div class="field" aria-hidden="true" data-radius="0.74" data-cy="0.02"></div>
+    <div class="wrap">
+      <div data-mask style="display:grid;justify-items:center">
+        <p class="hero-brand" data-after-type>{{mark}}<span>Zenstra for credit unions</span></p>
+        <h1 class="display" id="hero-h" data-typed="42">Your credit union already runs agentic AI.</h1>
+        <p class="sub" data-after-type>Zenstra makes it <span class="rot" data-rot="2600"><span>visible.</span><span>governed.</span><span>examiner-ready.</span></span></p>
+      </div>
+      <div class="ctas" data-after-type><a class="pill dark lg" href="demo.html">Request a demo {{icon:arrow}}</a><a class="pill ghost lg" href="#controls">See the eight controls</a></div>
+    </div>
+    <div class="hero-foot" data-after-type aria-label="At a glance"><span><i></i>Core platforms</span><span><i></i>Copilots</span><span><i></i>Lending and fraud</span><span><i></i>Member service</span></div>
+  </section>
+
+  <section aria-label="Credit unions and agentic AI" style="padding-top:clamp(72px,9vw,120px)">
+    <div class="wrap">
+      <div class="stats">
+        <div data-reveal><b data-count="59" data-suf="%">59%</b><span>of credit unions run generative AI in production</span></div>
+        <div data-reveal data-delay="100"><b data-count="17" data-suf="%">17%</b><span>have already deployed agentic AI</span></div>
+        <div data-reveal data-delay="200"><b>&lt;1 in 5</b><span>call their deployment enterprise-ready</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="statement" aria-label="The problem">
+    <div class="wrap">
+      <p data-scrub>Core platforms, copilots, lending and fraud tools are adding agents faster than policy can follow. Zenstra gives every one of them an owner, a scope and a record.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="where-h" style="padding-bottom:clamp(96px,12vw,160px)">
+    <div class="wrap sec-head center">
+      <span class="eyebrow" data-reveal>Where agents already run</span>
+      <h2 class="h2" id="where-h" data-reveal>It shipped with the platforms<br>you already run.</h2>
+    </div>
+    <div class="bubbles" data-bubbles aria-hidden="true">
+      <div class="bubble-row">
+        <span class="bubble k">{{icon:bank}}<em>Core banking</em></span><span class="bubble">{{icon:user}}<em>Copilots</em></span><span class="bubble">{{icon:file}}<em>Lending</em></span><span class="bubble">{{icon:target}}<em>Fraud and AML</em></span><span class="bubble k">{{icon:chat}}<em>Member chat</em></span><span class="bubble">{{icon:plug}}<em>No-code</em></span><span class="bubble">{{icon:card}}<em>Card disputes</em></span><span class="bubble">{{icon:book}}<em>Knowledge base</em></span><span class="bubble k">{{icon:people}}<em>HR assistant</em></span><span class="bubble">{{icon:grid}}<em>MCP</em></span><span class="bubble">{{icon:mail}}<em>Email</em></span><span class="bubble">{{icon:device}}<em>Branch devices</em></span>
+      </div>
+    </div>
+    <div class="wrap">
+      <div class="areas">
+        <div data-reveal><b>{{icon:bank}}Core-banking agents</b><p>Fiserv agentOS, Jack Henry and Temenos ship agent runtimes inside your core.</p></div>
+        <div data-reveal data-delay="60"><b>{{icon:user}}Employee copilots</b><p>Copilot, ChatGPT and Gemini, often live before a policy exists.</p></div>
+        <div data-reveal data-delay="120"><b>{{icon:file}}Lending and underwriting</b><p>Agents that touch loan files from application to approval.</p></div>
+        <div data-reveal data-delay="180"><b>{{icon:target}}Fraud and AML</b><p>SAR-prep and pattern agents with standing access to transactions.</p></div>
+        <div data-reveal data-delay="240"><b>{{icon:chat}}Member service</b><p>Chat and voice agents sharing a knowledge base with staff assistants.</p></div>
+        <div data-reveal data-delay="300"><b>{{icon:plug}}Shadow automation</b><p>n8n and Zapier wiring agents into core systems without IT seeing it.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="gap-h" style="padding-bottom:clamp(96px,12vw,160px)">
+    <div class="wrap">
+      <div class="sec-head" style="margin-bottom:clamp(36px,5vw,56px)">
+        <span class="eyebrow" data-reveal>The gap</span>
+        <h2 class="h2" id="gap-h" data-reveal>Vendor defaults are not<br><span class="muted">institutional governance.</span></h2>
+      </div>
+      <div class="compare" data-reveal>
+        <div class="scroll">
+          <table>
+            <thead><tr><th scope="col">What examiners ask</th><th scope="col">Vendor defaults</th><th scope="col">With Zenstra</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Which agents do you run?</th><td class="no"><span class="m">{{icon:x}}</span>Per platform, if at all</td><td class="yes"><span class="m">{{icon:check}}</span>Every agent and connector, across platforms</td></tr>
+              <tr><th scope="row">What can each one reach?</th><td class="no"><span class="m">{{icon:x}}</span>Standing credentials</td><td class="yes"><span class="m">{{icon:check}}</span>Scoped grants that expire with the task</td></tr>
+              <tr><th scope="row">Who approved it?</th><td class="no"><span class="m">{{icon:x}}</span>A policy written at rollout</td><td class="yes"><span class="m">{{icon:check}}</span>A recorded review before production</td></tr>
+              <tr><th scope="row">How do you stop it?</th><td class="no"><span class="m">{{icon:x}}</span>A different switch per vendor</td><td class="yes"><span class="m">{{icon:check}}</span>One revocation across platforms, in seconds</td></tr>
+              <tr><th scope="row">Show me what it did.</th><td class="no"><span class="m">{{icon:x}}</span>Logs spread across vendors</td><td class="yes"><span class="m">{{icon:check}}</span>One tamper-evident record of every decision</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="controls" aria-labelledby="ctl-h" style="padding-bottom:clamp(96px,12vw,160px)">
+    <div class="wrap">
+      <div class="sec-head">
+        <span class="eyebrow" data-reveal>What Zenstra provides</span>
+        <h2 class="h2" id="ctl-h" data-reveal>Eight controls, one layer.</h2>
+      </div>
+      <div class="controls">
+        <div class="ctl" data-reveal><span class="n">01</span><div><b>Shadow AI discovery</b><p>Copilots and no-code flows wired into core, found before an examiner finds them.</p></div></div>
+        <div class="ctl" data-reveal data-delay="60"><span class="n">02</span><div><b>Agent identity</b><p>A cryptographic identity for every agent, revoked when access drifts.</p></div></div>
+        <div class="ctl" data-reveal data-delay="120"><span class="n">03</span><div><b>Secure tool access</b><p>Each connector into Fiserv, Jack Henry or Temenos becomes a scoped grant.</p></div></div>
+        <div class="ctl" data-reveal data-delay="180"><span class="n">04</span><div><b>Runtime detection</b><p>An agent reaching beyond its task is caught before it reaches a member's file.</p></div></div>
+        <div class="ctl" data-reveal><span class="n">05</span><div><b>Injection defense</b><p>Member chat and voice agents isolated from malicious input.</p></div></div>
+        <div class="ctl" data-reveal data-delay="60"><span class="n">06</span><div><b>Memory protection</b><p>Shared knowledge layers that cannot be poisoned across sessions.</p></div></div>
+        <div class="ctl" data-reveal data-delay="120"><span class="n">07</span><div><b>Policy enforcement</b><p>Your acceptable-use policy as enforced code, not a PDF.</p></div></div>
+        <div class="ctl" data-reveal data-delay="180"><span class="n">08</span><div><b>Immutable audit trail</b><p>A tamper-evident record of every decision, ready for an NCUA examiner.</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="exam-h" style="padding-bottom:clamp(60px,8vw,110px)">
+    <div class="wrap">
+      <div class="sec-head" style="margin-bottom:clamp(40px,6vw,80px)">
+        <span class="eyebrow" data-reveal>Built for examination</span>
+        <h2 class="h2" id="exam-h" data-reveal>No separate rulebook for AI.<br><span class="muted">So the proof has to come from you.</span></h2>
+      </div>
+      <div class="explore" data-explore>
+        <div class="ex-list">
+          <article class="ex-item" data-ex-item>
+            <span class="num">01</span>
+            <h3>A living inventory.</h3>
+            <p data-chars>Every agent and connection, tracked automatically, with a named owner and the platform it runs on.</p>
+            <div class="ex-inline">{{shot:crop-coverage|Coverage by platform: governed against discovered agents}}</div>
+          </article>
+          <article class="ex-item" data-ex-item>
+            <span class="num">02</span>
+            <h3>Only the access it needs.</h3>
+            <p data-chars>Least-privilege proof generated as grants are issued, with unused access flagged for removal.</p>
+            <div class="ex-inline">{{shot:crop-grants|Tool grants with scope, expiry and last use}}</div>
+          </article>
+          <article class="ex-item" data-ex-item>
+            <span class="num">03</span>
+            <h3>A complete audit trail.</h3>
+            <p data-chars>Every action recorded, not just the flagged ones, and exported as an examination pack on demand.</p>
+            <a class="link" href="../zenstra/prove.html#evidence">See the examination pack {{icon:arrow}}</a>
+            <div class="ex-inline">{{shot:screen-overview|Security overview with governed agents, detections and approvals}}</div>
+          </article>
+        </div>
+        <div class="ex-media">
+          <a class="glow-frame" href="../zenstra/console.html" data-cursor="Open" aria-label="Open the Zenstra console">
+            <div class="ex-stage">
+              <div class="ex-shot">{{shot:crop-coverage|Coverage by platform: governed against discovered agents}}</div>
+              <div class="ex-shot">{{shot:crop-grants|Tool grants with scope, expiry and last use}}</div>
+              <div class="ex-shot full">{{shot:screen-overview|Security overview with governed agents, detections and approvals}}</div>
+            </div>
+          </a>
+          <div class="ex-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="how-h" style="padding-bottom:clamp(96px,12vw,160px)">
+    <div class="wrap">
+      <div class="morph" data-morph data-reveal>
+        <div class="morph-copy">
+          <div style="display:grid;gap:18px">
+            <span class="eyebrow">How it connects</span>
+            <h2 class="h2" id="how-h">One quiet layer.<br>Nothing to rip out.</h2>
+          </div>
+          <div class="steps" role="tablist" aria-label="How Zenstra connects">
+            <button class="step" type="button" role="tab" data-shape="radar"><i class="bar"></i><span class="n">01</span><b>On every device</b><p>A small app, deployed through your device management, finds AI in use and stops risky actions.</p></button>
+            <button class="step" type="button" role="tab" data-shape="shield"><i class="bar"></i><span class="n">02</span><b>In front of your core</b><p>A gateway in your environment decides every call to Fiserv, Jack Henry or Temenos.</p></button>
+            <button class="step" type="button" role="tab" data-shape="chain"><i class="bar"></i><span class="n">03</span><b>One record</b><p>One policy set and one ledger, tied to Okta, Entra ID or Google Workspace.</p></button>
+          </div>
+          <a class="link" style="color:#fff" href="../zenstra/platform.html#deployment">Deployment options {{icon:arrow}}</a>
+        </div>
+        <div class="field" aria-hidden="true"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="faq-h" style="padding-top:0">
+    <div class="wrap faq">
+      <div><span class="eyebrow" data-reveal>FAQ</span><h2 class="h2" id="faq-h" style="margin-top:18px;font-size:clamp(30px,3.4vw,46px)" data-reveal>Questions credit unions ask first.</h2></div>
+      <div data-reveal>
+        <details><summary>Does Zenstra replace our core provider's agent controls?</summary><div class="a"><p>No. It sits underneath them. Your core provider's controls still apply; Zenstra adds an inventory, a policy and a revocation switch that work across every platform, so your institution can verify them independently.</p></div></details>
+        <details><summary>What does deployment involve for our IT team?</summary><div class="a"><p>The endpoint app goes out through your existing device management. The gateway runs in your environment in front of core and agent platforms. Most credit unions start with a pilot group and one platform.</p></div></details>
+        <details><summary>Do staff need training?</summary><div class="a"><p>No. Staff keep using the tools they already use. They only see Zenstra when an action needs approval or is blocked, with a plain explanation.</p></div></details>
+        <details><summary>Where does member data go?</summary><div class="a"><p>Prompts and payloads are evaluated inside your environment. Only decisions and redacted evidence reach the Zenstra control plane. The <a href="../zenstra/trust-center.html#privacy">Trust Center</a> lists exactly what leaves and what never does.</p></div></details>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="cta-h">
+    <div class="wrap">
+      <div class="cta-panel">
+        <div class="field" aria-hidden="true"></div>
+        <div class="inner">
+          <h2 class="h2" id="cta-h" data-reveal>Show your examiner<br>exactly what happened.</h2>
+          <p data-reveal data-delay="100">See Zenstra find, govern and record the agents already running in a credit union like yours.</p>
+          <div class="ctas" data-reveal data-delay="200"><a class="pill light lg" href="demo.html">Request a demo {{icon:arrow}}</a><a class="pill on-dark lg" href="../zenstra/trust-center.html">Visit the Trust Center</a></div>
+        </div>
+      </div>
+    </div>
+  </section>
