@@ -14,10 +14,23 @@
 
   /* ---------------- Theme ---------------- */
   $$('[data-theme-toggle]').forEach(function (b) {
-    b.addEventListener('click', function () {
+    b.addEventListener('click', function (e) {
       var next = isDark() ? 'light' : 'dark';
       var apply = function () { root.setAttribute('data-theme', next); try { localStorage.setItem('zx-theme', next); } catch (e) {} onTheme.forEach(function (f) { f(); }); };
-      if (document.startViewTransition && !REDUCE) document.startViewTransition(apply); else apply();
+      if (!document.startViewTransition || REDUCE) { apply(); return; }
+      // Circular reveal from the toggle
+      var r0 = b.getBoundingClientRect();
+      var x = e.clientX || r0.left + r0.width / 2, y = e.clientY || r0.top + r0.height / 2;
+      var r = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+      root.classList.add('vt');
+      var vt = document.startViewTransition(apply);
+      vt.finished.finally(function () { root.classList.remove('vt'); });
+      vt.ready.then(function () {
+        root.animate(
+          { clipPath: ['circle(0px at ' + x + 'px ' + y + 'px)', 'circle(' + r + 'px at ' + x + 'px ' + y + 'px)'] },
+          { duration: 620, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', pseudoElement: '::view-transition-new(root)' }
+        );
+      }).catch(function () {});
     });
   });
 
@@ -135,7 +148,7 @@
   $$('[data-reveal]').forEach(function (el) { var d = el.getAttribute('data-delay'); if (d) el.style.transitionDelay = d + 'ms'; if (io && !REDUCE) io.observe(el); else el.classList.add('in'); });
   $$('[data-words]').forEach(function (el) { splitWords(el); if (io && !REDUCE) io.observe(el); else el.classList.add('in'); });
 
-  /* ---------------- Count-up and gauges ---------------- */
+  /* ---------------- Count-up and figures ---------------- */
   function countTo(el, to, dec, pre, suf, dur) {
     if (REDUCE) { el.textContent = pre + to.toFixed(dec) + suf; return; }
     var t0 = performance.now();
@@ -148,10 +161,9 @@
     if (!REDUCE) el.textContent = pre + (0).toFixed(dec) + suf;
     onView(el, function () { countTo(el, to, dec, pre, suf, 1500); });
   });
-  $$('.gauge').forEach(function (g) {
-    var v = $('.v', g), frac = parseFloat(g.getAttribute('data-gauge') || '1'), L = 2 * Math.PI * 32;
-    v.style.strokeDasharray = L; v.style.strokeDashoffset = REDUCE ? L * (1 - frac) : L;
-    onView(g, function () { anim(v, [{ strokeDashoffset: L }, { strokeDashoffset: L * (1 - frac) }], { duration: 1600, easing: 'cubic-bezier(0.65, 0, 0.35, 1)' }); });
+  $$('.fig').forEach(function (f) {
+    var d = +f.getAttribute('data-delay') || 0;
+    onView(f, function () { setTimeout(function () { f.classList.add('drawn'); }, REDUCE ? 0 : d + 150); });
   });
 
   /* ---------------- Hero ---------------- */

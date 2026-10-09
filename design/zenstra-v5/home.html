@@ -8,7 +8,7 @@
 <link rel="icon" href="assets/img/zenstra-mark.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@600&display=swap" rel="stylesheet">
 <script>(function(){var r=document.documentElement;r.classList.add('js');try{var t=localStorage.getItem('zx-theme');if(t)r.setAttribute('data-theme',t);}catch(e){}var red=matchMedia('(prefers-reduced-motion: reduce)').matches;if(red)r.classList.add('reduce');var seen=false;try{seen=sessionStorage.getItem('zx5-intro')==='1';}catch(e){}if(!red&&(!seen||/[?&]intro=1/.test(location.search)))r.classList.add('intro-play');setTimeout(function(){if(!window.__v5ok){r.classList.remove('intro-play');r.classList.add('reveal-all');}},7000);})();</script>
 <link rel="stylesheet" href="assets/v5.css">
 
@@ -165,11 +165,11 @@
 
   <section aria-label="Zenstra in numbers" style="padding-bottom:clamp(96px,11vw,160px)">
     <div class="wrap">
-      <div class="gauges">
-        <div class="gauge" data-gauge="0.18" data-reveal><svg viewBox="0 0 76 76" aria-hidden="true"><circle class="t" cx="38" cy="38" r="32"/><circle class="v" cx="38" cy="38" r="32"/></svg><div><b><span data-count="18">18</span> ms</b><span>p95 decision latency, of a 100 ms budget</span></div></div>
-        <div class="gauge" data-gauge="1" data-reveal data-delay="80"><svg viewBox="0 0 76 76" aria-hidden="true"><circle class="t" cx="38" cy="38" r="32"/><circle class="v" cx="38" cy="38" r="32"/></svg><div><b><span data-count="8">8</span> of 8</b><span>Security controls enforced inline</span></div></div>
-        <div class="gauge" data-gauge="1" data-reveal data-delay="160"><svg viewBox="0 0 76 76" aria-hidden="true"><circle class="t" cx="38" cy="38" r="32"/><circle class="v" cx="38" cy="38" r="32"/></svg><div><b><span data-count="100">100</span>%</b><span>Of tool calls decided before they run</span></div></div>
-        <div class="gauge" data-gauge="0" data-reveal data-delay="240"><svg viewBox="0 0 76 76" aria-hidden="true"><circle class="t" cx="38" cy="38" r="32"/><circle class="v" cx="38" cy="38" r="32"/></svg><div><b>0</b><span>Prompts or payloads that leave your cloud</span></div></div>
+      <div class="figures">
+        <div class="fig" data-reveal><b><span data-count="18">18</span><small>ms</small></b><span>p95 decision latency, inline and fail-closed</span></div>
+        <div class="fig" data-reveal data-delay="80"><b><span data-count="47" data-suf="+">47+</span></b><span>Agents protected</span></div>
+        <div class="fig" data-reveal data-delay="160"><b><span data-count="8.7" data-suf="K">8.7K</span></b><span>Threats blocked every month</span></div>
+        <div class="fig" data-reveal data-delay="240"><b><span data-count="60" data-suf="+">60+</span></b><span>Security policies enforced</span></div>
       </div>
     </div>
   </section>
