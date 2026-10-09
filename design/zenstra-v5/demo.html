@@ -8,13 +8,12 @@
 <link rel="icon" href="assets/img/zenstra-mark.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@600&display=swap" rel="stylesheet">
 <script>(function(){var r=document.documentElement;r.classList.add('js');try{var t=localStorage.getItem('zx-theme');if(t)r.setAttribute('data-theme',t);}catch(e){}var red=matchMedia('(prefers-reduced-motion: reduce)').matches;if(red)r.classList.add('reduce');var seen=false;try{seen=sessionStorage.getItem('zx5-intro')==='1';}catch(e){}if(!red&&(!seen||/[?&]intro=1/.test(location.search)))r.classList.add('intro-play');setTimeout(function(){if(!window.__v5ok){r.classList.remove('intro-play');r.classList.add('reveal-all');}},7000);})();</script>
 <link rel="stylesheet" href="assets/v5.css">
 <style>
   .demo-hero { position: relative; padding: calc(var(--head-h) + 56px) 0 clamp(80px, 9vw, 128px); overflow: hidden; }
   .demo-hero::before { content: ''; position: absolute; inset: 0; z-index: 0; background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px); background-size: 64px 64px; mask-image: radial-gradient(ellipse 50% 60% at 20% 10%, #000 10%, transparent 75%); -webkit-mask-image: radial-gradient(ellipse 50% 60% at 20% 10%, #000 10%, transparent 75%); opacity: 0.7; }
-  .demo-hero .stream { position: absolute; inset: 0; z-index: 0; opacity: 0.8; mask-image: linear-gradient(90deg, transparent 40%, #000 62%); -webkit-mask-image: linear-gradient(90deg, transparent 40%, #000 62%); }
   .demo-grid { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); gap: clamp(40px, 6vw, 88px); align-items: start; }
   .demo-grid h1 { margin-top: 26px; }
   .demo-grid .lede { margin-top: 22px; }
@@ -78,9 +77,9 @@
 <nav class="menu" id="menu" aria-label="Mobile"><span class="mono-label">Products</span><a href="home.html#workflow">Workflow Security</a><a href="home.html#cloud">Cloud Security</a><a href="home.html#edr">Zenstra EDR</a><span class="mono-label">Explore</span><a href="credit-unions.html">Credit unions</a><a href="../zenstra/resources.html">Resources</a><a href="../zenstra/trust-center.html">Trust Center</a><a href="../zenstra/company.html">Company</a><a href="../zenstra/platform.html">Platform</a><a href="../zenstra/console.html">Sign in</a><a class="btn primary" href="demo.html">Request a demo</a></nav>
 <main id="main">
 <section class="demo-hero hero-lite rails" aria-labelledby="hero-h">
-    <div class="stream" data-gate="0.72" aria-hidden="true"></div>
+    <div class="lens" data-cx="0.5" data-cy="0.3" aria-hidden="true"></div>
     <div class="wrap demo-grid">
-      <div>
+      <div data-lens-mask>
         <span class="chip-live" data-after><i></i>Technical session · 30 minutes</span>
         <h1 class="display" id="hero-h" data-scan><span class="scanline"><span class="in">See Zenstra stop</span><i class="bar"></i></span><span class="scanline"><span class="in grad">a live attack.</span><i class="bar"></i></span></h1>
         <p class="lede" data-after>A security engineer connects Zenstra to one of your agents, runs a real injection against it, and hands you the decision record. No slides.</p>

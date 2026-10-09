@@ -59,48 +59,45 @@
   if (menuBtn) menuBtn.addEventListener('click', function () { toggleMenu(!body.classList.contains('menu-open')); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeAll(); });
 
-  /* ---------------- Text: scramble ---------------- */
-  var GLYPHS = '01<>/\\=+*#_-:;[]{}';
-  function scramble(el, text, dur) {
-    return new Promise(function (resolve) {
-      if (REDUCE) { el.textContent = text; resolve(); return; }
-      var t0 = performance.now(), n = text.length;
-      var step = function (now) {
-        var k = Math.min(1, (now - t0) / dur), done = Math.floor(k * n), out = text.slice(0, done), tail = '';
-        for (var i = done; i < Math.min(n, done + 6); i++) tail += text[i] === ' ' ? ' ' : GLYPHS[(Math.random() * GLYPHS.length) | 0];
-        el.innerHTML = '';
-        el.appendChild(document.createTextNode(out));
-        if (tail) { var s = document.createElement('span'); s.className = 'gl'; s.textContent = tail; el.appendChild(s); }
-        if (k < 1) requestAnimationFrame(step); else { el.textContent = text; resolve(); }
-      };
-      requestAnimationFrame(step);
-    });
+  /* ---------------- Text: word swap (after go.ai's intro) ----------------
+     The outgoing word sinks and blurs away while the next word drops in from
+     above and sharpens, both at once. The slot eases to the new word's width,
+     so a centred line re-centres smoothly instead of jumping. */
+  var DROP = 'cubic-bezier(0.22, 1, 0.36, 1)';
+  function swapSlot(slot, first) {
+    slot.classList.add('swap'); slot.textContent = '';
+    var cur = document.createElement('span'); cur.className = 'sw'; cur.textContent = first; slot.appendChild(cur);
+    return cur;
   }
-  function unscramble(el, dur) {
-    return new Promise(function (resolve) {
-      var text = el.textContent; if (REDUCE || !text) { resolve(); return; }
-      var t0 = performance.now(), n = text.length;
-      var step = function (now) {
-        var k = Math.min(1, (now - t0) / dur), keep = Math.ceil((1 - k) * n), tail = '';
-        for (var i = keep; i < Math.min(n, keep + 4); i++) tail += GLYPHS[(Math.random() * GLYPHS.length) | 0];
-        el.innerHTML = ''; el.appendChild(document.createTextNode(text.slice(0, keep)));
-        if (tail && k < 1) { var s = document.createElement('span'); s.className = 'gl'; s.textContent = tail; el.appendChild(s); }
-        if (k < 1) requestAnimationFrame(step); else { el.textContent = ''; resolve(); }
-      };
-      requestAnimationFrame(step);
+  function swapTo(slot, text, opts) {
+    opts = opts || {};
+    var cur = slot.querySelector('.sw:not(.out)');
+    if (REDUCE) { if (cur) cur.textContent = text; slot.style.width = ''; return Promise.resolve(); }
+    var nxt = document.createElement('span'); nxt.className = 'sw in'; nxt.textContent = text; slot.appendChild(nxt);
+    var from = cur ? cur.getBoundingClientRect().width : 0, to = nxt.getBoundingClientRect().width;
+    slot.style.width = from + 'px';
+    void slot.offsetWidth;
+    slot.style.transition = 'width ' + (opts.widthMs || 420) + 'ms ' + DROP;
+    slot.style.width = to + 'px';
+    var d = opts.dur || 380, dist = opts.dist || '0.42em', blur = opts.blur || '10px';
+    if (cur) {
+      cur.classList.add('out');
+      var o = anim(cur, [{ transform: 'translateY(0)', filter: 'blur(0)', opacity: 1 }, { transform: 'translateY(' + dist + ')', filter: 'blur(' + blur + ')', opacity: 0 }], { duration: d * 0.85, easing: 'cubic-bezier(0.55, 0, 0.75, 0.3)' });
+      if (o) o.onfinish = function () { cur.remove(); }; else cur.remove();
+    }
+    var i = anim(nxt, [{ transform: 'translateY(-' + dist + ')', filter: 'blur(' + blur + ')', opacity: 0 }, { transform: 'translateY(0)', filter: 'blur(0)', opacity: 1 }], { duration: d, easing: DROP });
+    return new Promise(function (res) {
+      var finish = function () { nxt.classList.remove('in'); slot.style.transition = ''; slot.style.width = ''; res(); };
+      if (i) i.onfinish = finish; else finish();
     });
   }
 
-  /* Rotating product word (decode) */
+  /* Rotating product line under the hero headline */
   function switcher(el) {
-    var words = el.getAttribute('data-switch').split('|'), i = 0, live = $('.sr-only', el.parentElement);
-    el.textContent = words[0]; el.style.minWidth = '';
+    var words = el.getAttribute('data-switch').split('|'), i = 0;
+    swapSlot(el, words[0]);
     if (REDUCE) return;
-    setInterval(function () {
-      if (document.hidden) return;
-      i = (i + 1) % words.length;
-      unscramble(el, 300).then(function () { return scramble(el, words[i], 520); });
-    }, 3000);
+    setInterval(function () { if (document.hidden) return; i = (i + 1) % words.length; swapTo(el, words[i], { dist: '0.5em', blur: '8px' }); }, 2800);
   }
 
   /* ---------------- Text: scan-line reveal ---------------- */
@@ -160,7 +157,11 @@
   /* ---------------- Hero ---------------- */
   var heroStream = null, ctaStreams = [];
   if (FX) {
-    $$('.hero .stream, .hero-lite .stream').forEach(function (h) { heroStream = FX.GateStream(h, { gate: +h.getAttribute('data-gate') || 0.74 }); onTheme.push(heroStream.theme); });
+    $$('.lens').forEach(function (h) {
+      var sec = h.closest('section'), m = sec ? sec.querySelector('[data-lens-mask]') : null;
+      heroStream = FX.LensField(h, { mask: m, cx: +h.getAttribute('data-cx') || 0.66, cy: +h.getAttribute('data-cy') || 0.5 });
+      onTheme.push(heroStream.theme);
+    });
     $$('.cta .stream').forEach(function (h) { ctaStreams.push(FX.GateStream(h, { gate: 0.76, dark: true, density: 0.8 })); });
   }
   var EVENTS = [
@@ -213,7 +214,10 @@
     });
   }
 
-  /* ---------------- Intro ---------------- */
+  /* ---------------- Intro ----------------
+     Timing measured from go.ai: the line drops in blurred (~0.45 s), each word
+     holds ~0.7 s, swaps take ~0.38 s, then the whole line gives way to the
+     Zenstra logo the same way before the screen opens. */
   function runIntro() {
     var intro = $('.intro');
     if (!intro || !root.classList.contains('intro-play')) { startHero(); return; }
@@ -224,8 +228,8 @@
     var done = false;
     var open = function () {
       if (done) return; done = true;
-      anim(line, [{ opacity: 1 }, { opacity: 0 }], { duration: 200 });
-      anim(logo, [{ opacity: 1 }, { opacity: 0 }], { duration: 250 });
+      anim(line, [{ opacity: getComputedStyle(line).opacity }, { opacity: 0 }], { duration: 200 });
+      anim(logo, [{ opacity: getComputedStyle(logo).opacity }, { opacity: 0 }], { duration: 250 });
       anim(beam, [{ transform: 'translateX(-50%) scaleX(0.2)', opacity: 1 }, { transform: 'translateX(-50%) scaleX(1)', opacity: 1 }], { duration: 420, easing: 'cubic-bezier(0.65, 0, 0.35, 1)' });
       setTimeout(function () {
         anim(beam, [{ opacity: 1 }, { opacity: 0 }], { duration: 500, delay: 300 });
@@ -240,18 +244,18 @@
     $('.intro-skip', intro).addEventListener('click', open);
     intro.addEventListener('click', open);
     window.addEventListener('keydown', open, { once: true });
-    anim(line, [{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 600 });
-    var seq = wait(350);
-    words.forEach(function (w, i) {
-      seq = seq.then(function () { if (!done) return scramble(word, w, 480); })
-        .then(function () { if (!done) return wait(i === words.length - 1 ? 900 : 760); })
-        .then(function () { if (!done && i < words.length - 1) return unscramble(word, 240); });
+    swapSlot(word, words[0]);
+    anim(line, [{ opacity: 0, transform: 'translateY(-0.45em)', filter: 'blur(12px)' }, { opacity: 1, transform: 'translateY(0)', filter: 'blur(0)' }], { duration: 460, delay: 120, easing: DROP });
+    var seq = wait(120 + 460 + 720);
+    words.slice(1).forEach(function (w, i) {
+      seq = seq.then(function () { if (!done) return swapTo(word, w); })
+        .then(function () { if (!done) return wait(i === words.length - 2 ? 820 : 700); });
     });
     seq.then(function () {
       if (done) return;
-      anim(line, [{ opacity: 1, filter: 'blur(0)' }, { opacity: 0, filter: 'blur(8px)' }], { duration: 420 });
-      anim(logo, [{ opacity: 0, transform: 'scale(0.94)', filter: 'blur(8px)' }, { opacity: 1, transform: 'scale(1)', filter: 'blur(0)' }], { duration: 700, delay: 250 });
-      return wait(1050);
+      anim(line, [{ opacity: 1, transform: 'translateY(0)', filter: 'blur(0)' }, { opacity: 0, transform: 'translateY(0.42em)', filter: 'blur(10px)' }], { duration: 320, easing: 'cubic-bezier(0.55, 0, 0.75, 0.3)' });
+      anim(logo, [{ opacity: 0, transform: 'translateY(-0.6em)', filter: 'blur(10px)' }, { opacity: 1, transform: 'translateY(0)', filter: 'blur(0)' }], { duration: 460, easing: DROP });
+      return wait(460 + 760);
     }).then(open);
   }
 

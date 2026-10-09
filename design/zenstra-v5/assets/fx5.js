@@ -240,5 +240,67 @@
     return host;
   }
 
-  window.ZX5 = { GateStream: GateStream, WorkflowViz: WorkflowViz, CloudViz: CloudViz, EdrViz: EdrViz, REDUCE: REDUCE };
+  /* ---------------- LensField ----------------
+   * After Antigravity's hero: a quiet field of short dashes covers the whole
+   * hero. Around a soft ring the dashes grow, turn to face outward and take on
+   * brand colour. The ring drifts on its own and eases after the pointer with a
+   * lag, so moving the mouse sweeps it smoothly across the field. Dashes over
+   * the text block are kept faint so the headline stays clean.
+   */
+  function LensField(el, opts) {
+    opts = opts || {};
+    var dots = [], R = rand(21), lens = null, target = null, ptr = null, lastMove = -10, maskEl = opts.mask || null, mask = null;
+    var col = {};
+    var theme = function () {
+      var dark = document.documentElement.getAttribute('data-theme') === 'dark' || (!document.documentElement.getAttribute('data-theme') && matchMedia('(prefers-color-scheme: dark)').matches);
+      col.a = dark ? '#5cd2ff' : '#00a8ef'; col.b = dark ? '#7fa8ff' : '#005aa4'; col.c = dark ? '#ff8f86' : '#e5574f'; col.dust = dark ? 'rgba(124,148,174,0.35)' : 'rgba(107,135,166,0.28)'; col.dark = dark;
+    };
+    theme();
+    var idle = function (w, h, t) { var cx = opts.cx != null ? opts.cx : 0.66, cy = opts.cy != null ? opts.cy : 0.5; return [w * cx + Math.sin(t * 0.23) * w * 0.07 + Math.sin(t * 0.51 + 1.7) * w * 0.025, h * cy + Math.cos(t * 0.19) * h * 0.08 + Math.sin(t * 0.43) * h * 0.03]; };
+    var host = new Host(el, function (g, w, h, dt, t) {
+      var tgt = (ptr && t - lastMove < 6) ? ptr : idle(w, h, t);
+      if (!lens) lens = tgt.slice();
+      var k = 1 - Math.exp(-dt / (ptr ? 0.55 : 1.4));
+      lens[0] += (tgt[0] - lens[0]) * k; lens[1] += (tgt[1] - lens[1]) * k;
+      if (maskEl && (Math.round(t * 4) % 4 === 0 || !mask)) { var er = el.getBoundingClientRect(), mr = maskEl.getBoundingClientRect(); mask = [mr.left - er.left - 24, mr.top - er.top - 16, mr.right - er.left + 24, mr.bottom - er.top + 16]; }
+      var Rr = Math.min(w, h) * 0.24 + Math.sin(t * 0.9) * 10 + Math.cos(t * 2.1) * 5, band = 46;
+      var lx = lens[0], ly = lens[1];
+      for (var i = 0; i < dots.length; i++) {
+        var d = dots[i];
+        var dx = d.x - lx, dy = d.y - ly, dist = Math.sqrt(dx * dx + dy * dy) || 1;
+        var e = (dist - Rr) / band, ring = Math.exp(-e * e);
+        var inner = dist < Rr ? 0.16 * (1 - dist / Rr) : 0;
+        var dust = (Math.sin(d.x * 0.013 + t * 0.7 + d.p) * Math.cos(d.y * 0.017 - t * 0.5) + 1) * 0.5;
+        var sc = ring * 1.0 + inner + Math.pow(dust, 6) * 0.35;
+        if (sc < 0.08) continue;
+        var push = ring * 9, x = d.x + dx / dist * push, y = d.y + dy / dist * push;
+        var fade = 1;
+        if (mask && x > mask[0] && x < mask[2] && y > mask[1] && y < mask[3]) fade = 0.16;
+        var ang = Math.atan2(dy, dx) + Math.sin(t * 0.8 + d.p) * 0.35;
+        var len = 2.2 + sc * 8.5, wid = 1.1 + sc * 1.6;
+        var hue = (Math.sin(Math.atan2(dy, dx) * 1.0 + t * 0.35 + d.p * 0.2) + 1) * 0.5;
+        g.globalAlpha = Math.min(1, (0.25 + sc * 0.9)) * fade * (ring > 0.12 ? 1 : 0.7);
+        g.fillStyle = ring > 0.12 ? (hue < 0.62 ? col.a : hue < 0.9 ? col.b : col.c) : col.dust;
+        g.setTransform(Math.cos(ang) * host.d, Math.sin(ang) * host.d, -Math.sin(ang) * host.d, Math.cos(ang) * host.d, x * host.d, y * host.d);
+        g.beginPath(); var r = wid / 2; g.moveTo(-len / 2 + r, -r); g.lineTo(len / 2 - r, -r); g.arc(len / 2 - r, 0, r, -Math.PI / 2, Math.PI / 2); g.lineTo(-len / 2 + r, r); g.arc(-len / 2 + r, 0, r, Math.PI / 2, Math.PI * 1.5); g.fill();
+      }
+      g.globalAlpha = 1; g.setTransform(host.d, 0, 0, host.d, 0, 0);
+    });
+    host.onResize = function (w, h) {
+      var sp = opts.spacing || (w < 700 ? 20 : 22); dots = [];
+      for (var y = sp / 2; y < h; y += sp) for (var x = sp / 2; x < w; x += sp) dots.push({ x: x + (R() - 0.5) * sp * 0.8, y: y + (R() - 0.5) * sp * 0.8, p: R() * 6.28 });
+    };
+    host.resize();
+    var onMove = function (e) {
+      var r = el.getBoundingClientRect();
+      if (e.clientY < r.top || e.clientY > r.bottom) { ptr = null; return; }
+      ptr = [e.clientX - r.left, e.clientY - r.top]; lastMove = host.t;
+    };
+    window.addEventListener('pointermove', onMove, { passive: true });
+    document.addEventListener('pointerleave', function () { ptr = null; });
+    host.theme = function () { theme(); if (!host.running) host.frame(0); };
+    return host;
+  }
+
+  window.ZX5 = { LensField: LensField, GateStream: GateStream, WorkflowViz: WorkflowViz, CloudViz: CloudViz, EdrViz: EdrViz, REDUCE: REDUCE };
 })();

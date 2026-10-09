@@ -29,7 +29,7 @@
   .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
   .stats > div { padding: 32px 24px 32px 0; }
   .stats > div + div { padding-left: 24px; border-left: 1px solid var(--line); }
-  .stats b { display: block; font: 600 clamp(44px, 5vw, 72px)/1 var(--display); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+  .stats b { display: block; font: 500 clamp(40px, 4.6vw, 64px)/1 var(--mono); letter-spacing: -0.05em; font-variant-numeric: tabular-nums; }
   .stats > div > span { display: block; margin-top: 12px; color: var(--ink-2); max-width: 26ch; }
   @media (max-width: 760px) { .stats { grid-template-columns: 1fr; } .stats > div + div { border-left: 0; padding-left: 0; border-top: 1px solid var(--line); } }
 
@@ -68,13 +68,13 @@
   @media (max-width: 560px) { .ctl8 { grid-template-columns: 1fr; } .ctl8 > div { min-height: 0; } }
 </style>
   <section class="hero rails" aria-labelledby="hero-h">
-    <div class="stream" data-gate="0.78" aria-hidden="true"></div>
+    <div class="lens" data-cx="0.72" data-cy="0.5" aria-hidden="true"></div>
     <div class="wrap hero-grid">
-      <div class="hero-copy">
+      <div class="hero-copy" data-lens-mask>
         <a class="chip-live" href="#products-cu" data-after><i></i>Zenstra for credit unions</a>
         <h1 class="display" id="hero-h" data-scan><span class="scanline"><span class="in">Your credit union</span><i class="bar"></i></span><span class="scanline"><span class="in">already runs</span><i class="bar"></i></span><span class="scanline"><span class="in grad">agentic AI.</span><i class="bar"></i></span></h1>
         <p class="lede sub" data-after>Core platforms, copilots, lending and fraud tools are adding agents faster than policy can follow. Zenstra gives every one an owner, a scope and a record.</p>
-        <p class="switch" data-after><span class="muted" aria-hidden="true">Zenstra makes it</span> <span class="scramble" data-switch="visible.|governed.|examiner-ready." aria-hidden="true">visible.</span><span class="sr-only">Zenstra makes it visible, governed and examiner-ready.</span></p>
+        <p class="switch" data-after><span class="muted" aria-hidden="true">Zenstra makes it</span> <span class="slot" data-switch="visible.|governed.|examiner-ready." aria-hidden="true">visible.</span><span class="sr-only">Zenstra makes it visible, governed and examiner-ready.</span></p>
         <div class="ctas" data-after><a class="btn primary lg" href="demo.html">Request a demo {{icon:arrow}}</a><a class="btn secondary lg" href="#controls">The eight controls</a></div>
       </div>
       <div class="pack-wrap" data-after>

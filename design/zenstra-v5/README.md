@@ -3,8 +3,12 @@
 Open `home.html`. Links to pages not redesigned here go to the v3 pages in
 `../zenstra/`, so keep both folders side by side.
 
-Brand: Zenstra's own mark, palette (#005aa4, #00a8ef, navy #0a2545) and type
-(Sora, Manrope, JetBrains Mono), taken from zenstra.ai.
+Brand: Zenstra's own mark and palette (#005aa4, #00a8ef, navy #0a2545), taken
+from zenstra.ai.
+
+Type: Hanken Grotesk for headings and text, JetBrains Mono for the technical
+voice (labels, tabs, chips, code, figures), Sora only in the logo wordmark. All
+three are open-licence Google Fonts.
 
 ## Pages
 
@@ -17,12 +21,13 @@ Brand: Zenstra's own mark, palette (#005aa4, #00a8ef, navy #0a2545) and type
 ## Motion
 
 - **Intro** (first page of a session, or add `?intro=1`): "Zenstra for workflow
-  security → cloud security → EDR" decodes letter by letter, resolves to the
+  security", then "cloud security", then "EDR". Each word drops in from a blur
+  while the last one sinks away and the line re-centres. It resolves to the
   Zenstra logo, then a light beam splits the screen open. Skippable.
 - **Hero**: headline lines revealed by a scanning bar; the product line under
-  it decodes in place. Behind it, agent actions stream into a decision line:
-  most pass (cyan), some wait for a person (amber), some are stopped (coral).
-  The stream is masked away from the text.
+  it swaps words the same way as the intro. Behind it, a field of short dashes
+  forms a ring that drifts on its own and follows the pointer with a soft lag.
+  The ring fades almost out where it passes behind the text.
 - **Products**: expanding panels, each with its own live visual: a workflow
   graph with a blocked hop, a cloud boundary payloads never leave, and a
   device fleet scan that contains a rogue agent.
