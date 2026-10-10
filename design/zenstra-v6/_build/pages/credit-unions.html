@@ -1,0 +1,220 @@
+<!--{"title": "Zenstra AI for credit unions", "description": "Inventory, scoped access and an examiner-ready record for every AI agent in your credit union: core platforms, copilots, lending, fraud and member service.", "active": "solutions"}-->
+<style>
+  .pack { position: relative; z-index: 1; width: min(440px, 100%); justify-self: end; border-radius: 18px; background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow); overflow: hidden; }
+  .pack-head { display: flex; align-items: center; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--line); }
+  .pack-head .ic { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
+  .pack-head .ic svg { width: 17px; height: 17px; }
+  .pack-head b { display: block; font: 600 15px/1.3 var(--display); }
+  .pack-head small { display: block; font: 500 11.5px/1.3 var(--mono); color: var(--ink-3); }
+  .pack-head .st { margin-left: auto; font: 500 11px/1 var(--mono); color: var(--good); letter-spacing: 0.06em; text-transform: uppercase; opacity: 0; transition: opacity 500ms; }
+  .pack.done .st { opacity: 1; }
+  .pack-rows { padding: 6px 18px; }
+  .prow { display: grid; grid-template-columns: 22px 1fr auto; gap: 12px; align-items: center; padding: 13px 0; border-top: 1px solid var(--line); font-size: 14.5px; }
+  .prow:first-child { border-top: 0; }
+  .prow svg { width: 20px; height: 20px; }
+  .prow svg circle { fill: color-mix(in srgb, var(--good) 14%, transparent); }
+  .prow svg path { fill: none; stroke: var(--good); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .prow b { font-weight: 700; }
+  .prow small { display: block; font-size: 12.5px; color: var(--ink-3); }
+  .prow .v { font: 500 13px/1 var(--mono); color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .js:not(.reduce):not(.reveal-all) .prow { opacity: 0.25; }
+  .prow.on { opacity: 1 !important; transition: opacity 500ms; }
+  .pack-foot { display: flex; align-items: center; gap: 10px; padding: 14px 18px; background: var(--bg-2); border-top: 1px solid var(--line); font: 500 12px/1 var(--mono); color: var(--ink-3); }
+  .pack-foot .bar { flex: 1; height: 4px; border-radius: 2px; background: var(--line-2); overflow: hidden; }
+  .pack-foot .bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transform-origin: left; transform: scaleX(0); }
+  .reduce .pack-foot .bar i { transform: none; }
+  .hero .pack-wrap { display: grid; align-items: center; height: 100%; }
+  @media (max-width: 1000px) { .pack { justify-self: start; } }
+
+  .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .stats > div { padding: 32px 24px 32px 0; }
+  .stats > div + div { padding-left: 24px; border-left: 1px solid var(--line); }
+  .stats b { display: block; font: 500 clamp(40px, 4.6vw, 64px)/1 var(--mono); letter-spacing: -0.05em; font-variant-numeric: tabular-nums; }
+  .stats > div > span { display: block; margin-top: 12px; color: var(--ink-2); max-width: 26ch; }
+  @media (max-width: 760px) { .stats { grid-template-columns: 1fr; } .stats > div + div { border-left: 0; padding-left: 0; border-top: 1px solid var(--line); } }
+
+  .map { display: grid; gap: 0; border-top: 1px solid var(--line); }
+  .map-row { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 5fr) minmax(0, 4fr); gap: 28px; align-items: start; padding: 30px 0; border-bottom: 1px solid var(--line); transition: background-color 300ms; }
+  .map-row:hover { background: linear-gradient(90deg, transparent, var(--bg-2) 30%, transparent); }
+  .map-row .p { display: flex; gap: 14px; align-items: center; }
+  .map-row .p .ic { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: var(--deep); color: #5cd2ff; flex: none; }
+  .map-row .p .ic svg { width: 20px; height: 20px; }
+  .map-row .p b { font: 600 20px/1.2 var(--display); letter-spacing: -0.015em; }
+  .map-row .p small { display: block; font: 500 11.5px/1.3 var(--mono); color: var(--ink-3); letter-spacing: 0.06em; text-transform: uppercase; margin-top: 4px; }
+  .map-row p { color: var(--ink-2); }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tags span { height: 30px; display: inline-flex; align-items: center; padding: 0 11px; border-radius: 8px; border: 1px solid var(--line-2); font: 500 12.5px/1 var(--mono); color: var(--ink-2); background: var(--card); }
+  @media (max-width: 900px) { .map-row { grid-template-columns: 1fr; gap: 14px; } }
+
+  .areas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .area { position: relative; padding: 24px; border-radius: 16px; border: 1px solid var(--line); background: var(--card); display: grid; gap: 10px; align-content: start; overflow: hidden; transition: border-color 300ms, transform 400ms var(--ease); }
+  .area:hover { border-color: var(--accent); transform: translateY(-3px); }
+  .area .ic { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); }
+  .area .ic svg { width: 18px; height: 18px; }
+  .area b { font: 600 18px/1.25 var(--display); letter-spacing: -0.01em; }
+  .area p { color: var(--ink-2); font-size: 15px; }
+  .area .by { margin-top: 4px; font: 500 11.5px/1 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
+  @media (max-width: 900px) { .areas { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 600px) { .areas { grid-template-columns: 1fr; } }
+
+  .ctl8 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
+  .ctl8 > div { position: relative; padding: 26px 24px 30px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); min-height: 210px; display: grid; align-content: space-between; gap: 18px; overflow: hidden; isolation: isolate; }
+  .ctl8 > div::before { content: ''; position: absolute; inset: 0; z-index: -1; background: radial-gradient(circle at 100% 100%, color-mix(in srgb, var(--accent-2) 16%, transparent), transparent 60%); opacity: 0; transition: opacity 500ms; }
+  .ctl8 > div:hover::before { opacity: 1; }
+  .ctl8 .n { font: 500 12px/1 var(--mono); color: var(--accent); letter-spacing: 0.1em; }
+  .ctl8 b { display: block; font: 600 18px/1.25 var(--display); letter-spacing: -0.01em; }
+  .ctl8 p { margin-top: 8px; color: var(--ink-2); font-size: 14.5px; }
+  @media (max-width: 1000px) { .ctl8 { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 560px) { .ctl8 { grid-template-columns: 1fr; } .ctl8 > div { min-height: 0; } }
+</style>
+  <section class="hero rails" aria-labelledby="hero-h">
+    <div class="lens" data-cx="0.72" data-cy="0.5" aria-hidden="true"></div>
+    <div class="wrap hero-grid">
+      <div class="hero-copy" data-lens-mask>
+        <a class="chip-live" href="#products-cu" data-after><i></i>Zenstra for credit unions</a>
+        <h1 class="display" id="hero-h" data-scan><span class="scanline"><span class="in">Your credit union</span><i class="bar"></i></span><span class="scanline"><span class="in">already runs</span><i class="bar"></i></span><span class="scanline"><span class="in grad">agentic AI.</span><i class="bar"></i></span></h1>
+        <p class="lede sub" data-after>Core platforms, copilots, lending and fraud tools are adding agents faster than policy can follow. Zenstra gives every one an owner, a scope and a record.</p>
+        <p class="switch" data-after><span class="muted" aria-hidden="true">Zenstra makes it</span> <span class="slot" data-switch="visible.|governed.|examiner-ready." aria-hidden="true">visible.</span><span class="sr-only">Zenstra makes it visible, governed and examiner-ready.</span></p>
+        <div class="ctas" data-after><a class="btn primary lg" href="demo.html">Request a demo {{icon:arrow}}</a><a class="btn secondary lg" href="#controls">The eight controls</a></div>
+      </div>
+      <div class="pack-wrap" data-after>
+        <div class="pack" data-pack aria-label="Example examination pack">
+          <div class="pack-head"><span class="ic">{{icon:bank}}</span><span><b>Examination pack</b><small>Northbank FCU · Q3 2026</small></span><span class="st">Ready</span></div>
+          <div class="pack-rows">
+            <div class="prow"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="10"/><path d="m6 10.5 2.6 2.6L14 7.6"/></svg><span><b>Agent inventory</b><small>Every agent, owner and platform</small></span><span class="v">47 agents</span></div>
+            <div class="prow"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="10"/><path d="m6 10.5 2.6 2.6L14 7.6"/></svg><span><b>Least-privilege grants</b><small>Scoped, expiring, last used</small></span><span class="v">212 grants</span></div>
+            <div class="prow"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="10"/><path d="m6 10.5 2.6 2.6L14 7.6"/></svg><span><b>Approvals recorded</b><small>Who approved, when and why</small></span><span class="v">38 reviews</span></div>
+            <div class="prow"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="10"/><path d="m6 10.5 2.6 2.6L14 7.6"/></svg><span><b>Decision ledger</b><small>Hash chain verified</small></span><span class="v">1.2M entries</span></div>
+          </div>
+          <div class="pack-foot"><span>Generating</span><span class="bar"><i></i></span><span>PDF + CSV</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="padding:clamp(56px,7vw,96px) 0 0" aria-label="Credit unions and agentic AI">
+    <div class="wrap">
+      <div class="stats">
+        <div data-reveal><b><span data-count="59">59</span>%</b><span>of credit unions run generative AI in production</span></div>
+        <div data-reveal data-delay="100"><b><span data-count="17">17</span>%</b><span>have already deployed agentic AI</span></div>
+        <div data-reveal data-delay="200"><b>&lt;1 in 5</b><span>call their deployment enterprise-ready</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="products-cu" aria-labelledby="map-h">
+    <div class="wrap">
+      <div class="sec-head split">
+        <div style="display:grid;gap:20px"><span class="eyebrow" data-reveal>Three products, one programme</span><h2 class="h2" id="map-h" data-reveal>Mapped to how a credit union actually runs.</h2></div>
+        <p class="lede" data-words>Start with the exposure your examiner will ask about first. Each product shares the same inventory, policies and record.</p>
+      </div>
+      <div class="map">
+        <div class="map-row" data-reveal><div class="p"><span class="ic">{{icon:scan}}</span><span><b>Zenstra EDR</b><small>Staff devices</small></span></div><p>Copilot, ChatGPT and other AI tools on branch and back-office computers, found and governed by your acceptable-use policy. Deployed through your existing device management.</p><div class="tags"><span>Microsoft Copilot</span><span>ChatGPT</span><span>Intune</span><span>Jamf</span></div></div>
+        <div class="map-row" data-reveal><div class="p"><span class="ic">{{icon:cloud}}</span><span><b>Cloud Security</b><small>Core and lending</small></span></div><p>A gateway in your environment in front of every connector into core, LOS and CRM. Each becomes a scoped, expiring grant your risk register can list.</p><div class="tags"><span>Fiserv agentOS</span><span>Jack Henry</span><span>Temenos</span><span>LOS</span></div></div>
+        <div class="map-row" data-reveal><div class="p"><span class="ic">{{icon:flow}}</span><span><b>Workflow Security</b><small>Automations</small></span></div><p>Card-dispute, SAR-prep and lending workflows checked hop by hop, including the no-code flows IT never saw being built.</p><div class="tags"><span>n8n</span><span>Zapier</span><span>Copilot Studio</span><span>MCP</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec alt" aria-labelledby="where-h">
+    <div class="wrap">
+      <div class="sec-head"><span class="eyebrow" data-reveal>Where agents already run</span><h2 class="h2" id="where-h" data-reveal>It shipped with the platforms you already use.</h2></div>
+      <div class="areas">
+        <div class="area" data-reveal><span class="ic">{{icon:bank}}</span><b>Core-banking agents</b><p>Agent runtimes inside the core you already operate, whether or not you asked.</p><span class="by">Cloud Security</span></div>
+        <div class="area" data-reveal data-delay="60"><span class="ic">{{icon:user}}</span><b>Employee copilots</b><p>Often the first agentic tools live, usually before a policy exists.</p><span class="by">Zenstra EDR</span></div>
+        <div class="area" data-reveal data-delay="120"><span class="ic">{{icon:file}}</span><b>Lending and underwriting</b><p>Document and decisioning agents that touch loan files end to end.</p><span class="by">Cloud + Workflow</span></div>
+        <div class="area" data-reveal><span class="ic">{{icon:target}}</span><b>Fraud and AML</b><p>Pattern and SAR-prep agents with standing access to transaction data.</p><span class="by">Workflow Security</span></div>
+        <div class="area" data-reveal data-delay="60"><span class="ic">{{icon:chat}}</span><b>Member service</b><p>Chat and voice agents sharing a knowledge base with staff assistants.</p><span class="by">Cloud Security</span></div>
+        <div class="area" data-reveal data-delay="120"><span class="ic">{{icon:plug}}</span><b>Shadow automation</b><p>No-code tools wiring agents into core systems without IT seeing it.</p><span class="by">Workflow + EDR</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band sec" aria-labelledby="gap-h">
+    <div class="wrap cu-grid">
+      <div style="display:grid;gap:22px;justify-items:start">
+        <span class="eyebrow" data-reveal>The gap</span>
+        <h2 class="h2" id="gap-h" data-reveal>Vendor defaults are not institutional governance.</h2>
+        <p class="lede" data-reveal>Core platforms describe what an agent can do. They do not say what your institution should allow, who owns the risk, or how drift is caught six months from now.</p>
+      </div>
+      <div class="vs" data-reveal>
+        <div class="vs-row"><div>The examiner asks</div><div>Vendor defaults</div><div class="y">With Zenstra</div></div>
+        <div class="vs-row"><div class="q">Which agents do you run?</div><div class="n">Per platform, if at all</div><div class="y">Every agent, one inventory</div></div>
+        <div class="vs-row"><div class="q">Who approved it?</div><div class="n">A policy written at rollout</div><div class="y">A recorded review before production</div></div>
+        <div class="vs-row"><div class="q">What can each one reach?</div><div class="n">Standing credentials</div><div class="y">Scoped, expiring grants</div></div>
+        <div class="vs-row"><div class="q">How do you stop one?</div><div class="n">A switch per vendor</div><div class="y">One revocation, in seconds</div></div>
+        <div class="vs-row"><div class="q">Show me what it did.</div><div class="n">Logs spread across vendors</div><div class="y">One tamper-evident record</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="controls" aria-labelledby="ctl-h">
+    <div class="wrap">
+      <div class="sec-head split">
+        <div style="display:grid;gap:20px"><span class="eyebrow" data-reveal>What Zenstra provides</span><h2 class="h2" id="ctl-h" data-reveal>Eight controls, mapped to how credit unions work.</h2></div>
+        <p class="lede" data-words>Every control runs inline, before a tool call executes, not reported after the damage is done.</p>
+      </div>
+      <div class="ctl8">
+        <div data-reveal><span class="n">01</span><div><b>Shadow AI discovery</b><p>Copilots and no-code flows wired into core, found before an examiner finds them.</p></div></div>
+        <div data-reveal data-delay="60"><span class="n">02</span><div><b>Agent identity</b><p>A cryptographic identity for every agent, revoked the moment access drifts.</p></div></div>
+        <div data-reveal data-delay="120"><span class="n">03</span><div><b>Secure tool access</b><p>Each connector into core, LOS or CRM becomes a scoped, expiring grant.</p></div></div>
+        <div data-reveal data-delay="180"><span class="n">04</span><div><b>Runtime detection</b><p>An agent reaching beyond its task is caught before it reaches a member's file.</p></div></div>
+        <div data-reveal><span class="n">05</span><div><b>Prompt injection defense</b><p>Member chat and voice agents isolated from malicious input.</p></div></div>
+        <div data-reveal data-delay="60"><span class="n">06</span><div><b>Memory protection</b><p>Shared knowledge layers that cannot be poisoned across sessions.</p></div></div>
+        <div data-reveal data-delay="120"><span class="n">07</span><div><b>Policy enforcement</b><p>Your acceptable-use policy as enforced code, not a PDF.</p></div></div>
+        <div data-reveal data-delay="180"><span class="n">08</span><div><b>Immutable audit trail</b><p>A tamper-evident record of every decision, ready for an NCUA examiner.</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec alt" data-show aria-labelledby="exam-h">
+    <div class="wrap">
+      <div class="sec-head split">
+        <div style="display:grid;gap:20px"><span class="eyebrow" data-reveal>Built for examination</span><h2 class="h2" id="exam-h" data-reveal>No separate rulebook for AI. The proof comes from you.</h2></div>
+        <p class="lede" data-words>Examiners already check that you run safely, treat members fairly and know what your vendors do. Zenstra creates that proof as your agents work.</p>
+      </div>
+      <div class="show-tabs" role="tablist" aria-label="Examination evidence" data-reveal>
+        <button class="show-tab" role="tab" aria-selected="true" data-cap="A living inventory: every agent and connection, tracked automatically, with an owner.">Living inventory<i></i></button>
+        <button class="show-tab" role="tab" aria-selected="false" data-cap="Only the access it needs: least-privilege proof generated as grants are issued.">Least privilege<i></i></button>
+        <button class="show-tab" role="tab" aria-selected="false" data-cap="A complete record: every action, not just the flagged ones, ready to export.">Complete record<i></i></button>
+      </div>
+      <div class="show-stage" data-reveal>
+        <div class="show-frame">
+          <div class="show-bar"><i></i><i></i><i></i><span>console.zenstra.ai</span><span class="live">Live</span></div>
+          <div class="show-view">
+            <div class="show-slide">{{shot:screen-overview|Overview with governed agents, owners and coverage by platform}}</div>
+            <div class="show-slide">{{shot:screen-agent|Agent profile with scoped grants, expiry and last use}}</div>
+            <div class="show-slide">{{shot:screen-investigation|Investigation with the full agent run and decision record}}</div>
+            <i class="show-scan" aria-hidden="true"></i>
+          </div>
+        </div>
+      </div>
+      <div class="show-caption"><span data-caption aria-live="polite"></span><a class="link" href="../zenstra/prove.html#evidence">See the examination pack {{icon:arrow}}</a></div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="faq-h">
+    <div class="wrap faq">
+      <div style="display:grid;gap:18px;align-content:start"><span class="eyebrow" data-reveal>FAQ</span><h2 class="h2" id="faq-h" style="font-size:clamp(28px,3vw,42px)" data-reveal>Questions credit unions ask first.</h2></div>
+      <div data-reveal>
+        <details><summary>Does Zenstra replace our core provider's agent controls?</summary><div class="a"><p>No. It sits underneath them. Your core provider's controls still apply; Zenstra adds an inventory, a policy and a revocation switch that work across every platform, so your institution can verify them independently.</p></div></details>
+        <details><summary>Which product should we start with?</summary><div class="a"><p>Most credit unions start with Zenstra EDR for staff copilots, because that is where unapproved AI use appears first, then add Cloud Security in front of core and lending connectors.</p></div></details>
+        <details><summary>What does deployment involve for our IT team?</summary><div class="a"><p>The EDR app is deployed through your existing device management. The gateway runs in your environment in front of core and agent platforms. Most credit unions start with a pilot group and one platform.</p></div></details>
+        <details><summary>Where does member data go?</summary><div class="a"><p>Prompts and payloads are evaluated inside your environment. Only decisions and redacted evidence reach the Zenstra control plane. The <a href="../zenstra/trust-center.html#privacy">Trust Center</a> lists exactly what leaves and what never does.</p></div></details>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="cta-h" style="padding-bottom:clamp(80px,9vw,128px)">
+    <div class="wrap">
+      <div class="cta">
+        <div class="stream" aria-hidden="true"></div>
+        <div class="cta-inner">
+          <span class="eyebrow" style="color:#5cd2ff" data-reveal>For credit unions</span>
+          <h2 class="h2" id="cta-h" data-reveal>Show your examiner exactly what happened.</h2>
+          <p data-reveal>See Zenstra find, govern and record the agents already running in a credit union like yours.</p>
+          <div class="ctas" data-reveal><a class="btn white lg" href="demo.html">Request a demo {{icon:arrow}}</a><a class="btn glass lg" href="../zenstra/trust-center.html">Visit the Trust Center</a></div>
+        </div>
+      </div>
+    </div>
+  </section>
