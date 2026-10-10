@@ -1,0 +1,14 @@
+{
+  "name": "zenstra-site-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Builds the production zenstra.ai static site from the design sources.",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs --out dist --site-url http://localhost:8080",
+    "fonts": "node scripts/fetch-fonts.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}

@@ -85,18 +85,6 @@ MEGA = {
     ],
     'foot': [('All solutions', 'solutions.html'), ('Request a demo', 'demo.html')],
   },
-  'resources': {
-    'label': 'Resources', 'cols': 2, 'cls': '',
-    'groups': [
-      ('Learn', [('Documentation', 'Quickstarts, deployment and API reference', 'book', 'resources.html#docs'),
-                 ('Threat research', 'How agents get attacked, with real techniques', 'target', 'resources.html#research'),
-                 ('Guides and reports', 'Programme guides for security leaders', 'file', 'resources.html#guides')]),
-      ('Stay current', [('Blog', 'Product and engineering notes', 'pen', 'resources.html#blog'),
-                        ('Webinars and events', 'Live sessions with our engineers', 'video', 'resources.html#webinars'),
-                        ('Glossary', 'Agentic AI security terms, defined', 'abc', 'resources.html#glossary')]),
-    ],
-    'foot': [('Resource library', 'resources.html'), ('Trust Center', 'trust-center.html')],
-  },
   'company': {
     'label': 'Company', 'cols': 2, 'cls': 'right',
     'groups': [
@@ -167,12 +155,12 @@ def mega(key, active):
 '''
 
 def header(active):
-    nav = mega('platform', active) + mega('solutions', active) + mega('resources', active)
+    nav = mega('platform', active) + mega('solutions', active)
     tcur = ' aria-current="page"' if active == 'trust' else ''
     nav += f'      <li><a class="nav-trigger" href="trust-center.html"{tcur}>Trust Center</a></li>\n'
     nav += mega('company', active)
     groups = ''
-    for key in ['platform', 'solutions', 'resources', 'company']:
+    for key in ['platform', 'solutions', 'company']:
         m = MEGA[key]
         links = ''.join(f'<a href="{href}">{t}</a>' for g, items in m['groups'] for t, s, ic, href in items)
         groups += f'<details><summary>{m["label"]}</summary><div>{links}</div></details>'
@@ -189,13 +177,12 @@ def header(active):
         <svg class="moon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13 9.5A5.5 5.5 0 0 1 6.5 3a5.5 5.5 0 1 0 6.5 6.5Z"/></svg>
         <svg class="sun" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="3"/><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"/></svg>
       </button>
-      <a class="btn btn-ghost btn-sm signin" href="console.html">Sign in</a>
       <a class="btn btn-primary btn-sm" href="demo.html">Request a demo</a>
       <button class="btn btn-ghost btn-sm menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu">{icon('menu')}</button>
     </div>
   </div>
 </header>
-<nav class="mobile-menu" id="mobile-menu" aria-label="Mobile">{groups}<a href="trust-center.html">Trust Center</a><a href="console.html">Sign in</a><a class="btn btn-primary" href="demo.html">Request a demo</a></nav>
+<nav class="mobile-menu" id="mobile-menu" aria-label="Mobile">{groups}<a href="trust-center.html">Trust Center</a><a class="btn btn-primary" href="demo.html">Request a demo</a></nav>
 '''
 
 def footer():
@@ -222,6 +209,7 @@ def scripts(meta):
 <script src="assets/vendor/lenis-1.1.13.min.js"></script>
 <script src="assets/zx-core.js"></script>
 <script src="assets/site-motion.js"></script>
+<script src="../zenstra-v6/assets/forms.js"></script>
 {extra}</body>
 </html>
 '''

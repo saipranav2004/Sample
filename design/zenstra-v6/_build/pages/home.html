@@ -3,7 +3,6 @@
     <div class="lens" data-agents data-cx="0.7" data-cy="0.5" aria-hidden="true"></div>
     <div class="wrap hero-grid">
       <div class="hero-copy" data-lens-mask>
-        <a class="chip-live" href="#products" data-after><i></i>Runtime security for agentic AI</a>
         <h1 class="display" id="hero-h" data-scan><span class="scanline"><span class="in">Your AI agents</span><i class="bar"></i></span><span class="scanline"><span class="in">act on their own.</span><i class="bar"></i></span><span class="scanline"><span class="in grad">Give them a perimeter.</span><i class="bar"></i></span></h1>
         <p class="lede sub" data-after>Zenstra checks every agent action before it runs, across your workflows, inside your cloud and on every device, and records why.</p>
         <p class="switch" data-after><span class="muted" aria-hidden="true">One platform for</span> <span class="slot" data-switch="workflow security.|cloud security.|EDR for AI agents." aria-hidden="true">workflow security.</span><span class="sr-only">One platform for workflow security, cloud security and EDR for AI agents.</span></p>
@@ -92,14 +91,12 @@
         <div class="eng-stage" aria-hidden="true">
           <div class="eng-call"><span class="mono-label">Incoming tool call</span><div class="eng-call-b"><span><em>agent</em>member-chat-assist</span><span><em>tool</em>email.send</span><span><em>to</em>x.adams@protonmail.me</span><span><em>body</em>3 member records</span></div></div>
           <div class="eng-view">
-            <div class="eng-iso">
-              <div class="disc" data-k="identity"><i class="rim"></i><i class="scan"></i><i class="hole"></i><i class="anc"></i></div>
-              <div class="disc" data-k="intent"><i class="rim"></i><i class="arc a1"></i><i class="arc a2"></i><i class="hole"></i><i class="anc"></i></div>
-              <div class="disc" data-k="policy"><i class="rim"></i><i class="iris"></i><i class="hole"></i><i class="anc"></i></div>
-              <div class="disc" data-k="record"><i class="rim"></i><i class="segs"></i><i class="hole"></i><i class="anc"></i></div>
-              <div class="dest"><span>{{icon:mail}}</span><b>email · external</b><small>never sent</small></div>
-              <div class="orb"><i></i><span>email.send</span></div>
-              <div class="orb ev"><i></i><span>evidence</span></div>
+            <div class="eng-iso" data-perimeter>
+              <div class="core"><i class="cl"></i><i class="cl"></i><i class="cl"></i><i class="cl"></i><i class="cl"></i><div class="core-top"><img src="assets/img/zenstra-mark.png" alt="" width="138" height="126"></div></div>
+              <div class="bb core-tag"><b>member data · email</b><small>protected</small></div>
+              <div class="bb orb"><i></i><span>email.send</span></div>
+              <div class="bb orb ev"><i></i><span>evidence</span></div>
+              <i class="bb mark m-start"></i><i class="bb mark m-core"></i>
             </div>
           </div>
           <svg class="eng-lines"></svg>

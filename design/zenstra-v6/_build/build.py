@@ -35,7 +35,6 @@ PLATFORM = [('Platform overview', V3 + 'platform.html'), ('Architecture', V3 + '
 
 NAV = [
     ('solutions', 'Credit unions', 'credit-unions.html'),
-    ('resources', 'Resources', V3 + 'resources.html'),
     ('trust', 'Trust Center', V3 + 'trust-center.html'),
     ('company', 'Company', V3 + 'company.html'),
 ]
@@ -100,13 +99,12 @@ def header(active):
     </nav>
     <div class="head-actions">
       <button class="icon-btn theme" type="button" data-theme-toggle aria-label="Switch between light and dark theme"><svg class="moon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13 9.5A5.5 5.5 0 0 1 6.5 3a5.5 5.5 0 1 0 6.5 6.5Z"/></svg><svg class="sun" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="3"/><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"/></svg></button>
-      <a class="signin" href="{V3}console.html">Sign in</a>
       <a class="btn primary sm" href="demo.html">Request a demo</a>
       <button class="icon-btn menu-btn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="menu">{icon('menu')}</button>
     </div>
   </div>
 </header>
-<nav class="menu" id="menu" aria-label="Mobile"><span class="mono-label">Products</span>{mob_prod}<span class="mono-label">Explore</span>{mob}<a href="{V3}platform.html">Platform</a><a href="{V3}console.html">Sign in</a><a class="btn primary" href="demo.html">Request a demo</a></nav>
+<nav class="menu" id="menu" aria-label="Mobile"><span class="mono-label">Products</span>{mob_prod}<span class="mono-label">Explore</span>{mob}<a href="{V3}platform.html">Platform</a><a class="btn primary" href="demo.html">Request a demo</a></nav>
 '''
 
 
@@ -129,6 +127,7 @@ def scripts(meta):
     return f'''<script src="assets/vendor/lenis-1.1.13.min.js"></script>
 <script src="assets/fx6.js"></script>
 {extra}<script src="assets/v6.js"></script>
+<script src="assets/forms.js"></script>
 </body>
 </html>
 '''
@@ -139,6 +138,22 @@ def shot(name, alt):
     w, h = Image.open(os.path.join(OUT, 'assets', 'img', name + '-light.webp')).size
     return (f'<img class="th-light" src="assets/img/{name}-light.webp" alt="{alt}" width="{w}" height="{h}" loading="lazy" decoding="async">'
             f'<img class="th-dark" src="assets/img/{name}-dark.webp" alt="" width="{w}" height="{h}" loading="lazy" decoding="async">')
+
+
+# Form choices come from the API's reference data, so the page and the
+# server always agree on what is valid.
+REFERENCE = json.load(open(os.path.join(OUT, '..', '..', 'zenstra-site', 'api', 'src', 'reference.json'), encoding='utf-8'))
+
+
+def options(key):
+    import html as h
+    items = REFERENCE[key]
+    out = ['<option value="">Choose one</option>']
+    for i, v in enumerate(items):
+        out.append(f'<option>{h.escape(v)}</option>')
+        if key == 'countries' and i == 0:
+            out.append('<option disabled>──────────</option>')
+    return ''.join(out)
 
 
 def build(name):
@@ -153,6 +168,7 @@ def build(name):
     if sm:
         style, body = sm.group(1), body[sm.end():]
     body = body.replace('{{logo}}', LOGO)
+    body = re.sub(r'\{\{options:([A-Za-z]+)\}\}', lambda x: options(x.group(1)), body)
     body = re.sub(r'\{\{icon:([a-z]+)\}\}', lambda x: icon(x.group(1)), body)
     body = re.sub(r'\{\{shot:([a-z0-9-]+)\|([^}]*)\}\}', lambda x: shot(x.group(1), x.group(2)), body)
     html = head(meta, style) + intro() + header(meta.get('active', '')) + '<main id="main">\n' + body.strip() + '\n</main>\n' + footer() + scripts(meta)

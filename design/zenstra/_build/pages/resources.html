@@ -97,8 +97,8 @@
       <div class="newsletter" data-reveal="scale">
         <div><h2>New research, once a month.</h2><p>Agent attack techniques and the controls that stop them. No marketing in between.</p></div>
         <div>
-          <form data-validate novalidate><div class="field" style="flex:1;min-width:220px"><label for="nl-email" class="sr-only">Work email</label><input id="nl-email" type="email" required placeholder="name@company.com"><span class="err" role="alert"></span></div><button class="btn btn-primary" type="submit">Subscribe</button></form>
-          <div data-success hidden><p style="color:var(--band-ink)"><b>You're subscribed.</b> The next issue arrives early next month.</p></div>
+          <form id="nl-form" data-api="/api/subscriptions" data-kind="newsletter" data-fallback-email="hello@zenstra.ai" novalidate><div class="field" style="flex:1;min-width:220px"><label for="nl-email" class="sr-only">Email</label><input id="nl-email" name="email" type="email" required maxlength="254" autocomplete="email" inputmode="email" placeholder="name@company.com"><span class="err" role="alert"></span></div><div class="hp" aria-hidden="true"><label for="nl-website">Leave this empty</label><input id="nl-website" name="website" tabindex="-1" autocomplete="off"></div><div data-turnstile hidden></div><button class="btn btn-primary" type="submit">Subscribe</button></form>
+          <div data-success hidden><p style="color:var(--band-ink)"><b>Check your inbox.</b> Confirm your subscription from the email we sent to <span data-email></span>.</p></div>
         </div>
       </div>
     </div>

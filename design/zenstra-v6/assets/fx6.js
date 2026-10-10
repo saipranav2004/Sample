@@ -4,6 +4,10 @@
  * WorkflowViz — an agent workflow graph; one hop is blocked before it runs.
  * CloudViz    — your cloud boundary with a gateway; payloads never leave.
  * EdrViz      — a fleet of devices scanned for AI agents; rogue ones contained.
+ * IntroField  — the intro backdrop; agents converge into the mark, the page
+ *               opens through a mark-shaped window.
+ * AgentLens   — the hero: a glass lens over agent traffic that names agents
+ *               and shows each decision.
  * Each engine pauses off screen or in a hidden tab, and draws one still frame
  * under prefers-reduced-motion.
  */
@@ -240,69 +244,6 @@
     return host;
   }
 
-  /* ---------------- LensField ----------------
-   * After Antigravity's hero: a quiet field of short dashes covers the whole
-   * hero. Around a soft ring the dashes grow, turn to face outward and take on
-   * brand colour. The ring drifts on its own and eases after the pointer with a
-   * lag, so moving the mouse sweeps it smoothly across the field. Dashes over
-   * the text block are kept faint so the headline stays clean.
-   */
-  function LensField(el, opts) {
-    opts = opts || {};
-    var dots = [], R = rand(21), lens = null, target = null, ptr = null, lastMove = -10, maskEl = opts.mask || null, mask = null;
-    var col = {};
-    var theme = function () {
-      var dark = document.documentElement.getAttribute('data-theme') === 'dark' || (!document.documentElement.getAttribute('data-theme') && matchMedia('(prefers-color-scheme: dark)').matches);
-      col.a = dark ? '#5cd2ff' : '#00a8ef'; col.b = dark ? '#7fa8ff' : '#005aa4'; col.c = dark ? '#ff8f86' : '#e5574f'; col.dust = dark ? 'rgba(124,148,174,0.35)' : 'rgba(107,135,166,0.28)'; col.dark = dark;
-    };
-    theme();
-    var idle = function (w, h, t) { var cx = opts.cx != null ? opts.cx : 0.66, cy = opts.cy != null ? opts.cy : 0.5; return [w * cx + Math.sin(t * 0.23) * w * 0.07 + Math.sin(t * 0.51 + 1.7) * w * 0.025, h * cy + Math.cos(t * 0.19) * h * 0.08 + Math.sin(t * 0.43) * h * 0.03]; };
-    var host = new Host(el, function (g, w, h, dt, t) {
-      var tgt = (ptr && t - lastMove < 6) ? ptr : idle(w, h, t);
-      if (!lens) lens = tgt.slice();
-      var k = 1 - Math.exp(-dt / (ptr ? 0.55 : 1.4));
-      lens[0] += (tgt[0] - lens[0]) * k; lens[1] += (tgt[1] - lens[1]) * k;
-      if (maskEl && (Math.round(t * 4) % 4 === 0 || !mask)) { var er = el.getBoundingClientRect(), mr = maskEl.getBoundingClientRect(); mask = [mr.left - er.left - 24, mr.top - er.top - 16, mr.right - er.left + 24, mr.bottom - er.top + 16]; }
-      var Rr = Math.min(w, h) * 0.24 + Math.sin(t * 0.9) * 10 + Math.cos(t * 2.1) * 5, band = 46;
-      var lx = lens[0], ly = lens[1];
-      for (var i = 0; i < dots.length; i++) {
-        var d = dots[i];
-        var dx = d.x - lx, dy = d.y - ly, dist = Math.sqrt(dx * dx + dy * dy) || 1;
-        var e = (dist - Rr) / band, ring = Math.exp(-e * e);
-        var inner = dist < Rr ? 0.16 * (1 - dist / Rr) : 0;
-        var dust = (Math.sin(d.x * 0.013 + t * 0.7 + d.p) * Math.cos(d.y * 0.017 - t * 0.5) + 1) * 0.5;
-        var sc = ring * 1.0 + inner + Math.pow(dust, 6) * 0.35;
-        if (sc < 0.08) continue;
-        var push = ring * 9, x = d.x + dx / dist * push, y = d.y + dy / dist * push;
-        var fade = 1;
-        if (mask && x > mask[0] && x < mask[2] && y > mask[1] && y < mask[3]) fade = 0.16;
-        var ang = Math.atan2(dy, dx) + Math.sin(t * 0.8 + d.p) * 0.35;
-        var len = 2.2 + sc * 8.5, wid = 1.1 + sc * 1.6;
-        var hue = (Math.sin(Math.atan2(dy, dx) * 1.0 + t * 0.35 + d.p * 0.2) + 1) * 0.5;
-        g.globalAlpha = Math.min(1, (0.25 + sc * 0.9)) * fade * (ring > 0.12 ? 1 : 0.7);
-        g.fillStyle = ring > 0.12 ? (hue < 0.62 ? col.a : hue < 0.9 ? col.b : col.c) : col.dust;
-        g.setTransform(Math.cos(ang) * host.d, Math.sin(ang) * host.d, -Math.sin(ang) * host.d, Math.cos(ang) * host.d, x * host.d, y * host.d);
-        g.beginPath(); var r = wid / 2; g.moveTo(-len / 2 + r, -r); g.lineTo(len / 2 - r, -r); g.arc(len / 2 - r, 0, r, -Math.PI / 2, Math.PI / 2); g.lineTo(-len / 2 + r, r); g.arc(-len / 2 + r, 0, r, Math.PI / 2, Math.PI * 1.5); g.fill();
-      }
-      g.globalAlpha = 1; g.setTransform(host.d, 0, 0, host.d, 0, 0);
-    });
-    host.onResize = function (w, h) {
-      var sp = opts.spacing || (w < 700 ? 20 : 22); dots = [];
-      for (var y = sp / 2; y < h; y += sp) for (var x = sp / 2; x < w; x += sp) dots.push({ x: x + (R() - 0.5) * sp * 0.8, y: y + (R() - 0.5) * sp * 0.8, p: R() * 6.28 });
-    };
-    host.resize();
-    var onMove = function (e) {
-      var r = el.getBoundingClientRect();
-      if (e.clientY < r.top || e.clientY > r.bottom) { ptr = null; return; }
-      ptr = [e.clientX - r.left, e.clientY - r.top]; lastMove = host.t;
-    };
-    window.addEventListener('pointermove', onMove, { passive: true });
-    document.addEventListener('pointerleave', function () { ptr = null; });
-    host.theme = function () { theme(); if (!host.running) host.frame(0); };
-    return host;
-  }
-
-
   /* ---------------- IntroField ----------------
    * The intro backdrop: navy with one soft light and fine grain, and a quiet
    * field of agents with faint links. converge() pulls every agent into the
@@ -413,13 +354,14 @@
    * The home hero. Agents call the systems they work with. Outside the lens
    * they are anonymous grey traffic; inside it Zenstra names each agent, puts
    * a checkpoint on each call and shows the decision: allow, hold for a
-   * person, or block. The lens follows the pointer and wanders when idle.
+   * person, or block. The lens is glass; it follows the pointer and wanders
+   * when idle.
    */
   function AgentLens(el, opts) {
     opts = opts || {};
-    var R = rand(33), agents = [], systems = [], edges = [], packets = [], tags = [], dots = [];
+    var R = rand(33), agents = [], systems = [], edges = [], packets = [], tags = [];
     var lens = null, ptr = null, lastMove = -10, maskEl = opts.mask || null, mask = null, col = {}, spawnAcc = 0, Rr = 200;
-    var NAMES = ['loan-doc-classifier', 'member-chat-assist', 'sar-prep-agent', 'copilot · hr-assist', 'card-dispute-flow', 'kyc-review', 'fraud-triage', 'cursor · laptop-114', 'n8n · collections', 'zapier · lead-sync', 'treasury-recon', 'claims-summariser', 'it-helpdesk', 'ach-exceptions', 'vendor-risk', 'crewai · underwriting', 'mcp · files-server', 'langgraph · onboarding', 'copilot · finance', 'chatgpt · marketing'];
+    var NAMES = ['loan-doc-classifier', 'member-chat-assist', 'sar-prep-agent', 'copilot · hr-assist', 'card-dispute-flow', 'kyc-review', 'fraud-triage', 'cursor · laptop-114', 'n8n · collections', 'zapier · lead-sync', 'treasury-recon', 'claims-summariser', 'it-helpdesk', 'ach-exceptions', 'vendor-risk', 'crewai · underwriting', 'mcp · files-server', 'langgraph · onboarding', 'copilot · finance', 'chatgpt · marketing', 'wire-review', 'loan-servicing', 'aml-screening', 'collections-voice', 'copilot · legal', 'gemini · ops', 'n8n · onboarding', 'zapier · crm-sync', 'mcp · core-api', 'claude · research', 'cursor · laptop-207', 'card-fraud-scorer', 'member-onboarding', 'statement-recon', 'complaints-triage', 'exam-prep-agent'];
     var SYS = ['core banking', 'crm', 'loan origination', 'email', 'knowledge base', 'payments', 'general ledger', 'ticketing', 'member docs', 'slack'];
     var BLOCK = ['blocked · data egress', 'blocked · prompt injection', 'blocked · unregistered MCP', 'blocked · out of scope'];
     var HOLD = ['held · needs approval', 'held · first-time payee'];
@@ -465,8 +407,6 @@
         edges.push({ a: i, s: near[0][1] });
         if (near[1] && R() < 0.55) edges.push({ a: i, s: near[1][1] });
       });
-      var sp = small ? 20 : 22; dots = [];
-      for (var y = sp / 2; y < h; y += sp) for (var x = sp / 2; x < w; x += sp) dots.push({ x: x + (R() - 0.5) * sp * 0.8, y: y + (R() - 0.5) * sp * 0.8, p: R() * 6.28 });
       packets = []; tags = [];
     }
     var CP = 0.68; // checkpoint position along each call
@@ -493,6 +433,26 @@
       g.globalAlpha = 1; g.fillStyle = bg; rr(g, x - 5, y - 9, tw + 10, 17, 4); g.fill();
       g.fillStyle = color; g.textBaseline = 'middle'; g.fillText(text, x, y + 0.5);
       return tw + 10;
+    }
+    // The lens is glass: what it covers is magnified, its edge has depth, and a
+    // highlight travels slowly round the rim.
+    var MAG = 1.12;
+    function rim(g, lx, ly, t) {
+      g.save();
+      var edge = g.createRadialGradient(lx, ly, Rr * 0.8, lx, ly, Rr);
+      edge.addColorStop(0, 'rgba(0,0,0,0)'); edge.addColorStop(1, col.dark ? 'rgba(92,210,255,0.16)' : 'rgba(0,90,164,0.12)');
+      g.fillStyle = edge; g.beginPath(); g.arc(lx, ly, Rr, 0, 6.283); g.fill();
+      var ra = t * 0.22, ux = Math.cos(ra) * Rr, uy = Math.sin(ra) * Rr;
+      var lg = g.createLinearGradient(lx - ux, ly - uy, lx + ux, ly + uy);
+      lg.addColorStop(0, col.dark ? 'rgba(220,240,255,0.95)' : 'rgba(0,168,239,0.95)');
+      lg.addColorStop(0.5, col.dark ? 'rgba(92,210,255,0.3)' : 'rgba(0,90,164,0.3)');
+      lg.addColorStop(1, col.dark ? 'rgba(127,168,255,0.8)' : 'rgba(0,90,164,0.85)');
+      g.shadowColor = col.dark ? 'rgba(0,0,0,0.6)' : 'rgba(10,37,69,0.18)'; g.shadowBlur = 30; g.shadowOffsetY = 10;
+      g.strokeStyle = lg; g.lineWidth = 1.6; g.beginPath(); g.arc(lx, ly, Rr, 0, 6.283); g.stroke();
+      g.shadowColor = 'transparent'; g.shadowBlur = 0; g.shadowOffsetY = 0;
+      g.globalAlpha = col.dark ? 0.55 : 0.75; g.strokeStyle = '#ffffff'; g.lineWidth = 3; g.lineCap = 'round';
+      g.beginPath(); g.arc(lx, ly, Rr - 7, Math.PI + ra, Math.PI * 1.3 + ra); g.stroke();
+      g.restore();
     }
     var host = new Host(el, function (g, w, h, dt, t) {
       var tgt = (ptr && t - lastMove < 6) ? ptr : idle(w, h, t);
@@ -523,8 +483,9 @@
 
       // 2. Inside the lens: identities, checkpoints and decisions.
       g.save(); g.beginPath(); g.arc(lx, ly, Rr, 0, 6.283); g.clip();
+      g.translate(lx, ly); g.scale(MAG, MAG); g.translate(-lx, -ly);
       var glass = g.createRadialGradient(lx, ly, Rr * 0.2, lx, ly, Rr); glass.addColorStop(0, col.glass); glass.addColorStop(1, 'rgba(0,0,0,0)');
-      g.fillStyle = col.dark ? 'rgba(4,16,31,0.55)' : 'rgba(247,251,255,0.82)'; g.beginPath(); g.arc(lx, ly, Rr, 0, 6.283); g.fill();
+      g.fillStyle = col.dark ? 'rgba(4,16,31,0.55)' : 'rgba(247,251,255,0.82)'; g.beginPath(); g.arc(lx, ly, Rr / MAG + 2, 0, 6.283); g.fill();
       g.fillStyle = glass; g.fillRect(lx - Rr, ly - Rr, Rr * 2, Rr * 2);
       var fade = function (x, y) { return inMask(x, y) ? 0.25 : 1; };
       edges.forEach(function (e) {
@@ -537,7 +498,7 @@
         var p = pos(pk, t), c = pk.v === 'ok' || !pk.hit ? col.ok : pk.v === 'hold' ? col.hold : col.bad;
         var life = pk.end ? Math.max(0, 1 - (t - pk.end) / 0.6) : 1;
         if (pk.v === 'bad' && pk.hit && !pk.end) pk.end = pk.hit + 0.5;
-        if (pk.hit && !pk.tagged) { pk.tagged = true; var inL = Math.hypot(p[0] - lx, p[1] - ly) < Rr - 8; if (inL && !inMask(p[0], p[1]) && pk.v !== 'ok' || (inL && !inMask(p[0], p[1]) && R() < 0.35)) tags.push({ x: p[0], y: p[1], t: t, v: pk.v, text: pk.v === 'ok' ? 'allowed · ' + (3 + Math.floor(R() * 14)) + ' ms' : pk.v === 'hold' ? HOLD[Math.floor(R() * HOLD.length)] : BLOCK[Math.floor(R() * BLOCK.length)] }); }
+        if (pk.hit && !pk.tagged) { pk.tagged = true; var inL = Math.hypot(p[0] - lx, p[1] - 22 - ly) < Rr / MAG - 70; if (inL && !inMask(p[0], p[1]) && pk.v !== 'ok' || (inL && !inMask(p[0], p[1]) && R() < 0.35)) tags.push({ x: p[0], y: p[1], t: t, v: pk.v, text: pk.v === 'ok' ? 'allowed · ' + (3 + Math.floor(R() * 14)) + ' ms' : pk.v === 'hold' ? HOLD[Math.floor(R() * HOLD.length)] : BLOCK[Math.floor(R() * BLOCK.length)] }); }
         g.globalAlpha = life * fade(p[0], p[1]); g.fillStyle = c;
         g.beginPath(); g.arc(p[0], p[1], 3, 0, 6.283); g.fill();
         g.globalAlpha = life * 0.22 * fade(p[0], p[1]); g.beginPath(); g.arc(p[0], p[1], 7, 0, 6.283); g.fill();
@@ -548,26 +509,16 @@
       agents.forEach(function (a) { if (Math.hypot(a.x - lx, a.y - ly) > Rr + 10) return; g.globalAlpha = fade(a.x, a.y); g.fillStyle = col.agent; g.beginPath(); g.arc(a.x, a.y, 3.4, 0, 6.283); g.fill(); g.globalAlpha = 0.25 * fade(a.x, a.y); g.strokeStyle = col.agent; g.lineWidth = 1; g.beginPath(); g.arc(a.x, a.y, 7.5 + Math.sin(t * 2 + a.p) * 1.2, 0, 6.283); g.stroke(); });
       // labels, nearest first, skipping any that would collide
       var placed = [], cand = [];
-      agents.forEach(function (a) { var d = Math.hypot(a.x - lx, a.y - ly); if (d < Rr - 18 && !inMask(a.x, a.y)) cand.push([d, a.x + 11, a.y, a.name, col.label]); });
-      systems.forEach(function (s) { var d = Math.hypot(s.x - lx, s.y - ly); if (d < Rr - 18 && !inMask(s.x, s.y)) cand.push([d, s.x + 11, s.y, s.name, col.label]); });
+      agents.forEach(function (a) { var d = Math.hypot(a.x - lx, a.y - ly); if (d < Rr / MAG - 18 && !inMask(a.x, a.y)) cand.push([d, a.x + 11, a.y, a.name, col.label]); });
+      systems.forEach(function (s) { var d = Math.hypot(s.x - lx, s.y - ly); if (d < Rr / MAG - 18 && !inMask(s.x, s.y)) cand.push([d, s.x + 11, s.y, s.name, col.label]); });
       cand.sort(function (x, y) { return x[0] - y[0]; });
       g.font = FONT;
-      cand.forEach(function (c) { var wd = g.measureText(c[3]).width + 10; if (Math.hypot(c[1] + wd - lx, c[2] - ly) > Rr - 8) return; for (var i = 0; i < placed.length; i++) { var q = placed[i]; if (c[1] < q[0] + q[2] + 6 && c[1] + wd + 6 > q[0] && Math.abs(c[2] - q[1]) < 20) return; } placed.push([c[1], c[2], wd]); g.globalAlpha = Math.min(1, (Rr - 18 - c[0]) / 40); label(g, c[1], c[2], c[3], c[4], col.labelBg); });
+      cand.forEach(function (c) { var wd = g.measureText(c[3]).width + 10; if (Math.hypot(c[1] + wd - lx, c[2] - ly) > Rr / MAG - 10 || Math.hypot(c[1] - lx, c[2] - ly) > Rr / MAG - 10) return; for (var i = 0; i < placed.length; i++) { var q = placed[i]; if (c[1] < q[0] + q[2] + 6 && c[1] + wd + 6 > q[0] && Math.abs(c[2] - q[1]) < 20) return; } placed.push([c[1], c[2], wd]); g.globalAlpha = Math.min(1, (Rr / MAG - 18 - c[0]) / 40); label(g, c[1], c[2], c[3], c[4], col.labelBg); });
       tags.forEach(function (tg) { var a = Math.min(1, (t - tg.t) / 0.15) * Math.min(1, (1.6 - (t - tg.t)) / 0.3); g.globalAlpha = Math.max(0, a); var c = tg.v === 'ok' ? col.ok : tg.v === 'hold' ? col.hold : col.bad; g.font = FONT; var tw = g.measureText(tg.text).width + 12, x = tg.x - tw / 2, y = tg.y - 22 - (t - tg.t) * 4; g.fillStyle = col.labelBg; rr(g, x, y - 9, tw, 18, 9); g.fill(); g.strokeStyle = c; g.lineWidth = 1; rr(g, x, y - 9, tw, 18, 9); g.stroke(); g.fillStyle = c; g.textBaseline = 'middle'; g.fillText(tg.text, x + 6, y + 0.5); });
       g.restore(); g.globalAlpha = 1;
 
-      // 3. The lens rim: a band of short dashes, as before.
-      for (var i = 0; i < dots.length; i++) {
-        var d = dots[i], dx = d.x - lx, dy = d.y - ly, dist = Math.sqrt(dx * dx + dy * dy) || 1;
-        var e = (dist - Rr) / 34, ring = Math.exp(-e * e); if (ring < 0.12) continue;
-        var push = ring * 8, x = d.x + dx / dist * push, y = d.y + dy / dist * push;
-        var ang = Math.atan2(dy, dx) + Math.sin(t * 0.8 + d.p) * 0.3, len = 2.2 + ring * 8, wid = 1.1 + ring * 1.4;
-        var hue = (Math.sin(Math.atan2(dy, dx) + t * 0.35 + d.p * 0.2) + 1) * 0.5;
-        g.globalAlpha = Math.min(1, 0.25 + ring * 0.85) * (inMask(x, y) ? 0.16 : 1);
-        g.fillStyle = hue < 0.62 ? col.a : hue < 0.9 ? col.b : col.c;
-        g.setTransform(Math.cos(ang) * host.d, Math.sin(ang) * host.d, -Math.sin(ang) * host.d, Math.cos(ang) * host.d, x * host.d, y * host.d);
-        g.beginPath(); var r = wid / 2; g.moveTo(-len / 2 + r, -r); g.lineTo(len / 2 - r, -r); g.arc(len / 2 - r, 0, r, -Math.PI / 2, Math.PI / 2); g.lineTo(-len / 2 + r, r); g.arc(-len / 2 + r, 0, r, Math.PI / 2, Math.PI * 1.5); g.fill();
-      }
+      // 3. The glass rim.
+      rim(g, lx, ly, t);
       g.globalAlpha = 1; g.setTransform(host.d, 0, 0, host.d, 0, 0);
     });
     host.onResize = function (w, h) { layout(w, h); };
@@ -585,5 +536,5 @@
     return host;
   }
 
-  window.ZX6 = { IntroField: IntroField, AgentLens: AgentLens, LensField: LensField, GateStream: GateStream, WorkflowViz: WorkflowViz, CloudViz: CloudViz, EdrViz: EdrViz, REDUCE: REDUCE };
+  window.ZX6 = { IntroField: IntroField, AgentLens: AgentLens, GateStream: GateStream, WorkflowViz: WorkflowViz, CloudViz: CloudViz, EdrViz: EdrViz, REDUCE: REDUCE };
 })();

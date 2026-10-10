@@ -38,6 +38,7 @@
   var lenis = null;
   if (!REDUCE && window.Lenis) {
     lenis = new Lenis({ duration: 1.1, easing: function (t) { return Math.min(1, 1.001 - Math.pow(2, -10 * t)); } });
+    (window.ZX = window.ZX || {}).lenis = lenis;
     var raf = function (t) { lenis.raf(t); requestAnimationFrame(raf); }; requestAnimationFrame(raf);
   }
   var scrollToEl = function (el) { if (lenis) lenis.scrollTo(el, { offset: -90 }); else el.scrollIntoView({ behavior: REDUCE ? 'auto' : 'smooth' }); };
@@ -189,7 +190,7 @@
   if (FX) {
     $$('.lens').forEach(function (h) {
       var sec = h.closest('section'), m = sec ? sec.querySelector('[data-lens-mask]') : null;
-      heroStream = (h.hasAttribute('data-agents') && FX.AgentLens ? FX.AgentLens : FX.LensField)(h, { mask: m, cx: +h.getAttribute('data-cx') || 0.66, cy: +h.getAttribute('data-cy') || 0.5 });
+      heroStream = FX.AgentLens(h, { mask: m, cx: +h.getAttribute('data-cx') || 0.66, cy: +h.getAttribute('data-cy') || 0.5 });
       onTheme.push(heroStream.theme);
     });
     $$('.cta .stream').forEach(function (h) { ctaStreams.push(FX.GateStream(h, { gate: 0.76, dark: true, density: 0.8 })); });
@@ -317,16 +318,38 @@
   }
 
   /* ---------------- Decision path: pinned horizontal scroll ---------------- */
-  /* ---------------- Decision engine ----------------
-   * One tool call travels through four discs as you scroll. Every visual is a
-   * pure function of scroll progress, so scrolling back plays it in reverse.
+  /* ---------------- Decision engine: the perimeter ----------------
+   * Four rings around a protected core: identity, intent, policy, record.
+   * One tool call comes in from outside and stops at each gate; policy closes
+   * its gate and the call never reaches the core. Every visual is a pure
+   * function of scroll progress, so scrolling back plays it in reverse.
    */
   $$('[data-engine]').forEach(function (sec) {
-    var pin = $('.eng-pin', sec); if (!pin) return;
-    var discs = $$('.disc', sec), steps = $$('.eng-steps li', sec), ds = $$('.eng-d', sec), labs = $$('.elab', sec);
-    var svg = $('.eng-lines', sec), stage = $('.eng-stage', sec), orb = $('.orb:not(.ev)', sec), ev = $('.orb.ev', sec), dest = $('.dest', sec);
+    var pin = $('.eng-pin', sec), iso = $('[data-perimeter]', sec); if (!pin || !iso) return;
+    var steps = $$('.eng-steps li', sec), ds = $$('.eng-d', sec), labs = $$('.elab', sec);
+    var svg = $('.eng-lines', sec), stage = $('.eng-stage', sec), orb = $('.orb:not(.ev)', sec), ev = $('.orb.ev', sec);
+    var core = $('.core', sec), coreTag = $('.core-tag', sec), mStart = $('.m-start', sec), mCore = $('.m-core', sec);
     var clock = $('[data-ms]', sec), clockBox = $('.eng-clock', sec), sum = $('[data-sum]', sec), ticks = $('.eng-ticks', sec), orbLabel = $('span', orb);
     var on = function () { return !REDUCE && getComputedStyle(pin).display !== 'none'; };
+    var NS = 'http://www.w3.org/2000/svg';
+    var RAD = [238, 182, 128, 80], STEP = 24, GATE = 200 * Math.PI / 180, GAP = 0.2, LINKS = 28;
+    var mk = function (tag, attrs, parent) { var e = document.createElementNS(NS, tag); for (var k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+    var arc = function (r, a0, a1) { var x0 = r + Math.cos(a0) * r, y0 = r + Math.sin(a0) * r, x1 = r + Math.cos(a1) * r, y1 = r + Math.sin(a1) * r; return 'M' + x0.toFixed(2) + ' ' + y0.toFixed(2) + ' A' + r + ' ' + r + ' 0 ' + ((a1 - a0) % 6.2832 > Math.PI ? 1 : 0) + ' 1 ' + x1.toFixed(2) + ' ' + y1.toFixed(2); };
+    // Build the rings, outermost first so the DOM order matches the labels.
+    var rings = RAD.map(function (R, i) {
+      var el = document.createElement('div'); el.className = 'ring';
+      el.style.cssText = 'left:' + -R + 'px;top:' + -R + 'px;width:' + 2 * R + 'px;height:' + 2 * R + 'px';
+      var sv = mk('svg', { viewBox: '0 0 ' + 2 * R + ' ' + 2 * R, 'aria-hidden': 'true' }, el), r = R - 2, g = mk('g', { transform: 'translate(2 2)' }, sv);
+      var ring = { el: el, R: R };
+      if (i < 3) mk('path', { class: 'base', d: arc(r, GATE + GAP / 2, GATE - GAP / 2 + 6.2832) }, g);
+      for (var k = 0; k < 72; k++) { if (k % 6) continue; var ta = k / 72 * 6.2832; mk('path', { class: 'tick', d: 'M' + (r + Math.cos(ta) * (r - 8)).toFixed(1) + ' ' + (r + Math.sin(ta) * (r - 8)).toFixed(1) + ' L' + (r + Math.cos(ta) * (r - 3)).toFixed(1) + ' ' + (r + Math.sin(ta) * (r - 3)).toFixed(1) }, g); }
+      if (i === 0) { ring.scan = mk('path', { class: 'scan', d: arc(r, 0, 0.9) }, g); ring.scanG = ring.scan; }
+      if (i === 1) { ring.a = mk('path', { class: 'cmp a', d: arc(r - 9, GATE + 0.3, GATE + 1.3) }, g); ring.b = mk('path', { class: 'cmp b', d: arc(r - 15, GATE + 0.3, GATE + 1.3) }, g); }
+      if (i === 2) ring.door = mk('path', { class: 'door', d: arc(r, GATE - GAP / 2 - 0.02, GATE + GAP / 2 + 0.02) }, g);
+      if (i === 3) { ring.links = []; for (var j = 0; j < LINKS; j++) { var a0 = GATE + j / LINKS * 6.2832 + 0.03; ring.links.push(mk('path', { class: 'link', d: arc(r, a0, a0 + 6.2832 / LINKS - 0.06) }, g)); } }
+      iso.insertBefore(el, core);
+      return ring;
+    });
     var P = 0, D = -1, raf = 0, vis = false;
     var clamp = function (v) { return v < 0 ? 0 : v > 1 ? 1 : v; };
     var seg = function (p, a, b) { return clamp((p - a) / (b - a)); };
@@ -336,18 +359,18 @@
     var MS = [0, 2.1, 6.8, 14.0, 18.0];
     var RUN = ['checking key', 'comparing task', 'evaluating POL-114', 'writing entry'];
     var DONE = [['verified', 'ok'], ['mismatch', 'warn'], ['blocked', 'bad'], ['chained · SIEM', 'rec']];
-    var NS = 'http://www.w3.org/2000/svg', paths = [];
-    for (var i = 0; i < 5; i++) { var pa = document.createElementNS(NS, 'path'); if (i === 4) pa.setAttribute('class', 'axis'); svg.appendChild(pa); paths.push(pa); }
+    var paths = []; for (var i = 0; i < 5; i++) paths.push(mk('path', i === 4 ? { class: 'route' } : {}, svg));
     var setCls = function (el, name, v) { if (el.classList.contains(name) !== v) el.classList.toggle(name, v); };
+    var place = function (el, r, z) { el.style.setProperty('--x', (Math.cos(GATE) * r).toFixed(1) + 'px'); el.style.setProperty('--y', (Math.sin(GATE) * r).toFixed(1) + 'px'); el.style.setProperty('--z', z.toFixed(1) + 'px'); };
 
     function render(p) {
-      // 1. The closed engine opens into an exploded view.
-      var e = io3(seg(p, 0.0, 0.12)), gap = 14 + e * 136;
-      discs.forEach(function (d, i) { d.style.setProperty('--z', ((1.5 - i) * gap).toFixed(1) + 'px'); });
-      var zOf = function (i) { return (1.5 - i) * gap; };
-      sec.style.setProperty('--lo', seg(p, 0.05, 0.12).toFixed(3));
+      // 1. A flat target rises into stepped terraces around the core.
+      var e = io3(seg(p, 0.0, 0.12)), zOf = function (i) { return i * STEP * e; };
+      rings.forEach(function (rg, i) { rg.el.style.setProperty('--z', zOf(i).toFixed(1) + 'px'); });
+      var coreZ = zOf(4) - STEP * 0.4 * e; core.style.setProperty('--cz', coreZ.toFixed(1) + 'px');
+      coreTag.style.setProperty('--z', (coreZ + 25).toFixed(1) + 'px');
+      place(mStart, 300, 0); mCore.style.setProperty('--z', (coreZ + 25).toFixed(1) + 'px');
       labs.forEach(function (l) { l.style.setProperty('--lo', seg(p, 0.05, 0.12).toFixed(3)); });
-      dest.style.setProperty('--dz', (zOf(3) - 120 - e * 40).toFixed(1) + 'px');
 
       // 2. Which check is running, and how far along it is.
       var act = -1, sp = 0;
@@ -370,51 +393,57 @@
         setCls(l, 'on', i === act); ['ok', 'warn', 'bad', 'rec'].forEach(function (c) { setCls(l, c, st === 'done' && DONE[i][1] === c); });
       });
 
-      // 3. Each disc does its own work.
+      // 3. Each ring does its own work.
       var s0 = seg(p, 0.16, 0.31), s1 = seg(p, 0.37, 0.5), s2 = seg(p, 0.59, 0.66), s3 = seg(p, 0.77, 0.9);
-      discs[0].style.setProperty('--a', (s0 * 540).toFixed(1) + 'deg'); discs[0].style.setProperty('--so', (s0 > 0 && s0 < 1 ? 1 : 0.0));
-      discs[1].style.setProperty('--ao', (s1 > 0 ? 1 : 0)); discs[1].style.setProperty('--r2', (io3(s1) * 74).toFixed(1) + 'deg');
-      discs[2].style.setProperty('--is', io3(s2).toFixed(3)); discs[2].style.setProperty('--ir', ((1 - io3(s2)) * 120).toFixed(1) + 'deg');
-      discs[3].style.setProperty('--f', (io3(s3) * 360).toFixed(1) + 'deg');
-      discs.forEach(function (d, i) {
+      var r0 = rings[0], r1 = rings[1], r2 = rings[2], r3 = rings[3];
+      r0.scan.setAttribute('transform', 'rotate(' + (GATE * 180 / Math.PI + s0 * 540).toFixed(1) + ' ' + (r0.R - 2) + ' ' + (r0.R - 2) + ')');
+      r0.scan.style.opacity = s0 > 0 && s0 < 1 ? 1 : 0;
+      r1.a.style.opacity = r1.b.style.opacity = s1 > 0 ? 1 : 0;
+      r1.b.setAttribute('transform', 'rotate(' + (io3(s1) * 64).toFixed(1) + ' ' + (r1.R - 2) + ' ' + (r1.R - 2) + ')');
+      r2.door.setAttribute('transform', 'rotate(' + ((1 - io3(s2)) * -38).toFixed(1) + ' ' + (r2.R - 2) + ' ' + (r2.R - 2) + ')');
+      r2.door.style.opacity = s2 > 0 ? 1 : 0;
+      var lit = Math.round(io3(s3) * LINKS); r3.links.forEach(function (l, j) { setCls(l, 'on', j < lit); });
+      rings.forEach(function (rg, i) {
         var st = i < act || (i === act && sp > 0.8) ? DONE[i][1] : i === act ? 'run' : '';
         if (i === 2 && act === 2 && s2 > 0.5) st = 'bad';
-        setCls(d, 'on', st === 'run'); setCls(d, 'ok', st === 'ok' || st === 'rec'); setCls(d, 'warn', st === 'warn'); setCls(d, 'bad', st === 'bad');
+        setCls(rg.el, 'on', st === 'run'); setCls(rg.el, 'ok', st === 'ok'); setCls(rg.el, 'warn', st === 'warn'); setCls(rg.el, 'bad', st === 'bad'); setCls(rg.el, 'rec', st === 'rec');
       });
+      var safe = p >= 0.86; setCls(core, 'safe', safe); setCls(coreTag, 'safe', safe);
+      var tag = safe ? 'untouched' : p >= 0.62 ? 'never reached' : 'protected', small = $('small', coreTag); if (small.textContent !== tag) small.textContent = tag;
 
-      // 4. The tool call drops disc by disc and is stopped at policy; the evidence drops on to the record.
-      var oz = zOf(0) + 200 - oc(seg(p, 0.07, 0.16)) * 196;
-      oz += (zOf(1) - zOf(0)) * io3(seg(p, 0.31, 0.37));
-      oz += (zOf(2) - zOf(1)) * io3(seg(p, 0.51, 0.57));
-      var bump = seg(p, 0.6, 0.68); oz += Math.sin(bump * Math.PI) * 26 + (bump > 0 ? 8 * bump : 0);
-      orb.style.setProperty('--oz', oz.toFixed(1) + 'px'); orb.style.setProperty('--oo', seg(p, 0.06, 0.1).toFixed(3));
+      // 4. The call stops at each gate and is turned back at policy; the evidence goes to the record ring.
+      var gateR = function (i) { return RAD[i] + 16; };
+      var rr = 300 - (300 - gateR(0)) * oc(seg(p, 0.07, 0.16)), zz = zOf(0);
+      var m1 = io3(seg(p, 0.31, 0.37)); rr += (gateR(1) - gateR(0)) * m1; zz += (zOf(1) - zOf(0)) * m1;
+      var m2 = io3(seg(p, 0.51, 0.57)); rr += (gateR(2) - gateR(1)) * m2; zz += (zOf(2) - zOf(1)) * m2;
+      var bump = seg(p, 0.6, 0.68); rr += Math.sin(bump * Math.PI) * 22 + bump * 10;
+      place(orb, rr, zz + 10); orb.style.setProperty('--oo', seg(p, 0.06, 0.1).toFixed(3));
       var blocked = p >= 0.62; setCls(orb, 'bad', blocked);
       var ol = blocked ? 'email.send · blocked' : 'email.send'; if (orbLabel.textContent !== ol) orbLabel.textContent = ol;
-      var evk = seg(p, 0.74, 0.8);
-      ev.style.setProperty('--oz', (zOf(2) + (zOf(3) - zOf(2)) * io3(evk) + 6).toFixed(1) + 'px');
-      ev.style.setProperty('--oo', (evk > 0 && p < 0.92 ? Math.min(1, evk * 4) * (1 - seg(p, 0.86, 0.92)) : 0).toFixed(3));
-      dest.style.setProperty('--xo', seg(p, 0.64, 0.7).toFixed(3));
+      var evk = io3(seg(p, 0.74, 0.8));
+      place(ev, gateR(2) - 10 + (RAD[3] - gateR(2) + 10) * evk, zOf(2) + (zOf(3) - zOf(2)) * evk + 8);
+      ev.style.setProperty('--oo', (evk > 0 ? Math.min(1, evk * 4) * (1 - seg(p, 0.86, 0.92)) : 0).toFixed(3));
 
       // 5. Clock, summary and progress ruler.
       var ms = 0; STEPS.forEach(function (r, i) { if (p >= r[0]) ms = MS[i] + (MS[i + 1] - MS[i]) * oc(seg(p, r[0], r[0] + (r[1] - r[0]) * 0.8)); });
       clock.textContent = ms.toFixed(1); setCls(clockBox, 'bad', p >= 0.62 && p < 0.74);
       var sm = p >= 0.9 ? 'Blocked at 14 ms · recorded at 18 ms' : p >= 0.62 ? 'Blocked before the email was sent' : 'Decision time';
       if (sum.textContent !== sm) sum.textContent = sm;
-      ticks.style.setProperty('--p', p.toFixed(3)); $('i', ticks).style.setProperty('--p', p.toFixed(3));
+      $('i', ticks).style.setProperty('--p', p.toFixed(3));
 
-      // 6. Callout lines from each disc to its label, and the axis the call travels.
+      // 6. Callouts from each ring to its label, and the route the call takes.
       var sr = stage.getBoundingClientRect(), W = sr.width, H = sr.height, used = [];
-      var pts = discs.map(function (d) { var r = d.getBoundingClientRect(); return [r.right - sr.left, r.top + r.height / 2 - sr.top, r.left + r.width / 2 - sr.left]; });
-      pts.forEach(function (pt, i) {
-        var ly = Math.max(10, Math.min(H - 70, pt[1] - 14));
+      rings.forEach(function (rg, i) {
+        var r = rg.el.getBoundingClientRect(), ax = r.right - sr.left, ay = r.top + r.height / 2 - sr.top;
+        var ly = Math.max(10, Math.min(H - 70, ay - 14 - (3 - i) * 26));
         used.forEach(function (u) { if (Math.abs(ly - u) < 46) ly = u + 46; }); used.push(ly);
         labs[i].style.top = ly.toFixed(1) + 'px';
-        var lx = W - 168 - 14, x1 = Math.min(pt[0] + 4, lx - 30);
-        paths[i].setAttribute('d', 'M' + x1.toFixed(1) + ' ' + pt[1].toFixed(1) + ' L' + (lx - 18).toFixed(1) + ' ' + pt[1].toFixed(1) + ' L' + (lx - 4).toFixed(1) + ' ' + (ly + 14).toFixed(1));
+        var lx = W - 168 - 14, x1 = Math.min(ax + 4, lx - 30);
+        paths[i].setAttribute('d', 'M' + x1.toFixed(1) + ' ' + ay.toFixed(1) + ' L' + (lx - 18).toFixed(1) + ' ' + ay.toFixed(1) + ' L' + (lx - 4).toFixed(1) + ' ' + (ly + 14).toFixed(1));
         paths[i].style.opacity = seg(p, 0.05, 0.12); setCls(paths[i], 'on', i === act);
       });
-      var dr = $('span', dest).getBoundingClientRect(), top = orb.getBoundingClientRect();
-      paths[4].setAttribute('d', 'M' + pts[0][2].toFixed(1) + ' ' + Math.min(pts[0][1], top.top - sr.top).toFixed(1) + ' L' + (dr.left + dr.width / 2 - sr.left).toFixed(1) + ' ' + (dr.top - sr.top).toFixed(1));
+      var a = mStart.getBoundingClientRect(), c = mCore.getBoundingClientRect();
+      paths[4].setAttribute('d', 'M' + (a.left - sr.left).toFixed(1) + ' ' + (a.top - sr.top).toFixed(1) + ' L' + (c.left - sr.left).toFixed(1) + ' ' + (c.top - sr.top).toFixed(1));
       paths[4].style.opacity = (0.8 * seg(p, 0.05, 0.12)).toFixed(3);
     }
     function target() { var r = sec.getBoundingClientRect(), total = sec.offsetHeight - innerHeight; return clamp(-r.top / Math.max(1, total)); }
@@ -426,7 +455,7 @@
     }
     function size() {
       if (!on()) { sec.style.height = ''; return; }
-      sec.style.height = Math.round(innerHeight * 4.8) + "px";
+      sec.style.height = Math.round(innerHeight * 4.8) + 'px';
       render(D < 0 ? target() : D);
     }
     if ('IntersectionObserver' in window) new IntersectionObserver(function (es) { vis = es[0].isIntersecting && on(); if (vis && !raf) raf = requestAnimationFrame(loop); }, { rootMargin: '200px' }).observe(sec);
@@ -478,34 +507,6 @@
       if (REDUCE || !a) return; e.preventDefault();
       if (d.open) { var x = a.animate([{ height: a.offsetHeight + 'px', opacity: 1 }, { height: '0px', opacity: 0 }], { duration: 380, easing: EASE }); x.onfinish = function () { d.open = false; }; }
       else { d.open = true; var h = a.offsetHeight; a.animate([{ height: '0px', opacity: 0 }, { height: h + 'px', opacity: 1 }], { duration: 520, easing: EASE }); }
-    });
-  });
-
-  /* ---------------- Forms ---------------- */
-  var FREE = /@(gmail|yahoo|hotmail|outlook|icloud|aol|proton|protonmail|gmx|mail)\./i;
-  $$('form[data-validate]').forEach(function (form) {
-    form.addEventListener('submit', function (e) {
-      e.preventDefault();
-      var first = null;
-      $$('.field', form).forEach(function (f) {
-        var inp = $('input:not([type=checkbox]):not([type=radio]), select, textarea', f), err = $('.err', f); if (!inp) return;
-        var msg = '';
-        if (inp.required && !inp.value.trim()) msg = 'Required.';
-        else if (inp.type === 'email' && inp.value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inp.value)) msg = 'Enter an email like name@company.com.';
-        else if (inp.type === 'email' && inp.hasAttribute('data-work') && FREE.test(inp.value)) msg = 'Use your work email so we can prepare for your environment.';
-        f.classList.toggle('invalid', !!msg); if (err) err.textContent = msg; inp.setAttribute('aria-invalid', String(!!msg));
-        if (msg && !first) first = inp;
-      });
-      $$('.consent', form).forEach(function (c) { var cb = $('input', c), bad = cb.required && !cb.checked; c.classList.toggle('invalid', bad); if (bad && !first) first = cb; });
-      if (first) { first.focus(); return; }
-      var ok = form.parentElement.querySelector('[data-success]'); if (!ok) return;
-      form.hidden = true; ok.hidden = false;
-      var who = $('[data-who]', ok), nm = $('input[name=first]', form); if (who && nm) who.textContent = nm.value.trim();
-      if (!REDUCE) {
-        anim(ok, [{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }], { duration: 700 });
-        var path = $('.check path', ok); if (path) { var L = path.getTotalLength(); path.style.strokeDasharray = L; anim(path, [{ strokeDashoffset: L }, { strokeDashoffset: 0 }], { duration: 700, delay: 200 }); }
-      }
-      var h = $('h2, h3', ok); if (h) { h.tabIndex = -1; h.focus(); }
     });
   });
 

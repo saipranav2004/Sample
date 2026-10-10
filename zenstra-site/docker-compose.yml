@@ -1,0 +1,96 @@
+# zenstra.ai: static site (nginx), lead intake API (Node) and Postgres.
+#
+#   cp .env.example .env    # then set the required values
+#   docker compose up -d --build
+#   docker compose --profile dev up -d --build   # adds Mailpit to catch email locally
+#
+# Put TLS in front of the web service (load balancer, CDN or a reverse proxy).
+name: zenstra-site
+
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: zenstra-site/web/Dockerfile
+      args:
+        SITE_URL: ${PUBLIC_URL:-http://localhost:8080}
+      secrets: [build_ca]
+    ports:
+      - "${WEB_PORT:-8080}:8080"
+    environment:
+      API_UPSTREAM: api:3000
+      SERVER_NAME: ${SERVER_NAME:-_}
+      REAL_IP_FROM: ${REAL_IP_FROM:-127.0.0.1}
+      CSP_SCRIPT_EXTRA: ${CSP_SCRIPT_EXTRA:-}
+      CSP_FRAME_SRC: ${CSP_FRAME_SRC:-'none'}
+      HSTS: ${HSTS:-}
+    depends_on:
+      api:
+        condition: service_healthy
+    networks: [public, backend]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ./api
+      secrets: [build_ca]
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      TRUST_PROXY: "1"
+      DATABASE_URL: postgres://zenstra:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/zenstra
+    depends_on:
+      db:
+        condition: service_healthy
+    # backend: web and db; egress: outbound email, Slack, CRM and Turnstile.
+    networks: [backend, egress]
+    read_only: true
+    tmpfs: [/tmp]
+    init: true
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: zenstra
+      POSTGRES_USER: zenstra
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zenstra -d zenstra"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [backend]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+
+  # Development only: catches outgoing email. UI on http://localhost:8025.
+  mailpit:
+    image: axllent/mailpit:v1.27
+    profiles: [dev]
+    ports:
+      - "8025:8025"
+    networks: [backend, public]
+    restart: unless-stopped
+
+networks:
+  public: {}
+  egress: {}
+  # No route to the internet: the database is reachable only from the API.
+  backend:
+    internal: true
+
+volumes:
+  db-data: {}
+
+# Extra CA certificate for builds behind a TLS-inspecting proxy. Empty by default.
+secrets:
+  build_ca:
+    file: ${BUILD_CA_FILE:-/dev/null}

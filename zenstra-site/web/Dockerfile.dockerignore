@@ -1,0 +1,15 @@
+# The web image is built from the repository root. Send only what it needs;
+# in particular never the zip archives at the root, which hold credentials.
+**/*.zip
+**/.git
+**/node_modules
+**/__pycache__
+**/.env
+**/.env.*
+.git
+frontend*
+AWS-*
+design/zenstra-v4
+design/zenstra-v5
+zenstra-site/api
+zenstra-site/web/dist

@@ -1,0 +1,108 @@
+# zenstra.ai web server. Rendered at container start by the nginx image's
+# envsubst step: only ${UPPER_CASE} variables from the environment are
+# replaced; nginx's own $variables are left alone.
+
+server_tokens off;
+
+# Per-IP limits. Form posts are also limited by the API itself.
+limit_req_zone $binary_remote_addr zone=forms:10m rate=10r/m;
+limit_req_zone $binary_remote_addr zone=api:10m rate=60r/m;
+limit_req_status 429;
+
+# Client IP from the load balancer in front of this container.
+set_real_ip_from ${REAL_IP_FROM};
+real_ip_header X-Forwarded-For;
+real_ip_recursive on;
+
+gzip on;
+gzip_comp_level 6;
+gzip_min_length 1024;
+gzip_vary on;
+gzip_proxied any;
+gzip_types text/css application/javascript application/json image/svg+xml text/plain application/xml text/xml;
+
+upstream lead_api {
+  server ${API_UPSTREAM};
+  keepalive 16;
+}
+
+server {
+  # IPv4 only so the container starts on hosts without IPv6; the load
+  # balancer in front handles dual stack.
+  listen 8080;
+  server_name ${SERVER_NAME};
+  root /usr/share/nginx/html;
+  index home.html;
+  charset utf-8;
+  client_max_body_size 32k;
+  absolute_redirect off;
+
+  # Values for the security headers (see snippets/security-headers.conf).
+  include /etc/nginx/snippets/csp-hashes.conf;
+  set $csp_script_extra "${CSP_SCRIPT_EXTRA}";
+  set $csp_frame_src "${CSP_FRAME_SRC}";
+  set $hsts "${HSTS}";
+
+  error_page 404 /404.html;
+
+  location = /healthz {
+    access_log off;
+    default_type text/plain;
+    return 200 "ok\n";
+  }
+
+  # Browsers ask for /favicon.ico even when a page names its icon.
+  location = /favicon.ico {
+    access_log off;
+    add_header Cache-Control "public, max-age=604800" always;
+    try_files /assets/img/zenstra-mark.png =404;
+  }
+
+  location = /404.html {
+    internal;
+    include /etc/nginx/snippets/security-headers.conf;
+    add_header Cache-Control "no-cache" always;
+  }
+
+  # Form endpoints: a tighter limit than the rest of the API.
+  location ~ ^/api/(demo-requests|document-requests|subscriptions)$ {
+    limit_req zone=forms burst=5 nodelay;
+    include /etc/nginx/snippets/api-proxy.conf;
+  }
+
+  location /api/ {
+    limit_req zone=api burst=30 nodelay;
+    include /etc/nginx/snippets/api-proxy.conf;
+  }
+
+  # Fingerprinted CSS, JS and fonts never change: cache for a year.
+  location ~* "^/assets/.+\.[0-9a-f]{8}(\.min)?\.(js|css)$" {
+    include /etc/nginx/snippets/security-headers.conf;
+    add_header Cache-Control "public, max-age=31536000, immutable" always;
+    try_files $uri =404;
+  }
+  location ^~ /assets/fonts/ {
+    include /etc/nginx/snippets/security-headers.conf;
+    add_header Cache-Control "public, max-age=31536000, immutable" always;
+    add_header Access-Control-Allow-Origin "*" always;
+    try_files $uri =404;
+  }
+  location /assets/ {
+    include /etc/nginx/snippets/security-headers.conf;
+    add_header Cache-Control "public, max-age=604800" always;
+    try_files $uri =404;
+  }
+
+  # Pages: /demo and /demo.html both work; always revalidate HTML.
+  location / {
+    include /etc/nginx/snippets/security-headers.conf;
+    add_header Cache-Control "no-cache" always;
+    try_files $uri $uri.html $uri/ =404;
+  }
+
+  # Never serve dotfiles.
+  location ~ /\. {
+    deny all;
+    return 404;
+  }
+}

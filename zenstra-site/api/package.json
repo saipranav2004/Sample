@@ -1,0 +1,20 @@
+{
+  "name": "zenstra-site-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Lead intake API for zenstra.ai: demo requests, document requests and newsletter sign-ups.",
+  "type": "commonjs",
+  "main": "src/server.js",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "@fastify/rate-limit": "11.2.0",
+    "fastify": "5.12.5",
+    "nodemailer": "10.0.10",
+    "pg": "8.23.0"
+  }
+}

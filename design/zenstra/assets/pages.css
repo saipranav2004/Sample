@@ -365,3 +365,18 @@ fieldset.field { border: 0; margin: 0; padding: 0; }
 .code-card .s { color: var(--ok); }
 .code-card .c { color: var(--ink-3); }
 .code-card .hl { display: inline-block; width: 100%; background: var(--crit-wash); }
+
+/* Live forms (assets in ../zenstra-v6/assets/forms.js) */
+.hp { position: absolute !important; left: -10000px; top: auto; width: 1px; height: 1px; overflow: hidden; }
+[data-turnstile][hidden], .form-msg[hidden] { display: none !important; }
+.form-msg { margin: 0; padding: 10px 12px; border-radius: var(--r-2); font-size: 13.5px; line-height: 1.5; border: 1px solid var(--line-strong); color: var(--ink-2); }
+.form-msg.bad { border-color: var(--crit); color: var(--crit); }
+.form-msg.ok { border-color: var(--ok, #0f9d76); color: var(--ok, #0f9d76); }
+.form-msg a { color: inherit; font-weight: 600; }
+.form-note { font-size: 12.5px; line-height: 1.5; color: var(--ink-3); }
+.form-note a { color: inherit; }
+.form-ref { font: 500 12.5px/1.4 var(--font-mono); color: var(--ink-3); }
+form button[disabled] { opacity: 0.7; cursor: progress; }
+.newsletter form { flex-wrap: wrap; }
+.newsletter .form-msg { flex-basis: 100%; }
+

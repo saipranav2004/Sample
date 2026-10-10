@@ -268,12 +268,16 @@
     <div class="modal-card">
       <div class="modal-head"><div><span class="label">Under NDA</span><h2 id="doc-modal-h" style="margin-top:6px">SOC 2 report and penetration test summary</h2></div><button class="icon-close" type="button" data-modal-close aria-label="Close">{{icon:x}}</button></div>
       <p>Tell us who you are and our security team will send the NDA and the documents from security@zenstra.ai.</p>
-      <form data-validate novalidate style="display:grid;gap:14px;margin-top:20px">
-        <div class="field"><label for="dm-name">Full name</label><input id="dm-name" name="name" required autocomplete="name"><span class="err" role="alert"></span></div>
-        <div class="field"><label for="dm-email">Work email</label><input id="dm-email" type="email" required data-work autocomplete="email" placeholder="name@company.com"><span class="err" role="alert"></span></div>
-        <div class="field"><label for="dm-co">Company</label><input id="dm-co" required autocomplete="organization"><span class="err" role="alert"></span></div>
+      <form id="doc-form" data-api="/api/document-requests" data-kind="documents" data-fallback-email="security@zenstra.ai" novalidate style="display:grid;gap:14px;margin-top:20px">
+        <div class="field"><label for="dm-name">Full name</label><input id="dm-name" name="name" required maxlength="160" autocomplete="name"><span class="err" role="alert"></span></div>
+        <div class="field"><label for="dm-email">Work email</label><input id="dm-email" name="email" type="email" required data-work maxlength="254" autocomplete="email" inputmode="email" placeholder="name@company.com"><span class="err" role="alert"></span></div>
+        <div class="field"><label for="dm-co">Company</label><input id="dm-co" name="company" required maxlength="120" autocomplete="organization"><span class="err" role="alert"></span></div>
+        <input type="hidden" name="document" value="SOC 2 report and penetration test summary">
+        <div class="hp" aria-hidden="true"><label for="dm-website">Leave this empty</label><input id="dm-website" name="website" tabindex="-1" autocomplete="off"></div>
+        <div data-turnstile hidden></div>
         <button class="btn btn-primary" type="submit">Send request</button>
+        <p class="form-note">By submitting, you agree that Zenstra may contact you about this request, as described in our <a href="legal.html#privacy">privacy notice</a>.</p>
       </form>
-      <div class="success" data-success hidden><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24"/><path d="m15 25 6 6 12-13"/></svg><h3>Thanks, <span data-who></span>.</h3><p style="color:var(--ink-2)">The security team will email you the NDA within one business day.</p><button class="btn btn-secondary" type="button" data-modal-close>Close</button></div>
+      <div class="success" data-success hidden><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24"/><path d="m15 25 6 6 12-13"/></svg><h3>Thanks, <span data-who></span>.</h3><p style="color:var(--ink-2)">The security team will email the NDA to <b data-email></b> within one business day.</p><p class="form-ref">Reference <b data-ref></b></p><button class="btn btn-secondary" type="button" data-modal-close>Close</button></div>
     </div>
   </div>
