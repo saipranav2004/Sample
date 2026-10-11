@@ -44,10 +44,8 @@ jobs:
         run: |
           npm ci --no-audit --no-fund
           node build.mjs --out "$RUNNER_TEMP/dist" --site-url https://zenstra.ai
-      - name: Deploy scripts parse
-        run: |
-          bash -n zenstra-site/deploy.sh
-          sh -n zenstra-site/deploy/backup.sh
+      - name: Deploy script parses
+        run: bash -n zenstra-site/deploy.sh
 
   docker:
     runs-on: ubuntu-latest
