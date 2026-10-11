@@ -20,8 +20,8 @@ jobs:
     runs-on: ubuntu-latest
     defaults: { run: { working-directory: zenstra-site/api } }
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with: { node-version: 22, cache: npm, cache-dependency-path: zenstra-site/api/package-lock.json }
       - run: npm ci --no-audit --no-fund
       - run: npm test
@@ -29,10 +29,11 @@ jobs:
   site:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: "3.12" }
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with: { python-version: "3.12", cache: pip, cache-dependency-path: zenstra-site/site/_build/requirements.txt }
+      - run: python3 -m pip install -r zenstra-site/site/_build/requirements.txt
+      - uses: actions/setup-node@v5
         with: { node-version: 22, cache: npm, cache-dependency-path: zenstra-site/web/package-lock.json }
       - name: Generated pages match their sources
         run: |
@@ -51,7 +52,7 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Production Compose file resolves
         working-directory: zenstra-site
         env: { DOMAIN: example.com, ACME_EMAIL: ops@example.com, POSTGRES_PASSWORD: ci }
