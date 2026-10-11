@@ -70,10 +70,12 @@
   var dds = $$('.dd');
   function closeAll() { dds.forEach(function (d) { d.classList.remove('open'); $('.dd-btn', d).setAttribute('aria-expanded', 'false'); }); if (body.classList.contains('menu-open')) toggleMenu(false); }
   dds.forEach(function (d) {
-    var b = $('.dd-btn', d), tm, hoverAt = 0;
-    var set = function (on) { d.classList.toggle('open', on); b.setAttribute('aria-expanded', String(on)); };
-    b.addEventListener('click', function () { var open = d.classList.contains('open'); if (open && performance.now() - hoverAt < 600) return; set(!open); });
-    d.addEventListener('mouseenter', function () { clearTimeout(tm); if (!d.classList.contains('open')) hoverAt = performance.now(); set(true); });
+    var b = $('.dd-btn', d), tm, byHover = false;
+    var set = function (on) { d.classList.toggle('open', on); b.setAttribute('aria-expanded', String(on)); if (!on) byHover = false; };
+    // A click on a menu the pointer already opened keeps it open: the user is
+    // reaching for it, not dismissing it. Keyboard and touch toggle as usual.
+    b.addEventListener('click', function () { var open = d.classList.contains('open'); if (open && byHover) { byHover = false; return; } set(!open); });
+    d.addEventListener('mouseenter', function () { clearTimeout(tm); if (!d.classList.contains('open')) { set(true); byHover = true; } });
     d.addEventListener('mouseleave', function () { tm = setTimeout(function () { set(false); }, 180); });
   });
   document.addEventListener('click', function (e) { if (!e.target.closest('.dd')) dds.forEach(function (d) { d.classList.remove('open'); $('.dd-btn', d).setAttribute('aria-expanded', 'false'); }); });
