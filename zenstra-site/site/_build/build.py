@@ -65,9 +65,9 @@ LOGO = ('<span class="logo-mark"><img class="th-light" src="assets/img/zenstra-m
         '<span class="logo-word">ZENSTRA<b>AI</b></span>')
 
 PRODUCTS = [
-    ('flow', 'Workflow Security', 'Every hop in every agent workflow', 'home.html#workflow'),
-    ('cloud', 'Cloud Security', 'Runtime protection in your cloud', 'home.html#cloud'),
-    ('scan', 'Zenstra EDR', 'Detection and response for AI on endpoints', 'home.html#edr'),
+    ('flow', 'Workflow Security', 'Every hop in every agent workflow', 'workflow-security.html'),
+    ('cloud', 'Cloud Security', 'Runtime protection in your cloud', 'cloud-security.html'),
+    ('scan', 'Zenstra EDR', 'Detection and response for AI on endpoints', 'edr.html'),
 ]
 PLATFORM = [('How a decision happens', 'home.html#how'), ('The console', 'home.html#console')]
 
@@ -129,7 +129,7 @@ def header(active):
   <div class="wrap head-row">
     <a class="logo" href="home.html" aria-label="Zenstra AI home">{LOGO}</a>
     <nav class="nav" aria-label="Main">
-      <div class="dd"><button class="nav-link dd-btn" type="button" aria-expanded="false" aria-controls="dd-products">Products {icon('chev')}</button>
+      <div class="dd"><button class="nav-link dd-btn{' is-current' if active == 'products' else ''}" type="button" aria-expanded="false" aria-controls="dd-products">Products {icon('chev')}</button>
         <div class="dd-panel" id="dd-products"><div class="mm-prod">{prod}</div><div class="mm-plat"><span class="mono-label">Platform</span>{plat}</div></div>
       </div>
       {links}
@@ -231,6 +231,141 @@ def certs():
     return f'<div class="certs">{cells}</div>'
 
 
+# Product pages: one template, content from zenstra.ai and the home panels.
+PRODUCT_PAGES = {
+    'workflow': dict(
+        icon='flow', name='Workflow Security', full='Zenstra Workflow Security', viz='workflow', interest='workflow',
+        h1=('Every hop in every', 'agent workflow,', 'decided.'),
+        lede='Multi-agent pipelines fail one hop at a time. Zenstra checks each hop against policy and the task the workflow declared, before the next step runs.',
+        caps=[('grid', 'Workflow graph', 'Every agent, tool and MCP hop in n8n, Zapier, LangGraph and CrewAI, mapped and owned.'),
+              ('hand', 'Per-hop decisions', 'Allow, hold for a person, or block before the next step executes.'),
+              ('target', 'Intent across agents', 'Agent-to-agent hand-offs checked against the original task.'),
+              ('eye', 'Shadow automation', 'Unregistered agents and no-code workflows surfaced with the owner and the detection signal.')],
+        steps=[('Connect', 'Register workflows, agents, MCP servers and A2A peers through the SDK, proxy or gateway.'),
+               ('Monitor', 'Zenstra learns each workflow\'s normal path, tools and data reach.'),
+               ('Detect', 'Injection, escalation, poisoning and identity anomalies are scored in real time.'),
+               ('Enforce', 'Allow, step up to a person, or block and quarantine before the hop lands.')],
+        works=['n8n', 'Zapier', 'LangGraph', 'CrewAI', 'Copilot Studio', 'MCP', 'A2A'],
+        shot=('screen-investigation', 'Investigation showing the outcome, blast radius and the full agent run', 'An investigation opens on the outcome, the blast radius and the agent run.'),
+        faq=[('Do we have to rebuild our workflows?', 'No. Zenstra connects through the SDK, a proxy or the gateway, with no agent rewrite.'),
+             ('What happens when a hop is blocked?', 'The next step does not run. The decision, the policy that made it and the full run are recorded.'),
+             ('Does it slow workflows down?', 'Decisions are made inline in 18 ms at p95.')]),
+    'cloud': dict(
+        icon='cloud', name='Cloud Security', full='Zenstra Cloud Security', viz='cloud', interest='cloud',
+        h1=('Runtime protection,', 'inside your cloud.'),
+        lede='A gateway in your VPC or Kubernetes cluster sits in front of every MCP server, model and API your agents call. Payloads never leave your environment.',
+        caps=[('plug', 'Gateway for MCP and APIs', 'Deployed with Helm or Terraform in AWS, Azure or Google Cloud.'),
+              ('key', 'Scoped credentials', 'Per-agent identity and short-lived grants for Bedrock, Azure OpenAI and Vertex AI.'),
+              ('lock', 'Context vault', 'Scoped secrets and retrieved context, never raw.'),
+              ('shield', 'Fail-closed, fast', 'Decisions at 18 ms p95. If Zenstra is unreachable, actions are held.')],
+        steps=[('Deploy', 'Install the gateway in your VPC or cluster with Helm or Terraform.'),
+               ('Register', 'Agents, MCP servers and models get an identity and scoped, expiring grants.'),
+               ('Enforce', 'Guardrails as code, evaluated on every call.'),
+               ('Record', 'A tamper-evident trail with live risk scoring.')],
+        works=['AWS', 'Azure', 'Google Cloud', 'Kubernetes', 'Amazon Bedrock', 'Azure OpenAI', 'Vertex AI', 'MCP'],
+        shot=('screen-agent', 'Agent profile with identity, scoped grants, expiry and last use', 'One agent\'s identity, grants, baseline and history.'),
+        faq=[('Does our data leave our cloud?', 'No. The gateway runs in your VPC or Kubernetes cluster, and payloads never leave your environment.'),
+             ('What if the gateway is unavailable?', 'It fails closed: actions are held, never waved through.'),
+             ('Which clouds and models are supported?', 'AWS, Azure and Google Cloud, including Amazon Bedrock, Azure OpenAI and Vertex AI.')]),
+    'edr': dict(
+        icon='scan', name='Zenstra EDR', full='Zenstra EDR', viz='edr', interest='edr',
+        h1=('Detection and response', 'for AI agents', 'on every endpoint.'),
+        lede='Classic EDR sees a coding agent read credentials and cannot tell help from hijack. Zenstra EDR sees the prompt, the tool call and the device together.',
+        caps=[('device', 'Every AI, every device', 'Copilot, ChatGPT, Claude Code, Cursor and unregistered agents on Windows and macOS.'),
+              ('flow', 'Context, not noise', 'Prompt-to-action lineage tells a helpful agent from a hijacked one.'),
+              ('hand', 'Contain in seconds', 'Stop one agent on one device.'),
+              ('eye', 'Shadow AI discovery', 'Unsanctioned AI tools and agents detected, and your team alerted, the moment one appears.')],
+        steps=[('Deploy', 'Roll out through the device management you already run: Intune, Jamf or Kandji.'),
+               ('Discover', 'Every AI tool and agent on every device, with its owner.'),
+               ('Detect', 'Hijacks caught from the prompt, the tool call and the device together.'),
+               ('Contain', 'Stop the agent, not the person or the machine.')],
+        works=['Windows', 'macOS', 'Microsoft Intune', 'Jamf', 'Kandji', 'Microsoft Copilot', 'ChatGPT', 'Claude Code', 'Cursor'],
+        shot=('screen-detections', 'Detections queue ranked by severity, with the agent and the policy that caught each one', 'Detections ranked by severity, with the agent and the policy that caught them.'),
+        faq=[('How is it deployed?', 'Through the device management you already run: Microsoft Intune, Jamf or Kandji.'),
+             ('Which AI tools does it see?', 'Copilot, ChatGPT, Claude Code, Cursor and unregistered agents, on Windows and macOS.'),
+             ('Can it stop one agent without stopping the device?', 'Yes. Containment stops one agent on one device.')]),
+}
+
+
+def productpage(key):
+    d = PRODUCT_PAGES[key]
+    caps = ''.join(f'<div class="pp-cap" data-reveal data-delay="{i * 60}"><span class="ic">{icon(ic)}</span><b>{t}</b><p>{x}</p></div>' for i, (ic, t, x) in enumerate(d['caps']))
+    steps = ''.join(f'<li data-reveal data-delay="{i * 60}"><span class="n">0{i + 1}</span><b>{t}</b><p>{x}</p></li>' for i, (t, x) in enumerate(d['steps']))
+    works = ''.join(f'<span>{w}</span>' for w in d['works'])
+    faq = ''.join(f'<details><summary>{q}</summary><div class="a"><p>{a}</p></div></details>' for q, a in d['faq'])
+    others = ''.join(f'<a class="pp-other" href="{h}" data-reveal><span class="ic">{icon(i)}</span><span><b>{n}</b><small>{x}</small></span>{icon("arrow")}</a>' for i, n, x, h in PRODUCTS if n != d['name'])
+    shot_name, shot_alt, shot_cap = d['shot']
+    h1 = ''.join(f'<span class="scanline"><span class="in{" grad" if i else ""}">{t}</span><i class="bar"></i></span>' for i, t in enumerate(d['h1']))
+    return f'''<section class="pp-hero rails" aria-labelledby="hero-h">
+    <div class="wrap pp-grid">
+      <div class="pp-copy">
+        <span class="chip-live" data-after><i></i>{d['full']}</span>
+        <h1 class="display" id="hero-h" data-scan>{h1}</h1>
+        <p class="lede" data-after>{d['lede']}</p>
+        <div class="ctas" data-after><a class="btn primary lg" href="demo.html?interest={d['interest']}">Request a demo {icon('arrow')}</a><a class="btn secondary lg" href="home.html#how">How a decision happens</a></div>
+      </div>
+      <div class="pp-visual" data-after><div class="pp-viz" data-pviz="{d['viz']}" aria-hidden="true"></div><span class="pp-badge">{icon(d['icon'])}{d['name']}</span></div>
+    </div>
+    <div class="wrap pp-facts" data-after>
+      <div><b>18 ms</b><span>p95 decision time, inline</span></div>
+      <div><b>Fail-closed</b><span>unreachable means held, never waved through</span></div>
+      <div><b>No rewrite</b><span>your agents, framework, model and cloud</span></div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="cap-h">
+    <div class="wrap">
+      <div class="sec-head"><span class="eyebrow" data-reveal>Capabilities</span><h2 class="h2" id="cap-h" data-reveal>What {d['name']} does.</h2></div>
+      <div class="pp-caps">{caps}</div>
+    </div>
+  </section>
+
+  <section class="sec alt" aria-labelledby="how-h">
+    <div class="wrap">
+      <div class="sec-head"><span class="eyebrow" data-reveal>How it works</span><h2 class="h2" id="how-h" data-reveal>Live in four steps.</h2></div>
+      <ol class="pp-steps">{steps}</ol>
+      <div class="pp-works" data-reveal><span class="mono-label">Works with</span><div class="tags">{works}</div></div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="con-h">
+    <div class="wrap pp-console">
+      <div style="display:grid;gap:18px;align-content:start">
+        <span class="eyebrow" data-reveal>In the console</span>
+        <h2 class="h3" id="con-h" style="font-size:clamp(26px,2.6vw,36px)" data-reveal>{shot_cap}</h2>
+        <a class="link" href="home.html#console" data-reveal>Tour the console {icon('arrow')}</a>
+      </div>
+      <div class="show-frame pp-shot" data-reveal><div class="show-bar"><i></i><i></i><i></i><span>console.zenstra.ai</span><span class="live">Live</span></div><div class="show-view">{{{{shot:{shot_name}|{shot_alt}}}}}</div></div>
+    </div>
+  </section>
+
+  <section class="sec alt" aria-labelledby="faq-h">
+    <div class="wrap faq">
+      <div style="display:grid;gap:18px;align-content:start"><span class="eyebrow" data-reveal>FAQ</span><h2 class="h2" id="faq-h" style="font-size:clamp(28px,3vw,42px)" data-reveal>Questions teams ask first.</h2>
+        <p class="pp-comp" data-reveal>ISO 27001 · SOC 2 Type II · ISO/IEC 42001 · ISO/IEC 27701 · <a href="company.html#compliance">Compliance</a></p></div>
+      <div data-reveal>{faq}</div>
+    </div>
+  </section>
+
+  <section class="sec" aria-label="Other products" style="padding-top:clamp(56px,6vw,80px);padding-bottom:0">
+    <div class="wrap"><span class="mono-label">Also on the platform</span><div class="pp-others">{others}</div></div>
+  </section>
+
+  <section aria-labelledby="cta-h" style="padding:clamp(56px,6vw,80px) 0 clamp(80px,9vw,128px)">
+    <div class="wrap">
+      <div class="cta">
+        <div class="stream" aria-hidden="true"></div>
+        <div class="cta-inner">
+          <span class="eyebrow" style="color:#5cd2ff" data-reveal>30-minute technical session</span>
+          <h2 class="h2" id="cta-h" data-reveal>See {d['name']} on one of your agents.</h2>
+          <p data-reveal>A security engineer runs it live against your environment. No slides.</p>
+          <div class="ctas" data-reveal><a class="btn white lg" href="demo.html?interest={d['interest']}">Request a demo {icon('arrow')}</a><a class="btn glass lg" href="company.html#contact">Talk to us</a></div>
+        </div>
+      </div>
+    </div>
+  </section>'''
+
+
 def build(name):
     src = open(os.path.join(HERE, 'pages', name + '.html'), encoding='utf-8').read()
     m = re.match(r'\s*<!--(\{.*?\})-->\s*', src, re.S)
@@ -244,6 +379,7 @@ def build(name):
         style, body = sm.group(1), body[sm.end():]
     body = body.replace('{{logo}}', LOGO)
     body = body.replace('{{certs}}', certs())
+    body = re.sub(r'\{\{productpage:([a-z]+)\}\}', lambda x: productpage(x.group(1)), body)
     body = re.sub(r'\{\{options:([A-Za-z]+)\}\}', lambda x: options(x.group(1)), body)
     body = re.sub(r'\{\{icon:([a-z]+)\}\}', lambda x: icon(x.group(1)), body)
     body = re.sub(r'\{\{shot:([a-z0-9-]+)\|([^}]*)\}\}', lambda x: shot(x.group(1), x.group(2)), body)

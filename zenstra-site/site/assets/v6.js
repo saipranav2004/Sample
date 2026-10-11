@@ -332,6 +332,12 @@
     if (location.hash) { var hp = document.getElementById(location.hash.slice(1)); if (hp && hp.matches('.prod')) selectProduct(hp, true); }
   }
 
+  /* ---------------- Product page hero visual ---------------- */
+  $$('[data-pviz]').forEach(function (h) {
+    var k = h.getAttribute('data-pviz');
+    if (FX) (k === 'workflow' ? FX.WorkflowViz : k === 'cloud' ? FX.CloudViz : FX.EdrViz)(h);
+  });
+
   /* ---------------- Arriving on a #section from another page ----------------
    * The browser's own jump puts the target under the fixed header (and, for a
    * product, cuts its panel off). Land it just below the header instead.
