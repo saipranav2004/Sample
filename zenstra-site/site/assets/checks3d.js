@@ -193,7 +193,7 @@ export function create(host, opts) {
     envs[dark] = envs[dark] || studio(renderer, dark); scene.environment = envs[dark];
     Object.assign(C, dark
       ? { card: 0x0f2741, cardInk: '#e9f3ff', cardSub: '#7c94ae', cyan: '#5cd2ff', accent: '#00a8ef', edge: 0x5cd2ff, path: 0x2b5a85, grid: 0x23415f, glass: 0x9fdcff }
-      : { card: 0xffffff, cardInk: '#07182c', cardSub: '#6b87a6', cyan: '#00a8ef', accent: '#005aa4', edge: 0x2b9be0, path: 0x9cc0e2, grid: 0xb9cbe0, glass: 0xd6efff });
+      : { card: 0xffffff, cardInk: '#07182c', cardSub: '#526b88', cyan: '#00a8ef', accent: '#005aa4', edge: 0x2b9be0, path: 0x9cc0e2, grid: 0xb9cbe0, glass: 0xd6efff });
     M.card.color.set(C.card); M.cardNear.color.set(C.card);
     M.glass.color.set(C.glass);
     M.pane.color.set(C.glass);

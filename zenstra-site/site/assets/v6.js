@@ -80,7 +80,13 @@
   var menuBtn = $('.menu-btn');
   function toggleMenu(open) { body.classList.toggle('menu-open', open); menuBtn.setAttribute('aria-expanded', String(open)); if (lenis) open ? lenis.stop() : lenis.start(); }
   if (menuBtn) menuBtn.addEventListener('click', function () { toggleMenu(!body.classList.contains('menu-open')); });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeAll(); });
+  // Escape closes menus and returns focus to the control that opened them.
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    var openDd = $('.dd.open'), inMenu = body.classList.contains('menu-open');
+    closeAll();
+    if (openDd) $('.dd-btn', openDd).focus(); else if (inMenu) { var mb = $('.menu-btn'); if (mb) mb.focus(); }
+  });
 
   /* ---------------- Text: word swap (after go.ai's intro) ----------------
      The outgoing word sinks and blurs away while the next word drops in from

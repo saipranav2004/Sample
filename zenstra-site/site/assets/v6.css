@@ -1,11 +1,11 @@
 /* Zenstra v6 (experiment based on v5). Brand palette from zenstra.ai; Hanken Grotesk, JetBrains Mono, Sora for the wordmark. */
 :root {
   --bg: #f7fbff; --bg-2: #eef4fc; --bg-3: #e3edf9;
-  --ink: #07182c; --ink-2: #415973; --ink-3: #6b87a6; --ink-4: #b9cbe0;
+  --ink: #07182c; --ink-2: #415973; --ink-3: #526b88; --ink-4: #b9cbe0;
   --line: #dbe7f4; --line-2: #c2d8ef;
   --accent: #005aa4; --accent-2: #00a8ef; --accent-soft: #e0f4fd;
   --deep: #0a2545; --deep-2: #123a68; --deep-ink: #dce9f9; --deep-ink-2: #8fb0d3; --deep-line: #1b4373;
-  --good: #0f9d76; --bad: #d94a44; --warn: #d89a32;
+  --good: #08775a; --bad: #d94a44; --warn: #d89a32;
   --card: #ffffff;
   --shadow: 0 28px 70px -40px rgba(7, 24, 44, 0.45);
   --display: 'Hanken Grotesk', 'Segoe UI', system-ui, sans-serif;
@@ -173,7 +173,7 @@ body.menu-open .head { transform: none; background: var(--bg); }
 .intro-logo .th-light { display: none !important; }
 .intro-logo .th-dark { display: block !important; }
 .intro-logo { display: inline-flex; align-items: center; gap: 14px; }
-.intro-skip { position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%); background: none; border: 0; color: #6b87a6; font: 500 11.5px/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; padding: 10px 14px; z-index: 2; }
+.intro-skip { position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%); background: none; border: 0; color: #8aa3bf; font: 500 11.5px/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; padding: 10px 14px; z-index: 2; }
 .intro-skip:hover { color: #fff; }
 
 /* ---------- Text motion ---------- */
@@ -271,7 +271,7 @@ body.menu-open .head { transform: none; background: var(--bg); }
 .pcard h3 { font: 600 30px/1.1 var(--display); letter-spacing: -0.025em; margin-top: 14px; }
 .pcard p { color: var(--ink-2); margin-top: 10px; max-width: 40ch; }
 .term { border-radius: 12px; background: var(--deep); color: var(--deep-ink); padding: 16px 18px; font: 500 13px/1.75 var(--mono); overflow: hidden; }
-.term .k { color: #5cd2ff; } .term .ok { color: #2fc79b; } .term .bad { color: #f0736c; } .term .c { color: #6b87a6; }
+.term .k { color: #5cd2ff; } .term .ok { color: #2fc79b; } .term .bad { color: #f0736c; } .term .c { color: #8aa3bf; }
 .term .row { display: block; opacity: 0.25; transition: opacity 400ms; white-space: nowrap; }
 .term .row .c { display: inline-block; min-width: 8ch; }
 .pcard.lit .term .row { opacity: 1; }
@@ -424,7 +424,7 @@ html.vt, html.vt body, html.vt .head, html.vt .btn, html.vt .icon-btn, html.vt .
 .cta .h2 { color: #fff; }
 .cta p { color: #9cb5d1; font-size: 18px; max-width: 46ch; }
 .cta .ctas { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 6px; }
-.cta .fine { font: 500 12px/1.5 var(--mono); color: #6b87a6; letter-spacing: 0.04em; }
+.cta .fine { font: 500 12px/1.5 var(--mono); color: #8aa3bf; letter-spacing: 0.04em; }
 
 /* ---------- FAQ ---------- */
 .faq { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); gap: 64px; }
