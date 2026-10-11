@@ -4,7 +4,7 @@
 #   docker compose up -d --build
 #   docker compose --profile dev up -d --build   # adds Mailpit to catch email locally
 #
-# Put TLS in front of the web service (load balancer, CDN or a reverse proxy).
+# Production with HTTPS, backups and log rotation: ./deploy.sh (see DEPLOY.md).
 name: zenstra-site
 
 services:

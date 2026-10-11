@@ -1,0 +1,73 @@
+# Checks for zenstra-site: API tests, generated pages up to date, production
+# build, Docker images and the production Compose file.
+name: zenstra-site
+
+on:
+  push:
+    paths: ["zenstra-site/**", ".github/workflows/zenstra-site.yml"]
+  pull_request:
+    paths: ["zenstra-site/**", ".github/workflows/zenstra-site.yml"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zenstra-site-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: zenstra-site/api } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: zenstra-site/api/package-lock.json }
+      - run: npm ci --no-audit --no-fund
+      - run: npm test
+
+  site:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: zenstra-site/web/package-lock.json }
+      - name: Generated pages match their sources
+        run: |
+          python3 zenstra-site/site/_build/build.py
+          git diff --exit-code -- zenstra-site/site || { echo "::error::Run python3 zenstra-site/site/_build/build.py and commit the result"; exit 1; }
+      - name: Production build
+        working-directory: zenstra-site/web
+        run: |
+          npm ci --no-audit --no-fund
+          node build.mjs --out "$RUNNER_TEMP/dist" --site-url https://zenstra.ai
+      - name: Deploy scripts parse
+        run: |
+          bash -n zenstra-site/deploy.sh
+          sh -n zenstra-site/deploy/backup.sh
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Production Compose file resolves
+        working-directory: zenstra-site
+        env: { DOMAIN: example.com, ACME_EMAIL: ops@example.com, POSTGRES_PASSWORD: ci }
+        run: |
+          touch .env
+          docker compose -f docker-compose.yml -f docker-compose.prod.yml config --quiet
+      - name: Build images
+        run: |
+          docker build -f zenstra-site/web/Dockerfile -t zenstra-web:ci .
+          docker build -t zenstra-api:ci zenstra-site/api
+      - name: Web image serves the site
+        run: |
+          docker run -d --name web -p 8080:8080 -e API_UPSTREAM=127.0.0.1:9 zenstra-web:ci
+          for _ in $(seq 1 20); do curl -fs http://localhost:8080/healthz >/dev/null && break; sleep 1; done
+          for p in / /workflow-security.html /cloud-security.html /edr.html /company.html /demo.html /credit-unions.html /privacy.html /terms.html; do
+            test "$(curl -s -o /dev/null -w '%{http_code}' "http://localhost:8080$p")" = 200 || { echo "::error::$p did not return 200"; exit 1; }
+          done
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/no-such-page)" = 404
+          curl -sI http://localhost:8080/ | grep -qi '^content-security-policy:'

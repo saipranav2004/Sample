@@ -1,0 +1,17 @@
+# HTTPS in front of the web container. Certificates come from Let's Encrypt
+# and renew automatically. www redirects to the bare domain. Requests are
+# logged once, by nginx in the web container.
+{
+	email {$ACME_EMAIL}
+}
+
+www.{$DOMAIN} {
+	redir https://{$DOMAIN}{uri} permanent
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+	reverse_proxy web:8080 {
+		health_uri /healthz
+	}
+}
