@@ -1,7 +1,5 @@
 'use strict';
 
-const dns = require('node:dns');
-
 // Personal mailbox providers. A demo is prepared for the visitor's environment,
 // so we ask for a work address, as Wiz, Vanta, Snyk and Abnormal do.
 const FREE = new Set(`
@@ -43,29 +41,4 @@ function classify(domain) {
   return 'work';
 }
 
-// Can this domain receive mail? 'ok' when it has MX records (or, with no MX at
-// all, an address, which mail servers fall back to), 'none' when the domain
-// does not exist, publishes a null MX or has neither, and 'unknown' when DNS
-// did not answer in time. Only 'none' rejects.
-async function checkMailDomain(domain, { resolver = dns.promises, timeoutMs = 2000 } = {}) {
-  const withTimeout = (p) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(Object.assign(new Error('timeout'), { code: 'ETIMEOUT' })), timeoutMs))]);
-  const missing = (e) => e && (e.code === 'ENOTFOUND' || e.code === 'ENODATA' || e.code === 'NXDOMAIN');
-  try {
-    const mx = await withTimeout(resolver.resolveMx(domain));
-    if (Array.isArray(mx) && mx.length) {
-      // A "null MX" (RFC 7505) declares that the domain accepts no email.
-      const real = mx.filter((r) => r.exchange && r.exchange !== '.');
-      return real.length ? 'ok' : 'none';
-    }
-  } catch (e) {
-    if (!missing(e)) return 'unknown';
-  }
-  try {
-    const a = await withTimeout(resolver.resolve4(domain));
-    return Array.isArray(a) && a.length ? 'ok' : 'none';
-  } catch (e) {
-    return missing(e) ? 'none' : 'unknown';
-  }
-}
-
-module.exports = { FREE, DISPOSABLE, domainOf, classify, checkMailDomain };
+module.exports = { FREE, DISPOSABLE, domainOf, classify };

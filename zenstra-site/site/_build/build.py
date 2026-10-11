@@ -179,20 +179,6 @@ def shot(name, alt):
 
 # Form choices come from the API's reference data, so the page and the
 # server always agree on what is valid.
-REFERENCE = json.load(open(os.path.join(OUT, '..', 'api', 'src', 'reference.json'), encoding='utf-8'))
-
-
-def options(key):
-    import html as h
-    items = REFERENCE[key]
-    out = ['<option value="">Choose one</option>']
-    for i, v in enumerate(items):
-        out.append(f'<option>{h.escape(v)}</option>')
-        if key == 'countries' and i == 0:
-            out.append('<option disabled>──────────</option>')
-    return ''.join(out)
-
-
 # Compliance badges, shared by the home and company pages. Names and
 # descriptions as Deep Algorithms publishes them; "kind" says what each one
 # is, since HIPAA and GDPR are laws a programme complies with, not certificates.
@@ -380,7 +366,6 @@ def build(name):
     body = body.replace('{{logo}}', LOGO)
     body = body.replace('{{certs}}', certs())
     body = re.sub(r'\{\{productpage:([a-z]+)\}\}', lambda x: productpage(x.group(1)), body)
-    body = re.sub(r'\{\{options:([A-Za-z]+)\}\}', lambda x: options(x.group(1)), body)
     body = re.sub(r'\{\{icon:([a-z]+)\}\}', lambda x: icon(x.group(1)), body)
     body = re.sub(r'\{\{shot:([a-z0-9-]+)\|([^}]*)\}\}', lambda x: shot(x.group(1), x.group(2)), body)
     # The intro plays only when a visit starts on the home page. Anyone who

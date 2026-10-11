@@ -55,7 +55,7 @@ jobs:
       - uses: actions/checkout@v5
       - name: Production Compose file resolves
         working-directory: zenstra-site
-        env: { DOMAIN: example.com, ACME_EMAIL: ops@example.com, POSTGRES_PASSWORD: ci }
+        env: { DOMAIN: example.com, ACME_EMAIL: ops@example.com }
         run: |
           touch .env
           docker compose -f docker-compose.yml -f docker-compose.prod.yml config --quiet

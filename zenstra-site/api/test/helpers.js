@@ -2,19 +2,15 @@
 
 const { load } = require('../src/config');
 const { buildApp } = require('../src/app');
-const { createMemoryStore } = require('../src/store/memory');
+const { createMailer } = require('../src/mail');
 
-function makeApp(env = {}, { domain = 'ok', captcha = 'ok' } = {}) {
-  const config = load(Object.assign({ NODE_ENV: 'test', LOG_LEVEL: 'silent', EMAIL_DOMAIN_CHECK: 'true' }, env));
-  const store = createMemoryStore();
-  const kicks = { n: 0 };
-  const app = buildApp({
-    config, store, logger: false,
-    worker: { kick: () => { kicks.n++; } },
-    checkDomain: async () => domain,
-    verifyCaptcha: async () => captcha
-  });
-  return { app, store, config, kicks };
+// An app with a fake SMTP transport that records what would be sent.
+function makeApp(env = {}, { fail = null } = {}) {
+  const config = load(Object.assign({ NODE_ENV: 'test', DOMAIN: 'zenstra.ai', SMTP_URL: 'smtp://localhost:1025', SALES_EMAIL: 'sales@zenstra.ai' }, env));
+  const sent = [];
+  const transport = { sendMail: async (m) => { if (fail && fail(m)) throw new Error('smtp down'); sent.push(m); } };
+  const app = buildApp({ config, mailer: createMailer(config, transport), logger: false });
+  return { app, sent, config };
 }
 
 const demo = (over = {}) => Object.assign({
@@ -23,4 +19,6 @@ const demo = (over = {}) => Object.assign({
   website: '', elapsedMs: 9000, utm: { source: 'linkedin', campaign: 'q4' }, page: 'https://zenstra.ai/demo'
 }, over);
 
-module.exports = { makeApp, demo };
+const post = (app, payload, headers = {}) => app.inject({ method: 'POST', url: '/api/demo-requests', payload, headers: Object.assign({ origin: 'https://zenstra.ai' }, headers) });
+
+module.exports = { makeApp, demo, post };

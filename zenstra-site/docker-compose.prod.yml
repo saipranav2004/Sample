@@ -1,4 +1,4 @@
-# Production additions: HTTPS, nightly database backups and log rotation.
+# Production additions: HTTPS and log rotation.
 #
 #   ./deploy.sh            # checks .env, builds, starts, then smoke-tests
 #
@@ -37,35 +37,10 @@ services:
     environment:
       REAL_IP_FROM: 172.28.0.0/24
       SERVER_NAME: ${DOMAIN}
-      HSTS: ${HSTS:-max-age=63072000; includeSubDomains}
+      HSTS: max-age=63072000; includeSubDomains
     <<: *logging
 
   api:
-    <<: *logging
-
-  db:
-    <<: *logging
-
-  # pg_dump every night; keeps BACKUP_KEEP_DAYS days of compressed dumps in the
-  # db-backups volume. Restore: see deploy/backup.sh.
-  backup:
-    image: postgres:16-alpine
-    environment:
-      PGHOST: db
-      PGUSER: zenstra
-      PGDATABASE: zenstra
-      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
-      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
-    volumes:
-      - ./deploy/backup.sh:/usr/local/bin/backup.sh:ro
-      - db-backups:/backups
-    entrypoint: ["/bin/sh", "/usr/local/bin/backup.sh", "loop"]
-    depends_on:
-      db:
-        condition: service_healthy
-    networks: [backend]
-    security_opt: ["no-new-privileges:true"]
-    restart: unless-stopped
     <<: *logging
 
 networks:
@@ -77,4 +52,3 @@ networks:
 volumes:
   caddy-data: {}
   caddy-config: {}
-  db-backups: {}

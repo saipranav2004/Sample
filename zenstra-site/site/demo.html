@@ -49,9 +49,8 @@
   .rcv-main .h2 { max-width: 18ch; }
   .rcv-main .lede b { color: var(--ink); }
   .rcv-main .mono { font-family: var(--mono); font-weight: 500; letter-spacing: 0.02em; }
-  .rcv-main .book, .rcv-main .next { width: 100%; margin-top: 14px; padding: clamp(22px, 3vw, 30px); border-radius: 20px; background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow); }
-  .rcv-main .book h2, .rcv-main .next h2 { font: 600 22px/1.25 var(--display); letter-spacing: -0.015em; }
-  .rcv-main .book > p { color: var(--ink-2); margin: 6px 0 16px; }
+  .rcv-main .next { width: 100%; margin-top: 14px; padding: clamp(22px, 3vw, 30px); border-radius: 20px; background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow); }
+  .rcv-main .next h2 { font: 600 22px/1.25 var(--display); letter-spacing: -0.015em; }
   .next ol { list-style: none; counter-reset: s; margin: 18px 0 0; padding: 0; display: grid; gap: 16px; }
   .next li { counter-increment: s; display: grid; grid-template-columns: 32px 1fr; column-gap: 14px; }
   .next li::before { content: counter(s); grid-row: span 2; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--line-2); font: 500 12px/1 var(--mono); color: var(--accent); }
@@ -120,7 +119,6 @@
             <div class="field full"><label for="f-msg">What would you like to see? <span class="opt">(optional)</span></label><textarea id="f-msg" name="message" maxlength="500" rows="3" placeholder="For example: Copilot agents in lending, an n8n workflow"></textarea><span class="err" role="alert"></span></div>
             <input type="hidden" name="interest" value="">
             <div class="hp" aria-hidden="true"><label for="f-website">Leave this empty</label><input id="f-website" name="website" tabindex="-1" autocomplete="off"></div>
-            <div class="ts full" data-turnstile hidden></div>
             <button class="btn primary lg full" type="submit">Request a demo <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></button>
           </div>
           <p class="fine">By submitting, you agree that Zenstra may contact you about this request, as described in our <a href="privacy.html">privacy notice</a>. No phone number needed.</p>
@@ -133,13 +131,7 @@
         <span class="eyebrow">Request received</span>
         <h1 class="h2">Thanks, <span data-who></span>. Your session is on its way.</h1>
         <p class="lede">We sent a confirmation to <b data-email></b>. Your reference is <b class="mono" data-ref></b>.</p>
-        <div class="book" data-booking hidden>
-          <h2>Pick your 30 minutes now</h2>
-          <p>Choose a slot that suits you. The invite comes from the security engineer who will run your session.</p>
-          <div class="book-frame"><iframe title="Choose a time for your technical session" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
-          <a data-booking-link target="_blank" rel="noopener">Open the scheduler in a new tab <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
-        </div>
-        <div class="next" data-no-booking>
+        <div class="next">
           <h2>What happens next</h2>
           <ol>
             <li><b>A security engineer reads your request</b><span>They look at the agents and tools you mentioned so the session is about your environment.</span></li>

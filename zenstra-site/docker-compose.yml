@@ -1,10 +1,10 @@
-# zenstra.ai: static site (nginx), lead intake API (Node) and Postgres.
+# zenstra.ai: static site (nginx) and the demo request API (Node).
 #
-#   cp .env.example .env    # then set the required values
+#   cp .env.example .env    # then set the values
 #   docker compose up -d --build
 #   docker compose --profile dev up -d --build   # adds Mailpit to catch email locally
 #
-# Production with HTTPS, backups and log rotation: ./deploy.sh (see DEPLOY.md).
+# Production with HTTPS and log rotation: ./deploy.sh (see DEPLOY.md).
 name: zenstra-site
 
 services:
@@ -13,25 +13,21 @@ services:
       context: ..
       dockerfile: zenstra-site/web/Dockerfile
       args:
-        SITE_URL: ${PUBLIC_URL:-http://localhost:8080}
+        SITE_URL: ${DOMAIN:+https://${DOMAIN}}
       secrets: [build_ca]
     ports:
-      - "${WEB_PORT:-8080}:8080"
+      - "8080:8080"
     environment:
       API_UPSTREAM: api:3000
-      SERVER_NAME: ${SERVER_NAME:-_}
-      REAL_IP_FROM: ${REAL_IP_FROM:-127.0.0.1}
-      CSP_SCRIPT_EXTRA: ${CSP_SCRIPT_EXTRA:-}
-      CSP_FRAME_SRC: ${CSP_FRAME_SRC:-'none'}
-      HSTS: ${HSTS:-}
     depends_on:
       api:
         condition: service_healthy
-    networks: [public, backend]
+    networks: [public, internal]
     security_opt: ["no-new-privileges:true"]
     cap_drop: [ALL]
     restart: unless-stopped
 
+  # Validates the demo form and emails it to sales. No database.
   api:
     build:
       context: ./api
@@ -39,36 +35,14 @@ services:
     env_file: .env
     environment:
       NODE_ENV: production
-      PORT: "3000"
       TRUST_PROXY: "1"
-      DATABASE_URL: postgres://zenstra:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/zenstra
-    depends_on:
-      db:
-        condition: service_healthy
-    # backend: web and db; egress: outbound email, Slack, CRM and Turnstile.
-    networks: [backend, egress]
+    # internal: reached by web only; egress: out to the SMTP server.
+    networks: [internal, egress]
     read_only: true
     tmpfs: [/tmp]
     init: true
     security_opt: ["no-new-privileges:true"]
     cap_drop: [ALL]
-    restart: unless-stopped
-
-  db:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: zenstra
-      POSTGRES_USER: zenstra
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
-    volumes:
-      - db-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U zenstra -d zenstra"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
-    networks: [backend]
-    security_opt: ["no-new-privileges:true"]
     restart: unless-stopped
 
   # Development only: catches outgoing email. UI on http://localhost:8025.
@@ -77,18 +51,14 @@ services:
     profiles: [dev]
     ports:
       - "8025:8025"
-    networks: [backend, public]
+    networks: [internal, egress]
     restart: unless-stopped
 
 networks:
   public: {}
   egress: {}
-  # No route to the internet: the database is reachable only from the API.
-  backend:
+  internal:
     internal: true
-
-volumes:
-  db-data: {}
 
 # Extra CA certificate for builds behind a TLS-inspecting proxy. Empty by default.
 secrets:

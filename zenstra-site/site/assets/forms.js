@@ -1,8 +1,7 @@
 /* Zenstra site forms (the demo request).
  * Any <form data-api="/api/..."> is validated in the browser, posted as JSON
- * to the lead API, and answered with the server's own field messages, a
- * reference number and, for demos, an instant booking calendar when one is
- * configured. Works without the motion scripts and on every page.
+ * to the demo API, and answered with the server's own field messages and a
+ * reference number. Works without the motion scripts and on every page.
  */
 (function () {
   'use strict';
@@ -30,32 +29,6 @@
   var FREE = /@(gmail|googlemail|yahoo|ymail|hotmail|outlook|live|msn|icloud|me|mac|aol|proton|protonmail|pm|gmx|web|mail|zoho|yandex|qq|163|126|fastmail|hey|duck|mailinator|guerrillamail|10minutemail|yopmail|tempmail|temp-mail)\.[a-z.]+$/i;
   var EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
   var MSG = { required: 'Required.', email: 'Enter an email address like name@company.com.', free: 'Use your work email so we can prepare for your environment.' };
-
-  var config = null;
-  function getConfig() {
-    if (config) return config;
-    config = PREVIEW ? Promise.resolve({}) : fetch('/api/config', { headers: { accept: 'application/json' } }).then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; });
-    return config;
-  }
-
-  // Cloudflare Turnstile, only when the API says a site key is configured.
-  var tsLoad = null;
-  function turnstile(form) {
-    var box = $('[data-turnstile]', form);
-    if (!box) return;
-    getConfig().then(function (c) {
-      if (!c.turnstileSiteKey) return;
-      if (!tsLoad) tsLoad = new Promise(function (res, rej) {
-        var s = document.createElement('script');
-        s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
-        s.async = true; s.onload = res; s.onerror = rej; document.head.appendChild(s);
-      });
-      tsLoad.then(function () {
-        box.hidden = false;
-        form._ts = window.turnstile.render(box, { sitekey: c.turnstileSiteKey, action: form.getAttribute('data-kind') || 'form', size: 'flexible', theme: 'auto', callback: function (t) { form._tsToken = t; }, 'expired-callback': function () { form._tsToken = ''; } });
-      }).catch(function () {});
-    });
-  }
 
   function fieldOf(el) { return el.closest('.field') || el.closest('.consent') || el.parentElement; }
   function setError(el, msg) {
@@ -112,8 +85,6 @@
     var data = {}, arrays = {};
     Array.prototype.forEach.call(form.elements, function (el) {
       if (!el.name || el.disabled || el.type === 'submit' || el.type === 'button') return;
-      // Turnstile adds its own hidden input; the token is sent separately below.
-      if (el.closest('[data-turnstile]')) return;
       if (el.type === 'checkbox') {
         if (el.hasAttribute('data-bool')) data[el.name] = el.checked;
         else { arrays[el.name] = arrays[el.name] || []; if (el.checked) arrays[el.name].push(el.value); }
@@ -123,9 +94,6 @@
     });
     Object.keys(arrays).forEach(function (k) { data[k] = arrays[k]; });
     data.elapsedMs = Math.min(86400000, Date.now() - LOADED);
-    var token = form._tsToken;
-    if (window.turnstile && form._ts != null) { try { token = window.turnstile.getResponse(form._ts) || token; } catch (e) {} }
-    if (token) data.turnstileToken = token;
     if (TRACK.utm && Object.keys(TRACK.utm).length) data.utm = TRACK.utm;
     if (TRACK.referrer) data.referrer = TRACK.referrer;
     data.page = location.origin + location.pathname;
@@ -150,14 +118,6 @@
     set('[data-who]', (data.firstName || (data.name || '').split(' ')[0] || 'there'));
     set('[data-email]', data.email || '');
     set('[data-ref]', res.ref || '');
-    var book = $('[data-booking]', ok);
-    if (book && res.bookingUrl && /^https:\/\//.test(res.bookingUrl)) {
-      var frame = $('iframe', book), link = $('[data-booking-link]', book);
-      if (frame) frame.src = res.bookingUrl;
-      if (link) link.href = res.bookingUrl;
-      book.hidden = false;
-      var later = $('[data-no-booking]', ok); if (later) later.hidden = true;
-    }
     // A page-level confirmation replaces the whole form area (data-replace).
     var replace = form.getAttribute('data-replace');
     if (replace && $(replace)) $(replace).hidden = true; else form.hidden = true;
@@ -182,7 +142,6 @@
   forms.forEach(function (form) {
     form.setAttribute('novalidate', '');
     conditions(form);
-    turnstile(form);
     var tried = false;
     // Forms inside dialogs are reset when reopened; clear our messages too.
     form.addEventListener('reset', function () {
@@ -209,7 +168,7 @@
         if (m && !first) first = el;
       });
       if (first) { first.focus(); message(form, 'Please check the highlighted fields.', 'bad'); return; }
-      if (PREVIEW) { message(form, 'Preview mode: this form sends when the site runs on its server (see zenstra-site/README.md).', 'bad'); return; }
+      if (PREVIEW) { message(form, 'Preview mode: this form sends when the site runs on its server (see zenstra-site/DEPLOY.md).', 'bad'); return; }
 
       var data = payload(form);
       busy(form, true);
@@ -224,7 +183,6 @@
             if (firstBad) firstBad.focus();
             return message(form, r.body.message || 'Please check the highlighted fields.', 'bad');
           }
-          if (r.status === 400 && r.body.error === 'verification_failed') { if (window.turnstile && form._ts != null) window.turnstile.reset(form._ts); form._tsToken = ''; return message(form, r.body.message, 'bad'); }
           if (r.status === 429) return message(form, 'Too many requests from your network. Please wait a minute and try again.', 'bad');
           message(form, fallbackText(form, 'We could not send your request just now. Please try again, or email us at'), 'bad');
         })

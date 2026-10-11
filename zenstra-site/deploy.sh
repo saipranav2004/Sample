@@ -26,13 +26,9 @@ done < .env
 need() { if [ -z "${!1:-}" ]; then red "missing in .env: $1 ($2)"; fail=1; else ok "$1 set"; fi; }
 need DOMAIN "the site's domain, e.g. zenstra.ai"
 need ACME_EMAIL "email for Let's Encrypt notices"
-need POSTGRES_PASSWORD "openssl rand -base64 32"
-need IP_HASH_SALT "openssl rand -hex 32"
-need SMTP_URL "smtp(s)://user:pass@host:port for confirmations and sales notices"
-need SALES_NOTIFY_EMAILS "who receives demo requests"
-[ "${#IP_HASH_SALT}" -ge 32 ] || { red "IP_HASH_SALT must be at least 32 characters"; fail=1; }
-[ "${PUBLIC_URL:-}" = "https://${DOMAIN:-}" ] || { red "PUBLIC_URL must be https://$DOMAIN"; fail=1; }
-case ",${ALLOWED_ORIGINS:-}," in *",https://${DOMAIN:-},"*) ok "ALLOWED_ORIGINS includes https://$DOMAIN" ;; *) red "ALLOWED_ORIGINS must include https://$DOMAIN"; fail=1 ;; esac
+need SMTP_URL "smtp(s)://user:pass@host:port, to send demo requests"
+need SALES_EMAIL "who receives demo requests"
+case "${SMTP_URL:-}" in smtp://*|smtps://*|"") ;; *) red "SMTP_URL must start with smtp:// or smtps://"; fail=1 ;; esac
 [ "$fail" = 0 ] || { red "fix .env and run again"; exit 1; }
 
 if [ "${1:-}" != "check" ]; then
@@ -53,7 +49,7 @@ for i in $(seq 1 30); do [ "$(code "$url/healthz")" = 200 ] && break; sleep 4; d
 check() { if [ "$2" = "$3" ]; then ok "$1"; else red "$1: expected $3, got $2"; fail=1; fi; }
 check "home page"               "$(code "$url/")" 200
 check "product page"            "$(code "$url/edr")" 200
-check "API health"              "$(curl -s --max-time 15 "$url/api/health" | tr -d ' ' || true)" '{"status":"ok","store":"postgres"}'
+check "API health"              "$(curl -s --max-time 15 "$url/api/health" | tr -d ' ' || true)" '{"status":"ok"}'
 check "http redirects to https" "$(code "http://$DOMAIN/")" 308
 check "unknown page is 404"     "$(code "$url/no-such-page")" 404
 hdr=$(curl -sI --max-time 15 "$url/" || true)
