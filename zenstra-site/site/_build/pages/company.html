@@ -66,15 +66,6 @@
   @media (max-width: 900px) { .adv { grid-template-columns: 1fr; } }
   @media (max-width: 480px) { .adv > div { grid-template-columns: 1fr; gap: 6px; } }
 
-  .rec { display: grid; grid-template-columns: 120px 1fr; border-top: 1px solid var(--line); }
-  .rec > h3 { padding: 22px 0; font: 500 clamp(28px, 3vw, 40px)/1 var(--mono); letter-spacing: -0.04em; color: var(--deep-ink-2); border-bottom: 1px solid rgba(255, 255, 255, 0.12); }
-  .rec > ul { list-style: none; margin: 0; padding: 0; border-bottom: 1px solid rgba(255, 255, 255, 0.12); }
-  .rec li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; padding: 22px 0; border-top: 1px solid rgba(255, 255, 255, 0.08); }
-  .rec li:first-child { border-top: 0; }
-  .rec li b { font: 600 18px/1.3 var(--display); color: #fff; }
-  .rec li span { color: var(--deep-ink-2); }
-  .band .rec { border-top-color: rgba(255, 255, 255, 0.12); }
-  @media (max-width: 700px) { .rec { grid-template-columns: 1fr; } .rec > h3 { border-bottom: 0; padding-bottom: 0; } .rec li { grid-template-columns: 1fr; gap: 4px; } }
 
   .offices { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
   .office { padding: 22px; border-radius: 16px; border: 1px solid var(--line); background: var(--card); display: grid; gap: 8px; align-content: start; }
@@ -185,26 +176,21 @@
     </div>
   </section>
 
-  <section class="band sec" aria-labelledby="rec-h">
-    <div class="wrap">
-      <div class="sec-head"><span class="eyebrow" data-reveal>Recognition and events</span><h2 class="h2" id="rec-h" data-reveal>Where Deep Algorithms has been recognised and has shown its work.</h2></div>
-      <div class="rec" data-reveal>
-        <h3>2026</h3><ul><li><b>Cyber Security Training</b><span>Cyber Bureau Hyderabad</span></li></ul>
-        <h3>2025</h3><ul>
-          <li><b>Business Excellence Award</b><span>Best Cybersecurity Solutions Provider</span></li>
-          <li><b>Cybersecurity Excellence</b><span>Data Security Council of India (DSCI)</span></li>
-          <li><b>GITEX GLOBAL × Expand North Star</b><span>Dubai</span></li>
-          <li><b>NEC–Globis Innovation</b><span>T-Hub</span></li>
-        </ul>
-        <h3>2024</h3><ul>
-          <li><b>CCoE DSCI Chapter Meet</b><span>Hyderabad</span></li>
-          <li><b>Bharat Mandapam</b><span>Delhi</span></li>
-        </ul>
+  <section class="sec" id="compliance" aria-labelledby="comp-h">
+    <div class="wrap trust-row">
+      <div style="display:grid;gap:18px;justify-items:start">
+        <span class="eyebrow" data-reveal>Security &amp; Compliance</span>
+        <h2 class="h3" id="comp-h" style="font-size:clamp(26px,2.6vw,36px)" data-reveal>Built to the world&rsquo;s highest standards.</h2>
+        <p class="lede" style="font-size:16.5px" data-reveal>Our certifications are independently audited and renewed annually to ensure your data is always protected.</p>
+        <a class="link" href="#contact" data-reveal>Compliance documentation available on request {{icon:arrow}}</a>
+      </div>
+      <div>
+        {{certs}}
       </div>
     </div>
   </section>
 
-  <section class="sec" id="contact" aria-labelledby="off-h">
+  <section class="sec alt" id="contact" aria-labelledby="off-h">
     <div class="wrap">
       <div class="sec-head split">
         <div style="display:grid;gap:20px"><span class="eyebrow" data-reveal>Offices and contact</span><h2 class="h2" id="off-h" data-reveal>Talk to the team.</h2></div>

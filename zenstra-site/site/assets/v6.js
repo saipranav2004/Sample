@@ -34,6 +34,15 @@
     });
   });
 
+  // Runs fn at most once per frame on scroll, and only while el is near the viewport.
+  function onScrollFrame(el, fn) {
+    var near = true, queued = false;
+    var run = function () { queued = false; if (near) fn(); };
+    var ask = function () { if (!queued) { queued = true; requestAnimationFrame(run); } };
+    if ('IntersectionObserver' in window) new IntersectionObserver(function (es) { near = es[0].isIntersecting; if (near) ask(); }, { rootMargin: '200px 0px' }).observe(el);
+    window.addEventListener('scroll', ask, { passive: true }); window.addEventListener('resize', ask); fn();
+  }
+
   /* ---------------- Smooth scroll ---------------- */
   var lenis = null;
   if (!REDUCE && window.Lenis) {
@@ -46,7 +55,7 @@
     var a = e.target.closest('a[href*="#"]'); if (!a) return;
     var url = new URL(a.href, location.href); if (url.pathname !== location.pathname || url.hash.length < 2) return;
     var t = document.getElementById(url.hash.slice(1)); if (!t) return;
-    e.preventDefault(); closeAll(); scrollToEl(t); history.replaceState(null, '', url.hash);
+    e.preventDefault(); closeAll(); scrollToEl(t.matches('.prod') ? t.parentElement : t); history.replaceState(null, '', url.hash);
     if (t.matches('.prod')) selectProduct(t, true);
   });
 
@@ -295,7 +304,10 @@
     vizzes.push(v);
     p.addEventListener('click', function (e) { if (e.target.closest('a')) return; selectProduct(p, true); });
     p.addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && !e.target.closest('a')) { e.preventDefault(); selectProduct(p, true); } });
-    p.addEventListener('mouseenter', function () { if (!narrow() && !p.classList.contains('on')) selectProduct(p, true); });
+    // Hover intent: only a pointer that rests on a panel opens it, so sweeping across them does not.
+    var hover = 0;
+    p.addEventListener('mouseenter', function () { clearTimeout(hover); if (!narrow() && !p.classList.contains('on')) hover = setTimeout(function () { selectProduct(p, true); }, 160); });
+    p.addEventListener('mouseleave', function () { clearTimeout(hover); });
   });
   function selectProduct(p, user) {
     var i = prods.indexOf(p); if (i < 0) return;
@@ -312,10 +324,28 @@
   if (prods.length) {
     var wrapP = prods[0].parentElement;
     if ('IntersectionObserver' in window) new IntersectionObserver(function (es) { prodVis = es[0].isIntersecting; if (prodVis && !prodUser) selectProduct(prods[prodIdx]); else clearTimeout(prodTimer); }, { threshold: 0.4 }).observe(wrapP);
+    // Canvases keep the width of an open panel; closed panels show part of it.
+    var sizeViz = function () { var gap = 12 * (prods.length - 1), w = (wrapP.clientWidth - gap) * 2.6 / (2.6 + prods.length - 1); wrapP.style.setProperty('--prod-w', narrow() ? '100%' : Math.round(w) + 'px'); };
+    sizeViz();
     selectProduct(prods[0]);
-    window.addEventListener('resize', function () { selectProduct(prods[prodIdx]); });
+    window.addEventListener('resize', function () { sizeViz(); selectProduct(prods[prodIdx]); });
     if (location.hash) { var hp = document.getElementById(location.hash.slice(1)); if (hp && hp.matches('.prod')) selectProduct(hp, true); }
   }
+
+  /* ---------------- Arriving on a #section from another page ----------------
+   * The browser's own jump puts the target under the fixed header (and, for a
+   * product, cuts its panel off). Land it just below the header instead.
+   */
+  (function () {
+    var t = location.hash.length > 1 && document.getElementById(location.hash.slice(1)); if (!t) return;
+    var el = t.matches('.prod') ? t.parentElement : t;
+    // Layout position, not getBoundingClientRect: reveal transforms would skew it.
+    var docTop = function (n) { var y = 0; while (n) { y += n.offsetTop; n = n.offsetParent; } return y; };
+    // Native scroll: Lenis ignores jumps requested before it has measured the page, and follows native scrolls.
+    var land = function () { window.scrollTo(0, Math.max(0, docTop(el) - (head ? head.offsetHeight : 70) - 24)); };
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+    land(); window.addEventListener('load', function () { requestAnimationFrame(land); });
+  })();
 
   /* ---------------- Decision section: the inline module ----------------
    * assets/checks3d.js draws the module in WebGL; it is loaded only when the
@@ -373,7 +403,7 @@
       // Ease towards the scroll position at the same speed at any frame rate.
       var now = performance.now(), dt = lastT ? Math.min(0.1, (now - lastT) / 1000) : 0.016; lastT = now;
       P = target(); if (D < 0) D = P;
-      D += (P - D) * (1 - Math.exp(-dt * 9)); if (Math.abs(P - D) < 0.0003) D = P;
+      D += (P - D) * (1 - Math.exp(-dt * 10)); if (Math.abs(P - D) < 0.0003) D = P;
       render(D); sec.__p = D;
       raf = vis ? requestAnimationFrame(loop) : (lastT = 0);
     }
@@ -416,15 +446,19 @@
     go(0);
     if (!REDUCE && frame) {
       var tilt = function () { var r = frame.getBoundingClientRect(), k = Math.min(1, Math.max(0, (innerHeight - r.top) / (innerHeight * 0.75))); frame.style.transform = 'rotateX(' + ((1 - k) * 14).toFixed(2) + 'deg) scale(' + (0.94 + k * 0.06).toFixed(3) + ')'; };
-      window.addEventListener('scroll', tilt, { passive: true }); tilt();
+      onScrollFrame(frame, tilt);
     }
   });
 
   /* ---------------- Agenda line ---------------- */
   $$('[data-agenda]').forEach(function (list) {
     var line = $('.prog', list), items = $$('li', list); if (!line) return;
-    var upd = function () { var r = list.getBoundingClientRect(), k = REDUCE ? 1 : Math.min(1, Math.max(0, (innerHeight * 0.7 - r.top) / r.height)); line.style.transform = 'scaleY(' + k.toFixed(3) + ')'; items.forEach(function (li) { var lr = li.getBoundingClientRect(); li.classList.toggle('lit', REDUCE || lr.top < innerHeight * 0.7); }); };
-    window.addEventListener('scroll', upd, { passive: true }); upd();
+    var upd = function () {
+      var r = list.getBoundingClientRect(), k = REDUCE ? 1 : Math.min(1, Math.max(0, (innerHeight * 0.7 - r.top) / r.height));
+      var lit = items.map(function (li) { return REDUCE || li.getBoundingClientRect().top < innerHeight * 0.7; });
+      line.style.transform = 'scaleY(' + k.toFixed(3) + ')'; items.forEach(function (li, i) { li.classList.toggle('lit', lit[i]); });
+    };
+    onScrollFrame(list, upd);
   });
 
   /* ---------------- FAQ ---------------- */
@@ -445,7 +479,7 @@
       secs.forEach(function (s, i) { if (s && s.getBoundingClientRect().top < line) cur = i; });
       links.forEach(function (a, i) { if (i === cur) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current'); });
     };
-    window.addEventListener('scroll', upd, { passive: true }); upd();
+    onScrollFrame(toc.parentElement, upd);
   });
 
   window.__v6ok = true;

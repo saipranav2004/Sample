@@ -29,9 +29,12 @@
     if ('IntersectionObserver' in window) new IntersectionObserver(function (e) { self.vis = e[0].isIntersecting; self.loop(); }, { rootMargin: '100px' }).observe(el); else { this.vis = true; }
     document.addEventListener('visibilitychange', function () { self.loop(); });
   }
+  // Sized from the canvas's own CSS box, so a container that animates its
+  // width (the product panels) does not reallocate the canvas every frame.
   Host.prototype.resize = function () {
-    var w = this.el.clientWidth, h = this.el.clientHeight; if (!w || !h) return;
-    var d = DPR(); this.w = w; this.h = h; this.d = d;
+    var w = this.c.clientWidth || this.el.clientWidth, h = this.c.clientHeight || this.el.clientHeight; if (!w || !h) return;
+    var d = DPR(); if (w === this.w && h === this.h && d === this.d) return;
+    this.w = w; this.h = h; this.d = d;
     this.c.width = Math.round(w * d); this.c.height = Math.round(h * d);
     if (this.onResize) this.onResize(w, h);
     this.frame(0);

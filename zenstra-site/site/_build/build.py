@@ -96,7 +96,7 @@ def head(meta, style):
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@600&display=swap" rel="stylesheet">
-<script>(function(){{var r=document.documentElement;r.classList.add('js');try{{var t=localStorage.getItem('zx-theme');if(t)r.setAttribute('data-theme',t);}}catch(e){{}}var red=matchMedia('(prefers-reduced-motion: reduce)').matches;if(red)r.classList.add('reduce');var seen=false;try{{seen=sessionStorage.getItem('zx6-intro')==='1';}}catch(e){{}}if(!red&&(!seen||/[?&]intro=1/.test(location.search)))r.classList.add('intro-play');setTimeout(function(){{if(!window.__v6ok){{r.classList.remove('intro-play');r.classList.add('reveal-all');}}}},7000);}})();</script>
+<script>(function(){{var r=document.documentElement;r.classList.add('js');try{{var t=localStorage.getItem('zx-theme');if(t)r.setAttribute('data-theme',t);}}catch(e){{}}var red=matchMedia('(prefers-reduced-motion: reduce)').matches;if(red)r.classList.add('reduce');var seen=false;try{{seen=sessionStorage.getItem('zx6-intro')==='1';}}catch(e){{}}if(!red&&((!seen&&!location.hash)||/[?&]intro=1/.test(location.search)))r.classList.add('intro-play');setTimeout(function(){{if(!window.__v6ok){{r.classList.remove('intro-play');r.classList.add('reveal-all');}}}},7000);}})();</script>
 <link rel="stylesheet" href="assets/v6.css">
 {style}
 </head>
@@ -193,6 +193,44 @@ def options(key):
     return ''.join(out)
 
 
+# Compliance badges, shared by the home and company pages. Names and
+# descriptions as Deep Algorithms publishes them; "kind" says what each one
+# is, since HIPAA and GDPR are laws a programme complies with, not certificates.
+CERTS = [
+    ('iso', '27001', 'ISO 27001', 'Information Security Management', 'Certified'),
+    ('soc2', '', 'SOC 2 Type II', 'Security, Availability & Confidentiality', 'Audit report'),
+    ('hipaa', '', 'HIPAA', 'Health Data Privacy & Security', 'Compliance programme'),
+    ('gdpr', '', 'GDPR', 'EU General Data Protection Regulation', 'Compliance programme'),
+    ('iso', '42001', 'ISO/IEC 42001:2023', 'Artificial Intelligence Management System (AIMS)', 'Certified'),
+    ('iso', '27701', 'ISO/IEC 27701:2025', 'Privacy Information Management', 'Certified'),
+]
+
+
+def badge(kind, num):
+    import math
+    if kind == 'iso':
+        art = ('<circle class="o" cx="32" cy="32" r="30"/><circle class="d" cx="32" cy="32" r="25.5"/><circle class="i" cx="32" cy="32" r="21"/>'
+               f'<text class="t" x="32" y="29.5" text-anchor="middle">ISO</text><line class="ln" x1="19" y1="34" x2="45" y2="34"/><text class="s" x="32" y="42.5" text-anchor="middle">{num}</text>')
+    elif kind == 'soc2':
+        art = ('<rect class="o" x="3" y="3" width="58" height="58" rx="17"/><rect class="d" x="7.5" y="7.5" width="49" height="49" rx="13"/><rect class="i" x="12" y="12" width="40" height="40" rx="10"/>'
+               '<text class="t" x="32" y="31" text-anchor="middle">SOC 2</text><text class="s" x="32" y="41" text-anchor="middle">TYPE II</text>')
+    elif kind == 'hipaa':
+        art = ('<path class="o" d="M32 2.5 57 11.5V30c0 15.5-10.6 26.4-25 31.5C17.6 56.4 7 45.5 7 30V11.5Z"/>'
+               '<path class="i" d="M32 9.5 51 16.4V30c0 11.7-7.8 20.2-19 24.6C20.8 50.2 13 41.7 13 30V16.4Z"/>'
+               '<text class="t sm" x="32" y="35" text-anchor="middle">HIPAA</text>')
+    else:
+        stars = ''.join(f'<circle class="st" cx="{32 + 24 * math.cos(math.radians(k * 30 - 90)):.2f}" cy="{32 + 24 * math.sin(math.radians(k * 30 - 90)):.2f}" r="1.9"/>' for k in range(12))
+        art = ('<circle class="o" cx="32" cy="32" r="30"/><circle class="i" cx="32" cy="32" r="19"/>' + stars +
+               '<text class="t sm" x="32" y="35.5" text-anchor="middle">GDPR</text>')
+    return f'<svg viewBox="0 0 64 64" aria-hidden="true">{art}</svg>'
+
+
+def certs():
+    cells = ''.join(f'<div class="cert" data-reveal data-delay="{(i % 3) * 70}">{badge(k, n)}<b>{label}</b><small>{sub}</small><span class="kind">{kind}</span></div>'
+                    for i, (k, n, label, sub, kind) in enumerate(CERTS))
+    return f'<div class="certs">{cells}</div>'
+
+
 def build(name):
     src = open(os.path.join(HERE, 'pages', name + '.html'), encoding='utf-8').read()
     m = re.match(r'\s*<!--(\{.*?\})-->\s*', src, re.S)
@@ -205,6 +243,7 @@ def build(name):
     if sm:
         style, body = sm.group(1), body[sm.end():]
     body = body.replace('{{logo}}', LOGO)
+    body = body.replace('{{certs}}', certs())
     body = re.sub(r'\{\{options:([A-Za-z]+)\}\}', lambda x: options(x.group(1)), body)
     body = re.sub(r'\{\{icon:([a-z]+)\}\}', lambda x: icon(x.group(1)), body)
     body = re.sub(r'\{\{shot:([a-z0-9-]+)\|([^}]*)\}\}', lambda x: shot(x.group(1), x.group(2)), body)

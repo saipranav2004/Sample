@@ -235,9 +235,9 @@ body.menu-open .head { transform: none; background: var(--bg); }
 .products { display: flex; gap: 12px; height: 680px; }
 .prod:not(.on) .viz { opacity: 0.5; transition: opacity 600ms; }
 .prod.on .viz { opacity: 1; transition: opacity 600ms; }
-.prod { position: relative; flex: 1; min-width: 0; border-radius: 22px; background: var(--deep); color: var(--deep-ink); overflow: hidden; cursor: pointer; transition: flex-grow 900ms var(--ease), box-shadow 400ms; isolation: isolate; border: 1px solid var(--deep-line); }
+.prod { position: relative; contain: layout paint; flex: 1; min-width: 0; border-radius: 22px; background: var(--deep); color: var(--deep-ink); overflow: hidden; cursor: pointer; transition: flex-grow 900ms var(--ease), box-shadow 400ms; isolation: isolate; border: 1px solid var(--deep-line); }
 .prod.on { flex-grow: 2.6; cursor: default; box-shadow: 0 30px 80px -40px rgba(0, 90, 164, 0.6); }
-.prod canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
+.prod canvas { position: absolute; left: 0; top: 0; width: var(--prod-w, 100%); height: 100%; z-index: 0; }
 .prod::after { content: ''; position: absolute; inset: 0; z-index: 0; background: linear-gradient(180deg, transparent 30%, rgba(4, 16, 31, 0.92) 78%); pointer-events: none; }
 .prod-top { position: absolute; left: 26px; right: 26px; top: 24px; z-index: 1; display: flex; justify-content: space-between; align-items: center; }
 .prod-top .num { font: 500 12px/1 var(--mono); color: var(--deep-ink-2); letter-spacing: 0.1em; }
@@ -398,19 +398,24 @@ html.vt, html.vt body, html.vt .head, html.vt .btn, html.vt .icon-btn, html.vt .
 
 /* ---------- Trust row ---------- */
 .trust-row { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); gap: 40px; align-items: center; }
-.certs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
-.cert { display: grid; justify-items: center; text-align: center; gap: 10px; padding: 20px 12px; border-radius: 16px; border: 1px solid var(--line); background: var(--card); transition: transform 400ms var(--ease), border-color 300ms; }
-.cert:hover { transform: translateY(-3px); border-color: var(--accent); }
-.cert svg { width: 54px; height: 54px; }
+.certs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.cert { display: grid; justify-items: center; align-content: start; text-align: center; gap: 8px; padding: 22px 14px 18px; border-radius: 16px; border: 1px solid var(--line); background: var(--card); transition: transform 500ms var(--ease), border-color 300ms, box-shadow 500ms var(--ease); }
+.cert:hover { transform: translateY(-3px); border-color: var(--accent); box-shadow: var(--shadow); }
+.cert svg { width: 64px; height: 64px; margin-bottom: 4px; }
 .cert .o { fill: none; stroke: var(--accent); stroke-width: 1.4; }
-.cert .d { fill: none; stroke: var(--accent); stroke-dasharray: 1.5 3; }
+.cert .d { fill: none; stroke: var(--accent); stroke-width: 1; stroke-dasharray: 1.5 3; }
 .cert .i { fill: var(--accent-soft); }
-.cert text { fill: var(--accent); font: 700 9.5px var(--display); }
-.cert text.s { font: 500 6.5px var(--mono); fill: var(--ink-3); }
-.cert b { font: 600 14px/1.25 var(--display); }
-.cert small { font-size: 12.5px; color: var(--ink-3); margin-top: -6px; }
+.cert .ln { stroke: var(--accent); stroke-width: 1; opacity: 0.6; }
+.cert .st { fill: var(--accent); }
+.cert text { fill: var(--accent); font: 800 13px var(--display); letter-spacing: 0.02em; }
+.cert text.sm { font-size: 11px; }
+.cert text.s { font: 600 7.5px var(--mono); letter-spacing: 0.08em; fill: var(--ink-3); }
+.cert b { font: 600 14.5px/1.25 var(--display); }
+.cert small { font-size: 12.5px; line-height: 1.4; color: var(--ink-3); }
+.cert .kind { margin-top: 2px; font: 500 10.5px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
 .trust-note { margin-top: 16px; font: 500 12.5px/1.5 var(--mono); color: var(--ink-3); }
 @media (max-width: 900px) { .trust-row { grid-template-columns: 1fr; } .certs { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 420px) { .certs { gap: 8px; } .cert { padding: 18px 10px 14px; } }
 
 /* ---------- CTA ---------- */
 .cta { position: relative; border-radius: 28px; background: #04101f; color: #fff; overflow: hidden; min-height: 460px; display: grid; align-items: center; isolation: isolate; }

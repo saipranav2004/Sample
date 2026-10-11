@@ -213,15 +213,26 @@ export function create(host, opts) {
     near: { pos: [-2.4, 3.2, 7.2], tgt: [0, 0.8, 0], fov: 30 },
     pane: (i) => ({ pos: [PANES[i] - 2.6, BLOCK.y + 2.4, 6.2], tgt: [PANES[i] + 0.2, BLOCK.y - 0.1, 0], fov: 30 }),
   };
-  const mix = (a, b, k) => ({ pos: a.pos.map((q, i) => lerp(q, b.pos[i], k)), tgt: a.tgt.map((q, i) => lerp(q, b.tgt[i], k)), fov: lerp(a.fov, b.fov, k) });
+  // One continuous camera path through the stations. While a check plays the
+  // camera keeps drifting slowly along the block, so it never stops dead and
+  // never jerks into the next move.
+  const drift = (st, dx) => ({ pos: [st.pos[0] + dx, st.pos[1], st.pos[2] + dx * 0.4], tgt: [st.tgt[0] + dx, st.tgt[1], st.tgt[2]], fov: st.fov });
+  const near = (st, k) => ({ pos: st.pos.map((q, i) => lerp(q, st.tgt[i], k)), tgt: st.tgt, fov: st.fov });
+  const L = T.stageLen;
+  const KEYS = [
+    [0, S.over], [T.intro[1], near(S.over, 0.04)], [(T.enter[0] + T.enter[1]) / 2, S.near], [T.stages[0], S.pane(0)],
+    ...[0, 1, 2, 3].flatMap((i) => [[T.stages[i] + L * 0.72, drift(S.pane(i), 0.2)], ...(i < 3 ? [[T.stages[i + 1] + L * 0.04, S.pane(i + 1)]] : [])]),
+    [T.outcome[0] + 0.05, S.over], [T.fail[0], near(S.over, 0.03)], [1, near(S.over, 0.07)],
+  ];
+  const posPath = new THREE.CatmullRomCurve3(KEYS.map((k) => new THREE.Vector3(...k[1].pos)), false, 'centripetal');
+  const tgtPath = new THREE.CatmullRomCurve3(KEYS.map((k) => new THREE.Vector3(...k[1].tgt)), false, 'centripetal');
+  const cp = new THREE.Vector3(), ct = new THREE.Vector3();
   function camAt(p) {
-    if (p < T.intro[1]) return S.over;
-    if (p < T.enter[1]) { const k = ease(seg(p, T.enter[0], T.enter[1])); return k < 0.5 ? mix(S.over, S.near, k * 2) : mix(S.near, S.pane(0), (k - 0.5) * 2); }
-    for (let i = 0; i < 4; i++) {
-      const s0 = T.stages[i];
-      if (p < s0 + T.stageLen) return i === 0 ? S.pane(0) : mix(S.pane(i - 1), S.pane(i), ease(seg(p, s0, s0 + T.stageLen * 0.35)));
-    }
-    return mix(S.pane(3), S.over, ease(seg(p, T.outcome[0], T.outcome[0] + 0.05)));
+    let i = 0; while (i < KEYS.length - 2 && p >= KEYS[i + 1][0]) i++;
+    const local = seg(p, KEYS[i][0], KEYS[i + 1][0]), smooth = local * local * (3 - 2 * local);
+    const u = (i + lerp(local, smooth, 0.55)) / (KEYS.length - 1);
+    posPath.getPoint(u, cp); tgtPath.getPoint(u, ct);
+    return { pos: [cp.x, cp.y, cp.z], tgt: [ct.x, ct.y, ct.z], fov: 30 };
   }
   const hitOf = (i) => T.stages[i] + T.hitAt;
   const closedK = (p) => ease(seg(p, T.fail[0] + 0.02, T.fail[0] + 0.05));
@@ -238,6 +249,8 @@ export function create(host, opts) {
         c.u = nu; if (c.u > 3) { c.u = 0; c.from = Math.floor(rnd() * 3); c.to = Math.floor(rnd() * 4); }
       }
       at(c.from, c.to, c.u, tmp); c.m.position.copy(tmp); c.s.position.copy(tmp);
+      const e = Math.min(seg(c.u, 0, 0.14), seg(c.u, 3, 2.86)), sz = e * e * (3 - 2 * e);
+      c.m.scale.setScalar(Math.max(0.001, sz)); c.s.scale.setScalar(0.22 * Math.max(0.001, sz));
       const vis = p > 0.005; c.m.visible = c.s.visible = vis;
       if (c.u > 2.96 && dt) surfaces[c.to].glow = 1;
     });
@@ -245,10 +258,10 @@ export function create(host, opts) {
     // 2. Panes: idle glass, the active check lit, a red flash on a catch, amber when closed.
     let cur = -1; T.stages.forEach((s0, i) => { if (p >= s0 && p < s0 + T.stageLen) cur = i; });
     panes.forEach((pn, i) => {
-      const hit = hitOf(i), f = p >= hit ? 1 - seg(p, hit, hit + 0.05) : 0;
+      const hit = hitOf(i), f = ease(seg(p, hit - 0.008, hit)) * (1 - ease(seg(p, hit, hit + 0.06)));
       const col = cyan.clone().lerp(red, f).lerp(amber, fail);
       pn.fm.color.copy(col); pn.fm.opacity = 0.35 + (cur === i ? 0.65 : 0) + f * 0.5 + fail * 0.5;
-      pn.fill.material.color.copy(f > 0 ? red : amber); pn.fill.material.opacity = Math.max(f * 0.28, fail * 0.42);
+      pn.fill.material.color.copy(f > fail ? red : amber); pn.fill.material.opacity = Math.max(f * 0.28, fail * 0.42);
     });
     M.edge.opacity = 0.65 + fail * 0.3; M.edge.color.set(C.edge).lerp(amber, fail);
     const insideK = seg(p, T.enter[0] + 0.06, T.enter[1]) * (1 - seg(p, T.outcome[0], T.outcome[0] + 0.04));
@@ -290,15 +303,19 @@ export function create(host, opts) {
     place(layerTag, scr(0, BLOCK.y + BLOCK.h / 2 + 0.55, -BLOCK.d / 2), overview && p > 0.02, 0, 0);
     place(sideTags[0], scr(LEFT_X, 0.95, -1.8), overview && p < T.fail[0], 0, 0);
     place(sideTags[1], scr(RIGHT_X, 0.95, -2.4), overview && p < T.fail[0], 0, 0);
-    if (showAttack) { const a = scr(showAttack.m.position.x, showAttack.m.position.y, showAttack.m.position.z); if (attackTag._n !== showAttack.name) { attackTag.textContent = showAttack.name; attackTag._n = showAttack.name; } place(attackTag, a, a[2] && a[1] < H * 0.7, 14, -26); } else place(attackTag, [0, 0], false);
+    if (showAttack) { const a = scr(showAttack.m.position.x, showAttack.m.position.y, showAttack.m.position.z); if (attackTag._n !== showAttack.name) { attackTag.textContent = showAttack.name; attackTag._n = showAttack.name; } place(attackTag, a, a[2] && a[1] < H * 0.7 && a[0] > W * 0.42, 14, -26); } else place(attackTag, [0, 0], false);
     if (cur >= 0 && p >= hitOf(cur)) { const a = scr(PANES[cur], BLOCK.y + 0.42, 0.2); if (resultTag._i !== cur) { resultTag.textContent = '✕ ' + ATTACKS[cur].out; resultTag._i = cur; } place(resultTag, a, a[2], 0, 0); } else place(resultTag, [0, 0], false);
     const showCaught = p >= T.outcome[0] + 0.04 && p < T.fail[0];
     panes.forEach((pn, i) => { const a = scr(pn.x, BLOCK.y - BLOCK.h / 2 - 0.1, BLOCK.d / 2); place(caughtTags[i], a, showCaught && a[2], 0, 10 + i * 30); });
     place(failTag, scr(0, BLOCK.y, BLOCK.d / 2 + 0.2), fail > 0.5, 0, 0);
   }
 
+  let slow = 0, lowRes = false;
   function tick(now) {
     const dt = last ? Math.min(0.05, (now - last) / 1000) : 0.016; last = now;
+    // Keep motion fluid on slower GPUs: after ~1.5 s of frames slower than
+    // 40 fps, render at 1x pixel density instead of up to 1.75x.
+    if (!lowRes && dt > 0.025 && renderer.getPixelRatio() > 1) { if ((slow += dt) > 1.5) { lowRes = true; renderer.setPixelRatio(1); resize(); } } else slow = Math.max(0, slow - dt * 0.5);
     render(dt);
     raf = active ? requestAnimationFrame(tick) : (last = 0);
   }
