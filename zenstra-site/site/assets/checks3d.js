@@ -290,7 +290,7 @@ export function create(host, opts) {
     place(layerTag, scr(0, BLOCK.y + BLOCK.h / 2 + 0.55, -BLOCK.d / 2), overview && p > 0.02, 0, 0);
     place(sideTags[0], scr(LEFT_X, 0.95, -1.8), overview && p < T.fail[0], 0, 0);
     place(sideTags[1], scr(RIGHT_X, 0.95, -2.4), overview && p < T.fail[0], 0, 0);
-    if (showAttack) { const a = scr(showAttack.m.position.x, showAttack.m.position.y, showAttack.m.position.z); if (attackTag._n !== showAttack.name) { attackTag.textContent = showAttack.name; attackTag._n = showAttack.name; } place(attackTag, a, a[2], 14, -26); } else place(attackTag, [0, 0], false);
+    if (showAttack) { const a = scr(showAttack.m.position.x, showAttack.m.position.y, showAttack.m.position.z); if (attackTag._n !== showAttack.name) { attackTag.textContent = showAttack.name; attackTag._n = showAttack.name; } place(attackTag, a, a[2] && a[1] < H * 0.7, 14, -26); } else place(attackTag, [0, 0], false);
     if (cur >= 0 && p >= hitOf(cur)) { const a = scr(PANES[cur], BLOCK.y + 0.42, 0.2); if (resultTag._i !== cur) { resultTag.textContent = '✕ ' + ATTACKS[cur].out; resultTag._i = cur; } place(resultTag, a, a[2], 0, 0); } else place(resultTag, [0, 0], false);
     const showCaught = p >= T.outcome[0] + 0.04 && p < T.fail[0];
     panes.forEach((pn, i) => { const a = scr(pn.x, BLOCK.y - BLOCK.h / 2 - 0.1, BLOCK.d / 2); place(caughtTags[i], a, showCaught && a[2], 0, 10 + i * 30); });
