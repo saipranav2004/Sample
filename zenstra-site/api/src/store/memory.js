@@ -9,10 +9,10 @@ function createMemoryStore() {
   const leads = [], outbox = [];
   const now = () => Date.now();
   const row = (v) => ({
-    id: ++seq, ref: newRef(), kind: v.kind, status: v.status || 'new', created_at: new Date(), first_name: v.firstName || null, last_name: v.lastName || null,
-    full_name: v.name || null, email: v.email, email_domain: v.domain, company: v.company || null, role: v.role || null, country: v.country || null,
-    region: v.region || null, institution_type: v.institutionType || null, interests: v.interests || [], document: v.document || null, message: v.message || null,
-    marketing_opt_in: !!v.marketingOptIn, consent_version: v.consentVersion, confirm_token: v.confirmToken || null, ip_hash: v.ipHash || null,
+    id: ++seq, ref: newRef(), kind: v.kind, created_at: new Date(), first_name: v.firstName || null, last_name: v.lastName || null,
+    email: v.email, email_domain: v.domain, company: v.company || null, role: v.role || null, country: v.country || null,
+    region: v.region || null, institution_type: v.institutionType || null, interests: v.interests || [], message: v.message || null,
+    marketing_opt_in: !!v.marketingOptIn, consent_version: v.consentVersion, ip_hash: v.ipHash || null,
     user_agent: v.userAgent || null, referrer: v.referrer || null, page: v.page || null, utm: v.utm || {}, risk_flags: v.riskFlags || []
   });
   const enqueue = (leadId, channels) => {
@@ -30,14 +30,6 @@ function createMemoryStore() {
       leads.push(r);
       enqueue(r.id, channels);
       return { lead: toLead(r), duplicate: false };
-    },
-    async confirm(token, channels) {
-      const r = leads.find((l) => l.confirm_token === token);
-      if (!r) return null;
-      if (r.status !== 'pending') return { lead: toLead(r), already: true };
-      r.status = 'confirmed'; r.confirmed_at = new Date();
-      enqueue(r.id, channels);
-      return { lead: toLead(r), already: false };
     },
     async claimDue(limit, maxAttempts) {
       const t = now();

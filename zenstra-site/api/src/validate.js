@@ -48,25 +48,17 @@ const schemas = {
       institutionType: str(100), interests: { type: 'array', maxItems: 8, items: str(60) }, message: str(2000),
       marketingOptIn: { type: 'boolean' }
     }, common)
-  },
-  documents: {
-    type: 'object', additionalProperties: false, required: ['email'],
-    properties: Object.assign({ name: str(300), company: str(300), document: str(200) }, common)
-  },
-  newsletter: {
-    type: 'object', additionalProperties: false, required: ['email'],
-    properties: Object.assign({}, common)
   }
 };
 
-function checkEmail(raw, errors, { allowFree = false } = {}) {
+function checkEmail(raw, errors) {
   const email = clean(raw);
   if (!email) { errors.email = MSG.required; return null; }
   const [local] = email.split('@');
   if (email.length > 254 || !EMAIL.test(email) || local.length > 64) { errors.email = MSG.email; return null; }
   const domain = domainOf(email);
   const kind = classify(domain);
-  if (kind === 'free' && !allowFree) { errors.email = MSG.free; return null; }
+  if (kind === 'free') { errors.email = MSG.free; return null; }
   if (kind === 'disposable') { errors.email = MSG.disposable; return null; }
   return { email: email.slice(0, email.lastIndexOf('@') + 1) + domain, domain };
 }
@@ -99,11 +91,12 @@ function tracking(body) {
 function validate(kind, body) {
   const errors = {};
   const out = { kind };
-  // Demos and NDA documents need a work address; the newsletter does not.
-  const em = checkEmail(body.email, errors, { allowFree: kind === 'newsletter' });
+  if (kind !== 'demo') throw new Error('unknown kind ' + kind);
+  // A demo is prepared for the visitor's environment, so it needs a work address.
+  const em = checkEmail(body.email, errors);
   if (em) { out.email = em.email; out.domain = em.domain; }
 
-  if (kind === 'demo') {
+  {
     out.firstName = text(body.firstName, 'firstName', errors, { required: true, max: 80, name: true });
     out.lastName = text(body.lastName, 'lastName', errors, { required: true, max: 80, name: true });
     out.company = text(body.company, 'company', errors, { required: true, max: 120 });
@@ -120,15 +113,6 @@ function validate(kind, body) {
     out.interests = [...new Set(interests)].filter((i) => REF.interests.includes(i));
     out.message = text(body.message, 'message', errors, { max: 500 });
     out.marketingOptIn = body.marketingOptIn === true;
-  } else if (kind === 'documents') {
-    out.name = text(body.name, 'name', errors, { required: true, max: 160, name: true });
-    out.company = text(body.company, 'company', errors, { required: true, max: 120 });
-    out.document = text(body.document, 'document', errors, { max: 120 });
-    out.marketingOptIn = false;
-  } else if (kind === 'newsletter') {
-    out.marketingOptIn = true;
-  } else {
-    throw new Error('unknown kind ' + kind);
   }
   Object.assign(out, tracking(body));
   return Object.keys(errors).length ? { value: null, errors } : { value: out, errors: null };

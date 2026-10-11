@@ -11,12 +11,11 @@ const config = load({
   SLACK_WEBHOOK_URL: 'https://hooks.slack.test/x', HUBSPOT_PORTAL_ID: '123', HUBSPOT_DEMO_FORM_ID: 'form-1', HUBSPOT_SUBSCRIPTION_TYPE_ID: '99',
   CRM_WEBHOOK_URL: 'https://crm.test/hook', CRM_WEBHOOK_SECRET: 'a-very-long-secret-value', BOOKING_URL: 'https://cal.com/z?email={email}'
 });
-const lead = { id: 1, ref: 'ZX-ABC234', kind: 'demo', status: 'new', createdAt: '2026-10-10T10:00:00.000Z', firstName: 'Dana', lastName: '<b>Reyes</b>', email: 'dana@acme.com', company: 'Acme & Co', role: 'CISO or security leader', country: 'United States', region: 'Ohio', interests: ['Zenstra EDR'], message: 'hi', marketingOptIn: true, utm: {}, riskFlags: [], confirmToken: null };
+const lead = { id: 1, ref: 'ZX-ABC234', kind: 'demo', createdAt: '2026-10-10T10:00:00.000Z', firstName: 'Dana', lastName: '<b>Reyes</b>', email: 'dana@acme.com', company: 'Acme & Co', role: 'CISO or security leader', country: 'United States', region: 'Ohio', interests: ['Zenstra EDR'], message: 'hi', marketingOptIn: true, utm: {}, riskFlags: [] };
 
 test('channels follow configuration', () => {
-  assert.deepEqual(channelsFor('demo', config), ['slack', 'team_email', 'confirmation_email', 'hubspot', 'crm_webhook']);
-  assert.deepEqual(channelsFor('newsletter', config), ['optin_email']);
-  assert.deepEqual(channelsFor('demo', load({ NODE_ENV: 'test' })), []);
+  assert.deepEqual(channelsFor(config), ['slack', 'team_email', 'confirmation_email', 'hubspot', 'crm_webhook']);
+  assert.deepEqual(channelsFor(load({ NODE_ENV: 'test' })), []);
 });
 
 test('emails escape visitor input and carry the reference and postal address', () => {
@@ -44,7 +43,7 @@ test('HubSpot and CRM payloads', async () => {
   const sig = sent[1].opts.headers['x-zenstra-signature'];
   const [, t, v1] = sig.match(/^t=(\d+),v1=([a-f0-9]{64})$/);
   assert.equal(v1, crypto.createHmac('sha256', 'a-very-long-secret-value').update(`${t}.${sent[1].opts.body}`).digest('hex'));
-  assert.ok(!sent[1].opts.body.includes('confirmToken'));
+  assert.equal(JSON.parse(sent[1].opts.body).lead.ref, 'ZX-ABC234');
   assert.equal(JSON.parse(sent[2].opts.body).blocks[0].type, 'section');
 });
 

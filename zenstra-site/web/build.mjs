@@ -1,10 +1,9 @@
-// Builds the production site from the design sources.
+// Builds the production site from zenstra-site/site.
 //
 //   node build.mjs --out dist --site-url https://zenstra.ai
 //
-// Pages: home, demo and credit unions from design/zenstra-v6; every other page
-// from design/zenstra. Output:
-//   <out>/site/          static files served by nginx
+// Every page in site/ is copied with minified, fingerprinted assets and self-hosted fonts. Output:
+//   <out>/site/                   static files served by nginx
 //   <out>/nginx/csp-hashes.conf   hashes of inline scripts, for the CSP header
 import { readFile, writeFile, mkdir, rm, readdir, copyFile, stat } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
@@ -13,9 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { transform } from 'esbuild';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const ROOT = path.resolve(HERE, '..', '..');
-const V6 = path.join(ROOT, 'design', 'zenstra-v6');
-const V3 = path.join(ROOT, 'design', 'zenstra');
+const SRC = path.resolve(HERE, '..', 'site');
 const FONTS = path.join(HERE, 'fonts');
 
 const args = Object.fromEntries(process.argv.slice(2).reduce((a, v, i, all) => (v.startsWith('--') ? a.concat([[v.slice(2), all[i + 1]]]) : a), []));
@@ -23,9 +20,9 @@ const OUT = path.resolve(args.out || path.join(HERE, 'dist'));
 const SITE = path.join(OUT, 'site');
 const SITE_URL = String(args['site-url'] || 'http://localhost:8080').replace(/\/+$/, '');
 
-const V6_PAGES = ['home', 'demo', 'credit-unions'];
 const sha = (buf, enc = 'hex') => createHash('sha256').update(buf).digest(enc);
 const exists = (p) => stat(p).then(() => true, () => false);
+const posix = (p) => p.split(path.sep).join('/');
 
 async function walk(dir, base = dir) {
   const out = [];
@@ -37,35 +34,30 @@ async function walk(dir, base = dir) {
   return out;
 }
 
-// 1. Merge the two asset folders. A file present in both must be identical.
-async function mergeAssets() {
-  const origin = new Map();
-  for (const [src, label] of [[path.join(V3, 'assets'), 'v3'], [path.join(V6, 'assets'), 'v6']]) {
-    for (const rel of await walk(src)) {
-      const buf = await readFile(path.join(src, rel));
-      const h = sha(buf);
-      if (origin.has(rel) && origin.get(rel).h !== h) throw new Error(`asset conflict: assets/${rel} differs between ${origin.get(rel).label} and ${label}`);
-      origin.set(rel, { h, label });
-      await mkdir(path.dirname(path.join(SITE, 'assets', rel)), { recursive: true });
-      await writeFile(path.join(SITE, 'assets', rel), buf);
-    }
+// 1. Copy the site, leaving out the page sources and generator.
+async function copySite() {
+  const files = (await walk(SRC)).filter((f) => !posix(f).startsWith('_build/') && !/(^|\/)\.|__pycache__/.test(posix(f)));
+  for (const rel of files) {
+    await mkdir(path.dirname(path.join(SITE, rel)), { recursive: true });
+    await copyFile(path.join(SRC, rel), path.join(SITE, rel));
   }
-  for (const f of await readdir(FONTS)) {
-    if (!/\.(woff2|css)$/.test(f)) continue;
-    await mkdir(path.join(SITE, 'assets', 'fonts'), { recursive: true });
-    await copyFile(path.join(FONTS, f), path.join(SITE, 'assets', 'fonts', f));
-  }
+  await mkdir(path.join(SITE, 'assets', 'fonts'), { recursive: true });
+  for (const f of await readdir(FONTS)) if (/\.(woff2|css)$/.test(f)) await copyFile(path.join(FONTS, f), path.join(SITE, 'assets', 'fonts', f));
   await copyFile(path.join(FONTS, 'LICENSES.md'), path.join(SITE, 'assets', 'fonts', 'LICENSES.txt'));
-  return origin.size;
+  return files;
 }
 
 // 2. Minify CSS and JS and give each a content-hashed name for long caching.
-async function fingerprint() {
+// Keys and values are paths from the site root.
+async function fingerprint(files) {
   const map = new Map();
-  for (const rel of await walk(path.join(SITE, 'assets'))) {
+  for (const rel of files.map(posix).concat('assets/fonts/fonts.css')) {
     const ext = path.extname(rel);
     if (ext !== '.js' && ext !== '.css') continue;
-    const file = path.join(SITE, 'assets', rel);
+    // Vendor files carry their version in the name and are imported by path
+    // (three.js by checks3d.js), so they keep it.
+    if (/(^|\/)vendor\//.test(rel)) continue;
+    const file = path.join(SITE, rel);
     const src = await readFile(file, 'utf8');
     const already = /\.min\.js$/.test(rel) || /vendor\//.test(rel);
     let code = src;
@@ -74,8 +66,9 @@ async function fingerprint() {
       code = r.code;
     }
     const hashed = rel.replace(/(\.min)?(\.js|\.css)$/, (m) => `.${sha(code).slice(0, 8)}${m}`);
-    await writeFile(path.join(SITE, 'assets', hashed), code);
-    map.set('assets/' + rel.split(path.sep).join('/'), 'assets/' + hashed.split(path.sep).join('/'));
+    await writeFile(path.join(SITE, hashed), code);
+    await rm(file);
+    map.set(rel, hashed);
   }
   return map;
 }
@@ -88,32 +81,33 @@ async function preloadFor(family) {
   return m ? `assets/fonts/${m[1]}` : null;
 }
 
-// 3. Pages: flatten links, use hashed assets and local fonts, add SEO tags,
-// and collect inline script hashes for the Content Security Policy.
-async function pages(assetMap) {
+// 3. Pages: hashed assets, local fonts, SEO tags, and the hashes of inline
+// scripts for the Content Security Policy.
+async function pages(files, assetMap) {
   const scriptHashes = new Set();
   const list = [];
-  const fontsCss = assetMap.get('assets/fonts/fonts.css');
-  const preload = { v6: await preloadFor('Hanken Grotesk'), v3: await preloadFor('Instrument Sans') };
-  const v3Pages = (await readdir(V3)).filter((f) => f.endsWith('.html') && !V6_PAGES.includes(f.replace('.html', '')));
-  const sources = V6_PAGES.map((p) => ({ file: p + '.html', dir: V6, kind: 'v6' })).concat(v3Pages.map((f) => ({ file: f, dir: V3, kind: 'v3' })));
-  for (const { file, dir, kind } of sources) {
-    let html = await readFile(path.join(dir, file), 'utf8');
-    html = html.replace(/\.\.\/zenstra(-v6)?\//g, '');
+  const preload = await preloadFor('Hanken Grotesk');
+  for (const file of files.map(posix).filter((f) => f.endsWith('.html'))) {
+    const dir = path.posix.dirname(file) === '.' ? '' : path.posix.dirname(file);
+    const up = (p) => (dir ? path.posix.relative(dir, p) : p);
+    let html = await readFile(path.join(SITE, file), 'utf8');
     html = html.replace(/<link[^>]+fonts\.(googleapis|gstatic)\.com[^>]*>\s*/g, '');
-    const fontTags = `<link rel="preload" href="${preload[kind]}" as="font" type="font/woff2" crossorigin>\n<link rel="stylesheet" href="${fontsCss}">\n`;
+    const fontTags = `<link rel="preload" href="${up(preload)}" as="font" type="font/woff2" crossorigin>\n<link rel="stylesheet" href="${up(assetMap.get('assets/fonts/fonts.css'))}">\n`;
     html = html.replace(/(<meta name="viewport"[^>]*>\n?)/, `$1${fontTags}`);
-    if (!/rel="icon"/.test(html)) html = html.replace('</head>', '<link rel="icon" href="assets/img/zenstra-mark.png">\n</head>');
-    html = html.replace(/((?:src|href)=")(assets\/[^"#?]+\.(?:js|css))(")/g, (m, a, ref, b) => (assetMap.has(ref) ? a + assetMap.get(ref) + b : m));
+    if (!/rel="icon"/.test(html)) html = html.replace('</head>', `<link rel="icon" href="${up('assets/img/zenstra-mark.png')}">\n</head>`);
+    html = html.replace(/((?:src|href|data-src)=")((?:\.\.\/)*assets\/[^"#?]+\.(?:js|css))(")/g, (m, a, ref, b) => {
+      const key = path.posix.join(dir, ref);
+      return assetMap.has(key) ? a + up(assetMap.get(key)) + b : m;
+    });
     // Canonical URLs match the links the pages use (file.html); home is the root.
-    const url = `${SITE_URL}/${file === 'home.html' ? '' : file}`;
+    const url = `${SITE_URL}/${file === 'home.html' ? '' : file.replace(/(^|\/)index\.html$/, '$1')}`;
     const attr = (v) => String(v).replace(/&(?!amp;|lt;|gt;|quot;|#)/g, '&amp;').replace(/"/g, '&quot;');
     const title = attr((html.match(/<title>([^<]*)<\/title>/) || [])[1] || 'Zenstra AI');
     const desc = (html.match(/<meta name="description" content="([^"]*)"/) || [])[1] || '';
     const seo = `<link rel="canonical" href="${url}">\n<meta property="og:type" content="website">\n<meta property="og:site_name" content="Zenstra AI">\n<meta property="og:title" content="${title}">\n<meta property="og:description" content="${desc}">\n<meta property="og:url" content="${url}">\n<meta property="og:image" content="${SITE_URL}/assets/img/zenstra-mark.png">\n<meta name="twitter:card" content="summary">\n<meta name="theme-color" content="#005aa4">\n`;
     html = html.replace('</head>', seo + '</head>');
     for (const [, body] of html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)) scriptHashes.add(`'sha256-${sha(body, 'base64')}'`);
-    const unresolved = [...html.matchAll(/(?:src|href)="(assets\/[^"]+\.(?:js|css))"/g)].map((m) => m[1]).filter((r) => !/\.[0-9a-f]{8}(\.min)?\.(js|css)$/.test(r));
+    const unresolved = [...html.matchAll(/(?:src|href|data-src)="((?:\.\.\/)*assets\/[^"]+\.(?:js|css))"/g)].map((m) => m[1]).filter((r) => !/\/vendor\/|^assets\/vendor\//.test(r) && !/\.[0-9a-f]{8}(\.min)?\.(js|css)$/.test(r));
     if (unresolved.length) throw new Error(`${file}: assets not fingerprinted: ${unresolved.join(', ')}`);
     await writeFile(path.join(SITE, file), html);
     list.push({ file, url, title });
@@ -152,16 +146,16 @@ async function extras(list, assetMap) {
 }
 
 async function main() {
-  if (!(await exists(path.join(V6, 'home.html'))) || !(await exists(path.join(V3, 'platform.html')))) throw new Error('design sources not found; run the generators in design/zenstra and design/zenstra-v6 first');
+  if (!(await exists(path.join(SRC, 'home.html')))) throw new Error('site/home.html not found; run python3 site/_build/build.py first');
   await rm(OUT, { recursive: true, force: true });
   await mkdir(SITE, { recursive: true });
-  const n = await mergeAssets();
-  const assetMap = await fingerprint();
-  const { list, scriptHashes } = await pages(assetMap);
+  const files = await copySite();
+  const assetMap = await fingerprint(files);
+  const { list, scriptHashes } = await pages(files, assetMap);
   await extras(list, assetMap);
   await mkdir(path.join(OUT, 'nginx'), { recursive: true });
   await writeFile(path.join(OUT, 'nginx', 'csp-hashes.conf'), `# Generated by build.mjs: hashes of the inline scripts in the built pages.\nset $csp_script_hashes "${[...scriptHashes].sort().join(' ')}";\n`);
-  console.log(`built ${list.length} pages, ${n} assets (${assetMap.size} fingerprinted), ${scriptHashes.size} inline script hashes -> ${OUT}`);
+  console.log(`built ${list.length} pages, ${files.length} files (${assetMap.size} fingerprinted), ${scriptHashes.size} inline script hashes -> ${OUT}`);
 }
 
 main().catch((e) => { console.error(e.message); process.exit(1); });

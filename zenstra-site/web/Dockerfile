@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.7
-# Build context: the repository root (the site is built from design/).
+# Build context: the repository root (the site is built from zenstra-site/site).
 
 FROM node:22-alpine AS build
 WORKDIR /src
@@ -9,8 +9,7 @@ COPY zenstra-site/web/package.json zenstra-site/web/package-lock.json zenstra-si
 RUN --mount=type=secret,id=build_ca,required=false \
     if [ -s /run/secrets/build_ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/build_ca; fi; \
     cd zenstra-site/web && npm ci --no-audit --no-fund
-COPY design/zenstra design/zenstra
-COPY design/zenstra-v6 design/zenstra-v6
+COPY zenstra-site/site zenstra-site/site
 COPY zenstra-site/web zenstra-site/web
 ARG SITE_URL=https://zenstra.ai
 RUN cd zenstra-site/web && node build.mjs --out /out --site-url "$SITE_URL"

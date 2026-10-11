@@ -1,15 +1,13 @@
--- Leads from the website forms, and an outbox of notifications to deliver for
+-- Demo requests from the website, and an outbox of notifications to deliver for
 -- each one (Slack, email, CRM). Rows in the outbox are retried until sent.
 
 CREATE TABLE leads (
   id               BIGSERIAL PRIMARY KEY,
   ref              TEXT NOT NULL UNIQUE,
-  kind             TEXT NOT NULL CHECK (kind IN ('demo', 'documents', 'newsletter')),
-  status           TEXT NOT NULL DEFAULT 'new' CHECK (status IN ('new', 'pending', 'confirmed')),
+  kind             TEXT NOT NULL CHECK (kind IN ('demo')),
   created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
   first_name       TEXT,
   last_name        TEXT,
-  full_name        TEXT,
   email            TEXT NOT NULL,
   email_domain     TEXT NOT NULL,
   company          TEXT,
@@ -18,13 +16,10 @@ CREATE TABLE leads (
   region           TEXT,
   institution_type TEXT,
   interests        TEXT[] NOT NULL DEFAULT '{}',
-  document         TEXT,
   message          TEXT,
   marketing_opt_in BOOLEAN NOT NULL DEFAULT false,
   consent_version  TEXT NOT NULL,
   consent_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
-  confirm_token    TEXT UNIQUE,
-  confirmed_at     TIMESTAMPTZ,
   ip_hash          TEXT,
   user_agent       TEXT,
   referrer         TEXT,

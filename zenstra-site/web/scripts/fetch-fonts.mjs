@@ -5,8 +5,7 @@ import { writeFile, mkdir } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 
 const FAMILIES = [
-  'family=Hanken+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@600',
-  'family=Instrument+Sans:ital,wdth,wght@0,75..100,400..700;1,75..100,400..700'
+  'family=Hanken+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@600'
 ];
 const KEEP = new Set(['latin', 'latin-ext']);
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36';

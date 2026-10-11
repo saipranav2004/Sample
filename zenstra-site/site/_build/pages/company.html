@@ -1,0 +1,239 @@
+<!--{"title": "Company · Zenstra AI", "description": "Zenstra AI is built by Deep Algorithms, an AI-native cybersecurity company headquartered in Hyderabad, with offices in Bangalore and Maryland.", "active": "company"}-->
+<style>
+  .co-hero { position: relative; padding: calc(var(--head-h) + 56px) 0 clamp(72px, 8vw, 112px); overflow: hidden; }
+  .co-hero::before { content: ''; position: absolute; inset: 0; z-index: 0; background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px); background-size: 64px 64px; mask-image: radial-gradient(ellipse 55% 65% at 18% 10%, #000 10%, transparent 75%); -webkit-mask-image: radial-gradient(ellipse 55% 65% at 18% 10%, #000 10%, transparent 75%); opacity: 0.7; }
+  .co-grid { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(40px, 6vw, 88px); align-items: end; }
+  .co-grid h1 { margin-top: 26px; max-width: 15ch; }
+  .co-grid .lede { margin-top: 24px; }
+  .facts { margin: 0; border-radius: 20px; background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow); overflow: hidden; }
+  .facts > div { display: grid; grid-template-columns: 128px 1fr; gap: 16px; padding: 16px 22px; border-top: 1px solid var(--line); }
+  .facts > div:first-child { border-top: 0; }
+  .facts dt { font: 500 11.5px/1.5 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); }
+  .facts dd { margin: 0; font-weight: 600; }
+  .facts dd small { display: block; font-weight: 400; color: var(--ink-3); font-size: 13.5px; }
+
+  .story { display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); gap: clamp(40px, 6vw, 96px); align-items: start; }
+  .story-copy { display: grid; gap: 20px; }
+  .story-copy p { color: var(--ink-2); font-size: 17.5px; line-height: 1.7; max-width: 60ch; }
+  .story-copy p b { color: var(--ink); }
+  .quote { position: sticky; top: calc(var(--head-h) + 32px); margin: 0; padding: clamp(28px, 3vw, 40px); border-radius: 22px; background: var(--deep); color: #fff; overflow: hidden; isolation: isolate; }
+  :root[data-theme='dark'] .quote { background: #061527; border: 1px solid var(--line); }
+  .quote::before { content: ''; position: absolute; inset: 0; z-index: -1; background: radial-gradient(circle at 100% 0%, rgba(0, 168, 239, 0.28), transparent 60%); }
+  .quote p { font: 600 clamp(24px, 2.4vw, 34px)/1.2 var(--display); letter-spacing: -0.02em; }
+  .quote footer { margin-top: 22px; font: 500 12px/1.4 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: #5cd2ff; }
+
+  .family { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  .fam { position: relative; display: grid; align-content: start; gap: 10px; padding: 24px; border-radius: 18px; border: 1px solid var(--line); background: var(--card); text-decoration: none; color: inherit; transition: border-color 300ms, transform 400ms var(--ease); }
+  a.fam:hover { border-color: var(--accent); transform: translateY(-3px); }
+  .fam.here { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); background: linear-gradient(180deg, var(--accent-soft), var(--card) 70%); }
+  .fam .tag { font: 500 11px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+  .fam b { font: 600 20px/1.2 var(--display); letter-spacing: -0.015em; }
+  .fam i { font-style: normal; font-weight: 600; color: var(--ink); font-size: 15px; }
+  .fam p { color: var(--ink-2); font-size: 14.5px; }
+  .fam .go { margin-top: 6px; display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 14px; color: var(--accent); }
+  .fam .go svg { width: 13px; height: 13px; }
+  @media (max-width: 1000px) { .family { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 560px) { .family { grid-template-columns: 1fr; } }
+
+  .beliefs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
+  .beliefs > div { padding: 28px 26px 32px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); display: grid; gap: 12px; align-content: start; }
+  .beliefs .n { font: 500 12px/1 var(--mono); color: var(--accent); letter-spacing: 0.1em; }
+  .beliefs b { font: 600 20px/1.25 var(--display); letter-spacing: -0.015em; }
+  .beliefs p { color: var(--ink-2); font-size: 15px; }
+  @media (max-width: 900px) { .beliefs { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 600px) { .beliefs { grid-template-columns: 1fr; } }
+
+  .leaders { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+  .leader { display: grid; align-content: start; gap: 4px; }
+  .leader .ph { aspect-ratio: 1; border-radius: 18px; overflow: hidden; background: #fff; border: 1px solid var(--line); margin-bottom: 14px; }
+  .leader .ph img { width: 100%; height: 100%; object-fit: cover; display: block; filter: saturate(0.9); transition: transform 700ms var(--ease); }
+  .leader:hover .ph img { transform: scale(1.03); }
+  .leader b { font: 600 19px/1.25 var(--display); letter-spacing: -0.01em; }
+  .leader .role { font: 500 12px/1.4 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
+  .leader ul { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 4px; color: var(--ink-2); font-size: 14.5px; }
+  .leader .in { margin-top: 12px; display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 14px; color: var(--accent); text-decoration: none; }
+  .leader .in svg { width: 15px; height: 15px; }
+  @media (max-width: 1000px) { .leaders { grid-template-columns: 1fr 1fr; gap: 32px 16px; } }
+  @media (max-width: 480px) { .leaders { grid-template-columns: 1fr; } .leader .ph { max-width: 280px; } }
+
+  .advisors { margin-top: clamp(56px, 6vw, 80px); }
+  .advisors h3 { font: 600 22px/1.25 var(--display); letter-spacing: -0.015em; margin-bottom: 20px; }
+  .adv { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 40px; border-top: 1px solid var(--line); }
+  .adv > div { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 20px; padding: 18px 0; border-bottom: 1px solid var(--line); }
+  .adv b { display: block; font-weight: 700; }
+  .adv small { display: block; font: 500 11.5px/1.4 var(--mono); letter-spacing: 0.04em; color: var(--ink-3); margin-top: 3px; }
+  .adv p { color: var(--ink-2); font-size: 14.5px; }
+  @media (max-width: 900px) { .adv { grid-template-columns: 1fr; } }
+  @media (max-width: 480px) { .adv > div { grid-template-columns: 1fr; gap: 6px; } }
+
+  .rec { display: grid; grid-template-columns: 120px 1fr; border-top: 1px solid var(--line); }
+  .rec > h3 { padding: 22px 0; font: 500 clamp(28px, 3vw, 40px)/1 var(--mono); letter-spacing: -0.04em; color: var(--deep-ink-2); border-bottom: 1px solid rgba(255, 255, 255, 0.12); }
+  .rec > ul { list-style: none; margin: 0; padding: 0; border-bottom: 1px solid rgba(255, 255, 255, 0.12); }
+  .rec li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; padding: 22px 0; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+  .rec li:first-child { border-top: 0; }
+  .rec li b { font: 600 18px/1.3 var(--display); color: #fff; }
+  .rec li span { color: var(--deep-ink-2); }
+  .band .rec { border-top-color: rgba(255, 255, 255, 0.12); }
+  @media (max-width: 700px) { .rec { grid-template-columns: 1fr; } .rec > h3 { border-bottom: 0; padding-bottom: 0; } .rec li { grid-template-columns: 1fr; gap: 4px; } }
+
+  .offices { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  .office { padding: 22px; border-radius: 16px; border: 1px solid var(--line); background: var(--card); display: grid; gap: 8px; align-content: start; }
+  .office .tag { font: 500 11px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); }
+  .office b { font: 600 19px/1.25 var(--display); letter-spacing: -0.01em; }
+  .office address { font-style: normal; color: var(--ink-2); font-size: 14.5px; line-height: 1.55; }
+  .office.mail { background: var(--bg-2); }
+  @media (max-width: 1000px) { .offices { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 560px) { .offices { grid-template-columns: 1fr; } }
+
+  .contact { margin-top: clamp(56px, 6vw, 80px); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--line); }
+  .contact > div { padding: 26px 24px 0 0; display: grid; gap: 8px; align-content: start; }
+  .contact > div + div { padding-left: 24px; border-left: 1px solid var(--line); }
+  .contact h3 { font: 600 19px/1.25 var(--display); letter-spacing: -0.01em; }
+  .contact p { color: var(--ink-2); font-size: 15px; }
+  .contact a.mail { font-weight: 700; color: var(--accent); text-decoration: none; word-break: break-word; }
+  .contact a.mail:hover { text-decoration: underline; }
+  @media (max-width: 900px) { .contact { grid-template-columns: 1fr; } .contact > div + div { padding-left: 0; border-left: 0; border-top: 1px solid var(--line); margin-top: 26px; } }
+
+  @media (max-width: 1000px) { .co-grid, .story { grid-template-columns: 1fr; } .quote { position: static; } }
+  @media (max-width: 480px) { .facts > div { grid-template-columns: 1fr; gap: 4px; } }
+</style>
+  <section class="co-hero rails" aria-labelledby="hero-h">
+    <div class="wrap co-grid">
+      <div>
+        <span class="chip-live" data-after><i></i>Zenstra AI · by Deep Algorithms</span>
+        <h1 class="display" id="hero-h" data-scan><span class="scanline"><span class="in">Defence as intelligent</span><i class="bar"></i></span><span class="scanline"><span class="in grad">as the attack.</span><i class="bar"></i></span></h1>
+        <p class="lede" data-after>Zenstra AI is built by Deep Algorithms, an AI-native cybersecurity company headquartered in Hyderabad. We build platforms that think continuously, respond autonomously, and get smarter with every threat they see.</p>
+        <div class="ctas" data-after style="margin-top:32px"><a class="btn primary lg" href="#leadership">Meet the leadership {{icon:arrow}}</a><a class="btn secondary lg" href="#contact">Contact us</a></div>
+      </div>
+      <dl class="facts" data-after aria-label="Company facts">
+        <div><dt>Company</dt><dd>Deep Algorithms</dd></div>
+        <div><dt>Founded</dt><dd>2022</dd></div>
+        <div><dt>Headquarters</dt><dd>Hyderabad, India</dd></div>
+        <div><dt>Offices</dt><dd>Hyderabad · Bangalore · Maryland, USA</dd></div>
+        <div><dt>Focus</dt><dd>AI-native security<small>Serving organisations globally</small></dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="story-h" style="padding-top:clamp(56px,6vw,88px)">
+    <div class="wrap story">
+      <div class="story-copy">
+        <span class="eyebrow" data-reveal>Our story</span>
+        <h2 class="h2" id="story-h" data-reveal>Built from a belief that the defence must be as intelligent as the attack.</h2>
+        <p data-reveal>Deep Algorithms was founded on a single observation: the threat landscape changed fundamentally when attackers adopted AI. Bots that mimic human behaviour perfectly. Identity compromises that drift invisibly for months. Data access violations that look exactly like legitimate work. Traditional tools, built for a rule-based world, cannot keep pace.</p>
+        <p data-reveal>We set out to build something different. Not a faster version of existing tools. An entirely new class of security intelligence, one that learns your environment continuously, understands what normal looks like in your specific context, and detects deviation before it becomes a breach.</p>
+        <p data-reveal><b>Zenstra AI applies that thinking to the newest identities in the enterprise: autonomous AI agents.</b> Every agent gets an identity, every call is checked against policy before it runs, and every decision leaves a tamper-evident record.</p>
+      </div>
+      <blockquote class="quote" data-reveal>
+        <p>&ldquo;We don&rsquo;t sell security products. We build defence that thinks.&rdquo;</p>
+        <footer>Deep Algorithms founding philosophy</footer>
+      </blockquote>
+    </div>
+  </section>
+
+  <section class="sec alt" aria-labelledby="fam-h">
+    <div class="wrap">
+      <div class="sec-head split">
+        <div style="display:grid;gap:20px"><span class="eyebrow" data-reveal>The platforms</span><h2 class="h2" id="fam-h" data-reveal>One architecture, four platforms.</h2></div>
+        <p class="lede" data-words>Every Deep Algorithms product shares the same foundation: continuous, autonomous and adaptive.</p>
+      </div>
+      <div class="family">
+        <div class="fam here" data-reveal><span class="tag">You are here</span><b>Zenstra AI</b><i>Govern every agent. Secure every workflow.</i><p>Identity, policy enforcement, threat defense and audit for autonomous agent activity.</p><a class="go" href="home.html">Explore Zenstra {{icon:arrow}}</a></div>
+        <a class="fam" data-reveal data-delay="60" href="https://deepalgorithms.io/adapid-ai" rel="noopener"><span class="tag">Identity risk</span><b>adapID AI</b><i>Continuous Identity Risk Management.</i><p>Scores every identity for anomalous behaviour, detecting threats that traditional tools miss for months.</p><span class="go">deepalgorithms.io {{icon:arrow}}</span></a>
+        <a class="fam" data-reveal data-delay="120" href="https://deepalgorithms.io/botshield-ai" rel="noopener"><span class="tag">Bots and DDoS</span><b>BotShield AI</b><i>Intent intelligence over signature blocking.</i><p>Continuous threat exposure management, behavioural bot fingerprinting, and DDoS detection with auto-mitigation.</p><span class="go">deepalgorithms.io {{icon:arrow}}</span></a>
+        <a class="fam" data-reveal data-delay="180" href="https://deepalgorithms.io/dpdpa-compliance" rel="noopener"><span class="tag">Compliance</span><b>ICMS Compliance Suite</b><i>Automated DPDPA evidence generation.</i><p>Personal data access monitoring, with reporting for DPDPA, RBI and SEBI.</p><span class="go">deepalgorithms.io {{icon:arrow}}</span></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="bel-h">
+    <div class="wrap">
+      <div class="sec-head"><span class="eyebrow" data-reveal>What we believe</span><h2 class="h2" id="bel-h" data-reveal>Six principles behind every product.</h2></div>
+      <div class="beliefs">
+        <div data-reveal><span class="n">01</span><b>Continuous over periodic</b><p>Security that runs on a schedule gives attackers the gaps between. Everything we build operates in real time, always.</p></div>
+        <div data-reveal data-delay="60"><span class="n">02</span><b>Behaviour over signatures</b><p>Signatures describe yesterday&rsquo;s attacks. Behavioural intelligence catches attacks that have never been seen before.</p></div>
+        <div data-reveal data-delay="120"><span class="n">03</span><b>Autonomous over manual</b><p>Human-speed response cannot match machine-speed attacks. Autonomous action is not a feature; it is a requirement.</p></div>
+        <div data-reveal><span class="n">04</span><b>Context-first by design</b><p>Every threat environment has its own regulatory obligations, attack patterns and infrastructure risks. Our platforms are built from first principles for the environment they protect, not ported from a generic template.</p></div>
+        <div data-reveal data-delay="60"><span class="n">05</span><b>Evidence over assertion</b><p>Every detection is explainable. Every compliance claim is documented. Our customers can always show their work.</p></div>
+        <div data-reveal data-delay="120"><span class="n">06</span><b>Platform over product</b><p>Individual tools create gaps between them. A unified intelligence layer across identity, traffic and compliance leaves nowhere to hide.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec alt" id="leadership" aria-labelledby="lead-h">
+    <div class="wrap">
+      <div class="sec-head"><span class="eyebrow" data-reveal>Leadership</span><h2 class="h2" id="lead-h" data-reveal>The team behind Zenstra.</h2></div>
+      <div class="leaders">
+        <div class="leader" data-reveal><div class="ph"><img src="assets/img/lead-jp-mishra.webp" alt="JP Mishra" width="360" height="360" loading="lazy" decoding="async"></div><b>JP Mishra</b><span class="role">Founder &amp; CEO</span><ul><li>EPBA, IIM Calcutta</li><li>18+ years in AI, cybersecurity, cloud and blockchain</li></ul><a class="in" href="https://www.linkedin.com/in/jp-mishra-97272011/" rel="noopener">{{icon:user}} LinkedIn<span class="sr-only">: JP Mishra</span></a></div>
+        <div class="leader" data-reveal data-delay="60"><div class="ph"><img src="assets/img/lead-manish-parganiha.webp" alt="Manish Parganiha" width="360" height="360" loading="lazy" decoding="async"></div><b>Manish Parganiha</b><span class="role">CTO</span><ul><li>M.Tech, IIIT Bangalore</li><li>21+ years in solution design, cloud, blockchain, AI and analytics</li></ul><a class="in" href="https://www.linkedin.com/in/manishparganiha/" rel="noopener">{{icon:user}} LinkedIn<span class="sr-only">: Manish Parganiha</span></a></div>
+        <div class="leader" data-reveal data-delay="120"><div class="ph"><img src="assets/img/lead-amit-shukla.webp" alt="Dr. Amit Shukla" width="360" height="360" loading="lazy" decoding="async"></div><b>Dr. Amit Shukla</b><span class="role">CRO</span><ul><li>B.Tech, IIT Kanpur · PhD, Imperial College London</li><li>16+ years of experience · Chairperson at IIT Mandi</li></ul><a class="in" href="https://www.linkedin.com/in/amit-shukla-11a0391a/" rel="noopener">{{icon:user}} LinkedIn<span class="sr-only">: Dr. Amit Shukla</span></a></div>
+        <div class="leader" data-reveal data-delay="180"><div class="ph"><img src="assets/img/lead-abhishek-tripathi.webp" alt="Abhishek Tripathi" width="360" height="360" loading="lazy" decoding="async"></div><b>Abhishek Tripathi</b><span class="role">Chief of Innovation</span><ul><li>B.Tech, JNTU Hyderabad</li><li>6+ patents · 5+ years in innovation and research</li></ul><a class="in" href="https://www.linkedin.com/in/abhishek-tripathi-software/" rel="noopener">{{icon:user}} LinkedIn<span class="sr-only">: Abhishek Tripathi</span></a></div>
+      </div>
+      <div class="advisors">
+        <h3 data-reveal>Advisors and mentors</h3>
+        <div class="adv" data-reveal>
+          <div><span><b>Dr. Amarendra Sahoo</b><small>Senior Advisor</small></span><p>31+ years at RBI · Former World Bank consultant · Multi-firm board member</p></div>
+          <div><span><b>Yogesh Chadha</b><small>Business Growth Advisor</small></span><p>30+ years in investment banking and private equity · JPMorgan Chase · Mirae Asset · Multi-firm board member</p></div>
+          <div><span><b>Prakash Govindan</b><small>Strategic Advisor</small></span><p>Co-Founder and CEO, Gradiant · Driving clean water access through cutting-edge technologies</p></div>
+          <div><span><b>Himanshu Singhal</b><small>Strategic Advisor</small></span><p>Chief Executive Officer · Times 40 under 40 · Indian culture ambassador</p></div>
+          <div><span><b>Ajitesh Shukla</b><small>Technology Mentor</small></span><p>25 years of industry experience in AI, analytics, cloud and enterprise security</p></div>
+          <div><span><b>Amit Shukla</b><small>Business Mentor</small></span><p>Founder and MD, EasyGov (Jio Platforms)</p></div>
+          <div><span><b>Dr. Anil Rachamalla</b><small>Business Growth Advisor</small></span><p>Founder, End Now Foundation · 26 years of experience</p></div>
+          <div><span><b>Dr. Satvasheel Powar</b><small>Advisor</small></span><p>Dean (Finance and Accounts), IIT Mandi · Clean energy research-to-scale leader</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band sec" aria-labelledby="rec-h">
+    <div class="wrap">
+      <div class="sec-head"><span class="eyebrow" data-reveal>Recognition and events</span><h2 class="h2" id="rec-h" data-reveal>Where Deep Algorithms has been recognised and has shown its work.</h2></div>
+      <div class="rec" data-reveal>
+        <h3>2026</h3><ul><li><b>Cyber Security Training</b><span>Cyber Bureau Hyderabad</span></li></ul>
+        <h3>2025</h3><ul>
+          <li><b>Business Excellence Award</b><span>Best Cybersecurity Solutions Provider</span></li>
+          <li><b>Cybersecurity Excellence</b><span>Data Security Council of India (DSCI)</span></li>
+          <li><b>GITEX GLOBAL × Expand North Star</b><span>Dubai</span></li>
+          <li><b>NEC–Globis Innovation</b><span>T-Hub</span></li>
+        </ul>
+        <h3>2024</h3><ul>
+          <li><b>CCoE DSCI Chapter Meet</b><span>Hyderabad</span></li>
+          <li><b>Bharat Mandapam</b><span>Delhi</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" id="contact" aria-labelledby="off-h">
+    <div class="wrap">
+      <div class="sec-head split">
+        <div style="display:grid;gap:20px"><span class="eyebrow" data-reveal>Offices and contact</span><h2 class="h2" id="off-h" data-reveal>Talk to the team.</h2></div>
+        <p class="lede" data-words>For a product walkthrough, the fastest route is a demo request. For anything else, write to us and a person will reply.</p>
+      </div>
+      <div class="offices">
+        <div class="office" data-reveal><span class="tag">Headquarters</span><b>Hyderabad</b><address>Shanta Sriram Tech Park, adjacent to DLF Cyber City, Gachibowli, Hyderabad 500032, India</address></div>
+        <div class="office" data-reveal data-delay="60"><span class="tag">India</span><b>Bangalore</b><address>Prestige Shantiniketan, ITPL Main Road, Whitefield, Bangalore 560048, India</address></div>
+        <div class="office" data-reveal data-delay="120"><span class="tag">United States</span><b>Maryland</b><address>23231 Aurora Hills Drive, Clarksburg, MD 20871, United States</address></div>
+        <div class="office mail" data-reveal data-delay="180"><span class="tag">Zenstra AI mailing address</span><b>Delaware</b><address>Zenstra AI, c/o Northwest Registered Agent Service, Inc., 8 The Green, Suite B, Dover, DE 19901, United States</address></div>
+      </div>
+      <div class="contact">
+        <div data-reveal><h3>Zenstra AI</h3><p>Product, partnership and security questions.</p><a class="mail" href="mailto:info@zenstra.ai">info@zenstra.ai</a><a class="link" href="demo.html">Request a demo {{icon:arrow}}</a></div>
+        <div data-reveal data-delay="60"><h3>Deep Algorithms</h3><p>Company enquiries and the wider platform family.</p><a class="mail" href="mailto:info@deepalgorithms.in">info@deepalgorithms.in</a><a class="mail" href="tel:+917702846856">+91 77028 46856</a><a class="link" href="https://www.linkedin.com/company/deepalgorithms.in" rel="noopener">Deep Algorithms on LinkedIn {{icon:arrow}}</a></div>
+        <div data-reveal data-delay="120"><h3>Careers</h3><p>We&rsquo;re looking for AI engineers, security researchers and product builders who want to work on the world&rsquo;s hardest security problems.</p><a class="mail" href="mailto:hr@deepalgorithms.in">hr@deepalgorithms.in</a></div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="cta-h" style="padding-bottom:clamp(80px,9vw,128px)">
+    <div class="wrap">
+      <div class="cta">
+        <div class="stream" aria-hidden="true"></div>
+        <div class="cta-inner">
+          <span class="eyebrow" style="color:#5cd2ff" data-reveal>See it working</span>
+          <h2 class="h2" id="cta-h" data-reveal>Put Zenstra in front of one of your agents.</h2>
+          <p data-reveal>A 30-minute technical session with a security engineer, run against your own environment.</p>
+          <div class="ctas" data-reveal><a class="btn white lg" href="demo.html">Request a demo {{icon:arrow}}</a><a class="btn glass lg" href="mailto:info@zenstra.ai">Email info@zenstra.ai</a></div>
+        </div>
+      </div>
+    </div>
+  </section>

@@ -32,7 +32,7 @@ server {
   listen 8080;
   server_name ${SERVER_NAME};
   root /usr/share/nginx/html;
-  index home.html;
+  index home.html index.html;
   charset utf-8;
   client_max_body_size 32k;
   absolute_redirect off;
@@ -65,7 +65,7 @@ server {
   }
 
   # Form endpoints: a tighter limit than the rest of the API.
-  location ~ ^/api/(demo-requests|document-requests|subscriptions)$ {
+  location = /api/demo-requests {
     limit_req zone=forms burst=5 nodelay;
     include /etc/nginx/snippets/api-proxy.conf;
   }
@@ -77,6 +77,12 @@ server {
 
   # Fingerprinted CSS, JS and fonts never change: cache for a year.
   location ~* "^/assets/.+\.[0-9a-f]{8}(\.min)?\.(js|css)$" {
+    include /etc/nginx/snippets/security-headers.conf;
+    add_header Cache-Control "public, max-age=31536000, immutable" always;
+    try_files $uri =404;
+  }
+  # Vendor libraries carry their version in the file name.
+  location ^~ /assets/vendor/ {
     include /etc/nginx/snippets/security-headers.conf;
     add_header Cache-Control "public, max-age=31536000, immutable" always;
     try_files $uri =404;

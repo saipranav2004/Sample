@@ -9,7 +9,6 @@
 .git
 frontend*
 AWS-*
-design/zenstra-v4
-design/zenstra-v5
+zenstra-site/site/_build
 zenstra-site/api
 zenstra-site/web/dist

@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Request a demo · Zenstra AI</title>
+<meta name="description" content="A 30-minute technical session with a Zenstra security engineer, run against one of your own AI agents.">
+<link rel="icon" href="assets/img/zenstra-mark.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@600&display=swap" rel="stylesheet">
+<script>(function(){var r=document.documentElement;r.classList.add('js');try{var t=localStorage.getItem('zx-theme');if(t)r.setAttribute('data-theme',t);}catch(e){}var red=matchMedia('(prefers-reduced-motion: reduce)').matches;if(red)r.classList.add('reduce');var seen=false;try{seen=sessionStorage.getItem('zx6-intro')==='1';}catch(e){}if(!red&&(!seen||/[?&]intro=1/.test(location.search)))r.classList.add('intro-play');setTimeout(function(){if(!window.__v6ok){r.classList.remove('intro-play');r.classList.add('reveal-all');}},7000);})();</script>
+<link rel="stylesheet" href="assets/v6.css">
+<style>
+  .demo-hero { position: relative; padding: calc(var(--head-h) + 56px) 0 clamp(80px, 9vw, 128px); overflow: hidden; }
+  .demo-hero::before { content: ''; position: absolute; inset: 0; z-index: 0; background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px); background-size: 64px 64px; mask-image: radial-gradient(ellipse 50% 60% at 20% 10%, #000 10%, transparent 75%); -webkit-mask-image: radial-gradient(ellipse 50% 60% at 20% 10%, #000 10%, transparent 75%); opacity: 0.7; }
+  .demo-grid { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); gap: clamp(40px, 6vw, 88px); align-items: start; }
+  .demo-grid h1 { margin-top: 26px; }
+  .demo-grid .lede { margin-top: 22px; }
+  .agenda { list-style: none; margin: 44px 0 0; padding: 0; position: relative; }
+  .agenda::before { content: ''; position: absolute; left: 15px; top: 16px; bottom: 16px; width: 1px; background: var(--line-2); }
+  .agenda .prog { position: absolute; left: 15px; top: 16px; width: 1px; height: calc(100% - 32px); background: linear-gradient(var(--accent), var(--accent-2)); transform-origin: top; transform: scaleY(0); }
+  .agenda li { position: relative; display: grid; grid-template-columns: 32px 1fr; gap: 20px; padding-bottom: 28px; }
+  .agenda li:last-child { padding-bottom: 0; }
+  .agenda .n { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--line-2); background: var(--bg); font: 500 11px/1 var(--mono); color: var(--ink-3); position: relative; z-index: 1; transition: all 400ms; }
+  .agenda li.lit .n { border-color: var(--accent); background: var(--accent); color: #fff; }
+  .agenda time { font: 500 11.5px/1 var(--mono); color: var(--ink-3); letter-spacing: 0.06em; }
+  .agenda b { display: block; font: 600 19px/1.25 var(--display); letter-spacing: -0.015em; margin-top: 6px; }
+  .agenda p { color: var(--ink-2); margin-top: 4px; font-size: 15.5px; }
+  .assure { margin-top: 40px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--line); }
+  .assure div { padding: 18px 16px 0 0; font-size: 14.5px; color: var(--ink-2); }
+  .assure b { display: block; font: 600 15px/1.3 var(--display); color: var(--ink); margin-bottom: 4px; }
+  .form-card { position: sticky; top: calc(var(--head-h) + 24px); border-radius: 22px; padding: clamp(24px, 3vw, 36px); background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow); }
+  .form-card h2 { font: 600 26px/1.2 var(--display); letter-spacing: -0.02em; }
+  .form-card .note { color: var(--ink-3); font-size: 14.5px; margin-top: 6px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 24px; }
+  .form-grid .full { grid-column: 1 / -1; }
+  .form-card .btn { width: 100%; justify-content: center; }
+  .fine { margin-top: 14px; font: 500 12px/1.5 var(--mono); color: var(--ink-3); }
+  .received { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 4fr); gap: clamp(32px, 5vw, 72px); align-items: start; outline: none; }
+  .received[hidden] { display: none !important; }
+  .rcv-main { display: grid; gap: 18px; justify-items: start; }
+  .rcv-main .check { width: 56px; height: 56px; }
+  .rcv-main .check circle { fill: color-mix(in srgb, var(--good) 14%, transparent); }
+  .rcv-main .check path { fill: none; stroke: var(--good); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  .rcv-main .h2 { max-width: 18ch; }
+  .rcv-main .lede b { color: var(--ink); }
+  .rcv-main .mono { font-family: var(--mono); font-weight: 500; letter-spacing: 0.02em; }
+  .rcv-main .book, .rcv-main .next { width: 100%; margin-top: 14px; padding: clamp(22px, 3vw, 30px); border-radius: 20px; background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow); }
+  .rcv-main .book h2, .rcv-main .next h2 { font: 600 22px/1.25 var(--display); letter-spacing: -0.015em; }
+  .rcv-main .book > p { color: var(--ink-2); margin: 6px 0 16px; }
+  .next ol { list-style: none; counter-reset: s; margin: 18px 0 0; padding: 0; display: grid; gap: 16px; }
+  .next li { counter-increment: s; display: grid; grid-template-columns: 32px 1fr; column-gap: 14px; }
+  .next li::before { content: counter(s); grid-row: span 2; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--line-2); font: 500 12px/1 var(--mono); color: var(--accent); }
+  .next li b { font: 600 16px/1.35 var(--display); }
+  .next li span { color: var(--ink-2); font-size: 15px; }
+  .rcv-side { display: grid; gap: 14px; }
+  .side-card { padding: 20px 22px; border-radius: 16px; border: 1px solid var(--line); background: color-mix(in srgb, var(--card) 80%, transparent); display: grid; gap: 12px; }
+  .side-card h2 span { text-transform: none; letter-spacing: 0; color: var(--ink-4); }
+  .side-card ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; font-size: 14.5px; color: var(--ink-2); }
+  .session time { display: inline-block; width: 52px; font: 500 12px/1 var(--mono); color: var(--ink-3); }
+  .ready li { position: relative; padding-left: 16px; }
+  .ready li::before { content: ''; position: absolute; left: 0; top: 0.62em; width: 6px; height: 6px; border-radius: 50%; background: var(--accent-2); }
+  .side-card .link { font-size: 14.5px; }
+  @media (max-width: 1000px) { .demo-grid, .received { grid-template-columns: 1fr; } .form-card { position: static; } }
+  @media (max-width: 560px) { .form-grid { grid-template-columns: 1fr; } .assure { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body data-page="demo">
+<a class="skip" href="#main">Skip to content</a>
+<div class="intro" aria-hidden="true">
+  <div class="intro-stage">
+    <p class="intro-line"><span class="intro-for">Zenstra for</span> <span class="intro-word" data-words="workflow security|cloud security|EDR"></span></p>
+    <div class="intro-logo"><span class="logo-mark"><img class="th-light" src="assets/img/zenstra-mark.png" alt="" width="138" height="126"><img class="th-dark" src="assets/img/zenstra-mark-dark.png" alt="" width="138" height="126"></span><span class="logo-word">ZENSTRA<b>AI</b></span></div>
+  </div>
+  <button class="intro-skip" type="button" tabindex="-1">Skip intro</button>
+</div>
+<header class="head">
+  <div class="wrap head-row">
+    <a class="logo" href="home.html" aria-label="Zenstra AI home"><span class="logo-mark"><img class="th-light" src="assets/img/zenstra-mark.png" alt="" width="138" height="126"><img class="th-dark" src="assets/img/zenstra-mark-dark.png" alt="" width="138" height="126"></span><span class="logo-word">ZENSTRA<b>AI</b></span></a>
+    <nav class="nav" aria-label="Main">
+      <div class="dd"><button class="nav-link dd-btn" type="button" aria-expanded="false" aria-controls="dd-products">Products <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <div class="dd-panel" id="dd-products"><div class="mm-prod"><a class="mm-item" href="home.html#workflow"><span class="mm-ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="3" cy="4" r="1.6"/><circle cx="13" cy="4" r="1.6"/><circle cx="8" cy="12" r="1.6"/><path d="M4.6 4h6.8M3.8 5.4l3.4 5.2M12.2 5.4 8.8 10.6"/></svg></span><span><b>Workflow Security</b><small>Every hop in every agent workflow</small></span></a><a class="mm-item" href="home.html#cloud"><span class="mm-ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.5h7a3 3 0 0 0 .3-6A4 4 0 0 0 4.2 6 3.3 3.3 0 0 0 4.5 12.5Z"/></svg></span><span><b>Cloud Security</b><small>Runtime protection in your cloud</small></span></a><a class="mm-item" href="home.html#edr"><span class="mm-ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5V3a1 1 0 0 1 1-1h2M11 2h2a1 1 0 0 1 1 1v2M14 11v2a1 1 0 0 1-1 1h-2M5 14H3a1 1 0 0 1-1-1v-2M2 8h12"/></svg></span><span><b>Zenstra EDR</b><small>Detection and response for AI on endpoints</small></span></a></div><div class="mm-plat"><span class="mono-label">Platform</span><a href="home.html#how">How a decision happens</a><a href="home.html#console">The console</a></div></div>
+      </div>
+      <a class="nav-link" href="credit-unions.html">Credit unions</a><a class="nav-link" href="company.html">Company</a>
+    </nav>
+    <div class="head-actions">
+      <button class="icon-btn theme" type="button" data-theme-toggle aria-label="Switch between light and dark theme"><svg class="moon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13 9.5A5.5 5.5 0 0 1 6.5 3a5.5 5.5 0 1 0 6.5 6.5Z"/></svg><svg class="sun" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="3"/><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"/></svg></button>
+      <a class="btn primary sm" href="demo.html">Request a demo</a>
+      <button class="icon-btn menu-btn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="menu"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12"/></svg></button>
+    </div>
+  </div>
+</header>
+<nav class="menu" id="menu" aria-label="Mobile"><span class="mono-label">Products</span><a href="home.html#workflow">Workflow Security</a><a href="home.html#cloud">Cloud Security</a><a href="home.html#edr">Zenstra EDR</a><span class="mono-label">Explore</span><a href="credit-unions.html">Credit unions</a><a href="company.html">Company</a><a href="home.html#how">How a decision happens</a><a class="btn primary" href="demo.html">Request a demo</a></nav>
+<main id="main">
+<section class="demo-hero hero-lite rails" aria-labelledby="hero-h">
+    <div class="wrap demo-grid" id="demo-grid">
+      <div data-lens-mask>
+        <span class="chip-live" data-after><i></i>Technical session · 30 minutes</span>
+        <h1 class="display" id="hero-h" data-scan><span class="scanline"><span class="in">See Zenstra stop</span><i class="bar"></i></span><span class="scanline"><span class="in grad">a live attack.</span><i class="bar"></i></span></h1>
+        <p class="lede" data-after>A security engineer connects Zenstra to one of your agents, runs a real injection against it, and hands you the decision record. No slides.</p>
+        <ol class="agenda" data-agenda>
+          <i class="prog" aria-hidden="true"></i>
+          <li data-reveal><span class="n">01</span><div><time>00 – 05 MIN</time><b>Your agent, your concerns</b><p>Which agent you are being asked to approve, and what worries you about it.</p></div></li>
+          <li data-reveal><span class="n">02</span><div><time>05 – 12 MIN</time><b>Connect it</b><p>SDK, gateway or EDR app in front of a test copy. Any framework, any model.</p></div></li>
+          <li data-reveal><span class="n">03</span><div><time>12 – 22 MIN</time><b>Watch a policy stop it</b><p>A live prompt injection and an exfiltration attempt, decided before the tool runs.</p></div></li>
+          <li data-reveal><span class="n">04</span><div><time>22 – 30 MIN</time><b>Keep the record</b><p>The decision ledger from the session and a security review pack.</p></div></li>
+        </ol>
+        <div class="assure" data-reveal>
+          <div><b>No agent rewrite</b>Works with the code you have.</div>
+          <div><b>Runs in your cloud</b>Nothing leaves your environment.</div>
+          <div><b>Review pack included</b>For your security team.</div>
+        </div>
+      </div>
+      <div class="form-card" data-after>
+        <form id="demo-form" data-api="/api/demo-requests" data-kind="demo" data-fallback-email="info@zenstra.ai" data-success-target="#received" data-replace="#demo-grid" novalidate>
+          <h2>Request a technical session</h2>
+          <p class="note">A security engineer replies within one business day.</p>
+          <div class="form-grid">
+            <div class="field"><label for="f-first">First name</label><input id="f-first" name="firstName" required maxlength="80" autocomplete="given-name"><span class="err" role="alert"></span></div>
+            <div class="field"><label for="f-last">Last name</label><input id="f-last" name="lastName" required maxlength="80" autocomplete="family-name"><span class="err" role="alert"></span></div>
+            <div class="field full"><label for="f-email">Work email</label><input id="f-email" name="email" type="email" required data-work maxlength="254" autocomplete="email" inputmode="email" placeholder="name@company.com"><span class="err" role="alert"></span></div>
+            <div class="field"><label for="f-co">Company</label><input id="f-co" name="company" required maxlength="120" autocomplete="organization"><span class="err" role="alert"></span></div>
+            <div class="field"><label for="f-role">Role</label><select id="f-role" name="role" required><option value="">Choose one</option><option>CISO or security leader</option><option>Security architect or engineer</option><option>AI or platform engineering</option><option>IT leadership</option><option>Risk, compliance or audit</option><option>Other</option></select><span class="err" role="alert"></span></div>
+            <div class="field"><label for="f-country">Country</label><select id="f-country" name="country" required autocomplete="country-name"><option value="">Choose one</option><option>United States</option><option disabled>──────────</option><option>Afghanistan</option><option>Åland Islands</option><option>Albania</option><option>Algeria</option><option>American Samoa</option><option>Andorra</option><option>Angola</option><option>Anguilla</option><option>Antigua and Barbuda</option><option>Argentina</option><option>Armenia</option><option>Aruba</option><option>Australia</option><option>Austria</option><option>Azerbaijan</option><option>Bahamas</option><option>Bahrain</option><option>Bangladesh</option><option>Barbados</option><option>Belarus</option><option>Belgium</option><option>Belize</option><option>Benin</option><option>Bermuda</option><option>Bhutan</option><option>Bolivia</option><option>Bosnia and Herzegovina</option><option>Botswana</option><option>Brazil</option><option>British Virgin Islands</option><option>Brunei</option><option>Bulgaria</option><option>Burkina Faso</option><option>Burundi</option><option>Cabo Verde</option><option>Cambodia</option><option>Cameroon</option><option>Canada</option><option>Cayman Islands</option><option>Central African Republic</option><option>Chad</option><option>Chile</option><option>China</option><option>Colombia</option><option>Comoros</option><option>Congo</option><option>Congo (Democratic Republic)</option><option>Cook Islands</option><option>Costa Rica</option><option>Côte d’Ivoire</option><option>Croatia</option><option>Cuba</option><option>Curaçao</option><option>Cyprus</option><option>Czechia</option><option>Denmark</option><option>Djibouti</option><option>Dominica</option><option>Dominican Republic</option><option>Ecuador</option><option>Egypt</option><option>El Salvador</option><option>Equatorial Guinea</option><option>Eritrea</option><option>Estonia</option><option>Eswatini</option><option>Ethiopia</option><option>Faroe Islands</option><option>Fiji</option><option>Finland</option><option>France</option><option>French Guiana</option><option>French Polynesia</option><option>Gabon</option><option>Gambia</option><option>Georgia</option><option>Germany</option><option>Ghana</option><option>Gibraltar</option><option>Greece</option><option>Greenland</option><option>Grenada</option><option>Guadeloupe</option><option>Guam</option><option>Guatemala</option><option>Guernsey</option><option>Guinea</option><option>Guinea-Bissau</option><option>Guyana</option><option>Haiti</option><option>Honduras</option><option>Hong Kong</option><option>Hungary</option><option>Iceland</option><option>India</option><option>Indonesia</option><option>Iran</option><option>Iraq</option><option>Ireland</option><option>Isle of Man</option><option>Israel</option><option>Italy</option><option>Jamaica</option><option>Japan</option><option>Jersey</option><option>Jordan</option><option>Kazakhstan</option><option>Kenya</option><option>Kiribati</option><option>Kosovo</option><option>Kuwait</option><option>Kyrgyzstan</option><option>Laos</option><option>Latvia</option><option>Lebanon</option><option>Lesotho</option><option>Liberia</option><option>Libya</option><option>Liechtenstein</option><option>Lithuania</option><option>Luxembourg</option><option>Macao</option><option>Madagascar</option><option>Malawi</option><option>Malaysia</option><option>Maldives</option><option>Mali</option><option>Malta</option><option>Marshall Islands</option><option>Martinique</option><option>Mauritania</option><option>Mauritius</option><option>Mayotte</option><option>Mexico</option><option>Micronesia</option><option>Moldova</option><option>Monaco</option><option>Mongolia</option><option>Montenegro</option><option>Montserrat</option><option>Morocco</option><option>Mozambique</option><option>Myanmar</option><option>Namibia</option><option>Nauru</option><option>Nepal</option><option>Netherlands</option><option>New Caledonia</option><option>New Zealand</option><option>Nicaragua</option><option>Niger</option><option>Nigeria</option><option>North Macedonia</option><option>Northern Mariana Islands</option><option>Norway</option><option>Oman</option><option>Pakistan</option><option>Palau</option><option>Palestine</option><option>Panama</option><option>Papua New Guinea</option><option>Paraguay</option><option>Peru</option><option>Philippines</option><option>Poland</option><option>Portugal</option><option>Puerto Rico</option><option>Qatar</option><option>Réunion</option><option>Romania</option><option>Rwanda</option><option>Saint Kitts and Nevis</option><option>Saint Lucia</option><option>Saint Vincent and the Grenadines</option><option>Samoa</option><option>San Marino</option><option>São Tomé and Príncipe</option><option>Saudi Arabia</option><option>Senegal</option><option>Serbia</option><option>Seychelles</option><option>Sierra Leone</option><option>Singapore</option><option>Sint Maarten</option><option>Slovakia</option><option>Slovenia</option><option>Solomon Islands</option><option>Somalia</option><option>South Africa</option><option>South Korea</option><option>South Sudan</option><option>Spain</option><option>Sri Lanka</option><option>Sudan</option><option>Suriname</option><option>Sweden</option><option>Switzerland</option><option>Taiwan</option><option>Tajikistan</option><option>Tanzania</option><option>Thailand</option><option>Timor-Leste</option><option>Togo</option><option>Tonga</option><option>Trinidad and Tobago</option><option>Tunisia</option><option>Türkiye</option><option>Turkmenistan</option><option>Turks and Caicos Islands</option><option>Tuvalu</option><option>Uganda</option><option>Ukraine</option><option>United Arab Emirates</option><option>United Kingdom</option><option>Uruguay</option><option>US Virgin Islands</option><option>Uzbekistan</option><option>Vanuatu</option><option>Vatican City</option><option>Venezuela</option><option>Vietnam</option><option>Zambia</option><option>Zimbabwe</option></select><span class="err" role="alert"></span></div>
+            <div class="field" data-show-if="country=United States" hidden><label for="f-region">State</label><select id="f-region" name="region" required autocomplete="address-level1"><option value="">Choose one</option><option>Alabama</option><option>Alaska</option><option>Arizona</option><option>Arkansas</option><option>California</option><option>Colorado</option><option>Connecticut</option><option>Delaware</option><option>District of Columbia</option><option>Florida</option><option>Georgia</option><option>Hawaii</option><option>Idaho</option><option>Illinois</option><option>Indiana</option><option>Iowa</option><option>Kansas</option><option>Kentucky</option><option>Louisiana</option><option>Maine</option><option>Maryland</option><option>Massachusetts</option><option>Michigan</option><option>Minnesota</option><option>Mississippi</option><option>Missouri</option><option>Montana</option><option>Nebraska</option><option>Nevada</option><option>New Hampshire</option><option>New Jersey</option><option>New Mexico</option><option>New York</option><option>North Carolina</option><option>North Dakota</option><option>Ohio</option><option>Oklahoma</option><option>Oregon</option><option>Pennsylvania</option><option>Rhode Island</option><option>South Carolina</option><option>South Dakota</option><option>Tennessee</option><option>Texas</option><option>Utah</option><option>Vermont</option><option>Virginia</option><option>Washington</option><option>West Virginia</option><option>Wisconsin</option><option>Wyoming</option></select><span class="err" role="alert"></span></div>
+            <div class="field full"><label for="f-inst">Organisation type <span class="opt">(optional)</span></label><select id="f-inst" name="institutionType"><option value="">Choose one</option><option>Credit union</option><option>Community bank</option><option>Other financial institution</option><option>Enterprise</option><option>Public sector</option><option>Other</option></select><span class="err" role="alert"></span></div>
+            <fieldset class="field full"><legend>Where do you want to start? <span class="opt">(optional)</span></legend><div class="opts" style="margin-top:6px">
+              <label><input type="checkbox" name="interests" value="Workflow Security"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="3" cy="4" r="1.6"/><circle cx="13" cy="4" r="1.6"/><circle cx="8" cy="12" r="1.6"/><path d="M4.6 4h6.8M3.8 5.4l3.4 5.2M12.2 5.4 8.8 10.6"/></svg>Workflow Security</label><label><input type="checkbox" name="interests" value="Cloud Security"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.5h7a3 3 0 0 0 .3-6A4 4 0 0 0 4.2 6 3.3 3.3 0 0 0 4.5 12.5Z"/></svg>Cloud Security</label><label><input type="checkbox" name="interests" value="Zenstra EDR"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5V3a1 1 0 0 1 1-1h2M11 2h2a1 1 0 0 1 1 1v2M14 11v2a1 1 0 0 1-1 1h-2M5 14H3a1 1 0 0 1-1-1v-2M2 8h12"/></svg>Zenstra EDR</label><label><input type="checkbox" name="interests" value="Not sure yet">Not sure yet</label>
+            </div><span class="err" role="alert"></span></fieldset>
+            <div class="field full"><label for="f-msg">Anything we should prepare? <span class="opt">(optional)</span></label><input id="f-msg" name="message" maxlength="500" placeholder="For example: Copilot agents in lending, an n8n workflow"><span class="err" role="alert"></span></div>
+            <div class="hp" aria-hidden="true"><label for="f-website">Leave this empty</label><input id="f-website" name="website" tabindex="-1" autocomplete="off"></div>
+            <div class="ts full" data-turnstile hidden></div>
+            <label class="consent full"><input type="checkbox" name="marketingOptIn" data-bool><span>Send me occasional product updates and research. Unsubscribe any time.</span></label>
+            <button class="btn primary lg full" type="submit">Request the session <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></button>
+          </div>
+          <p class="fine">By submitting, you agree that Zenstra may contact you about this request, as described in our <a href="privacy.html">privacy notice</a>. No phone number needed.</p>
+        </form>
+      </div>
+    </div>
+    <div class="wrap received" id="received" data-success hidden tabindex="-1">
+      <div class="rcv-main">
+        <svg class="check" viewBox="0 0 56 56" aria-hidden="true"><circle cx="28" cy="28" r="28"/><path d="m18 29 7 7 14-15"/></svg>
+        <span class="eyebrow">Request received</span>
+        <h1 class="h2">Thanks, <span data-who></span>. Your session is on its way.</h1>
+        <p class="lede">We sent a confirmation to <b data-email></b>. Your reference is <b class="mono" data-ref></b>.</p>
+        <div class="book" data-booking hidden>
+          <h2>Pick your 30 minutes now</h2>
+          <p>Choose a slot that suits you. The invite comes from the security engineer who will run your session.</p>
+          <div class="book-frame"><iframe title="Choose a time for your technical session" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+          <a data-booking-link target="_blank" rel="noopener">Open the scheduler in a new tab <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+        </div>
+        <div class="next" data-no-booking>
+          <h2>What happens next</h2>
+          <ol>
+            <li><b>A security engineer reads your request</b><span>They look at the agents and tools you mentioned so the session is about your environment.</span></li>
+            <li><b>You get an email within one business day</b><span>With times that suit you, from a person, not a sequence.</span></li>
+            <li><b>You meet for 30 minutes</b><span>A live attack against one of your agents, and the decision record to keep.</span></li>
+          </ol>
+        </div>
+      </div>
+      <aside class="rcv-side">
+        <div class="side-card">
+          <h2 class="mono-label">Your session</h2>
+          <ul class="session">
+            <li><time>00–05</time>Your agent and your concerns</li>
+            <li><time>05–12</time>Connect Zenstra to a test copy</li>
+            <li><time>12–22</time>Watch a policy stop a live attack</li>
+            <li><time>22–30</time>Keep the decision record</li>
+          </ul>
+        </div>
+        <div class="side-card">
+          <h2 class="mono-label">Useful to have ready <span>(optional)</span></h2>
+          <ul class="ready">
+            <li>The agent you want to test, and the framework it runs on</li>
+            <li>The tools and MCP servers it can call</li>
+            <li>One workflow you would like to see attacked</li>
+            <li>Your identity provider</li>
+            <li>For credit unions: your vendor due-diligence questionnaire</li>
+          </ul>
+        </div>
+        <div class="side-card">
+          <h2 class="mono-label">While you wait</h2>
+          <a class="link" href="home.html#how">How a decision happens <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+          <a class="link" href="credit-unions.html">Zenstra for credit unions <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="sec alt" aria-labelledby="faq-h">
+    <div class="wrap faq">
+      <div style="display:grid;gap:18px;align-content:start"><span class="eyebrow" data-reveal>Before you book</span><h2 class="h2" id="faq-h" style="font-size:clamp(28px,3vw,42px)" data-reveal>Common questions.</h2></div>
+      <div data-reveal>
+        <details><summary>Do we need to prepare an agent?</summary><div class="a"><p>It helps, but it is not required. If you cannot run one in a test environment yet, we bring a sample agent that matches yours: a member-service assistant, a coding agent or a copilot.</p></div></details>
+        <details><summary>Does any of our data leave our environment?</summary><div class="a"><p>No. The decision point runs in your environment, and the session uses the same deployment, so prompts and payloads stay with you.</p></div></details>
+        <details><summary>Which product will you show?</summary><div class="a"><p>The one that matches your first risk. Workflow Security for automations, Cloud Security for agents calling your systems, or Zenstra EDR for AI on staff devices. All three share one console.</p></div></details>
+        <details><summary>What happens after the session?</summary><div class="a"><p>You keep the decision record and a security review pack. If it fits, we plan a pilot with one platform and a small group of users.</p></div></details>
+      </div>
+    </div>
+  </section>
+</main>
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-brand"><a class="logo" href="home.html" aria-label="Zenstra AI home"><span class="logo-mark"><img class="th-light" src="assets/img/zenstra-mark.png" alt="" width="138" height="126"><img class="th-dark" src="assets/img/zenstra-mark-dark.png" alt="" width="138" height="126"></span><span class="logo-word">ZENSTRA<b>AI</b></span></a><p>The runtime security layer for agentic AI: identity, policy and threat defense for every autonomous decision.</p><a class="btn primary" href="demo.html">Request a demo <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a></div>
+      <div class="foot-cols"><div><h2 class="mono-label">Products</h2><a href="home.html#workflow">Workflow Security</a><a href="home.html#cloud">Cloud Security</a><a href="home.html#edr">Zenstra EDR</a></div><div><h2 class="mono-label">Solutions</h2><a href="credit-unions.html">Credit unions</a></div><div><h2 class="mono-label">Company</h2><a href="company.html">About</a><a href="company.html#contact">Contact</a><a href="demo.html">Request a demo</a></div><div><h2 class="mono-label">Legal</h2><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms of Service</a></div></div>
+    </div>
+    <div class="foot-legal"><span>&copy; 2026 Zenstra AI</span><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms of Service</a></div>
+  </div>
+</footer>
+<script src="assets/vendor/lenis-1.1.13.min.js"></script>
+<script src="assets/fx6.js"></script>
+<script src="assets/v6.js"></script>
+<script src="assets/forms.js"></script>
+</body>
+</html>

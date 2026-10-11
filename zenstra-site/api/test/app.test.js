@@ -105,34 +105,6 @@ test('Turnstile: a rejected token blocks, an unreachable service is flagged', as
   assert.deepEqual(cfg, { turnstileSiteKey: 'site', booking: false });
 });
 
-test('document requests are stored and acknowledged', async () => {
-  const { app, store } = makeApp(Object.assign({ TRUST_NOTIFY_EMAILS: 'trust@zenstra.ai' }, ENV));
-  const r = await post(app, '/api/document-requests', { name: 'Sam Lee', email: 'sam@acmebank.com', company: 'Acme Bank', document: 'SOC 2 Type II report', elapsedMs: 6000 });
-  assert.equal(r.statusCode, 201);
-  assert.equal(store.leads[0].kind, 'documents');
-  assert.equal(store.leads[0].document, 'SOC 2 Type II report');
-});
-
-test('newsletter: double opt-in confirms once and then redirects', async () => {
-  const { app, store } = makeApp(Object.assign({ PUBLIC_URL: 'https://zenstra.ai', CRM_WEBHOOK_URL: 'https://crm.test/hook', CRM_WEBHOOK_SECRET: 'a-very-long-secret-value' }, ENV));
-  const r = await post(app, '/api/subscriptions', { email: 'sam@acmebank.com', elapsedMs: 5000 });
-  assert.equal(r.statusCode, 201);
-  assert.equal(r.json().confirmationSent, true);
-  const lead = store.leads[0];
-  assert.equal(lead.status, 'pending');
-  assert.deepEqual(store.outbox.map((o) => o.channel), ['optin_email']);
-  const c = await app.inject({ method: 'GET', url: '/api/subscriptions/confirm?token=' + lead.confirm_token });
-  assert.equal(c.statusCode, 303);
-  assert.equal(c.headers.location, 'https://zenstra.ai/resources.html?subscribed=1');
-  assert.equal(lead.status, 'confirmed');
-  assert.deepEqual(store.outbox.map((o) => o.channel), ['optin_email', 'crm_webhook']);
-  const again = await app.inject({ method: 'GET', url: '/api/subscriptions/confirm?token=' + lead.confirm_token });
-  assert.equal(again.headers.location, 'https://zenstra.ai/resources.html?subscribed=1');
-  assert.equal(store.outbox.length, 2);
-  const bad = await app.inject({ method: 'GET', url: '/api/subscriptions/confirm?token=nope' });
-  assert.equal(bad.headers.location, 'https://zenstra.ai/resources.html?subscribed=invalid');
-});
-
 test('health and unknown routes', async () => {
   const { app } = makeApp(ENV);
   assert.deepEqual((await app.inject({ method: 'GET', url: '/api/health' })).json(), { status: 'ok', store: 'memory' });

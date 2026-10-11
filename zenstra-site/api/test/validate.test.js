@@ -56,15 +56,6 @@ test('control characters are stripped', () => {
   assert.equal(clean('a\u0000b\u0007 \t c'), 'ab c');
 });
 
-test('document and newsletter forms validate their own fields', () => {
-  assert.deepEqual(Object.keys(validate('documents', { email: 'x@acme.com' }).errors).sort(), ['company', 'name']);
-  const n = validate('newsletter', { email: 'x@acme.com' });
-  assert.equal(n.errors, null);
-  assert.equal(validate('newsletter', { email: 'x@gmail.com' }).errors, null, 'personal addresses may subscribe');
-  assert.ok(validate('newsletter', { email: 'x@mailinator.com' }).errors.email, 'throwaway inboxes may not');
-  assert.equal(n.value.marketingOptIn, true);
-});
-
 test('mail domain check: MX, address fallback, missing and timeout', async () => {
   const mk = (mx, a) => ({ resolveMx: async () => { if (mx instanceof Error) throw mx; return mx; }, resolve4: async () => { if (a instanceof Error) throw a; return a; } });
   const nf = Object.assign(new Error('nf'), { code: 'ENOTFOUND' });

@@ -67,13 +67,13 @@ function createPgStore({ url, ssl, log }) {
         let row;
         for (let i = 0; i < 5 && !row; i++) {
           const r = await c.query(
-            `INSERT INTO leads (ref, kind, status, first_name, last_name, full_name, email, email_domain, company, role, country, region,
-               institution_type, interests, document, message, marketing_opt_in, consent_version, confirm_token, ip_hash, user_agent, referrer, page, utm, risk_flags)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25)
+            `INSERT INTO leads (ref, kind, first_name, last_name, email, email_domain, company, role, country, region,
+               institution_type, interests, message, marketing_opt_in, consent_version, ip_hash, user_agent, referrer, page, utm, risk_flags)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)
              ON CONFLICT (ref) DO NOTHING RETURNING *`,
-            [newRef(), v.kind, v.status || 'new', v.firstName || null, v.lastName || null, v.name || null, v.email, v.domain, v.company || null,
-              v.role || null, v.country || null, v.region || null, v.institutionType || null, v.interests || [], v.document || null, v.message || null,
-              !!v.marketingOptIn, v.consentVersion, v.confirmToken || null, v.ipHash || null, v.userAgent || null, v.referrer || null, v.page || null,
+            [newRef(), v.kind, v.firstName || null, v.lastName || null, v.email, v.domain, v.company || null,
+              v.role || null, v.country || null, v.region || null, v.institutionType || null, v.interests || [], v.message || null,
+              !!v.marketingOptIn, v.consentVersion, v.ipHash || null, v.userAgent || null, v.referrer || null, v.page || null,
               JSON.stringify(v.utm || {}), v.riskFlags || []]
           );
           row = r.rows[0];
@@ -81,18 +81,6 @@ function createPgStore({ url, ssl, log }) {
         if (!row) throw new Error('could not allocate a reference');
         for (const ch of channels) await c.query('INSERT INTO outbox (lead_id, channel) VALUES ($1, $2) ON CONFLICT DO NOTHING', [row.id, ch]);
         return { lead: toLead(row), duplicate: false };
-      });
-    },
-
-    async confirm(token, channels) {
-      return tx(async (c) => {
-        const r = await c.query(`UPDATE leads SET status = 'confirmed', confirmed_at = now() WHERE confirm_token = $1 AND status = 'pending' RETURNING *`, [token]);
-        if (!r.rows[0]) {
-          const seen = await c.query(`SELECT * FROM leads WHERE confirm_token = $1`, [token]);
-          return seen.rows[0] ? { lead: toLead(seen.rows[0]), already: true } : null;
-        }
-        for (const ch of channels) await c.query('INSERT INTO outbox (lead_id, channel) VALUES ($1, $2) ON CONFLICT DO NOTHING', [r.rows[0].id, ch]);
-        return { lead: toLead(r.rows[0]), already: false };
       });
     },
 

@@ -54,17 +54,12 @@ function load(env = process.env) {
     smtp: {
       url: env.SMTP_URL || '',
       from: env.MAIL_FROM || '',
-      salesTo: list(env.SALES_NOTIFY_EMAILS),
-      trustTo: list(env.TRUST_NOTIFY_EMAILS)
+      salesTo: list(env.SALES_NOTIFY_EMAILS)
     },
     slackWebhook: env.SLACK_WEBHOOK_URL || '',
     hubspot: {
       portalId: env.HUBSPOT_PORTAL_ID || '',
-      forms: {
-        demo: env.HUBSPOT_DEMO_FORM_ID || '',
-        documents: env.HUBSPOT_DOCUMENTS_FORM_ID || '',
-        newsletter: env.HUBSPOT_NEWSLETTER_FORM_ID || ''
-      },
+      formId: env.HUBSPOT_DEMO_FORM_ID || '',
       subscriptionTypeId: env.HUBSPOT_SUBSCRIPTION_TYPE_ID || ''
     },
     crmWebhook: { url: env.CRM_WEBHOOK_URL || '', secret: env.CRM_WEBHOOK_SECRET || '' },
