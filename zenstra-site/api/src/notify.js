@@ -6,7 +6,6 @@ const nodemailer = require('nodemailer');
 // Text shown next to the form. Stored by version with each lead, and sent to
 // HubSpot as the consent record.
 const NOTICE = 'By submitting, you agree that Zenstra may contact you about this request, as described in our privacy notice.';
-const OPTIN = 'Send me occasional product updates and research. Unsubscribe any time.';
 
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const who = (l) => [l.firstName, l.lastName].filter(Boolean).join(' ');
@@ -26,10 +25,8 @@ function channelsFor(config) {
 
 function rows(l) {
   return [
-    ['Reference', l.ref], ['Name', who(l)], ['Email', l.email], ['Company', l.company], ['Role', l.role],
-    ['Country', [l.region, l.country].filter(Boolean).join(', ')], ['Institution', l.institutionType],
-    ['Interested in', (l.interests || []).join(', ')], ['Message', l.message],
-    ['Product updates', l.marketingOptIn ? 'Yes' : 'No'],
+    ['Reference', l.ref], ['Name', who(l)], ['Email', l.email], ['Company', l.company],
+    ['Product', (l.interests || []).join(', ')], ['Message', l.message],
     ['Source', [l.utm && l.utm.source, l.utm && l.utm.campaign].filter(Boolean).join(' / ') || l.referrer], ['Flags', (l.riskFlags || []).join(', ')]
   ].filter((r) => r[1]);
 }
@@ -107,11 +104,10 @@ function createNotifier(config, { mailer, fetchImpl = fetch } = {}) {
     },
     async hubspot(l) {
       const fields = [['email', l.email], ['firstname', l.firstName], ['lastname', l.lastName],
-        ['company', l.company], ['jobtitle', l.role], ['country', l.country], ['state', l.region],
-        ['message', [l.message, l.institutionType && 'Institution: ' + l.institutionType, (l.interests || []).length && 'Interests: ' + l.interests.join(', '), 'Reference: ' + l.ref].filter(Boolean).join('\n')]]
+        ['company', l.company],
+        ['message', [l.message, (l.interests || []).length && 'Product: ' + l.interests.join(', '), 'Reference: ' + l.ref].filter(Boolean).join('\n')]]
         .filter(([, v]) => v).map(([name, value]) => ({ objectTypeId: '0-1', name, value: String(value) }));
       const consent = { consentToProcess: true, text: NOTICE, communications: [] };
-      if (config.hubspot.subscriptionTypeId && l.marketingOptIn) consent.communications.push({ value: true, subscriptionTypeId: Number(config.hubspot.subscriptionTypeId), text: OPTIN });
       const body = { submittedAt: String(Date.parse(l.createdAt) || Date.now()), fields, context: { pageUri: l.page || config.publicUrl, pageName: 'Demo request' }, legalConsentOptions: { consent } };
       await post(fetchImpl, `https://api.hsforms.com/submissions/v3/integration/submit/${encodeURIComponent(config.hubspot.portalId)}/${encodeURIComponent(config.hubspot.formId)}`, JSON.stringify(body));
     },
@@ -131,4 +127,4 @@ function createNotifier(config, { mailer, fetchImpl = fetch } = {}) {
   };
 }
 
-module.exports = { createNotifier, channelsFor, bookingLink, NOTICE, OPTIN, teamMail, visitorMail };
+module.exports = { createNotifier, channelsFor, bookingLink, NOTICE, teamMail, visitorMail };

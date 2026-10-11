@@ -8,7 +8,7 @@ const { createNotifier, channelsFor, teamMail, visitorMail } = require('../src/n
 
 const config = load({
   NODE_ENV: 'test', PUBLIC_URL: 'https://zenstra.ai', SMTP_URL: 'smtp://x', MAIL_FROM: 'Zenstra <hello@zenstra.ai>', SALES_NOTIFY_EMAILS: 'a@zenstra.ai,b@zenstra.ai',
-  SLACK_WEBHOOK_URL: 'https://hooks.slack.test/x', HUBSPOT_PORTAL_ID: '123', HUBSPOT_DEMO_FORM_ID: 'form-1', HUBSPOT_SUBSCRIPTION_TYPE_ID: '99',
+  SLACK_WEBHOOK_URL: 'https://hooks.slack.test/x', HUBSPOT_PORTAL_ID: '123', HUBSPOT_DEMO_FORM_ID: 'form-1',
   CRM_WEBHOOK_URL: 'https://crm.test/hook', CRM_WEBHOOK_SECRET: 'a-very-long-secret-value', BOOKING_URL: 'https://cal.com/z?email={email}'
 });
 const lead = { id: 1, ref: 'ZX-ABC234', kind: 'demo', createdAt: '2026-10-10T10:00:00.000Z', firstName: 'Dana', lastName: '<b>Reyes</b>', email: 'dana@acme.com', company: 'Acme & Co', role: 'CISO or security leader', country: 'United States', region: 'Ohio', interests: ['Zenstra EDR'], message: 'hi', marketingOptIn: true, utm: {}, riskFlags: [] };
@@ -38,7 +38,9 @@ test('HubSpot and CRM payloads', async () => {
   await n.send('slack', lead);
   const hub = JSON.parse(sent[0].opts.body);
   assert.equal(sent[0].url, 'https://api.hsforms.com/submissions/v3/integration/submit/123/form-1');
-  assert.deepEqual(hub.legalConsentOptions.consent.communications, [{ value: true, subscriptionTypeId: 99, text: 'Send me occasional product updates and research. Unsubscribe any time.' }]);
+  assert.equal(hub.legalConsentOptions.consent.consentToProcess, true);
+  assert.deepEqual(hub.legalConsentOptions.consent.communications, []);
+  assert.ok(hub.fields.some((f) => f.name === 'message' && /Product: Zenstra EDR/.test(f.value)));
   assert.ok(hub.fields.some((f) => f.name === 'email' && f.value === 'dana@acme.com'));
   const sig = sent[1].opts.headers['x-zenstra-signature'];
   const [, t, v1] = sig.match(/^t=(\d+),v1=([a-f0-9]{64})$/);

@@ -383,7 +383,13 @@ def build(name):
     body = re.sub(r'\{\{options:([A-Za-z]+)\}\}', lambda x: options(x.group(1)), body)
     body = re.sub(r'\{\{icon:([a-z]+)\}\}', lambda x: icon(x.group(1)), body)
     body = re.sub(r'\{\{shot:([a-z0-9-]+)\|([^}]*)\}\}', lambda x: shot(x.group(1), x.group(2)), body)
-    html = head(meta, style) + intro() + header(meta.get('active', '')) + '<main id="main">\n' + body.strip() + '\n</main>\n' + footer() + scripts(meta)
+    # The intro plays only when a visit starts on the home page. Anyone who
+    # lands elsewhere (a product page, the demo form) goes straight to it,
+    # and is not shown the intro later in the same visit.
+    top = head(meta, style)
+    if name != 'home':
+        top = top.replace("if(!red&&((!seen&&!location.hash)||/[?&]intro=1/.test(location.search)))r.classList.add('intro-play');", "try{sessionStorage.setItem('zx6-intro','1');}catch(e){}")
+    html = top + (intro() if name == 'home' else '') + header(meta.get('active', '')) + '<main id="main">\n' + body.strip() + '\n</main>\n' + footer() + scripts(meta)
     with open(os.path.join(OUT, name + '.html'), 'w', encoding='utf-8') as f:
         f.write(html)
     return name

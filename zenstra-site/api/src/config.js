@@ -59,8 +59,7 @@ function load(env = process.env) {
     slackWebhook: env.SLACK_WEBHOOK_URL || '',
     hubspot: {
       portalId: env.HUBSPOT_PORTAL_ID || '',
-      formId: env.HUBSPOT_DEMO_FORM_ID || '',
-      subscriptionTypeId: env.HUBSPOT_SUBSCRIPTION_TYPE_ID || ''
+      formId: env.HUBSPOT_DEMO_FORM_ID || ''
     },
     crmWebhook: { url: env.CRM_WEBHOOK_URL || '', secret: env.CRM_WEBHOOK_SECRET || '' },
     worker: { intervalMs: int(env.OUTBOX_INTERVAL_MS, 5000), maxAttempts: int(env.OUTBOX_MAX_ATTEMPTS, 8) }

@@ -29,7 +29,7 @@
   // Instant feedback only; the server has the full list and the final say.
   var FREE = /@(gmail|googlemail|yahoo|ymail|hotmail|outlook|live|msn|icloud|me|mac|aol|proton|protonmail|pm|gmx|web|mail|zoho|yandex|qq|163|126|fastmail|hey|duck|mailinator|guerrillamail|10minutemail|yopmail|tempmail|temp-mail)\.[a-z.]+$/i;
   var EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-  var MSG = { required: 'Required.', email: 'Enter an email address like name@company.com.', free: 'Use your work email so we can prepare for your environment.', state: 'Choose a state.' };
+  var MSG = { required: 'Required.', email: 'Enter an email address like name@company.com.', free: 'Use your work email so we can prepare for your environment.' };
 
   var config = null;
   function getConfig() {
@@ -66,9 +66,9 @@
     if (err && err.id) el.setAttribute('aria-describedby', err.id);
   }
   function check(el) {
-    if (el.disabled || el.type === 'checkbox' || el.name === 'website') return '';
+    if (el.disabled || el.type === 'checkbox' || el.type === 'hidden' || el.name === 'website') return '';
     var v = (el.value || '').trim();
-    if (el.required && !v) return el.name === 'region' ? MSG.state : MSG.required;
+    if (el.required && !v) return MSG.required;
     if (el.type === 'email' && v) {
       if (!EMAIL.test(v)) return MSG.email;
       if (el.hasAttribute('data-work') && FREE.test(v)) return MSG.free;
@@ -234,8 +234,10 @@
         });
     });
 
-    // "Request a Workflow Security demo" links arrive with ?interest=workflow.
+    // "Request a Workflow Security demo" links arrive with ?interest=workflow:
+    // the request carries the product, and the form says which demo it is.
     var pre = { workflow: 'Workflow Security', cloud: 'Cloud Security', edr: 'Zenstra EDR' }[new URLSearchParams(location.search).get('interest')];
-    if (pre) $$('input[name=interests]', form).forEach(function (cb) { if (cb.value === pre) cb.checked = true; });
+    var hid = form.elements.interest, note = $('[data-interest-note]', form);
+    if (pre && hid) { hid.value = pre; if (note) { note.textContent = pre + ' demo'; note.hidden = false; } }
   });
 })();

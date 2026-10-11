@@ -13,11 +13,21 @@ test('a complete demo request is accepted and normalised', () => {
   assert.equal(value.domain, 'northbankfcu.org');
   assert.equal(value.company, 'Northbank FCU');
   assert.deepEqual(value.utm, { source: 'linkedin', campaign: 'q4' });
+  assert.equal(value.firstName, 'Dana'); assert.equal(value.lastName, 'Reyes');
+  assert.deepEqual(value.interests, ['Workflow Security']);
+});
+
+test('the form is four fields: name, work email, company and an optional note', () => {
+  const { value, errors } = validate('demo', demo({ name: 'Cher', interest: '', message: '' }));
+  assert.equal(errors, null);
+  assert.equal(value.firstName, 'Cher'); assert.equal(value.lastName, null);
+  assert.deepEqual(value.interests, []); assert.equal(value.message, null);
+  assert.equal(validate('demo', demo({ name: '  Ana  María   López ' })).value.lastName, 'María López');
 });
 
 test('required fields report friendly messages', () => {
   const { errors } = validate('demo', { email: '' });
-  assert.deepEqual(Object.keys(errors).sort(), ['company', 'country', 'email', 'firstName', 'lastName', 'role']);
+  assert.deepEqual(Object.keys(errors).sort(), ['company', 'email', 'name']);
   assert.equal(errors.email, 'Required.');
 });
 
@@ -34,21 +44,13 @@ test('malformed emails are refused', () => {
   }
 });
 
-test('a US request needs a state; elsewhere it is ignored', () => {
-  assert.equal(validate('demo', demo({ region: '' })).errors.region, 'Choose a state.');
-  const { value } = validate('demo', demo({ country: 'Canada', region: 'Ohio' }));
-  assert.equal(value.region, null);
-});
-
-test('values outside the lists are refused', () => {
-  assert.equal(validate('demo', demo({ role: 'Hacker' })).errors.role, 'Choose one from the list.');
-  assert.equal(validate('demo', demo({ country: 'Atlantis' })).errors.country, 'Choose one from the list.');
-  assert.equal(validate('demo', demo({ interests: ['Free money'] })).errors.interests, 'Choose one from the list.');
+test('a product outside the list is refused', () => {
+  assert.equal(validate('demo', demo({ interest: 'Free money' })).errors.interest, 'Choose one from the list.');
 });
 
 test('links in names and over-long text are refused', () => {
-  assert.ok(validate('demo', demo({ firstName: 'Visit www.spam.ru' })).errors.firstName);
-  assert.ok(validate('demo', demo({ lastName: '<script>' })).errors.lastName);
+  assert.ok(validate('demo', demo({ name: 'Visit www.spam.ru' })).errors.name);
+  assert.ok(validate('demo', demo({ name: '<script>' })).errors.name);
   assert.match(validate('demo', demo({ message: 'x'.repeat(501) })).errors.message, /under 500/);
 });
 

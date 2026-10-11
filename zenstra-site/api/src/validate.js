@@ -10,7 +10,6 @@ const MSG = {
   disposable: 'Use your work email. Temporary inboxes are not accepted.',
   noDomain: 'We could not find that email domain. Check it for typos.',
   choose: 'Choose one from the list.',
-  state: 'Choose a state.',
   tooLong: (n) => `Keep this under ${n} characters.`,
   name: 'Use letters only, without links.'
 };
@@ -44,9 +43,7 @@ const schemas = {
   demo: {
     type: 'object', additionalProperties: false, required: ['email'],
     properties: Object.assign({
-      firstName: str(200), lastName: str(200), company: str(300), role: str(100), country: str(100), region: str(100),
-      institutionType: str(100), interests: { type: 'array', maxItems: 8, items: str(60) }, message: str(2000),
-      marketingOptIn: { type: 'boolean' }
+      name: str(300), company: str(300), interest: str(60), message: str(2000)
     }, common)
   }
 };
@@ -96,24 +93,15 @@ function validate(kind, body) {
   const em = checkEmail(body.email, errors);
   if (em) { out.email = em.email; out.domain = em.domain; }
 
-  {
-    out.firstName = text(body.firstName, 'firstName', errors, { required: true, max: 80, name: true });
-    out.lastName = text(body.lastName, 'lastName', errors, { required: true, max: 80, name: true });
-    out.company = text(body.company, 'company', errors, { required: true, max: 120 });
-    out.role = pick(body.role, 'role', REF.roles, errors, { required: true });
-    out.country = pick(body.country, 'country', REF.countries, errors, { required: true });
-    out.region = null;
-    if (out.country === 'United States') {
-      if (!clean(body.region)) errors.region = MSG.state;
-      else out.region = pick(body.region, 'region', REF.usStates, errors);
-    }
-    out.institutionType = pick(body.institutionType, 'institutionType', REF.institutionTypes, errors);
-    const interests = Array.isArray(body.interests) ? body.interests.map(clean) : [];
-    if (interests.some((i) => !REF.interests.includes(i))) errors.interests = MSG.choose;
-    out.interests = [...new Set(interests)].filter((i) => REF.interests.includes(i));
-    out.message = text(body.message, 'message', errors, { max: 500 });
-    out.marketingOptIn = body.marketingOptIn === true;
-  }
+  // Four fields: name, work email, company and an optional note. The product
+  // comes from the page the visitor arrived from, when there is one.
+  const name = text(body.name, 'name', errors, { required: true, max: 120, name: true });
+  if (name) { const parts = name.split(' '); out.firstName = parts[0]; out.lastName = parts.slice(1).join(' ') || null; }
+  out.company = text(body.company, 'company', errors, { required: true, max: 120 });
+  const interest = clean(body.interest);
+  if (interest && !REF.interests.includes(interest)) errors.interest = MSG.choose;
+  out.interests = interest && REF.interests.includes(interest) ? [interest] : [];
+  out.message = text(body.message, 'message', errors, { max: 500 });
   Object.assign(out, tracking(body));
   return Object.keys(errors).length ? { value: null, errors } : { value: out, errors: null };
 }

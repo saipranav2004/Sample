@@ -29,9 +29,9 @@ test('booking link is returned, prefilled, when a scheduler is configured', asyn
 
 test('field errors come back as 422 with per-field messages', async () => {
   const { app, store } = makeApp(ENV);
-  const r = await post(app, '/api/demo-requests', demo({ email: 'dana@gmail.com', region: '' }));
+  const r = await post(app, '/api/demo-requests', demo({ email: 'dana@gmail.com', company: '' }));
   assert.equal(r.statusCode, 422);
-  assert.deepEqual(Object.keys(r.json().fields).sort(), ['email', 'region']);
+  assert.deepEqual(Object.keys(r.json().fields).sort(), ['company', 'email']);
   assert.equal(store.leads.length, 0);
 });
 
@@ -51,7 +51,8 @@ test('an unverifiable domain is accepted and flagged', async () => {
 test('unknown fields and wrong types are rejected as bad requests', async () => {
   const { app } = makeApp(ENV);
   assert.equal((await post(app, '/api/demo-requests', demo({ admin: true }))).statusCode, 400);
-  assert.equal((await post(app, '/api/demo-requests', demo({ interests: 'x' }))).statusCode, 400);
+  assert.equal((await post(app, '/api/demo-requests', demo({ interest: ['x'] }))).statusCode, 400);
+  assert.equal((await post(app, '/api/demo-requests', demo({ role: 'CISO' }))).statusCode, 400, 'fields the form no longer has');
   assert.equal((await post(app, '/api/demo-requests', 'email=x', { 'content-type': 'application/x-www-form-urlencoded' })).statusCode, 415);
 });
 

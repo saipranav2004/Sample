@@ -18,9 +18,8 @@ function makeApp(env = {}, { domain = 'ok', captcha = 'ok' } = {}) {
 }
 
 const demo = (over = {}) => Object.assign({
-  firstName: 'Dana', lastName: 'Reyes', email: 'dana.reyes@northbankfcu.org', company: 'Northbank FCU',
-  role: 'CISO or security leader', country: 'United States', region: 'Ohio', institutionType: 'Credit union',
-  interests: ['Workflow Security'], message: 'Copilot agents in lending', marketingOptIn: false,
+  name: 'Dana Reyes', email: 'dana.reyes@northbankfcu.org', company: 'Northbank FCU',
+  interest: 'Workflow Security', message: 'Copilot agents in lending',
   website: '', elapsedMs: 9000, utm: { source: 'linkedin', campaign: 'q4' }, page: 'https://zenstra.ai/demo'
 }, over);
 

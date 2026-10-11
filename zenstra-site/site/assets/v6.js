@@ -389,6 +389,8 @@
         onTheme.push(scene.theme); scene.set(D < 0 ? target() : D); scene.setActive(vis);
       }).catch(fallback);
     }
+    // A check counts once the scene has played its block, or once the reader is past it.
+    function isCaught(i, p) { return p >= TL.stages[i] + TL.stageLen || (scene && scene.caught ? scene.caught(i) : p >= HITS[i]); }
     function render(p) {
       if (scene) scene.set(p);
       var cur = 0; for (var i = 0; i < PANELS.length - 1; i++) if (p >= PANELS[i]) cur = i;
@@ -401,10 +403,10 @@
       steps.forEach(function (li, i) {
         var act = cur - 2, after = cur >= 6;
         setCls(li, 'on', i === act); setCls(li, 'done', i < act || after);
-        setCls(li, 'caught', p >= HITS[i]);
+        setCls(li, 'caught', isCaught(i, p));
         $('b', li).style.transform = 'scaleX(' + (i < act || after ? 1 : i === act ? sp : 0).toFixed(3) + ')';
       });
-      var n = HITS.filter(function (h) { return p >= h; }).length;
+      var n = HITS.filter(function (h, i) { return isCaught(i, p); }).length;
       if (stopped.textContent !== String(n)) stopped.textContent = n;
       setCls(stopped.parentNode, 'done', n === 4);
       var sm = p >= TL.fail[0] ? 'fail-closed · nothing passes' : n === 4 ? '0 reached your systems · all recorded' : '0 reached your systems';

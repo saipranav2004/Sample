@@ -21,6 +21,9 @@
   .form-card { position: sticky; top: calc(var(--head-h) + 24px); border-radius: 22px; padding: clamp(24px, 3vw, 36px); background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow); }
   .form-card h2 { font: 600 26px/1.2 var(--display); letter-spacing: -0.02em; }
   .form-card .note { color: var(--ink-3); font-size: 14.5px; margin-top: 6px; }
+  .form-card .about { margin-top: 14px; display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: color-mix(in srgb, var(--accent-2) 10%, transparent); color: var(--ink-2); font: 500 12.5px/1.2 var(--mono); }
+  .form-card .about[hidden] { display: none; }
+  .form-card textarea { resize: vertical; min-height: 92px; }
   .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 24px; }
   .form-grid .full { grid-column: 1 / -1; }
   .form-card .btn { width: 100%; justify-content: center; }
@@ -74,25 +77,18 @@
       </div>
       <div class="form-card" data-after>
         <form id="demo-form" data-api="/api/demo-requests" data-kind="demo" data-fallback-email="info@zenstra.ai" data-success-target="#received" data-replace="#demo-grid" novalidate>
-          <h2>Request a technical session</h2>
+          <h2>Request a demo</h2>
           <p class="note">A security engineer replies within one business day.</p>
+          <p class="about" data-interest-note hidden></p>
           <div class="form-grid">
-            <div class="field"><label for="f-first">First name</label><input id="f-first" name="firstName" required maxlength="80" autocomplete="given-name"><span class="err" role="alert"></span></div>
-            <div class="field"><label for="f-last">Last name</label><input id="f-last" name="lastName" required maxlength="80" autocomplete="family-name"><span class="err" role="alert"></span></div>
+            <div class="field full"><label for="f-name">Full name</label><input id="f-name" name="name" required maxlength="120" autocomplete="name"><span class="err" role="alert"></span></div>
             <div class="field full"><label for="f-email">Work email</label><input id="f-email" name="email" type="email" required data-work maxlength="254" autocomplete="email" inputmode="email" placeholder="name@company.com"><span class="err" role="alert"></span></div>
-            <div class="field"><label for="f-co">Company</label><input id="f-co" name="company" required maxlength="120" autocomplete="organization"><span class="err" role="alert"></span></div>
-            <div class="field"><label for="f-role">Role</label><select id="f-role" name="role" required>{{options:roles}}</select><span class="err" role="alert"></span></div>
-            <div class="field"><label for="f-country">Country</label><select id="f-country" name="country" required autocomplete="country-name">{{options:countries}}</select><span class="err" role="alert"></span></div>
-            <div class="field" data-show-if="country=United States" hidden><label for="f-region">State</label><select id="f-region" name="region" required autocomplete="address-level1">{{options:usStates}}</select><span class="err" role="alert"></span></div>
-            <div class="field full"><label for="f-inst">Organisation type <span class="opt">(optional)</span></label><select id="f-inst" name="institutionType">{{options:institutionTypes}}</select><span class="err" role="alert"></span></div>
-            <fieldset class="field full"><legend>Where do you want to start? <span class="opt">(optional)</span></legend><div class="opts" style="margin-top:6px">
-              <label><input type="checkbox" name="interests" value="Workflow Security">{{icon:flow}}Workflow Security</label><label><input type="checkbox" name="interests" value="Cloud Security">{{icon:cloud}}Cloud Security</label><label><input type="checkbox" name="interests" value="Zenstra EDR">{{icon:scan}}Zenstra EDR</label><label><input type="checkbox" name="interests" value="Not sure yet">Not sure yet</label>
-            </div><span class="err" role="alert"></span></fieldset>
-            <div class="field full"><label for="f-msg">Anything we should prepare? <span class="opt">(optional)</span></label><input id="f-msg" name="message" maxlength="500" placeholder="For example: Copilot agents in lending, an n8n workflow"><span class="err" role="alert"></span></div>
+            <div class="field full"><label for="f-co">Company</label><input id="f-co" name="company" required maxlength="120" autocomplete="organization"><span class="err" role="alert"></span></div>
+            <div class="field full"><label for="f-msg">What would you like to see? <span class="opt">(optional)</span></label><textarea id="f-msg" name="message" maxlength="500" rows="3" placeholder="For example: Copilot agents in lending, an n8n workflow"></textarea><span class="err" role="alert"></span></div>
+            <input type="hidden" name="interest" value="">
             <div class="hp" aria-hidden="true"><label for="f-website">Leave this empty</label><input id="f-website" name="website" tabindex="-1" autocomplete="off"></div>
             <div class="ts full" data-turnstile hidden></div>
-            <label class="consent full"><input type="checkbox" name="marketingOptIn" data-bool><span>Send me occasional product updates and research. Unsubscribe any time.</span></label>
-            <button class="btn primary lg full" type="submit">Request the session {{icon:arrow}}</button>
+            <button class="btn primary lg full" type="submit">Request a demo {{icon:arrow}}</button>
           </div>
           <p class="fine">By submitting, you agree that Zenstra may contact you about this request, as described in our <a href="privacy.html">privacy notice</a>. No phone number needed.</p>
         </form>

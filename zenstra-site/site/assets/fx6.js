@@ -437,24 +437,70 @@
       g.fillStyle = color; g.textBaseline = 'middle'; g.fillText(text, x, y + 0.5);
       return tw + 10;
     }
-    // The lens is glass: what it covers is magnified, its edge has depth, and a
-    // highlight travels slowly round the rim.
-    var MAG = 1.12;
-    function rim(g, lx, ly, t) {
-      g.save();
-      var edge = g.createRadialGradient(lx, ly, Rr * 0.8, lx, ly, Rr);
-      edge.addColorStop(0, 'rgba(0,0,0,0)'); edge.addColorStop(1, col.dark ? 'rgba(92,210,255,0.16)' : 'rgba(0,90,164,0.12)');
-      g.fillStyle = edge; g.beginPath(); g.arc(lx, ly, Rr, 0, 6.283); g.fill();
-      var ra = t * 0.22, ux = Math.cos(ra) * Rr, uy = Math.sin(ra) * Rr;
-      var lg = g.createLinearGradient(lx - ux, ly - uy, lx + ux, ly + uy);
+    // The lens is a thick glass disc. The middle magnifies what it covers; the
+    // edge band refracts, squeezing the scene just outside the lens inward as
+    // real glass does; a bevel catches the light, a glint sits top left, the
+    // rim shows a faint colour fringe, and the front ring is engraved like a
+    // camera lens. It is all drawn from the canvas itself, so it is cheap.
+    var MAG = 1.12, off = document.createElement('canvas'), og = off.getContext('2d');
+    var RING = 'ZENSTRA · AGENT LENS · IDENTIFY · CHECK · DECIDE · RECORD · ';
+    function optics(g, lx, ly, t) {
+      var d = host.d, R = Rr * d, cx = lx * d, cy = ly * d, S = Math.ceil(R * 2.4), half = S / 2;
+      if (off.width !== S) { off.width = off.height = S; } else og.clearRect(0, 0, S, S);
+      // Copy what is under and around the lens (clipped to the canvas).
+      var sx = Math.max(0, Math.floor(cx - half)), sy = Math.max(0, Math.floor(cy - half));
+      var ex = Math.min(g.canvas.width, Math.ceil(cx + half)), ey = Math.min(g.canvas.height, Math.ceil(cy + half));
+      if (ex > sx && ey > sy) og.drawImage(g.canvas, sx, sy, ex - sx, ey - sy, sx - (cx - half), sy - (cy - half), ex - sx, ey - sy);
+      g.save(); g.setTransform(1, 0, 0, 1, 0, 0);
+      // Soft shadow under the disc.
+      g.save(); g.shadowColor = col.dark ? 'rgba(0,0,0,0.55)' : 'rgba(10,37,69,0.16)'; g.shadowBlur = 34 * d; g.shadowOffsetY = 12 * d;
+      g.strokeStyle = 'rgba(0,0,0,0.01)'; g.lineWidth = 2 * d; g.beginPath(); g.arc(cx, cy, R, 0, 6.283); g.stroke(); g.restore();
+      // Over the copy the glass thins out so it never competes with the text.
+      var mf = 1;
+      if (mask) { var mdx = Math.max(mask[0] - lx, 0, lx - mask[2]), mdy = Math.max(mask[1] - ly, 0, ly - mask[3]); mf = Math.max(0.2, Math.min(1, Math.hypot(mdx, mdy) / Rr)); }
+      // 1. Edge band: the refracted scene.
+      var IN = 0.8;
+      // A ring: the outer circle, then the inner one drawn the other way round.
+      g.save(); g.beginPath(); g.arc(cx, cy, R, 0, Math.PI * 2); g.moveTo(cx + R * IN, cy); g.arc(cx, cy, R * IN, Math.PI * 2, 0, true); g.clip();
+      g.clearRect(cx - R - 2, cy - R - 2, R * 2 + 4, R * 2 + 4);
+      if (mf < 1) g.drawImage(off, cx - half, cy - half);
+      g.globalAlpha = mf; g.fillStyle = col.dark ? 'rgba(4,16,31,0.6)' : 'rgba(247,251,255,0.7)'; g.fillRect(cx - R, cy - R, R * 2, R * 2);
+      var k = 0.86; g.globalAlpha = 0.9 * mf; g.drawImage(off, cx - half * k, cy - half * k, S * k, S * k); g.globalAlpha = mf;
+      // 2. Bevel: dark just inside the edge band, bright at the lip, lit from the top left.
+      var bev = g.createRadialGradient(cx, cy, R * IN, cx, cy, R);
+      bev.addColorStop(0, col.dark ? 'rgba(92,210,255,0.10)' : 'rgba(255,255,255,0.55)');
+      bev.addColorStop(0.18, col.dark ? 'rgba(0,0,0,0)' : 'rgba(255,255,255,0)');
+      bev.addColorStop(0.72, col.dark ? 'rgba(0,0,0,0.18)' : 'rgba(0,58,110,0.07)');
+      bev.addColorStop(0.93, col.dark ? 'rgba(140,220,255,0.22)' : 'rgba(255,255,255,0.6)');
+      bev.addColorStop(1, col.dark ? 'rgba(92,210,255,0.3)' : 'rgba(0,90,164,0.22)');
+      g.fillStyle = bev; g.fillRect(cx - R, cy - R, R * 2, R * 2);
+      var lit = g.createLinearGradient(cx - R, cy - R, cx + R, cy + R);
+      lit.addColorStop(0, col.dark ? 'rgba(220,240,255,0.16)' : 'rgba(255,255,255,0.5)'); lit.addColorStop(0.5, 'rgba(255,255,255,0)'); lit.addColorStop(1, col.dark ? 'rgba(0,0,0,0.22)' : 'rgba(0,40,90,0.08)');
+      g.fillStyle = lit; g.fillRect(cx - R, cy - R, R * 2, R * 2);
+      g.globalAlpha = mf * mf;
+      // 3. Engraving on the front ring, turning slowly.
+      g.font = '600 ' + (8.5 * d).toFixed(1) + 'px "JetBrains Mono", ui-monospace, monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillStyle = col.dark ? 'rgba(207,227,247,0.42)' : 'rgba(10,37,69,0.38)';
+      var rt = R * 0.9, step = (11.5 * d) / rt, n = Math.floor(6.283 / step), a0 = -t * 0.05;
+      for (var i = 0; i < n; i++) { var ch = RING[i % RING.length], a = a0 + i * step; g.save(); g.translate(cx + Math.cos(a) * rt, cy + Math.sin(a) * rt); g.rotate(a + Math.PI / 2); g.fillText(ch, 0, 0); g.restore(); }
+      g.restore();
+      // 4. The boundary between the magnified middle and the edge band.
+      g.strokeStyle = col.dark ? 'rgba(160,225,255,0.28)' : 'rgba(255,255,255,0.9)'; g.lineWidth = 1.2 * d; g.beginPath(); g.arc(cx, cy, R * IN, 0, 6.283); g.stroke();
+      // 5. Rim: a thin metal lip with a highlight that travels round it, and a faint colour fringe.
+      var ra = t * 0.22, ux = Math.cos(ra) * R, uy = Math.sin(ra) * R;
+      var lg = g.createLinearGradient(cx - ux, cy - uy, cx + ux, cy + uy);
       lg.addColorStop(0, col.dark ? 'rgba(220,240,255,0.95)' : 'rgba(0,168,239,0.95)');
-      lg.addColorStop(0.5, col.dark ? 'rgba(92,210,255,0.3)' : 'rgba(0,90,164,0.3)');
-      lg.addColorStop(1, col.dark ? 'rgba(127,168,255,0.8)' : 'rgba(0,90,164,0.85)');
-      g.shadowColor = col.dark ? 'rgba(0,0,0,0.6)' : 'rgba(10,37,69,0.18)'; g.shadowBlur = 30; g.shadowOffsetY = 10;
-      g.strokeStyle = lg; g.lineWidth = 1.6; g.beginPath(); g.arc(lx, ly, Rr, 0, 6.283); g.stroke();
-      g.shadowColor = 'transparent'; g.shadowBlur = 0; g.shadowOffsetY = 0;
-      g.globalAlpha = col.dark ? 0.55 : 0.75; g.strokeStyle = '#ffffff'; g.lineWidth = 3; g.lineCap = 'round';
-      g.beginPath(); g.arc(lx, ly, Rr - 7, Math.PI + ra, Math.PI * 1.3 + ra); g.stroke();
+      lg.addColorStop(0.5, col.dark ? 'rgba(92,210,255,0.35)' : 'rgba(0,90,164,0.35)');
+      lg.addColorStop(1, col.dark ? 'rgba(127,168,255,0.85)' : 'rgba(0,90,164,0.9)');
+      g.strokeStyle = lg; g.lineWidth = 1.8 * d; g.beginPath(); g.arc(cx, cy, R, 0, 6.283); g.stroke();
+      g.lineWidth = 1.4 * d;
+      g.strokeStyle = 'rgba(0,200,255,0.35)'; g.beginPath(); g.arc(cx, cy, R - 2.2 * d, 0.1, 1.9); g.stroke();
+      g.strokeStyle = 'rgba(255,96,86,0.22)'; g.beginPath(); g.arc(cx, cy, R + 1.6 * d, 0.1, 1.9); g.stroke();
+      // 6. Glint.
+      g.save(); g.translate(cx - R * 0.42, cy - R * 0.5); g.rotate(-0.62); g.scale(1, 0.32);
+      var gl = g.createRadialGradient(0, 0, 0, 0, 0, R * 0.34);
+      gl.addColorStop(0, col.dark ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.75)'); gl.addColorStop(1, 'rgba(255,255,255,0)');
+      g.fillStyle = gl; g.beginPath(); g.arc(0, 0, R * 0.34, 0, 6.283); g.fill(); g.restore();
       g.restore();
     }
     var host = new Host(el, function (g, w, h, dt, t) {
@@ -501,7 +547,7 @@
         var p = pos(pk, t), c = pk.v === 'ok' || !pk.hit ? col.ok : pk.v === 'hold' ? col.hold : col.bad;
         var life = pk.end ? Math.max(0, 1 - (t - pk.end) / 0.6) : 1;
         if (pk.v === 'bad' && pk.hit && !pk.end) pk.end = pk.hit + 0.5;
-        if (pk.hit && !pk.tagged) { pk.tagged = true; var inL = Math.hypot(p[0] - lx, p[1] - 22 - ly) < Rr / MAG - 70; if (inL && !inMask(p[0], p[1]) && pk.v !== 'ok' || (inL && !inMask(p[0], p[1]) && R() < 0.35)) tags.push({ x: p[0], y: p[1], t: t, v: pk.v, text: pk.v === 'ok' ? 'allowed · ' + (3 + Math.floor(R() * 14)) + ' ms' : pk.v === 'hold' ? HOLD[Math.floor(R() * HOLD.length)] : BLOCK[Math.floor(R() * BLOCK.length)] }); }
+        if (pk.hit && !pk.tagged) { pk.tagged = true; var inL = Math.hypot(p[0] - lx, p[1] - 22 - ly) < Rr * 0.8 - 60; if (inL && !inMask(p[0], p[1]) && pk.v !== 'ok' || (inL && !inMask(p[0], p[1]) && R() < 0.35)) tags.push({ x: p[0], y: p[1], t: t, v: pk.v, text: pk.v === 'ok' ? 'allowed · ' + (3 + Math.floor(R() * 14)) + ' ms' : pk.v === 'hold' ? HOLD[Math.floor(R() * HOLD.length)] : BLOCK[Math.floor(R() * BLOCK.length)] }); }
         g.globalAlpha = life * fade(p[0], p[1]); g.fillStyle = c;
         g.beginPath(); g.arc(p[0], p[1], 3, 0, 6.283); g.fill();
         g.globalAlpha = life * 0.22 * fade(p[0], p[1]); g.beginPath(); g.arc(p[0], p[1], 7, 0, 6.283); g.fill();
@@ -512,16 +558,16 @@
       agents.forEach(function (a) { if (Math.hypot(a.x - lx, a.y - ly) > Rr + 10) return; g.globalAlpha = fade(a.x, a.y); g.fillStyle = col.agent; g.beginPath(); g.arc(a.x, a.y, 3.4, 0, 6.283); g.fill(); g.globalAlpha = 0.25 * fade(a.x, a.y); g.strokeStyle = col.agent; g.lineWidth = 1; g.beginPath(); g.arc(a.x, a.y, 7.5 + Math.sin(t * 2 + a.p) * 1.2, 0, 6.283); g.stroke(); });
       // labels, nearest first, skipping any that would collide
       var placed = [], cand = [];
-      agents.forEach(function (a) { var d = Math.hypot(a.x - lx, a.y - ly); if (d < Rr / MAG - 18 && !inMask(a.x, a.y)) cand.push([d, a.x + 11, a.y, a.name, col.label]); });
-      systems.forEach(function (s) { var d = Math.hypot(s.x - lx, s.y - ly); if (d < Rr / MAG - 18 && !inMask(s.x, s.y)) cand.push([d, s.x + 11, s.y, s.name, col.label]); });
+      agents.forEach(function (a) { var d = Math.hypot(a.x - lx, a.y - ly); if (d < Rr * 0.8 - 18 && !inMask(a.x, a.y)) cand.push([d, a.x + 11, a.y, a.name, col.label]); });
+      systems.forEach(function (s) { var d = Math.hypot(s.x - lx, s.y - ly); if (d < Rr * 0.8 - 18 && !inMask(s.x, s.y)) cand.push([d, s.x + 11, s.y, s.name, col.label]); });
       cand.sort(function (x, y) { return x[0] - y[0]; });
       g.font = FONT;
-      cand.forEach(function (c) { var wd = g.measureText(c[3]).width + 10; if (Math.hypot(c[1] + wd - lx, c[2] - ly) > Rr / MAG - 10 || Math.hypot(c[1] - lx, c[2] - ly) > Rr / MAG - 10) return; for (var i = 0; i < placed.length; i++) { var q = placed[i]; if (c[1] < q[0] + q[2] + 6 && c[1] + wd + 6 > q[0] && Math.abs(c[2] - q[1]) < 20) return; } placed.push([c[1], c[2], wd]); g.globalAlpha = Math.min(1, (Rr / MAG - 18 - c[0]) / 40); label(g, c[1], c[2], c[3], c[4], col.labelBg); });
+      cand.forEach(function (c) { var wd = g.measureText(c[3]).width + 10; if (Math.hypot(c[1] + wd - lx, c[2] - ly) > Rr * 0.8 - 8 || Math.hypot(c[1] - lx, c[2] - ly) > Rr * 0.8 - 8) return; for (var i = 0; i < placed.length; i++) { var q = placed[i]; if (c[1] < q[0] + q[2] + 6 && c[1] + wd + 6 > q[0] && Math.abs(c[2] - q[1]) < 20) return; } placed.push([c[1], c[2], wd]); g.globalAlpha = Math.min(1, (Rr * 0.8 - 18 - c[0]) / 40); label(g, c[1], c[2], c[3], c[4], col.labelBg); });
       tags.forEach(function (tg) { var a = Math.min(1, (t - tg.t) / 0.15) * Math.min(1, (1.6 - (t - tg.t)) / 0.3); g.globalAlpha = Math.max(0, a); var c = tg.v === 'ok' ? col.ok : tg.v === 'hold' ? col.hold : col.bad; g.font = FONT; var tw = g.measureText(tg.text).width + 12, x = tg.x - tw / 2, y = tg.y - 22 - (t - tg.t) * 4; g.fillStyle = col.labelBg; rr(g, x, y - 9, tw, 18, 9); g.fill(); g.strokeStyle = c; g.lineWidth = 1; rr(g, x, y - 9, tw, 18, 9); g.stroke(); g.fillStyle = c; g.textBaseline = 'middle'; g.fillText(tg.text, x + 6, y + 0.5); });
       g.restore(); g.globalAlpha = 1;
 
-      // 3. The glass rim.
-      rim(g, lx, ly, t);
+      // 3. The glass itself.
+      optics(g, lx, ly, t);
       g.globalAlpha = 1; g.setTransform(host.d, 0, 0, host.d, 0, 0);
     });
     host.onResize = function (w, h) { layout(w, h); };
