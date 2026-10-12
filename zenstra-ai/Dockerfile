@@ -5,9 +5,10 @@ FROM nginxinc/nginx-unprivileged:1.29.1-alpine
 
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY nginx/security-headers.conf /etc/nginx/snippets/security-headers.conf
-COPY *.html /usr/share/nginx/html/
-COPY assets/ /usr/share/nginx/html/assets/
+COPY *.html /usr/share/nginx/zenstra/
+COPY assets/ /usr/share/nginx/zenstra/assets/
 
+# Served from its own folder, so none of the base image's sample pages are reachable.
 # The base image runs as the unprivileged "nginx" user and listens on 8080.
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
