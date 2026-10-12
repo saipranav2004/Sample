@@ -46,6 +46,7 @@
     var url = new URL(a.href, location.href); if (url.pathname !== location.pathname || url.hash.length < 2) return;
     var t = document.getElementById(url.hash.slice(1)); if (!t) return;
     e.preventDefault(); closeAll(); scrollToEl(t); history.replaceState(null, '', url.hash);
+    if (t.classList.contains('prod')) { t.click(); window.dispatchEvent(new Event('zx:prodlink')); }
     if (t.matches('.prod')) selectProduct(t, true);
   });
 
@@ -162,12 +163,6 @@
     walk(el);
     $$('.w', el).forEach(function (w, i) { w.style.transitionDelay = Math.min(i * 28, 1200) + 'ms'; });
   }
-
-  /* ---------------- Sequenced reveals: the children of a revealed block arrive one after another ---------------- */
-  $$('[data-seq]').forEach(function (box) {
-    var sel = box.getAttribute('data-seq') || ':scope > *';
-    $$(sel, box).forEach(function (el, i) { el.classList.add('sq'); el.style.setProperty('--i', i); });
-  });
 
   /* ---------------- Reveals ---------------- */
   var io = ('IntersectionObserver' in window) ? new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }); }, { rootMargin: '0px 0px -10% 0px' }) : null;
@@ -319,6 +314,11 @@
 
   /* ---------------- Products ---------------- */
   var prods = $$('.prod'), vizzes = [], prodIdx = 0, prodTimer = null, prodBar = null, prodUser = false, prodVis = false;
+  // After a link opens a panel, scrolling can slide another panel under a still pointer;
+  // hover only switches panels once the pointer has really moved.
+  var pointerMoved = true;
+  document.addEventListener('mousemove', function () { pointerMoved = true; }, { passive: true });
+  window.addEventListener('zx:prodlink', function () { pointerMoved = false; });
   var narrow = function () { return matchMedia('(max-width: 1000px)').matches; };
   prods.forEach(function (p) {
     var host = $('.viz', p), kind = p.getAttribute('data-viz'), v = null;
@@ -326,7 +326,7 @@
     vizzes.push(v);
     p.addEventListener('click', function (e) { if (e.target.closest('a')) return; selectProduct(p, true); });
     p.addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && !e.target.closest('a')) { e.preventDefault(); selectProduct(p, true); } });
-    p.addEventListener('mouseenter', function () { if (!narrow() && !p.classList.contains('on')) selectProduct(p, true); });
+    p.addEventListener('mouseenter', function () { if (pointerMoved && !narrow() && !p.classList.contains('on')) selectProduct(p, true); });
   });
   function selectProduct(p, user) {
     var i = prods.indexOf(p); if (i < 0) return;
@@ -345,115 +345,8 @@
     if ('IntersectionObserver' in window) new IntersectionObserver(function (es) { prodVis = es[0].isIntersecting; if (prodVis && !prodUser) selectProduct(prods[prodIdx]); else clearTimeout(prodTimer); }, { threshold: 0.4 }).observe(wrapP);
     selectProduct(prods[0]);
     window.addEventListener('resize', function () { selectProduct(prods[prodIdx]); });
-    if (location.hash) { var hp = document.getElementById(location.hash.slice(1)); if (hp && hp.matches('.prod')) selectProduct(hp, true); }
+    if (location.hash) { var hp = document.getElementById(location.hash.slice(1)); if (hp && hp.matches('.prod')) { pointerMoved = false; selectProduct(hp, true); } }
   }
-
-  /* ---------------- How a decision happens: pinned scroll scene ----------------
-     Scroll progress p (0 to 1) across the tall track drives every frame: a camera
-     that zooms into and out of the screen, keyframed elements, a five-part ring, and
-     the cards on either side. Five stages, one fifth of the scroll each. */
-  $$('[data-hscene]').forEach(function (sec) {
-    var track = $('.hs-track', sec), pin = $('.hs-pin', sec), cam = $('#hs-cam', sec), ringG = $('[data-hs-ring]', sec);
-    var cards = $$('.hs-card', sec), panels = $$('.hs-panel', sec), steps = $$('.hs-steps li', sec);
-    if (!track || !cam) return;
-    var ease = function (t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };
-    var at = function (kf, p) {
-      if (p <= kf[0][0]) return kf[0][1];
-      for (var i = 1; i < kf.length; i++) if (p <= kf[i][0]) { var a = kf[i - 1], b = kf[i]; return a[1] + (b[1] - a[1]) * ease((p - a[0]) / ((b[0] - a[0]) || 1)); }
-      return kf[kf.length - 1][1];
-    };
-    var CAM = {
-      s: [[0.17, 1.12], [0.27, 2.1], [0.57, 2.1], [0.66, 1.6], [0.77, 1.6], [0.87, 1.5]],
-      x: [[0.17, 318], [0.27, 300], [0.57, 300], [0.66, 355], [0.77, 355], [0.87, 305]],
-      y: [[0.17, 305], [0.27, 245], [0.57, 245], [0.66, 245], [0.77, 245], [0.87, 250]]
-    };
-    var out4 = function (a, b) { return [[a, 0], [a + 0.02, 1], [0.58, 1], [0.62, 0]]; };
-    var T = {
-      // 01 Identity: a scan finds an unknown agent, names it and links it to its owner.
-      scan: { x: [[0.01, 150], [0.09, 470]], o: [[0.01, 0], [0.025, 1], [0.08, 1], [0.095, 0]] },
-      ghost: { o: [[0.07, 1], [0.1, 0]] },
-      agent: { o: [[0.07, 0], [0.1, 1], [0.17, 1], [0.21, 0]], s: [[0.07, 0.8], [0.11, 1]] },
-      q: { o: [[0.07, 1], [0.09, 0]], s: [[0.07, 1], [0.09, 0.3]] },
-      ok: { o: [[0.09, 0], [0.11, 1], [0.17, 1], [0.21, 0]], s: [[0.09, 0.3], [0.12, 1]] },
-      tagUnk: { o: [[0.08, 1], [0.1, 0]] },
-      tagId: { o: [[0.1, 0], [0.12, 1], [0.17, 1], [0.2, 0]], y: [[0.1, 6], [0.12, 0]] },
-      link: { d: [[0.11, 0], [0.15, 1]], o: [[0.105, 0], [0.11, 1], [0.17, 1], [0.2, 0]] },
-      tagPerson: { o: [[0.13, 0], [0.15, 1], [0.17, 1], [0.2, 0]], y: [[0.13, 6], [0.15, 0]] },
-      idle: { o: [[0.17, 1], [0.22, 0]] },
-      // 02 Intent: inside the screen, a hidden instruction pushes the agent past its task.
-      ask: { o: out4(0.24), y: [[0.24, 8], [0.27, 0]] },
-      doc: { o: out4(0.27), y: [[0.27, 8], [0.3, 0]] },
-      inject: { o: out4(0.3) },
-      action: { o: out4(0.32), x: [[0.32, -10], [0.34, 0]] },
-      lens: { o: [[0.34, 0], [0.35, 1], [0.4, 1], [0.42, 0]], x: [[0.34, 120], [0.37, 0]] },
-      actionRed: { o: [[0.36, 0], [0.37, 1], [0.46, 1], [0.475, 0]] },
-      beyond: { o: [[0.37, 0], [0.39, 1], [0.47, 1], [0.49, 0]], y: [[0.37, 6], [0.39, 0]] },
-      // 03 Policy: a policy snaps onto the action and holds it for a person.
-      policy: { o: out4(0.42), x: [[0.42, 90], [0.46, 0]] },
-      clamp: { o: out4(0.455), s: [[0.455, 0.2], [0.47, 1]] },
-      actionHeld: { o: [[0.465, 0], [0.475, 1], [0.58, 1], [0.62, 0]] },
-      review: { o: out4(0.49), y: [[0.49, 6], [0.51, 0]] },
-      // 04 Protect: pasted credentials leave the screen and stop at EDR on the device.
-      cred: { o: [[0.61, 0], [0.65, 1], [0.8, 1], [0.83, 0]] },
-      credRaw: { o: [[0.71, 1], [0.72, 0]] },
-      credMask: { o: [[0.71, 0], [0.72, 1]] },
-      ext: { o: [[0.63, 0], [0.66, 1], [0.79, 1], [0.82, 0]] },
-      shield: { o: [[0.64, 0], [0.66, 1], [0.79, 1], [0.82, 0]], s: [[0.64, 0.5], [0.67, 1], [0.705, 1], [0.715, 1.18], [0.735, 1]] },
-      packet: { o: [[0.665, 0], [0.675, 1], [0.705, 1], [0.712, 0]], x: [[0.67, 0], [0.705, 12]] },
-      packetRed: { o: [[0.705, 0], [0.712, 1], [0.79, 1], [0.82, 0]], x: [[0, 12]], s: [[0.705, 1.1], [0.72, 1]] },
-      blocked: { o: [[0.715, 0], [0.735, 1], [0.79, 1], [0.82, 0]], y: [[0.715, 6], [0.735, 0]] },
-      // 05 Record: back out to the person, who sees three plain notes.
-      notes: { o: [[0.82, 0], [0.84, 1]] },
-      n1: { o: [[0.85, 0], [0.875, 1]], x: [[0.85, -10], [0.875, 0]] },
-      n2: { o: [[0.875, 0], [0.9, 1]], x: [[0.875, -10], [0.9, 0]] },
-      n3: { o: [[0.9, 0], [0.925, 1]], x: [[0.9, -10], [0.925, 0]] }
-    };
-    var els = [];
-    Object.keys(T).forEach(function (k) {
-      var el = sec.querySelector('[data-hs="' + k + '"]'); if (!el) return;
-      var len = T[k].d && el.getTotalLength ? el.getTotalLength() : 0;
-      if (len) { el.style.strokeDasharray = len; }
-      els.push({ el: el, t: T[k], len: len });
-    });
-    // Ring: five arcs with small gaps, a dim track under a bright progress stroke.
-    var NS = 'http://www.w3.org/2000/svg', R = 286, arcs = [];
-    var pt = function (a) { return (300 + R * Math.cos(a)).toFixed(2) + ' ' + (300 + R * Math.sin(a)).toFixed(2); };
-    for (var i = 0; i < 5; i++) {
-      var a0 = -Math.PI / 2 + i * (2 * Math.PI / 5) + 0.05, a1 = a0 + 2 * Math.PI / 5 - 0.1, d = 'M' + pt(a0) + ' A' + R + ' ' + R + ' 0 0 1 ' + pt(a1);
-      var tr = document.createElementNS(NS, 'path'); tr.setAttribute('d', d); tr.setAttribute('class', 'tr'); ringG.appendChild(tr);
-      var pg = document.createElementNS(NS, 'path'); pg.setAttribute('d', d); pg.setAttribute('class', 'pg'); ringG.appendChild(pg);
-      var L = pg.getTotalLength(); pg.style.strokeDasharray = L + ' ' + L; arcs.push({ el: pg, L: L });
-    }
-    var stage = -1;
-    var render = function (p) {
-      cam.setAttribute('transform', 'translate(300 300) scale(' + at(CAM.s, p).toFixed(4) + ') translate(' + (-at(CAM.x, p)).toFixed(2) + ' ' + (-at(CAM.y, p)).toFixed(2) + ')');
-      els.forEach(function (e) {
-        var t = e.t;
-        e.el.style.opacity = t.o ? at(t.o, p).toFixed(3) : '';
-        if (t.x || t.y || t.s) e.el.style.transform = 'translate(' + (t.x ? at(t.x, p) : 0).toFixed(2) + 'px,' + (t.y ? at(t.y, p) : 0).toFixed(2) + 'px) scale(' + (t.s ? at(t.s, p) : 1).toFixed(3) + ')';
-        if (e.len) e.el.style.strokeDashoffset = (e.len * (1 - at(t.d, p))).toFixed(1);
-      });
-      arcs.forEach(function (a, i) { var k = Math.min(1, Math.max(0, (p - i * 0.2) / 0.2)); a.el.style.strokeDashoffset = (a.L * (1 - k)).toFixed(1); });
-      var s = Math.min(4, Math.max(0, Math.floor((p + 0.02) / 0.2)));
-      if (s !== stage) {
-        stage = s;
-        [cards, panels].forEach(function (list) { list.forEach(function (c, i) { c.classList.toggle('on', i === s); c.classList.toggle('past', i < s); }); });
-        steps.forEach(function (li, i) { li.classList.toggle('on', i === s); li.classList.toggle('done', i < s); });
-      }
-    };
-    if (REDUCE) { sec.classList.add('hs-static'); render(1); return; }
-    var raf = 0;
-    var update = function () {
-      raf = 0;
-      var top = parseFloat(getComputedStyle(pin).top) || 0, r = track.getBoundingClientRect(), total = track.offsetHeight - pin.offsetHeight;
-      if (r.bottom < -200 || r.top > innerHeight + 200) return;
-      render(Math.min(1, Math.max(0, (top - r.top) / Math.max(1, total))));
-    };
-    var ask = function () { if (!raf) raf = requestAnimationFrame(update); };
-    window.addEventListener('scroll', ask, { passive: true });
-    window.addEventListener('resize', ask);
-    render(0); update();
-  });
 
   /* ---------------- Console showcase ---------------- */
   $$('[data-show]').forEach(function (sec) {
@@ -482,27 +375,6 @@
       var tilt = function () { var r = frame.getBoundingClientRect(), k = Math.min(1, Math.max(0, (innerHeight - r.top) / (innerHeight * 0.75))); frame.style.transform = 'rotateX(' + ((1 - k) * 14).toFixed(2) + 'deg) scale(' + (0.94 + k * 0.06).toFixed(3) + ')'; };
       window.addEventListener('scroll', tilt, { passive: true }); tilt();
     }
-  });
-
-  /* ---------------- Tabs ---------------- */
-  $$('[data-tabs]').forEach(function (box) {
-    var tabs = $$('[role="tab"]', box);
-    var show = function (i, focus) {
-      tabs.forEach(function (t, k) {
-        var on = k === i, panel = document.getElementById(t.getAttribute('aria-controls'));
-        t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1;
-        if (panel) panel.hidden = !on;
-      });
-      if (focus) tabs[i].focus();
-    };
-    tabs.forEach(function (t, i) {
-      t.addEventListener('click', function () { show(i); });
-      t.addEventListener('keydown', function (e) {
-        var k = e.key, n = k === 'ArrowRight' || k === 'ArrowDown' ? i + 1 : k === 'ArrowLeft' || k === 'ArrowUp' ? i - 1 : k === 'Home' ? 0 : k === 'End' ? tabs.length - 1 : null;
-        if (n === null) return; e.preventDefault(); show((n + tabs.length) % tabs.length, true);
-      });
-    });
-    show(0);
   });
 
   /* ---------------- Agenda line ---------------- */
@@ -591,14 +463,6 @@
       }
       var h = $('h2, h3', ok); if (h) { h.tabIndex = -1; h.focus(); }
   }
-
-  /* ---------------- Product page heroes ---------------- */
-  $$('[data-pviz]').forEach(function (h) {
-    var k = h.getAttribute('data-pviz');
-    // The engines start paused (the home page runs only the open panel); a product hero always runs.
-    var v = FX ? (k === 'workflow' ? FX.WorkflowViz : k === 'cloud' ? FX.CloudViz : FX.EdrViz)(h) : null;
-    if (v) v.setActive(true);
-  });
 
   /* ---------------- Legal pages: mark the section being read ---------------- */
   $$('.legal-toc').forEach(function (toc) {
