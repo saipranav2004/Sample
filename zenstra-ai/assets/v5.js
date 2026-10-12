@@ -60,10 +60,12 @@
   var dds = $$('.dd');
   function closeAll() { dds.forEach(function (d) { d.classList.remove('open'); $('.dd-btn', d).setAttribute('aria-expanded', 'false'); }); if (body.classList.contains('menu-open')) toggleMenu(false); }
   dds.forEach(function (d) {
-    var b = $('.dd-btn', d), tm, hoverAt = 0;
-    var set = function (on) { d.classList.toggle('open', on); b.setAttribute('aria-expanded', String(on)); };
-    b.addEventListener('click', function () { var open = d.classList.contains('open'); if (open && performance.now() - hoverAt < 600) return; set(!open); });
-    d.addEventListener('mouseenter', function () { clearTimeout(tm); if (!d.classList.contains('open')) hoverAt = performance.now(); set(true); });
+    var b = $('.dd-btn', d), tm, byHover = false;
+    var set = function (on) { d.classList.toggle('open', on); b.setAttribute('aria-expanded', String(on)); if (!on) byHover = false; };
+    // A click on a menu the pointer already opened keeps it open: the user is
+    // reaching for it, not dismissing it. Keyboard and touch toggle as usual.
+    b.addEventListener('click', function () { var open = d.classList.contains('open'); if (open && byHover) { byHover = false; return; } set(!open); });
+    d.addEventListener('mouseenter', function () { clearTimeout(tm); if (!d.classList.contains('open')) { set(true); byHover = true; } });
     d.addEventListener('mouseleave', function () { tm = setTimeout(function () { set(false); }, 180); });
   });
   document.addEventListener('click', function (e) { if (!e.target.closest('.dd')) dds.forEach(function (d) { d.classList.remove('open'); $('.dd-btn', d).setAttribute('aria-expanded', 'false'); }); });
@@ -77,30 +79,48 @@
      above and sharpens, both at once. The slot eases to the new word's width,
      so a centred line re-centres smoothly instead of jumping. */
   var DROP = 'cubic-bezier(0.22, 1, 0.36, 1)';
+  // Words are split into letters so each swap ripples across the word.
+  function letters(el, text) {
+    el.textContent = '';
+    for (var k = 0; k < text.length; k++) { var l = document.createElement('span'); l.className = 'l'; l.textContent = text[k]; el.appendChild(l); }
+    return $$('.l', el);
+  }
   function swapSlot(slot, first) {
     slot.classList.add('swap'); slot.textContent = '';
-    var cur = document.createElement('span'); cur.className = 'sw'; cur.textContent = first; slot.appendChild(cur);
+    var cur = document.createElement('span'); cur.className = 'sw'; letters(cur, first); slot.appendChild(cur);
     return cur;
+  }
+  var OUT = 'cubic-bezier(0.55, 0, 0.75, 0.3)';
+  function lettersIn(ls, o) {
+    var last = null;
+    ls.forEach(function (l, k) { last = anim(l, [{ transform: 'translateY(-' + o.dist + ')', filter: 'blur(' + o.blur + ')', opacity: 0 }, { transform: 'translateY(0)', filter: 'blur(0)', opacity: 1 }], { duration: o.dur, delay: (o.delay || 0) + k * o.stag, easing: DROP }); });
+    return last;
+  }
+  function lettersOut(ls, o) {
+    var last = null;
+    ls.forEach(function (l, k) { last = anim(l, [{ transform: 'translateY(0)', filter: 'blur(0)', opacity: 1 }, { transform: 'translateY(' + o.dist + ')', filter: 'blur(' + o.blur + ')', opacity: 0 }], { duration: o.dur, delay: k * o.stag, easing: OUT }); });
+    return last;
   }
   function swapTo(slot, text, opts) {
     opts = opts || {};
     var cur = slot.querySelector('.sw:not(.out)');
-    if (REDUCE) { if (cur) cur.textContent = text; slot.style.width = ''; return Promise.resolve(); }
-    var nxt = document.createElement('span'); nxt.className = 'sw in'; nxt.textContent = text; slot.appendChild(nxt);
+    if (REDUCE) { if (cur) letters(cur, text); slot.style.width = ''; return Promise.resolve(); }
+    var nxt = document.createElement('span'); nxt.className = 'sw in'; var nl = letters(nxt, text); slot.appendChild(nxt);
+    nl.forEach(function (l) { l.style.opacity = 0; });
     var from = cur ? cur.getBoundingClientRect().width : 0, to = nxt.getBoundingClientRect().width;
+    var d = opts.dur || 420, stag = opts.stag != null ? opts.stag : 14, dist = opts.dist || '0.42em', blur = opts.blur || '10px';
     slot.style.width = from + 'px';
     void slot.offsetWidth;
-    slot.style.transition = 'width ' + (opts.widthMs || 420) + 'ms ' + DROP;
+    slot.style.transition = 'width ' + (opts.widthMs || 520) + 'ms ' + DROP;
     slot.style.width = to + 'px';
-    var d = opts.dur || 380, dist = opts.dist || '0.42em', blur = opts.blur || '10px';
     if (cur) {
       cur.classList.add('out');
-      var o = anim(cur, [{ transform: 'translateY(0)', filter: 'blur(0)', opacity: 1 }, { transform: 'translateY(' + dist + ')', filter: 'blur(' + blur + ')', opacity: 0 }], { duration: d * 0.85, easing: 'cubic-bezier(0.55, 0, 0.75, 0.3)' });
+      var o = lettersOut($$('.l', cur), { dur: d * 0.7, stag: stag * 0.6, dist: dist, blur: blur });
       if (o) o.onfinish = function () { cur.remove(); }; else cur.remove();
     }
-    var i = anim(nxt, [{ transform: 'translateY(-' + dist + ')', filter: 'blur(' + blur + ')', opacity: 0 }, { transform: 'translateY(0)', filter: 'blur(0)', opacity: 1 }], { duration: d, easing: DROP });
+    var i = lettersIn(nl, { dur: d, stag: stag, dist: dist, blur: blur, delay: 60 });
     return new Promise(function (res) {
-      var finish = function () { nxt.classList.remove('in'); slot.style.transition = ''; slot.style.width = ''; res(); };
+      var finish = function () { nxt.classList.remove('in'); nl.forEach(function (l) { l.style.opacity = ''; }); slot.style.transition = ''; slot.style.width = ''; res(); };
       if (i) i.onfinish = finish; else finish();
     });
   }
@@ -110,7 +130,7 @@
     var words = el.getAttribute('data-switch').split('|'), i = 0;
     swapSlot(el, words[0]);
     if (REDUCE) return;
-    setInterval(function () { if (document.hidden) return; i = (i + 1) % words.length; swapTo(el, words[i], { dist: '0.5em', blur: '8px' }); }, 2800);
+    setInterval(function () { if (document.hidden) return; i = (i + 1) % words.length; swapTo(el, words[i], { dist: '0.5em', blur: '8px', stag: 12 }); }, 2800);
   }
 
   /* ---------------- Text: scan-line reveal ---------------- */
@@ -235,40 +255,60 @@
     if (!intro || !root.classList.contains('intro-play')) { startHero(); return; }
     try { sessionStorage.setItem('zx5-intro', '1'); } catch (e) {}
     if (lenis) lenis.stop();
-    var word = $('.intro-word', intro), line = $('.intro-line', intro), logo = $('.intro-logo', intro), beam = $('.intro-beam', intro);
-    var top = $('.intro-half.top', intro), bot = $('.intro-half.bottom', intro), words = word.getAttribute('data-words').split('|');
-    var done = false;
-    var open = function () {
-      if (done) return; done = true;
-      anim(line, [{ opacity: getComputedStyle(line).opacity }, { opacity: 0 }], { duration: 200 });
-      anim(logo, [{ opacity: getComputedStyle(logo).opacity }, { opacity: 0 }], { duration: 250 });
-      anim(beam, [{ transform: 'translateX(-50%) scaleX(0.2)', opacity: 1 }, { transform: 'translateX(-50%) scaleX(1)', opacity: 1 }], { duration: 420, easing: 'cubic-bezier(0.65, 0, 0.35, 1)' });
-      setTimeout(function () {
-        anim(beam, [{ opacity: 1 }, { opacity: 0 }], { duration: 500, delay: 300 });
-        anim(top, [{ transform: 'translateY(0)' }, { transform: 'translateY(-101%)' }], { duration: 950, easing: 'cubic-bezier(0.76, 0, 0.24, 1)' });
-        var a = anim(bot, [{ transform: 'translateY(0)' }, { transform: 'translateY(101%)' }], { duration: 950, easing: 'cubic-bezier(0.76, 0, 0.24, 1)' });
-        $$('.intro-stage, .intro-skip', intro).forEach(function (x) { x.style.display = 'none'; });
-        var end = function () { root.classList.remove('intro-play'); if (lenis) lenis.start(); };
-        if (a) a.onfinish = end; else end();
-        setTimeout(startHero, 380);
-      }, 420);
+    var word = $('.intro-word', intro), line = $('.intro-line', intro), logo = $('.intro-logo', intro), forEl = $('.intro-for', intro);
+    var words = word.getAttribute('data-words').split('|'), skip = $('.intro-skip', intro);
+    var field = FX && FX.IntroField ? FX.IntroField(intro) : null;
+    if (field) intro.classList.add('cv');
+    var done = false, opened = false;
+    var mark = function () { var m = $('.logo-mark .th-dark', logo) || $('.logo-mark', logo), r = m.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, s: r.width / 2 }; };
+    var finish = function () { root.classList.remove('intro-play'); if (lenis) lenis.start(); if (field) field.stop(); };
+    var reveal = function (fast) {
+      if (opened) return; opened = true;
+      var m = mark();
+      anim($('.logo-word', logo), [{ opacity: 1 }, { opacity: 0 }], { duration: 220 });
+      anim(skip, [{ opacity: 1 }, { opacity: 0 }], { duration: 200 });
+      var lm = $('.logo-mark', logo);
+      anim(lm, [{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(1.18)' }], { duration: 260, delay: 60, easing: 'ease-in' });
+      if (!field) { var f = anim(intro, [{ opacity: 1 }, { opacity: 0 }], { duration: 500 }); if (f) f.onfinish = finish; else finish(); startHero(); return; }
+      field.open(m.x, m.y, Math.max(16, m.s * 0.9), fast ? 900 : 1150).then(finish);
+      setTimeout(startHero, fast ? 200 : 380);
     };
-    $('.intro-skip', intro).addEventListener('click', open);
+    var toLogo = function () {
+      anim(logo, [{ opacity: 0, transform: 'translateY(-0.6em)', filter: 'blur(10px)' }, { opacity: 1, transform: 'translateY(0)', filter: 'blur(0)' }], { duration: 520, easing: DROP });
+    };
+    var open = function () {
+      // Skip: go straight to the logo and open the page through it.
+      if (done) return; done = true;
+      anim(line, [{ opacity: getComputedStyle(line).opacity }, { opacity: 0 }], { duration: 180 });
+      if (getComputedStyle(logo).opacity < 0.5) toLogo();
+      setTimeout(function () { reveal(true); }, 260);
+    };
+    skip.addEventListener('click', open);
     intro.addEventListener('click', open);
     window.addEventListener('keydown', open, { once: true });
-    swapSlot(word, words[0]);
-    anim(line, [{ opacity: 0, transform: 'translateY(-0.45em)', filter: 'blur(12px)' }, { opacity: 1, transform: 'translateY(0)', filter: 'blur(0)' }], { duration: 460, delay: 120, easing: DROP });
-    var seq = wait(120 + 460 + 720);
+
+    // 1. "Zenstra for workflow security" ripples in, letter by letter.
+    var fl = letters(forEl, forEl.textContent), cur = swapSlot(word, words[0]), all = fl.concat([null]).concat($$('.l', cur));
+    var k = 0;
+    all.forEach(function (l) { if (!l) { k += 2; return; } l.style.opacity = 0; anim(l, [{ transform: 'translateY(-0.45em)', filter: 'blur(12px)', opacity: 0 }, { transform: 'translateY(0)', filter: 'blur(0)', opacity: 1 }], { duration: 560, delay: 160 + k * 12, easing: DROP }); k++; });
+    var seq = wait(160 + k * 12 + 560 + 520).then(function () { all.forEach(function (l) { if (l) l.style.opacity = ''; }); });
+    // 2. cloud security, then EDR.
     words.slice(1).forEach(function (w, i) {
       seq = seq.then(function () { if (!done) return swapTo(word, w); })
-        .then(function () { if (!done) return wait(i === words.length - 2 ? 820 : 700); });
+        .then(function () { if (!done) return wait(i === words.length - 2 ? 700 : 600); });
     });
+    // 3. The line sinks away, the logo arrives, every agent converges into the mark, the page opens through it.
     seq.then(function () {
       if (done) return;
-      anim(line, [{ opacity: 1, transform: 'translateY(0)', filter: 'blur(0)' }, { opacity: 0, transform: 'translateY(0.42em)', filter: 'blur(10px)' }], { duration: 320, easing: 'cubic-bezier(0.55, 0, 0.75, 0.3)' });
-      anim(logo, [{ opacity: 0, transform: 'translateY(-0.6em)', filter: 'blur(10px)' }, { opacity: 1, transform: 'translateY(0)', filter: 'blur(0)' }], { duration: 460, easing: DROP });
-      return wait(460 + 760);
-    }).then(open);
+      lettersOut($$('.l', line), { dur: 340, stag: 9, dist: '0.42em', blur: '10px' });
+      setTimeout(toLogo, 160);
+      return wait(160 + 300);
+    }).then(function () {
+      if (done) return;
+      if (!field) return wait(600);
+      var m = mark();
+      return field.converge(m.x, m.y, 720).then(function () { return wait(60); });
+    }).then(function () { if (!done) { done = true; reveal(false); } });
   }
 
   /* ---------------- Products ---------------- */
@@ -400,6 +440,26 @@
       }
       var h = $('h2, h3', ok); if (h) { h.tabIndex = -1; h.focus(); }
     });
+  });
+
+  /* ---------------- Product page heroes ---------------- */
+  $$('[data-pviz]').forEach(function (h) {
+    var k = h.getAttribute('data-pviz');
+    if (FX) (k === 'workflow' ? FX.WorkflowViz : k === 'cloud' ? FX.CloudViz : FX.EdrViz)(h);
+  });
+
+  /* ---------------- Legal pages: mark the section being read ---------------- */
+  $$('.legal-toc').forEach(function (toc) {
+    var links = $$('ol a', toc), secs = links.map(function (a) { return document.getElementById(a.getAttribute('href').slice(1)); });
+    var queued = false;
+    var upd = function () {
+      queued = false;
+      var cur = 0, line = innerHeight * 0.3;
+      secs.forEach(function (s, i) { if (s && s.getBoundingClientRect().top < line) cur = i; });
+      links.forEach(function (a, i) { if (i === cur) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current'); });
+    };
+    window.addEventListener('scroll', function () { if (!queued) { queued = true; requestAnimationFrame(upd); } }, { passive: true });
+    upd();
   });
 
   window.__v5ok = true;

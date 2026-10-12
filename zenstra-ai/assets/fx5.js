@@ -4,6 +4,8 @@
  * WorkflowViz — an agent workflow graph; one hop is blocked before it runs.
  * CloudViz    — your cloud boundary with a gateway; payloads never leave.
  * EdrViz      — a fleet of devices scanned for AI agents; rogue ones contained.
+ * IntroField  — the intro backdrop; agents converge into the Zenstra mark,
+ *               which then opens to reveal the page.
  * Each engine pauses off screen or in a hidden tab, and draws one still frame
  * under prefers-reduced-motion.
  */
@@ -302,5 +304,110 @@
     return host;
   }
 
-  window.ZX5 = { LensField: LensField, GateStream: GateStream, WorkflowViz: WorkflowViz, CloudViz: CloudViz, EdrViz: EdrViz, REDUCE: REDUCE };
+  /* ---------------- IntroField ----------------
+   * The intro backdrop: navy with one soft light and fine grain, and a quiet
+   * field of agents with faint links. converge() pulls every agent into the
+   * Zenstra mark; open() cuts a mark-shaped window that grows until the page
+   * underneath is fully revealed.
+   */
+  function IntroField(host, opts) {
+    opts = opts || {};
+    var cv = document.createElement('canvas'); cv.className = 'intro-cv'; host.insertBefore(cv, host.firstChild);
+    var g = cv.getContext('2d'); if (!g) return null;
+    var w = 0, h = 0, d = 1, R = rand(7), pts = [], grain = null, raf = 0, t0 = performance.now(), last = t0;
+    var mode = 'idle', mAt = 0, mDur = 1, cx = 0, cy = 0, s0 = 22, s1 = 2000, glowAt = -10, done = null, fadeIn = 0;
+    var ease = { inOut: function (k) { return k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2; }, in: function (k) { return k * k * k; }, expoInOut: function (k) { return k === 0 ? 0 : k === 1 ? 1 : k < 0.5 ? Math.pow(2, 20 * k - 10) / 2 : (2 - Math.pow(2, -20 * k + 10)) / 2; } };
+    function makeGrain() {
+      var n = document.createElement('canvas'); n.width = n.height = 160; var c = n.getContext('2d'), im = c.createImageData(160, 160);
+      for (var i = 0; i < im.data.length; i += 4) { var v = R() * 255; im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = 10; }
+      c.putImageData(im, 0, 0); grain = g.createPattern(n, 'repeat');
+    }
+    function resize() {
+      w = innerWidth; h = innerHeight; d = Math.min(devicePixelRatio || 1, 2);
+      cv.width = Math.round(w * d); cv.height = Math.round(h * d);
+      var n = Math.max(70, Math.min(190, Math.round(w * h / 8200)));
+      if (!pts.length) for (var i = 0; i < n; i++) {
+        var ag = R() < 0.14;
+        pts.push({ x: R() * w, y: R() * h, vx: (R() - 0.5) * 9, vy: (R() - 0.5) * 7, r: ag ? 1.6 + R() * 0.8 : 0.7 + R() * 0.8, a: ag ? 0.75 : 0.22 + R() * 0.3, ag: ag, p: R() * 6.28, lag: 0 });
+      }
+      makeGrain();
+    }
+    // Four-point concave star with the proportions of the Zenstra mark.
+    function star(x, y, s) {
+      var ax = s, ay = s * 0.913, k = 0.13;
+      g.beginPath(); g.moveTo(x, y - ay);
+      g.quadraticCurveTo(x + ax * k, y - ay * k, x + ax, y);
+      g.quadraticCurveTo(x + ax * k, y + ay * k, x, y + ay);
+      g.quadraticCurveTo(x - ax * k, y + ay * k, x - ax, y);
+      g.quadraticCurveTo(x - ax * k, y - ay * k, x, y - ay);
+      g.closePath();
+    }
+    function backdrop(t) {
+      g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
+      g.fillStyle = '#04101f'; g.fillRect(0, 0, w, h);
+      var br = 0.2 + Math.sin(t * 0.8) * 0.035, L = g.createRadialGradient(w / 2, h * 0.52, 0, w / 2, h * 0.52, Math.max(w, h) * 0.62);
+      L.addColorStop(0, 'rgba(0,110,190,' + br + ')'); L.addColorStop(0.45, 'rgba(0,70,140,' + br * 0.4 + ')'); L.addColorStop(1, 'rgba(4,16,31,0)');
+      g.fillStyle = L; g.fillRect(0, 0, w, h);
+      if (grain) { g.fillStyle = grain; g.fillRect(0, 0, w, h); }
+    }
+    function field(t, dt) {
+      var conv = mode === 'converge' || mode === 'open', k = conv ? Math.max(0, Math.min(1, (performance.now() - mAt) / mDur)) : 0;
+      var vis = Math.max(0, Math.min(1, fadeIn));
+      // links between nearby agents and their neighbours
+      if (!conv) {
+        g.lineWidth = 1;
+        for (var i = 0; i < pts.length; i++) { var a = pts[i]; if (!a.ag) continue;
+          for (var j = 0; j < pts.length; j++) { if (i === j) continue; var b = pts[j], dx = b.x - a.x, dy = b.y - a.y, dd = dx * dx + dy * dy;
+            if (dd < 150 * 150) { g.strokeStyle = 'rgba(92,180,255,' + (0.15 * (1 - Math.sqrt(dd) / 150) * vis) + ')'; g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke(); } } }
+      }
+      for (var q = 0; q < pts.length; q++) {
+        var p = pts[q];
+        if (!conv) {
+          p.x += p.vx * dt; p.y += p.vy * dt;
+          if (p.x < -10) p.x = w + 10; if (p.x > w + 10) p.x = -10; if (p.y < -10) p.y = h + 10; if (p.y > h + 10) p.y = -10;
+          var tw = 0.75 + Math.sin(t * 1.3 + p.p) * 0.25;
+          g.globalAlpha = p.a * tw * vis; g.fillStyle = p.ag ? '#5cd2ff' : '#7f9cc0';
+          g.beginPath(); g.arc(p.x, p.y, p.r, 0, 6.283); g.fill();
+          if (p.ag) { g.globalAlpha = 0.12 * vis; g.beginPath(); g.arc(p.x, p.y, p.r * 4, 0, 6.283); g.fill(); }
+        } else {
+          if (!p.sx) { p.sx = p.x; p.sy = p.y; var dist = Math.hypot(p.x - cx, p.y - cy); p.lag = Math.min(0.35, dist / Math.hypot(w, h) * 0.45); }
+          var kk = Math.max(0, Math.min(1, (k - p.lag) / (1 - p.lag))), e = ease.in(kk);
+          var x = p.sx + (cx - p.sx) * e, y = p.sy + (cy - p.sy) * e;
+          var e2 = ease.in(Math.max(0, kk - 0.022)), px = p.sx + (cx - p.sx) * e2, py = p.sy + (cy - p.sy) * e2;
+          var near = Math.hypot(x - cx, y - cy), al = p.a * Math.min(1, near / 26) * (0.6 + kk * 0.8);
+          if (kk >= 1 || al <= 0.01) continue;
+          g.globalAlpha = Math.min(1, al); g.strokeStyle = p.ag ? '#5cd2ff' : '#9cc2ea'; g.lineWidth = p.r * 1.1; g.lineCap = 'round';
+          g.beginPath(); g.moveTo(px, py); g.lineTo(x, y); g.stroke();
+        }
+      }
+      g.globalAlpha = 1;
+    }
+    function frame(now) {
+      var dt = Math.max(0, Math.min(0.05, (now - last) / 1000)); last = Math.max(last, now); var t = Math.max(0, (now - t0) / 1000);
+      fadeIn += dt / 0.9;
+      g.setTransform(d, 0, 0, d, 0, 0); g.clearRect(0, 0, w, h);
+      backdrop(t);
+      if (mode === 'idle' || mode === 'converge') field(t, dt);
+      var gl = (now - glowAt) / 520;
+      if (gl >= 0 && gl < 1) { var G = g.createRadialGradient(cx, cy, 0, cx, cy, 40 + gl * 120); G.addColorStop(0, 'rgba(92,210,255,' + 0.55 * (1 - gl) + ')'); G.addColorStop(1, 'rgba(92,210,255,0)'); g.fillStyle = G; g.fillRect(cx - 200, cy - 200, 400, 400); }
+      if (mode === 'converge' && now - mAt >= mDur) { glowAt = now; mode = 'held'; if (done) { var f = done; done = null; f(); } }
+      if (mode === 'open') {
+        var k = Math.max(0, Math.min(1, (now - mAt) / mDur)), q = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2, e = k * 0.45 + q * 0.55, s = s0 * Math.pow(s1 / s0, e);
+        g.globalCompositeOperation = 'destination-out'; g.globalAlpha = 1; g.fillStyle = '#000'; star(cx, cy, s); g.fill();
+        g.globalCompositeOperation = 'source-over';
+        star(cx, cy, s); g.lineWidth = 1.5; g.strokeStyle = 'rgba(92,210,255,' + (0.9 * (1 - k)) + ')'; g.shadowColor = 'rgba(0,168,239,0.9)'; g.shadowBlur = 22; g.stroke(); g.shadowBlur = 0;
+        if (k >= 1) { cancelAnimationFrame(raf); raf = 0; g.clearRect(0, 0, w, h); if (done) { var f2 = done; done = null; f2(); } return; }
+      }
+      raf = requestAnimationFrame(frame);
+    }
+    resize(); window.addEventListener('resize', resize);
+    raf = requestAnimationFrame(frame);
+    return {
+      converge: function (x, y, ms) { cx = x; cy = y; mode = 'converge'; mAt = performance.now(); mDur = ms; return new Promise(function (r) { done = r; }); },
+      open: function (x, y, size, ms) { cx = x; cy = y; s0 = size; s1 = Math.hypot(Math.max(x, w - x), Math.max(y, h - y)) / 0.36; mode = 'open'; mAt = performance.now(); mDur = ms; return new Promise(function (r) { done = r; }); },
+      stop: function () { cancelAnimationFrame(raf); raf = 0; window.removeEventListener('resize', resize); }
+    };
+  }
+
+  window.ZX5 = { IntroField: IntroField, LensField: LensField, GateStream: GateStream, WorkflowViz: WorkflowViz, CloudViz: CloudViz, EdrViz: EdrViz, REDUCE: REDUCE };
 })();

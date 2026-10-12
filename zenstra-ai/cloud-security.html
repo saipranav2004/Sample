@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zenstra Cloud Security · Zenstra AI</title>
+<meta name="description" content="A runtime gateway in your VPC or Kubernetes cluster, in front of every MCP server, model and API your agents call.">
+<link rel="icon" href="assets/img/zenstra-mark.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@600&display=swap" rel="stylesheet">
+<script>(function(){var r=document.documentElement;r.classList.add('js');try{var t=localStorage.getItem('zx-theme');if(t)r.setAttribute('data-theme',t);}catch(e){}var red=matchMedia('(prefers-reduced-motion: reduce)').matches;if(red)r.classList.add('reduce');var seen=false;try{seen=sessionStorage.getItem('zx5-intro')==='1';}catch(e){}try{sessionStorage.setItem('zx5-intro','1');}catch(e){}setTimeout(function(){if(!window.__v5ok){r.classList.remove('intro-play');r.classList.add('reveal-all');}},7000);})();</script>
+<link rel="stylesheet" href="assets/v5.css">
+
+</head>
+<body data-page="cloud-security">
+<a class="skip" href="#main">Skip to content</a>
+<header class="head">
+  <div class="wrap head-row">
+    <a class="logo" href="home.html" aria-label="Zenstra AI home"><span class="logo-mark"><img class="th-light" src="assets/img/zenstra-mark.png" alt="" width="138" height="126"><img class="th-dark" src="assets/img/zenstra-mark-dark.png" alt="" width="138" height="126"></span><span class="logo-word">ZENSTRA<b>AI</b></span></a>
+    <nav class="nav" aria-label="Main">
+      <div class="dd"><button class="nav-link dd-btn is-current" type="button" aria-expanded="false" aria-controls="dd-products">Products <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
+        <div class="dd-panel" id="dd-products"><div class="mm-prod"><a class="mm-item" href="workflow-security.html"><span class="mm-ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="3" cy="4" r="1.6"/><circle cx="13" cy="4" r="1.6"/><circle cx="8" cy="12" r="1.6"/><path d="M4.6 4h6.8M3.8 5.4l3.4 5.2M12.2 5.4 8.8 10.6"/></svg></span><span><b>Workflow Security</b><small>Every hop in every agent workflow</small></span></a><a class="mm-item" href="cloud-security.html" aria-current="page"><span class="mm-ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.5h7a3 3 0 0 0 .3-6A4 4 0 0 0 4.2 6 3.3 3.3 0 0 0 4.5 12.5Z"/></svg></span><span><b>Cloud Security</b><small>Runtime protection in your cloud</small></span></a><a class="mm-item" href="edr.html"><span class="mm-ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5V3a1 1 0 0 1 1-1h2M11 2h2a1 1 0 0 1 1 1v2M14 11v2a1 1 0 0 1-1 1h-2M5 14H3a1 1 0 0 1-1-1v-2M2 8h12"/></svg></span><span><b>Zenstra EDR</b><small>Detection and response for AI on endpoints</small></span></a></div><div class="mm-plat"><span class="mono-label">Platform</span><a href="home.html#how">How a decision happens</a><a href="home.html#console">The console</a></div></div>
+      </div>
+      <a class="nav-link" href="credit-unions.html">Credit unions</a><a class="nav-link" href="company.html">Company</a>
+    </nav>
+    <div class="head-actions">
+      <button class="icon-btn theme" type="button" data-theme-toggle aria-label="Switch between light and dark theme"><svg class="moon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13 9.5A5.5 5.5 0 0 1 6.5 3a5.5 5.5 0 1 0 6.5 6.5Z"/></svg><svg class="sun" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="3"/><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"/></svg></button>
+      <a class="btn primary sm" href="demo.html">Request a demo</a>
+      <button class="icon-btn menu-btn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="menu"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12"/></svg></button>
+    </div>
+  </div>
+</header>
+<nav class="menu" id="menu" aria-label="Mobile"><span class="mono-label">Products</span><a href="workflow-security.html">Workflow Security</a><a href="cloud-security.html">Cloud Security</a><a href="edr.html">Zenstra EDR</a><span class="mono-label">Explore</span><a href="credit-unions.html">Credit unions</a><a href="company.html">Company</a><a href="home.html#how">How a decision happens</a><a class="btn primary" href="demo.html">Request a demo</a></nav>
+<main id="main">
+<section class="pp-hero rails" aria-labelledby="hero-h">
+    <div class="wrap pp-grid">
+      <div class="pp-copy">
+        <span class="chip-live" data-after><i></i>Zenstra Cloud Security</span>
+        <h1 class="display" id="hero-h" data-scan><span class="scanline"><span class="in">Runtime protection,</span><i class="bar"></i></span><span class="scanline"><span class="in grad">inside your cloud.</span><i class="bar"></i></span></h1>
+        <p class="lede" data-after>A gateway in your VPC or Kubernetes cluster sits in front of every MCP server, model and API your agents call. Payloads never leave your environment.</p>
+        <div class="pp-facts" data-after>
+      <div><b>18 ms</b><span>p95 decision time, inline</span></div>
+      <div><b>Fail-closed</b><span>unreachable means held, never waved through</span></div>
+      <div><b>No rewrite</b><span>your agents, framework, model and cloud</span></div>
+        </div>
+      </div>
+      <div class="pp-visual" data-after><div class="pp-viz" data-pviz="cloud" aria-hidden="true"></div><span class="pp-badge"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.5h7a3 3 0 0 0 .3-6A4 4 0 0 0 4.2 6 3.3 3.3 0 0 0 4.5 12.5Z"/></svg>Cloud Security</span></div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="sig-h">
+    <div class="wrap sig">
+      <div class="sig-copy">
+        <span class="eyebrow" data-reveal>Where it runs</span>
+        <h2 class="h2" id="sig-h" data-reveal>Inside your cloud. Payloads stay there.</h2>
+        <p data-reveal>The gateway runs in your VPC or Kubernetes cluster, between your agents and everything they call. Prompts, payloads and credentials never leave your environment; only decisions and redacted evidence reach the Zenstra control plane.</p>
+      </div>
+      <div class="sig-card" data-reveal>
+        <div class="vpc">
+          <span class="mono-label">Your VPC · AWS, Azure or Google Cloud</span>
+          <div class="vpc-row">
+            <div class="vpc-col"><span class="mono-label">Your agents</span><div class="vpc-item">Bedrock agent</div><div class="vpc-item">Copilot Studio</div><div class="vpc-item">Custom LangGraph agent</div></div>
+            <i class="vpc-arrow" aria-hidden="true"></i>
+            <div class="vpc-gw"><img src="assets/img/zenstra-mark-dark.png" alt="" width="138" height="126"><b>Zenstra gateway</b><small>identity · scope · policy<br>18 ms p95 · fail-closed</small></div>
+            <i class="vpc-arrow" aria-hidden="true"></i>
+            <div class="vpc-col"><span class="mono-label">What they call</span><div class="vpc-item">MCP servers</div><div class="vpc-item">Internal APIs</div><div class="vpc-item">Model endpoints</div></div>
+          </div>
+        </div>
+        <div class="vpc-out"><span class="plane">Zenstra control plane</span><span>receives <b>decisions and redacted evidence only</b>, never prompts or payloads.</span></div>
+        <div class="deploy" aria-label="Deployment"><span>Helm</span><span>Terraform</span><span>EKS</span><span>AKS</span><span>GKE</span><span>Bedrock</span><span>Azure OpenAI</span><span>Vertex AI</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="cap-h">
+    <div class="wrap">
+      <div class="sec-head"><span class="eyebrow" data-reveal>Capabilities</span><h2 class="h2" id="cap-h" data-reveal>What Cloud Security does.</h2></div>
+      <div class="pp-caps"><div class="pp-cap" data-reveal data-delay="0"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 2.5v3.5M10.5 2.5v3.5M3.5 6h9v2a4.5 4.5 0 0 1-9 0Z M8 12.5v1.5"/></svg></span><b>Gateway for MCP and APIs</b><p>Deployed with Helm or Terraform in AWS, Azure or Google Cloud.</p></div><div class="pp-cap" data-reveal data-delay="60"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="8" r="3"/><path d="M8.5 8h6M12 8v2.5M14.5 8v2"/></svg></span><b>Scoped credentials</b><p>Per-agent identity and short-lived grants for Bedrock, Azure OpenAI and Vertex AI.</p></div><div class="pp-cap" data-reveal data-delay="120"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg></span><b>Context vault</b><p>Scoped secrets and retrieved context, never raw.</p></div><div class="pp-cap" data-reveal data-delay="180"><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 1.5 13.5 4v4c0 3.2-2.4 5.6-5.5 6.5C4.9 13.6 2.5 11.2 2.5 8V4Z"/></svg></span><b>Fail-closed, fast</b><p>Decisions at 18 ms p95. If Zenstra is unreachable, actions are held.</p></div></div>
+    </div>
+  </section>
+
+  <section class="sec alt" aria-labelledby="how-h">
+    <div class="wrap">
+      <div class="sec-head"><span class="eyebrow" data-reveal>How it works</span><h2 class="h2" id="how-h" data-reveal>Live in four steps.</h2></div>
+      <ol class="pp-steps"><li data-reveal data-delay="0"><span class="n">01</span><b>Deploy</b><p>Install the gateway in your VPC or cluster with Helm or Terraform.</p></li><li data-reveal data-delay="60"><span class="n">02</span><b>Register</b><p>Agents, MCP servers and models get an identity and scoped, expiring grants.</p></li><li data-reveal data-delay="120"><span class="n">03</span><b>Enforce</b><p>Guardrails as code, evaluated on every call.</p></li><li data-reveal data-delay="180"><span class="n">04</span><b>Record</b><p>A tamper-evident trail with live risk scoring.</p></li></ol>
+      <div class="pp-works" data-reveal><span class="mono-label">Works with</span><div class="tags"><span>AWS</span><span>Azure</span><span>Google Cloud</span><span>Kubernetes</span><span>Amazon Bedrock</span><span>Azure OpenAI</span><span>Vertex AI</span><span>MCP</span></div></div>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="con-h">
+    <div class="wrap pp-console">
+      <div style="display:grid;gap:18px;align-content:start">
+        <span class="eyebrow" data-reveal>In the console</span>
+        <h2 class="h3" id="con-h" style="font-size:clamp(26px,2.6vw,36px)" data-reveal>One agent's identity, grants, baseline and history.</h2>
+        <a class="link" href="home.html#console" data-reveal>Tour the console <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a>
+      </div>
+      <div class="show-frame pp-shot" data-reveal><div class="show-bar"><i></i><i></i><i></i><span>console.zenstra.ai</span><span class="live">Live</span></div><div class="show-view"><img class="th-light" src="assets/img/screen-agent-light.webp" alt="Agent profile with identity, scoped grants, expiry and last use" width="1600" height="1000" loading="lazy" decoding="async"><img class="th-dark" src="assets/img/screen-agent-dark.webp" alt="" width="1600" height="1000" loading="lazy" decoding="async"></div></div>
+    </div>
+  </section>
+
+  <section class="sec alt" aria-labelledby="faq-h">
+    <div class="wrap faq">
+      <div style="display:grid;gap:18px;align-content:start"><span class="eyebrow" data-reveal>FAQ</span><h2 class="h2" id="faq-h" style="font-size:clamp(28px,3vw,42px)" data-reveal>Questions teams ask first.</h2>
+        <p class="pp-comp" data-reveal>ISO 27001 · SOC 2 Type II · ISO/IEC 42001 · ISO/IEC 27701 · <a href="company.html#compliance">Compliance</a></p></div>
+      <div data-reveal><details><summary>Does our data leave our cloud?</summary><div class="a"><p>No. The gateway runs in your VPC or Kubernetes cluster, and payloads never leave your environment.</p></div></details><details><summary>What if the gateway is unavailable?</summary><div class="a"><p>It fails closed: actions are held, never waved through.</p></div></details><details><summary>Which clouds and models are supported?</summary><div class="a"><p>AWS, Azure and Google Cloud, including Amazon Bedrock, Azure OpenAI and Vertex AI.</p></div></details></div>
+    </div>
+  </section>
+
+  <section class="sec" aria-label="Other products" style="padding-top:clamp(56px,6vw,80px);padding-bottom:0">
+    <div class="wrap"><span class="mono-label">Also on the platform</span><div class="pp-others"><a class="pp-other" href="workflow-security.html" data-reveal><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="3" cy="4" r="1.6"/><circle cx="13" cy="4" r="1.6"/><circle cx="8" cy="12" r="1.6"/><path d="M4.6 4h6.8M3.8 5.4l3.4 5.2M12.2 5.4 8.8 10.6"/></svg></span><span><b>Workflow Security</b><small>Every hop in every agent workflow</small></span><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a><a class="pp-other" href="edr.html" data-reveal><span class="ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5V3a1 1 0 0 1 1-1h2M11 2h2a1 1 0 0 1 1 1v2M14 11v2a1 1 0 0 1-1 1h-2M5 14H3a1 1 0 0 1-1-1v-2M2 8h12"/></svg></span><span><b>Zenstra EDR</b><small>Detection and response for AI on endpoints</small></span><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a></div></div>
+  </section>
+
+</main>
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-brand"><a class="logo" href="home.html" aria-label="Zenstra AI home"><span class="logo-mark"><img class="th-light" src="assets/img/zenstra-mark.png" alt="" width="138" height="126"><img class="th-dark" src="assets/img/zenstra-mark-dark.png" alt="" width="138" height="126"></span><span class="logo-word">ZENSTRA<b>AI</b></span></a><p>The runtime security layer for agentic AI: identity, policy and threat defense for every autonomous decision.</p><a class="btn primary" href="demo.html">Request a demo <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a></div>
+      <div class="foot-cols"><div><h2 class="mono-label">Products</h2><a href="workflow-security.html">Workflow Security</a><a href="cloud-security.html">Cloud Security</a><a href="edr.html">Zenstra EDR</a></div><div><h2 class="mono-label">Solutions</h2><a href="credit-unions.html">Credit unions</a></div><div><h2 class="mono-label">Company</h2><a href="company.html">About</a><a href="company.html#contact">Contact</a><a href="demo.html">Request a demo</a></div><div><h2 class="mono-label">Legal</h2><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms of Service</a></div></div>
+    </div>
+    <div class="foot-legal"><span>&copy; 2026 Zenstra AI</span><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms of Service</a></div>
+  </div>
+</footer>
+<script src="assets/vendor/lenis-1.1.13.min.js"></script>
+<script src="assets/fx5.js"></script>
+<script src="assets/v5.js"></script>
+</body>
+</html>
