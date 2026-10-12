@@ -37,6 +37,12 @@
   .form-grid .full { grid-column: 1 / -1; }
   .form-card .btn { width: 100%; justify-content: center; }
   .fine { margin-top: 14px; font: 500 12px/1.5 var(--mono); color: var(--ink-3); }
+  .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  .form-status { margin-top: 14px; padding: 14px 16px; border-radius: 12px; font-size: 14.5px; line-height: 1.5; }
+  .form-status.err { border: 1px solid color-mix(in srgb, var(--bad) 45%, transparent); background: color-mix(in srgb, var(--bad) 7%, transparent); color: var(--ink); }
+  .form-status.err b { display: block; color: var(--bad-ink); margin-bottom: 4px; }
+  .form-status .btn { margin-top: 10px; height: 40px; font-size: 14px; width: auto !important; }
+  .form-card form[aria-busy="true"] .btn.primary { opacity: 0.75; cursor: progress; }
   .success { display: grid; gap: 14px; justify-items: start; }
   .success .check { width: 56px; height: 56px; }
   .success .check circle { fill: color-mix(in srgb, var(--good) 14%, transparent); }
@@ -55,7 +61,7 @@
       <div class="dd"><button class="nav-link dd-btn" type="button" aria-expanded="false" aria-controls="dd-products">Products <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
         <div class="dd-panel" id="dd-products"><div class="mm-prod"><a class="mm-item" href="workflow-security.html"><span class="mm-ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="3" cy="4" r="1.6"/><circle cx="13" cy="4" r="1.6"/><circle cx="8" cy="12" r="1.6"/><path d="M4.6 4h6.8M3.8 5.4l3.4 5.2M12.2 5.4 8.8 10.6"/></svg></span><span><b>Workflow Security</b><small>Every hop in every agent workflow</small></span></a><a class="mm-item" href="cloud-security.html"><span class="mm-ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.5h7a3 3 0 0 0 .3-6A4 4 0 0 0 4.2 6 3.3 3.3 0 0 0 4.5 12.5Z"/></svg></span><span><b>Cloud Security</b><small>Runtime protection in your cloud</small></span></a><a class="mm-item" href="edr.html"><span class="mm-ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5V3a1 1 0 0 1 1-1h2M11 2h2a1 1 0 0 1 1 1v2M14 11v2a1 1 0 0 1-1 1h-2M5 14H3a1 1 0 0 1-1-1v-2M2 8h12"/></svg></span><span><b>Zenstra EDR</b><small>Detection and response for AI on endpoints</small></span></a></div><div class="mm-plat"><span class="mono-label">Platform</span><a href="home.html#how">How a decision happens</a><a href="home.html#console">The console</a></div></div>
       </div>
-      <a class="nav-link" href="company.html">Company</a>
+      <a class="nav-link" href="credit-unions.html">Credit unions</a><a class="nav-link" href="company.html">Company</a>
     </nav>
     <div class="head-actions">
       <button class="icon-btn theme" type="button" data-theme-toggle aria-label="Switch between light and dark theme"><svg class="moon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13 9.5A5.5 5.5 0 0 1 6.5 3a5.5 5.5 0 1 0 6.5 6.5Z"/></svg><svg class="sun" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="3"/><path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"/></svg></button>
@@ -64,7 +70,7 @@
     </div>
   </div>
 </header>
-<nav class="menu" id="menu" aria-label="Mobile"><span class="mono-label">Products</span><a href="workflow-security.html">Workflow Security</a><a href="cloud-security.html">Cloud Security</a><a href="edr.html">Zenstra EDR</a><span class="mono-label">Explore</span><a href="company.html">Company</a><a href="home.html#how">How a decision happens</a><a class="btn primary" href="demo.html">Request a demo</a></nav>
+<nav class="menu" id="menu" aria-label="Mobile"><span class="mono-label">Products</span><a href="workflow-security.html">Workflow Security</a><a href="cloud-security.html">Cloud Security</a><a href="edr.html">Zenstra EDR</a><span class="mono-label">Explore</span><a href="credit-unions.html">Credit unions</a><a href="company.html">Company</a><a href="home.html#how">How a decision happens</a><a class="btn primary" href="demo.html">Request a demo</a></nav>
 <main id="main">
 <section class="demo-hero hero-lite rails" aria-labelledby="hero-h">
     <div class="lens" data-cx="0.5" data-cy="0.3" aria-hidden="true"></div>
@@ -86,21 +92,25 @@
         </div>
       </div>
       <div class="form-card" data-after>
-        <form data-validate novalidate>
+        <form data-validate data-send action="https://formsubmit.co/info@zenstra.ai" method="POST" novalidate>
+          <input type="hidden" name="_subject" value="Demo request · zenstra.ai">
+          <input type="hidden" name="_template" value="table">
+          <div class="hp" aria-hidden="true"><label for="f-hp">Leave this empty</label><input id="f-hp" type="text" name="_honey" tabindex="-1" autocomplete="off"></div>
           <h2>Request a technical session</h2>
           <p class="note">A security engineer replies within one business day.</p>
           <div class="form-grid">
-            <div class="field"><label for="f-first">First name</label><input id="f-first" name="first" required autocomplete="given-name"><span class="err" role="alert"></span></div>
-            <div class="field"><label for="f-last">Last name</label><input id="f-last" name="last" required autocomplete="family-name"><span class="err" role="alert"></span></div>
-            <div class="field full"><label for="f-email">Work email</label><input id="f-email" type="email" required data-work autocomplete="email" placeholder="name@company.com"><span class="err" role="alert"></span></div>
-            <div class="field"><label for="f-co">Company</label><input id="f-co" required autocomplete="organization"><span class="err" role="alert"></span></div>
-            <div class="field"><label for="f-role">Role</label><select id="f-role" required><option value="">Choose one</option><option>CISO or security leader</option><option>Security architect or engineer</option><option>AI or platform engineering</option><option>Risk, compliance or audit</option><option>Other</option></select><span class="err" role="alert"></span></div>
+            <div class="field"><label for="f-first">First name</label><input id="f-first" name="first_name" required autocomplete="given-name"><span class="err" role="alert"></span></div>
+            <div class="field"><label for="f-last">Last name</label><input id="f-last" name="last_name" required autocomplete="family-name"><span class="err" role="alert"></span></div>
+            <div class="field full"><label for="f-email">Work email</label><input id="f-email" name="email" type="email" required data-work autocomplete="email" placeholder="name@company.com"><span class="err" role="alert"></span></div>
+            <div class="field"><label for="f-co">Company</label><input id="f-co" name="company" required autocomplete="organization"><span class="err" role="alert"></span></div>
+            <div class="field"><label for="f-role">Role</label><select id="f-role" name="role" required><option value="">Choose one</option><option>CISO or security leader</option><option>Security architect or engineer</option><option>AI or platform engineering</option><option>Risk, compliance or audit</option><option>Other</option></select><span class="err" role="alert"></span></div>
             <fieldset class="field full"><legend>Where do you want to start? <span class="opt">(optional)</span></legend><div class="opts" style="margin-top:6px">
-              <label><input type="checkbox" name="p"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="3" cy="4" r="1.6"/><circle cx="13" cy="4" r="1.6"/><circle cx="8" cy="12" r="1.6"/><path d="M4.6 4h6.8M3.8 5.4l3.4 5.2M12.2 5.4 8.8 10.6"/></svg>Workflow Security</label><label><input type="checkbox" name="p"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.5h7a3 3 0 0 0 .3-6A4 4 0 0 0 4.2 6 3.3 3.3 0 0 0 4.5 12.5Z"/></svg>Cloud Security</label><label><input type="checkbox" name="p"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5V3a1 1 0 0 1 1-1h2M11 2h2a1 1 0 0 1 1 1v2M14 11v2a1 1 0 0 1-1 1h-2M5 14H3a1 1 0 0 1-1-1v-2M2 8h12"/></svg>Zenstra EDR</label><label><input type="checkbox" name="p">Not sure yet</label>
+              <label><input type="checkbox" name="interest" value="Workflow Security"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="3" cy="4" r="1.6"/><circle cx="13" cy="4" r="1.6"/><circle cx="8" cy="12" r="1.6"/><path d="M4.6 4h6.8M3.8 5.4l3.4 5.2M12.2 5.4 8.8 10.6"/></svg>Workflow Security</label><label><input type="checkbox" name="interest" value="Cloud Security"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.5h7a3 3 0 0 0 .3-6A4 4 0 0 0 4.2 6 3.3 3.3 0 0 0 4.5 12.5Z"/></svg>Cloud Security</label><label><input type="checkbox" name="interest" value="Zenstra EDR"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5V3a1 1 0 0 1 1-1h2M11 2h2a1 1 0 0 1 1 1v2M14 11v2a1 1 0 0 1-1 1h-2M5 14H3a1 1 0 0 1-1-1v-2M2 8h12"/></svg>Zenstra EDR</label><label><input type="checkbox" name="interest" value="Not sure yet">Not sure yet</label>
             </div></fieldset>
-            <label class="consent full"><input type="checkbox" required><span>I agree that Zenstra may contact me about this request, as described in the <a href="privacy.html">privacy notice</a>.</span></label>
+            <label class="consent full"><input type="checkbox" name="consent" value="yes" required><span>I agree that Zenstra may contact me about this request, as described in the <a href="privacy.html">privacy notice</a>.</span></label>
             <button class="btn primary lg full" type="submit">Request the session <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></button>
           </div>
+          <div class="form-status" data-status role="status" aria-live="polite" hidden></div>
           <p class="fine">No phone number needed · Reply within one business day</p>
         </form>
         <div class="success" data-success hidden>
@@ -127,15 +137,24 @@
 </main>
 <footer class="foot">
   <div class="wrap">
-    <div class="foot-top">
-      <div class="foot-brand"><a class="logo" href="home.html" aria-label="Zenstra AI home"><span class="logo-mark"><img class="th-light" src="assets/img/zenstra-mark.png" alt="" width="138" height="126"><img class="th-dark" src="assets/img/zenstra-mark-dark.png" alt="" width="138" height="126"></span><span class="logo-word">ZENSTRA<b>AI</b></span></a><p>Runtime security for agentic AI.</p></div>
-      <nav class="foot-cols" aria-label="Footer">
+    <div class="foot-grid">
+      <div class="foot-brand"><a class="logo" href="home.html" aria-label="Zenstra AI home"><span class="logo-mark"><img class="th-light" src="assets/img/zenstra-mark.png" alt="" width="138" height="126"><img class="th-dark" src="assets/img/zenstra-mark-dark.png" alt="" width="138" height="126"></span><span class="logo-word">ZENSTRA<b>AI</b></span></a>
+        <p>Runtime security for agentic AI. Every agent identified, every action checked against its task, every decision on record.</p>
+        <a class="foot-mail" href="mailto:info@zenstra.ai">info@zenstra.ai</a>
+        <ul class="foot-certs" aria-label="Certifications"><li>SOC 2 Type II</li><li>ISO 27001</li><li>ISO 42001</li><li>ISO 27701</li></ul>
+      </div>
+      <nav class="foot-nav" aria-label="Footer">
         <div><h2 class="mono-label">Products</h2><a href="workflow-security.html">Workflow Security</a><a href="cloud-security.html">Cloud Security</a><a href="edr.html">Zenstra EDR</a></div>
-        <div><h2 class="mono-label">Company</h2><a href="company.html">About</a><a href="company.html#leadership">Leadership</a><a href="company.html#contact">Contact</a></div>
-        <div><h2 class="mono-label">Legal</h2><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms of Service</a></div>
+        <div><h2 class="mono-label">Solutions</h2><a href="credit-unions.html">Credit unions</a></div>
+        <div><h2 class="mono-label">Company</h2><a href="company.html">About</a><a href="company.html#leadership">Leadership</a><a href="company.html#compliance">Security &amp; compliance</a><a href="company.html#contact">Contact</a></div>
+        <div><h2 class="mono-label">Offices</h2><a href="company.html#contact">Hyderabad <small>HQ</small></a><a href="company.html#contact">Bangalore</a><a href="company.html#contact">Maryland, USA</a></div>
       </nav>
     </div>
-    <div class="foot-legal"><span>&copy; 2026 Zenstra AI · A Deep Algorithms company</span></div>
+    <div class="foot-bar">
+      <span>&copy; 2026 Zenstra AI · A Deep Algorithms company</span>
+      <nav class="foot-legal-links" aria-label="Legal"><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms of Service</a></nav>
+      <a class="foot-social" href="https://www.linkedin.com/company/deepalgorithms.in" target="_blank" rel="noopener" aria-label="Deep Algorithms on LinkedIn"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M3.6 5.6H1.2V15h2.4zM2.4 1a1.4 1.4 0 1 0 0 2.8 1.4 1.4 0 0 0 0-2.8zM15 9.6c0-2.6-1.4-4.2-3.6-4.2-1.2 0-2 .6-2.4 1.2V5.6H6.6V15H9v-5c0-1.2.6-2 1.6-2s1.4.8 1.4 2v5H15z"/></svg></a>
+    </div>
   </div>
 </footer>
 <script src="assets/vendor/lenis-1.1.13.min.js"></script>
