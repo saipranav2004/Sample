@@ -163,6 +163,12 @@
     $$('.w', el).forEach(function (w, i) { w.style.transitionDelay = Math.min(i * 28, 1200) + 'ms'; });
   }
 
+  /* ---------------- Sequenced reveals: the children of a revealed block arrive one after another ---------------- */
+  $$('[data-seq]').forEach(function (box) {
+    var sel = box.getAttribute('data-seq') || ':scope > *';
+    $$(sel, box).forEach(function (el, i) { el.classList.add('sq'); el.style.setProperty('--i', i); });
+  });
+
   /* ---------------- Reveals ---------------- */
   var io = ('IntersectionObserver' in window) ? new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }); }, { rootMargin: '0px 0px -10% 0px' }) : null;
   $$('[data-reveal]').forEach(function (el) { var d = el.getAttribute('data-delay'); if (d) el.style.transitionDelay = d + 'ms'; if (io && !REDUCE) io.observe(el); else el.classList.add('in'); });
@@ -387,7 +393,7 @@
     };
     tabs.forEach(function (t, i) {
       t.addEventListener('click', function () { go(i, true); });
-      t.addEventListener('keydown', function (e) { var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0; if (d) { e.preventDefault(); var n = (idx + d + tabs.length) % tabs.length; go(n, true); tabs[n].focus(); } });
+      t.addEventListener('keydown', function (e) { var d = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0; if (d) { e.preventDefault(); var n = (idx + d + tabs.length) % tabs.length; go(n, true); tabs[n].focus(); } });
     });
     if ('IntersectionObserver' in window) new IntersectionObserver(function (es) { vis = es[0].isIntersecting; if (vis && !user) go(idx); else clearTimeout(timer); }, { threshold: 0.35 }).observe(sec);
     go(0);
@@ -395,6 +401,27 @@
       var tilt = function () { var r = frame.getBoundingClientRect(), k = Math.min(1, Math.max(0, (innerHeight - r.top) / (innerHeight * 0.75))); frame.style.transform = 'rotateX(' + ((1 - k) * 14).toFixed(2) + 'deg) scale(' + (0.94 + k * 0.06).toFixed(3) + ')'; };
       window.addEventListener('scroll', tilt, { passive: true }); tilt();
     }
+  });
+
+  /* ---------------- Tabs ---------------- */
+  $$('[data-tabs]').forEach(function (box) {
+    var tabs = $$('[role="tab"]', box);
+    var show = function (i, focus) {
+      tabs.forEach(function (t, k) {
+        var on = k === i, panel = document.getElementById(t.getAttribute('aria-controls'));
+        t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1;
+        if (panel) panel.hidden = !on;
+      });
+      if (focus) tabs[i].focus();
+    };
+    tabs.forEach(function (t, i) {
+      t.addEventListener('click', function () { show(i); });
+      t.addEventListener('keydown', function (e) {
+        var k = e.key, n = k === 'ArrowRight' || k === 'ArrowDown' ? i + 1 : k === 'ArrowLeft' || k === 'ArrowUp' ? i - 1 : k === 'Home' ? 0 : k === 'End' ? tabs.length - 1 : null;
+        if (n === null) return; e.preventDefault(); show((n + tabs.length) % tabs.length, true);
+      });
+    });
+    show(0);
   });
 
   /* ---------------- Agenda line ---------------- */
@@ -445,7 +472,9 @@
   /* ---------------- Product page heroes ---------------- */
   $$('[data-pviz]').forEach(function (h) {
     var k = h.getAttribute('data-pviz');
-    if (FX) (k === 'workflow' ? FX.WorkflowViz : k === 'cloud' ? FX.CloudViz : FX.EdrViz)(h);
+    // The engines start paused (the home page runs only the open panel); a product hero always runs.
+    var v = FX ? (k === 'workflow' ? FX.WorkflowViz : k === 'cloud' ? FX.CloudViz : FX.EdrViz)(h) : null;
+    if (v) v.setActive(true);
   });
 
   /* ---------------- Legal pages: mark the section being read ---------------- */
