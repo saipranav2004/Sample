@@ -44,14 +44,38 @@
     for (var w = 1; w <= (windings || 0); w++) { var a = a0 + (a1 - a0) * w / (windings + 1); out.push({ pts: [polar(r0, a, zf), polar(r1, a, zf)], k: k + 'w', i: i }); }
   };
   var L = [];
-  // 0 · Policy engine: the Zenstra star inside two discs.
+  // 0 · Policy engine: the Zenstra mark (a concave four-point star, 138 x 126 like
+  // the logo, each arm split into a light and a dark facet) inside two discs.
+  var MARK = (function () {
+    var w = 50, h = 46, k = 0.13, tips = [[0, -h], [w, 0], [0, h], [-w, 0]], curves = [];
+    for (var q = 0; q < 4; q++) {
+      var a = tips[q], b = tips[(q + 1) % 4], c = [(a[0] + b[0]) * k, (a[1] + b[1]) * k], pts = [];
+      for (var i = 0; i <= 14; i++) { var t = i / 14, u = 1 - t; pts.push([u * u * a[0] + 2 * u * t * c[0] + t * t * b[0], u * u * a[1] + 2 * u * t * c[1] + t * t * b[1]]); }
+      curves.push(pts);
+    }
+    return { tips: tips, curves: curves };
+  })();
+  var markLines = function (z, back) {
+    var out = [];
+    var outline = []; MARK.curves.forEach(function (c, q) { c.forEach(function (pt, i) { if (q === 0 || i > 0) outline.push([pt[0], pt[1], z]); }); });
+    out.push({ pts: outline, k: 'star', back: back });
+    if (!back) MARK.tips.forEach(function (t) { out.push({ pts: [[0, 0, z], [t[0], t[1], z]], k: 'star' }); });
+    return out;
+  };
+  // Facets: each quadrant splits at its curve's midpoint, so every arm has one light and one dark half.
+  var FACETS = [];
+  MARK.curves.forEach(function (c, q) {
+    var mid = 7;
+    FACETS.push({ pts: [[0, 0, 6]].concat(c.slice(0, mid + 1).map(function (p) { return [p[0], p[1], 6]; })), light: q % 2 === 0 });
+    FACETS.push({ pts: [[0, 0, 6]].concat(c.slice(mid).map(function (p) { return [p[0], p[1], 6]; })), light: q % 2 === 1 });
+  });
   (function () {
-    var o = [], star = [[0, -46], [10, -10], [46, 0], [10, 10], [0, 46], [-10, 10], [-46, 0], [-10, -10], [0, -46]];
-    [6, -6].forEach(function (z) { o.push({ pts: star.map(function (s) { return [s[0], s[1], z]; }), k: 'star', back: z < 0 ? 1 : 0 }); });
-    star.slice(0, 8).forEach(function (s) { o.push({ pts: [[s[0], s[1], 6], [s[0], s[1], -6]], k: 'star', back: 1 }); });
-    o.push({ pts: ring(30, 8, 64), k: 'disc' }); o.push({ pts: ring(52, 4, 90), k: 'disc' }); o.push({ pts: ring(52, -4, 90), k: 'disc', back: 1 });
-    for (var i = 0; i < 24; i++) { var a = i / 24 * TAU; o.push({ pts: [polar(54, a, 0), polar(60, a, 0)], k: 'tick' }); }
-    L.push({ z0: 26, z1: 236, spin: 0, lines: o, rim: 60 });
+    var o = [];
+    o = o.concat(markLines(6, 0), markLines(-6, 1));
+    MARK.tips.forEach(function (t) { o.push({ pts: [[t[0], t[1], 6], [t[0], t[1], -6]], k: 'star', back: 1 }); });
+    o.push({ pts: ring(58, 4, 90), k: 'disc' }); o.push({ pts: ring(58, -4, 90), k: 'disc', back: 1 });
+    for (var i = 0; i < 24; i++) { var a = i / 24 * TAU; o.push({ pts: [polar(60, a, 0), polar(66, a, 0)], k: 'tick' }); }
+    L.push({ z0: 26, z1: 236, spin: 0, lines: o, rim: 66 });
   })();
   // 1 · Workflow Security: ten coils (the hops) on a chain.
   (function () {
@@ -105,7 +129,7 @@
     tx: [[0, 0.07], [0.14, 0.07], [0.26, -0.03], [0.33, -0.18], [0.46, -0.18], [0.52, 0.17], [0.64, 0.17], [0.7, -0.15], [0.8, -0.15], [0.9, -0.08]],
     ty: [[0.26, 0], [0.33, -0.08], [0.46, -0.08], [0.52, 0.03], [0.64, 0.03], [0.7, 0], [0.8, 0], [0.9, 0.02]],
     dim: [[0.28, 0], [0.33, 1], [0.8, 1], [0.86, 0]],
-    core: [[0.03, 0], [0.1, 1]],
+    core: [[0.06, 0], [0.11, 1]],
     l1: [[0.3, 0], [0.34, 1], [0.46, 1], [0.5, 0.3], [0.84, 0.3], [0.91, 1]],
     l2: [[0.48, 0], [0.52, 1], [0.64, 1], [0.68, 0.3], [0.86, 0.3], [0.93, 1]],
     l3: [[0.66, 0], [0.7, 1], [0.8, 1], [0.84, 0.3], [0.88, 0.3], [0.95, 1]],
@@ -236,6 +260,16 @@
       }
     }
     flush();
+    // The mark itself, filled like the logo once the core is lit.
+    if (lit[0] > 0.02) {
+      FACETS.forEach(function (f) {
+        ctx.beginPath();
+        f.pts.forEach(function (pt, i) { var q = proj(pt, s, lz[0], 0); if (i) ctx.lineTo(q[0], q[1]); else ctx.moveTo(q[0], q[1]); });
+        ctx.closePath();
+        ctx.fillStyle = f.light ? 'rgba(92,210,255,' + (0.92 * lit[0]).toFixed(3) + ')' : 'rgba(0,120,205,' + (0.88 * lit[0]).toFixed(3) + ')';
+        ctx.fill();
+      });
+    }
 
     // Activity overlays for the focused platform.
     ctx.globalCompositeOperation = 'lighter';
@@ -261,6 +295,31 @@
       glowDot(dpos[0], dpos[1], 26 * k, devT > 0.62 ? AMB : RED, 0.75);
     }
     ctx.globalCompositeOperation = 'source-over';
+
+    // Opening: named attacks close in on the dormant core; ignition pushes them back.
+    if (!REDUCE && p < 0.16) {
+      var near = ease(win(p, 0, 0.085)), push = ease(win(p, 0.095, 0.15)), rimPx = 214 * k * 1.12;
+      var far = mob ? Math.min(W, H) * 0.62 : Math.max(W, H) * 0.62, TH = [['PROMPT INJECTION', -0.75], ['TOOL POISONING', 0.3], ['CREDENTIAL LEAK', 1.25], ['SHADOW AI', 2.35]];
+      ctx.font = '500 11px "JetBrains Mono", ui-monospace, monospace'; ctx.textBaseline = 'middle';
+      TH.forEach(function (th, i) {
+        var wob = Math.sin(t * 1.3 + i * 1.7) * 0.03, ang = th[1] + wob;
+        var d = mix(far, rimPx, near) + push * far * 0.5, al = (0.25 + 0.75 * near) * (1 - push);
+        if (al < 0.01) return;
+        var hx = c0[0] + Math.cos(ang) * d, hy = c0[1] + Math.sin(ang) * d, tx2 = c0[0] + Math.cos(ang) * (d + 90), ty2 = c0[1] + Math.sin(ang) * (d + 90);
+        var g = ctx.createLinearGradient(tx2, ty2, hx, hy); g.addColorStop(0, 'rgba(' + RED + ',0)'); g.addColorStop(1, 'rgba(' + RED + ',' + (0.85 * al).toFixed(3) + ')');
+        ctx.strokeStyle = g; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(tx2, ty2); ctx.lineTo(hx, hy); ctx.stroke();
+        ctx.globalCompositeOperation = 'lighter'; glowDot(hx, hy, 14, RED, 0.8 * al); ctx.globalCompositeOperation = 'source-over';
+        // Keep each label fully on screen (phones are narrow).
+        var tw = ctx.measureText(th[0]).width, right = Math.cos(ang) >= 0;
+        var lx2 = right ? hx + 14 : hx - 14 - tw; lx2 = clamp(lx2, 8, W - 8 - tw);
+        ctx.textAlign = 'left';
+        ctx.fillStyle = 'rgba(' + RED + ',' + (0.95 * al).toFixed(3) + ')';
+        ctx.fillText(th[0], lx2, clamp(hy - 12, 12, H - 12));
+      });
+      // The shield pulse that pushes them back.
+      var pr = win(p, 0.09, 0.14);
+      if (pr > 0 && pr < 1) { ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = 'rgba(' + CY + ',' + (0.7 * (1 - pr)).toFixed(3) + ')'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(c0[0], c0[1], rimPx * (1 + pr * 0.7), 0, TAU); ctx.stroke(); ctx.globalCompositeOperation = 'source-over'; }
+    }
 
     // Labels and their leader lines.
     var la = at(K.lab, p) * (mob ? 0 : 1);

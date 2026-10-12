@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@600&display=swap" rel="stylesheet">
-<script>(function(){var r=document.documentElement;r.classList.add('js');try{var t=localStorage.getItem('zx-theme');if(t)r.setAttribute('data-theme',t);}catch(e){}var red=matchMedia('(prefers-reduced-motion: reduce)').matches;if(red)r.classList.add('reduce');var seen=false;try{seen=sessionStorage.getItem('zx5-intro')==='1';}catch(e){}if(!red&&(!seen||/[?&]intro=1/.test(location.search)))r.classList.add('intro-play');setTimeout(function(){if(!window.__v5ok){r.classList.remove('intro-play');r.classList.add('reveal-all');}},7000);})();</script>
+<script src="assets/boot.js" data-intro></script>
 <link rel="stylesheet" href="assets/v5.css">
 
 </head>
@@ -26,9 +26,6 @@
   <div class="wrap head-row">
     <a class="logo" href="home.html" aria-label="Zenstra AI home"><span class="logo-mark"><img class="th-light" src="assets/img/zenstra-mark.png" alt="" width="138" height="126"><img class="th-dark" src="assets/img/zenstra-mark-dark.png" alt="" width="138" height="126"></span><span class="logo-word">ZENSTRA<b>AI</b></span></a>
     <nav class="nav" aria-label="Main">
-      <div class="dd"><button class="nav-link dd-btn" type="button" aria-expanded="false" aria-controls="dd-products">Products <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5"/></svg></button>
-        <div class="dd-panel" id="dd-products"><div class="mm-prod"><a class="mm-item" href="home.html#workflow"><span class="mm-ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="3" cy="4" r="1.6"/><circle cx="13" cy="4" r="1.6"/><circle cx="8" cy="12" r="1.6"/><path d="M4.6 4h6.8M3.8 5.4l3.4 5.2M12.2 5.4 8.8 10.6"/></svg></span><span><b>Workflow Security</b><small>Every hop in every agent workflow</small></span></a><a class="mm-item" href="home.html#cloud"><span class="mm-ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.5h7a3 3 0 0 0 .3-6A4 4 0 0 0 4.2 6 3.3 3.3 0 0 0 4.5 12.5Z"/></svg></span><span><b>Cloud Security</b><small>Runtime protection in your cloud</small></span></a><a class="mm-item" href="home.html#edr"><span class="mm-ic"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5V3a1 1 0 0 1 1-1h2M11 2h2a1 1 0 0 1 1 1v2M14 11v2a1 1 0 0 1-1 1h-2M5 14H3a1 1 0 0 1-1-1v-2M2 8h12"/></svg></span><span><b>Zenstra EDR</b><small>Detection and response for AI on endpoints</small></span></a></div><div class="mm-plat"><span class="mono-label">Platform</span><a href="home.html#core">Inside the Zenstra core</a><a href="home.html#console">The console</a></div></div>
-      </div>
       <a class="nav-link" href="credit-unions.html">Credit unions</a><a class="nav-link" href="company.html">Company</a>
     </nav>
     <div class="head-actions">
@@ -38,7 +35,7 @@
     </div>
   </div>
 </header>
-<nav class="menu" id="menu" aria-label="Mobile"><span class="mono-label">Products</span><a href="home.html#workflow">Workflow Security</a><a href="home.html#cloud">Cloud Security</a><a href="home.html#edr">Zenstra EDR</a><span class="mono-label">Explore</span><a href="credit-unions.html">Credit unions</a><a href="company.html">Company</a><a href="home.html#core">Inside the Zenstra core</a><a class="btn primary" href="demo.html">Request a demo</a></nav>
+<nav class="menu" id="menu" aria-label="Mobile"><a href="credit-unions.html">Credit unions</a><a href="company.html">Company</a><a class="btn primary" href="demo.html">Request a demo</a></nav>
 <main id="main">
 <section class="hero rails" aria-labelledby="hero-h">
     <div class="lens" data-cx="0.68" data-cy="0.48" aria-hidden="true"></div>
@@ -109,30 +106,30 @@
 
   <section class="core" id="core" data-core aria-labelledby="core-h">
     <div class="wrap core-head">
-      <div style="display:grid;gap:20px"><span class="eyebrow" data-reveal>Inside the Zenstra core</span><h2 class="h2" id="core-h" data-reveal>One engine at the heart<br>of every agent.</h2></div>
-      <p class="lede" data-reveal>Agents now work in three places: inside workflows, in your cloud and on every laptop. Take the core apart to see how one engine secures all three.</p>
+      <div style="display:grid;gap:20px"><span class="eyebrow" data-reveal>Inside the Zenstra core</span><h2 class="h2" id="core-h" data-reveal>One engine.<br>Every agent, everywhere it runs.</h2></div>
+      <p class="lede" data-reveal>Agents work inside workflows, in your cloud and on every laptop. Take the core apart to see where each attack is stopped, and what lands on the record.</p>
     </div>
     <div class="core-track">
       <div class="core-pin">
         <div class="core-stage">
           <canvas aria-hidden="true"></canvas>
           <div class="core-labels" aria-hidden="true">
-            <span class="core-label"><b>Policy engine</b><small>Decides every action</small></span>
-            <span class="core-label"><b>Workflow Security</b><small>Every hop</small></span>
-            <span class="core-label"><b>Cloud Security</b><small>Inside your VPC</small></span>
-            <span class="core-label"><b>Zenstra EDR</b><small>Every device</small></span>
-            <span class="core-label"><b>Decision record</b><small>Every decision kept</small></span>
+            <span class="core-label"><b>Policy engine</b><small>Decides in 18 ms</small></span>
+            <span class="core-label"><b>Workflow Security</b><small>Stops injected hand-offs</small></span>
+            <span class="core-label"><b>Cloud Security</b><small>Payloads stay in your VPC</small></span>
+            <span class="core-label"><b>Zenstra EDR</b><small>Contains hijacked agents</small></span>
+            <span class="core-label"><b>Decision record</b><small>Tamper-evident</small></span>
           </div>
         </div>
         <div class="core-cards">
-          <article class="core-card pos-tl on" data-name="Agents everywhere"><div class="cc"><span class="cc-n">01 · The challenge</span><h3>Agents now work everywhere.</h3><p>Inside workflows, in your cloud and on every laptop. Each place has its own tools, its own owners and its own blind spots.</p><div class="cc-tags"><span>Workflows</span><span>Cloud</span><span>Endpoints</span></div></div></article>
-          <article class="core-card pos-br" data-name="Five layers"><div class="cc"><span class="cc-n">02 · The core, taken apart</span><h3>One engine, five layers.</h3><p>At the centre, one policy engine decides every action an agent takes. Around it, a layer for each place agents run, with one record behind them all.</p></div></article>
-          <article class="core-card pos-br" data-name="Workflow Security"><div class="cc"><span class="cc-n">03 · Workflow Security</span><h3>Every hop, checked against its task.</h3><p>When agents hand work to each other, each hop is checked before the next step runs. The one that drifts from its task is stopped there.</p><div class="cc-tags"><span>n8n</span><span>Zapier</span><span>LangGraph</span><span>CrewAI</span><span>Copilot Studio</span></div></div></article>
-          <article class="core-card pos-tl" data-name="Cloud Security"><div class="cc"><span class="cc-n">04 · Cloud Security</span><h3>A gateway inside your cloud.</h3><p>Calls to MCP servers, models and APIs pass through Zenstra in your VPC. Payloads never leave, and a call outside an agent’s grant goes no further.</p><div class="cc-tags"><span>AWS</span><span>Azure</span><span>Google Cloud</span><span>Kubernetes</span></div></div></article>
-          <article class="core-card pos-br" data-name="Zenstra EDR"><div class="cc"><span class="cc-n">05 · Zenstra EDR</span><h3>AI on every laptop, contained in seconds.</h3><p>Copilot, ChatGPT, Claude Code and Cursor are seen with the prompt, the tool call and the device together. A hijacked agent is stopped; the person keeps working.</p><div class="cc-tags"><span>Windows</span><span>macOS</span><span>Intune</span><span>Jamf</span><span>Kandji</span></div></div></article>
-          <article class="core-card pos-tr" data-name="One core"><div class="cc"><span class="cc-n">06 · One core</span><h3>One engine. Three ways in. One record.</h3><p>Every decision from every layer lands in one tamper-evident record your security team and auditors can read.</p><p class="cc-facts">18 ms decisions · Fail-closed · No agent rewrite</p><a class="cc-link" href="#products">Explore the three products <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a></div></article>
+          <article class="core-card pos-tl on" data-name="The exposure"><div class="cc"><span class="cc-n">01 · The exposure</span><h3>Agents act faster than your controls.</h3><p>They read documents, call tools and move data inside workflows, in your cloud and on every laptop. The same few attacks reach all three.</p><div class="cc-tags threat"><span>Prompt injection</span><span>Tool poisoning</span><span>Credential leakage</span><span>Shadow AI</span></div></div></article>
+          <article class="core-card pos-br" data-name="One policy engine"><div class="cc"><span class="cc-n">02 · One policy engine</span><h3>One engine decides every action.</h3><p>Each action is checked against the agent’s identity, the task it was given and your policy, inline, before it runs.</p><pre class="cc-code"><span><b>deny</b>  tool.call   when outside(task.scope)</span><span><b>hold</b>  payments.*  for human approval</span><span><b>allow</b> crm.read    for member in task</span></pre><p class="cc-facts">Inline · p95 18 ms · Fails closed</p></div></article>
+          <article class="core-card pos-br" data-name="Workflow Security"><div class="cc"><span class="cc-n">03 · Workflow Security</span><h3>Every hop, checked against its task.</h3><dl class="cc-rows"><div><dt>Runs in</dt><dd>n8n, Zapier, LangGraph, CrewAI, Copilot Studio</dd></div><div><dt>Checks</dt><dd>Every hop and agent-to-agent hand-off</dd></div><div><dt>Stops</dt><dd>Injected instructions spreading between agents</dd></div></dl><p class="cc-dec"><span class="vd2 bad">Block</span><code>hop 7 · crm.export → outside email · not in task</code></p></div></article>
+          <article class="core-card pos-tl" data-name="Cloud Security"><div class="cc"><span class="cc-n">04 · Cloud Security</span><h3>A gateway inside your cloud.</h3><dl class="cc-rows"><div><dt>Runs in</dt><dd>Your VPC on AWS, Azure or Google Cloud</dd></div><div><dt>Checks</dt><dd>Every MCP, model and API call against the agent’s grant</dd></div><div><dt>Stops</dt><dd>Tool poisoning, over-scoped keys, data leaving your cloud</dd></div></dl><p class="cc-dec"><span class="vd2 bad">Block</span><code>mcp core-banking · accounts.transfer · not in grant</code></p><p class="cc-facts">Prompts and payloads never leave your VPC</p></div></article>
+          <article class="core-card pos-br" data-name="Zenstra EDR"><div class="cc"><span class="cc-n">05 · Zenstra EDR</span><h3>AI on every laptop, contained in seconds.</h3><dl class="cc-rows"><div><dt>Runs on</dt><dd>Windows and macOS, through Intune, Jamf or Kandji</dd></div><div><dt>Checks</dt><dd>Copilot, ChatGPT, Claude Code and Cursor: prompt, tool call and device together</dd></div><div><dt>Stops</dt><dd>Hijacked coding agents, secrets pasted into AI, shadow AI</dd></div></dl><p class="cc-dec"><span class="vd2 bad">Block</span><code>laptop-114 · cursor · read ~/.aws · session contained</code></p></div></article>
+          <article class="core-card pos-tr" data-name="The record"><div class="cc"><span class="cc-n">06 · The record</span><h3>Every decision, on one record.</h3><p>Each entry is chained to the one before it, so any change shows. Export it as evidence for your auditors and examiners.</p><pre class="cc-code ledger"><span>#48213  <i class="b">block</i>  POL-114 v7   prev 9f2c…a71e</span><span>#48214  <i class="h">hold</i>   POL-021 v3   prev c07a…5d12</span><span>#48215  <i class="a">allow</i>  POL-003 v12  prev 4be1…09c3</span></pre><p class="cc-facts">Inline · p95 18 ms · Fails closed · No agent rewrite</p><a class="cc-link" href="#products">Explore the three products <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4"/></svg></a></div></article>
         </div>
-        <div class="core-hud" aria-hidden="true"><span data-core-n>01 / 06</span><span data-core-t>Agents everywhere</span><i></i></div>
+        <div class="core-hud" aria-hidden="true"><span data-core-n>01 / 06</span><span data-core-t>The exposure</span><i></i></div>
       </div>
     </div>
   </section>
@@ -241,7 +238,6 @@
         <ul class="foot-certs" aria-label="Certifications"><li>SOC 2 Type II</li><li>ISO 27001</li><li>ISO 42001</li><li>ISO 27701</li></ul>
       </div>
       <nav class="foot-nav" aria-label="Footer">
-        <div><h2 class="mono-label">Products</h2><a href="home.html#workflow">Workflow Security</a><a href="home.html#cloud">Cloud Security</a><a href="home.html#edr">Zenstra EDR</a></div>
         <div><h2 class="mono-label">Solutions</h2><a href="credit-unions.html">Credit unions</a></div>
         <div><h2 class="mono-label">Company</h2><a href="company.html">About</a><a href="company.html#leadership">Leadership</a><a href="company.html#compliance">Security &amp; compliance</a><a href="company.html#contact">Contact</a></div>
         <div><h2 class="mono-label">Offices</h2><a href="company.html#contact">Hyderabad <small>HQ</small></a><a href="company.html#contact">Bangalore</a><a href="company.html#contact">Maryland, USA</a></div>

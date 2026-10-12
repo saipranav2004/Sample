@@ -248,9 +248,9 @@
   }
 
   /* ---------------- Intro ----------------
-     Timing measured from go.ai: the line drops in blurred (~0.45 s), each word
-     holds ~0.7 s, swaps take ~0.38 s, then the whole line gives way to the
-     Zenstra logo the same way before the screen opens. */
+     Timing measured from go.ai: the lead words appear alone, the first word holds
+     about 2 s, later words about 0.6 to 0.7 s, swaps take ~0.38 s, then the line
+     gives way to the Zenstra logo before the screen opens. */
   function runIntro() {
     var intro = $('.intro');
     if (!intro || !root.classList.contains('intro-play')) { startHero(); return; }
@@ -288,17 +288,29 @@
     intro.addEventListener('click', open);
     window.addEventListener('keydown', open, { once: true });
 
-    // 1. "Zenstra for workflow security" ripples in, letter by letter.
-    var fl = letters(forEl, forEl.textContent), cur = swapSlot(word, words[0]), all = fl.concat([null]).concat($$('.l', cur));
-    var k = 0;
-    all.forEach(function (l) { if (!l) { k += 2; return; } l.style.opacity = 0; anim(l, [{ transform: 'translateY(-0.45em)', filter: 'blur(12px)', opacity: 0 }, { transform: 'translateY(0)', filter: 'blur(0)', opacity: 1 }], { duration: 560, delay: 160 + k * 12, easing: DROP }); k++; });
-    var seq = wait(160 + k * 12 + 560 + 520).then(function () { all.forEach(function (l) { if (l) l.style.opacity = ''; }); });
-    // 2. cloud security, then EDR.
+    // Cadence after go.ai: the lead words arrive alone, the first product holds
+    // longest, the next ones move faster, then the line gives way to the logo.
+    var HOLD_FOR = 380, HOLD_FIRST = 1300, HOLD_NEXT = [440, 560];
+    var drop = function (ls, delay) {
+      ls.forEach(function (l, i) { l.style.opacity = 0; anim(l, [{ transform: 'translateY(-0.45em)', filter: 'blur(12px)', opacity: 0 }, { transform: 'translateY(0)', filter: 'blur(0)', opacity: 1 }], { duration: 560, delay: delay + i * 12, easing: DROP }); });
+      return delay + ls.length * 12 + 560;
+    };
+    var settle = function (ls) { ls.forEach(function (l) { l.style.opacity = ''; }); };
+    // 1. "Zenstra for" ripples in alone and holds.
+    var fl = letters(forEl, forEl.textContent), cur = swapSlot(word, words[0]), wl = $$('.l', cur);
+    wl.forEach(function (l) { l.style.opacity = 0; });
+    var tFor = drop(fl, 160);
+    // 2. "workflow security" drops in and holds the longest.
+    var seq = wait(tFor + HOLD_FOR).then(function () {
+      if (done) return; settle(fl);
+      return wait(drop(wl, 0) + HOLD_FIRST);
+    }).then(function () { settle(wl); });
+    // 3. cloud security, then EDR, each for less time.
     words.slice(1).forEach(function (w, i) {
       seq = seq.then(function () { if (!done) return swapTo(word, w); })
-        .then(function () { if (!done) return wait(i === words.length - 2 ? 700 : 600); });
+        .then(function () { if (!done) return wait(HOLD_NEXT[i] || 600); });
     });
-    // 3. The line sinks away, the logo arrives, every agent converges into the mark, the page opens through it.
+    // 4. The line sinks away, the logo arrives, every agent converges into the mark, the page opens through it.
     seq.then(function () {
       if (done) return;
       lettersOut($$('.l', line), { dur: 340, stag: 9, dist: '0.42em', blur: '10px' });
@@ -427,7 +439,7 @@
   }
   function mailto(form, d) {
     var to = (form.getAttribute('action') || '').split('/').pop() || 'info@zenstra.ai';
-    var lines = ['Name: ' + [d.first_name, d.last_name].filter(Boolean).join(' '), 'Work email: ' + (d.email || ''), 'Company: ' + (d.company || ''), 'Role: ' + (d.role || ''), 'Interested in: ' + (d.interest || 'Not given')];
+    var lines = ['Name: ' + [d.first_name, d.last_name].filter(Boolean).join(' '), 'Work email: ' + (d.email || ''), 'Company: ' + (d.company || ''), 'Role: ' + (d.role || '')];
     return 'mailto:' + to + '?subject=' + encodeURIComponent('Demo request · ' + (d.company || 'zenstra.ai')) + '&body=' + encodeURIComponent(lines.join('\n'));
   }
   function send(form) {
@@ -454,15 +466,48 @@
     status.tabIndex = -1; status.focus();
   }
   function done(form) {
-      var ok = form.parentElement.querySelector('[data-success]'); if (!ok) return;
-      form.hidden = true; ok.hidden = false;
-      var who = $('[data-who]', ok), nm = $('input[name=first_name]', form); if (who && nm) who.textContent = nm.value.trim();
+    var ok = form.parentElement.querySelector('[data-success]'); if (!ok) return;
+    var d = payload(form), val = function (k) { return d[k] || ''; };
+    form.hidden = true; ok.hidden = false;
+    // The card: a summary of exactly what was sent.
+    $$('[data-sum]', ok).forEach(function (el) { var k = el.getAttribute('data-sum'); el.textContent = k === 'name' ? [val('first_name'), val('last_name')].join(' ').trim() : val(k); });
+    // The left column: from "what the session is" to "what happens next".
+    var page = form.closest('main') || document, before = $('[data-before]', page), next = $('[data-next]', page);
+    $$('[data-who]', page).forEach(function (el) { el.textContent = val('first_name'); });
+    var now = new Date(), when = $('[data-when]', page);
+    if (when) { when.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); when.setAttribute('datetime', now.toISOString()); }
+    if (before && next) {
+      before.hidden = true; next.hidden = false;
       if (!REDUCE) {
-        anim(ok, [{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }], { duration: 700 });
-        var path = $('.check path', ok); if (path) { var L = path.getTotalLength(); path.style.strokeDasharray = L; anim(path, [{ strokeDashoffset: L }, { strokeDashoffset: 0 }], { duration: 700, delay: 200 }); }
+        anim(next, [{ opacity: 0, transform: 'translateY(14px)' }, { opacity: 1, transform: 'none' }], { duration: 700, easing: EASE });
+        $$('.track li, .prep, .wait', next).forEach(function (el, i) { anim(el, [{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }], { duration: 600, delay: 180 + i * 110, easing: EASE, fill: 'both' }); });
       }
-      var h = $('h2, h3', ok); if (h) { h.tabIndex = -1; h.focus(); }
+    }
+    if (!REDUCE) {
+      anim(ok, [{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }], { duration: 700 });
+      var path = $('.check path', ok); if (path) { var L = path.getTotalLength(); path.style.strokeDasharray = L; anim(path, [{ strokeDashoffset: L }, { strokeDashoffset: 0 }], { duration: 700, delay: 200 }); }
+    }
+    // Bring the confirmation into view (on phones the form sits below the fold) and move focus to it.
+    var target = next && !next.hidden ? next : ok, head = next && !next.hidden ? $('.next-h', next) : $('h2, h3', ok);
+    if (lenis) lenis.scrollTo(target, { offset: -110 }); else target.scrollIntoView({ behavior: REDUCE ? 'auto' : 'smooth', block: 'start' });
+    if (head) { head.tabIndex = -1; head.focus({ preventScroll: true }); }
   }
+  // "Edit and send again": back to the filled-in form; nothing was lost.
+  $$('[data-edit]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var ok = btn.closest('[data-success]'), form = ok && ok.parentElement.querySelector('form'); if (!form) return;
+      var page = form.closest('main') || document, before = $('[data-before]', page), next = $('[data-next]', page);
+      ok.hidden = true; form.hidden = false; if (next) next.hidden = true; if (before) before.hidden = false;
+      var email = $('input[type=email]', form); if (email) { email.focus(); email.select(); }
+    });
+  });
+  // Preparation checklist: a live count, nothing stored.
+  $$('.prep').forEach(function (box) {
+    var boxes = $$('[data-prep]', box), out = $('[data-prep-count]', box);
+    var upd = function () { var n = boxes.filter(function (b) { return b.checked; }).length; if (out) { out.textContent = n === boxes.length ? 'Ready for your session' : n + ' of ' + boxes.length + ' ready'; out.classList.toggle('all', n === boxes.length); } };
+    boxes.forEach(function (b) { b.addEventListener('change', upd); }); upd();
+  });
+
 
   /* ---------------- Legal pages: mark the section being read ---------------- */
   $$('.legal-toc').forEach(function (toc) {

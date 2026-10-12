@@ -1,0 +1,5 @@
+# Only the site goes into the image: pages, assets and the nginx config.
+*
+!*.html
+!assets/
+!nginx/

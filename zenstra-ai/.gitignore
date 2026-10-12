@@ -1,0 +1,15 @@
+# OS and editor files
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Logs, archives and local secrets
+*.log
+*.zip
+.env
+.env.*
+
+# Dependencies (none are needed today)
+node_modules/
