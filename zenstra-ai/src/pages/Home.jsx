@@ -4,6 +4,7 @@ import { usePageFx } from '../lib/usePage.js';
 import Intro from '../components/Intro.jsx';
 import { VideoButton } from '../components/VideoTour.jsx';
 import UseCaseGrid from '../components/UseCaseGrid.jsx';
+import { WorksWith, FactCarousel, ScrollPath } from '../components/Motion.jsx';
 import { useCore } from '../lib/usePage.js';
 
 export default function Home() {
@@ -28,10 +29,7 @@ export default function Home() {
         </div>
         </div>
         <div className="wrap">
-        <div className="works" data-after="">
-        <span className="mono-label">Works with</span>
-        <p className="sr-only">Works with Microsoft Copilot, ChatGPT Enterprise, Claude, Gemini, Model Context Protocol, n8n, Zapier, LangGraph, CrewAI, AWS Bedrock, Azure OpenAI, Vertex AI, Fiserv, Jack Henry, Temenos.</p><div className="marquee" aria-hidden="true"><div className="marquee-track"><span>Microsoft Copilot</span><span>ChatGPT Enterprise</span><span>Claude</span><span>Gemini</span><span>MCP</span><span>n8n</span><span>Zapier</span><span>LangGraph</span><span>CrewAI</span><span>AWS Bedrock</span><span>Azure OpenAI</span><span>Vertex AI</span><span>Fiserv</span><span>Jack Henry</span><span>Temenos</span><span>Microsoft Copilot</span><span>ChatGPT Enterprise</span><span>Claude</span><span>Gemini</span><span>MCP</span><span>n8n</span><span>Zapier</span><span>LangGraph</span><span>CrewAI</span><span>AWS Bedrock</span><span>Azure OpenAI</span><span>Vertex AI</span><span>Fiserv</span><span>Jack Henry</span><span>Temenos</span></div></div>
-        </div>
+        <WorksWith />
         </div>
         </section>
         <section className="sec rails" id="products" aria-labelledby="prod-h">
@@ -137,15 +135,20 @@ export default function Home() {
         </div>
         </div>
         </section>
-        <section aria-label="Zenstra in numbers" style={{ paddingBottom: "clamp(64px,7vw,104px)" }}>
-        <div className="wrap">
-        <div className="figures">
-        <div className="fig" data-reveal=""><b><span data-count="18">18</span><small>ms</small></b><span>p95 decision latency, inline and fail-closed</span></div>
-        <div className="fig" data-reveal="" data-delay="80"><b><span data-count="47" data-suf="+">47+</span></b><span>Agents protected</span></div>
-        <div className="fig" data-reveal="" data-delay="160"><b><span data-count="8.7" data-suf="K">8.7K</span></b><span>Threats blocked every month</span></div>
-        <div className="fig" data-reveal="" data-delay="240"><b><span data-count="60" data-suf="+">60+</span></b><span>Security policies enforced</span></div>
-        </div>
-        </div>
+        <ScrollPath
+          id="changes"
+          eyebrow="What changes"
+          h={['What changes when every', 'action is decided.']}
+          items={[
+            { icon: 'radar', h: 'Every agent, found and owned', p: 'See every agent, tool and MCP server, with an owner for each.' },
+            { icon: 'gate', h: 'Risk stopped before runtime', p: 'Scope access and block risky setups before an agent runs.' },
+            { icon: 'pulse', h: 'Detections with context', p: 'Prompt, plan and action together, so an alert means something.' },
+            { icon: 'bolt', h: 'Contain one agent in seconds', p: 'Stop one agent on one device or flow, not the whole system.' },
+            { icon: 'ledger', h: 'Evidence on every decision', p: 'One tamper-evident record your auditors can read.' },
+          ]}
+        />
+        <section className="facts-sec" aria-label="Zenstra in numbers">
+        <FactCarousel />
         </section>
         <section className="sec" aria-labelledby="uses-h">
         <div className="wrap">

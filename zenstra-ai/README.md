@@ -30,6 +30,7 @@ They cover:
 - **Pages:** every page renders, hydrates and loads its images, with no console errors and no sideways scrolling on desktop or phone. Every internal link and anchor resolves.
 - **Accessibility:** axe finds no violations, in light and dark themes.
 - **Motion:**
+  - rolling rows on every page, the scroll-drawn path and the pinned steps
   - the opening sequence and its timing
   - the hero
   - product panels
@@ -72,7 +73,7 @@ Open http://localhost:8080. Put HTTPS in front of the container with your load b
 | `src/content/pages.js` | The copy for every capability and use-case page. |
 | `src/content/media.js` | The product video setting (see below). |
 | `src/pages/` | One component per page. `Template.jsx` is the shared layout for capability and use-case pages. |
-| `src/components/` | Header and mega menus, footer, intro, floating call-out, video, and the shared sections in `Sections.jsx`. |
+| `src/components/` | Header and mega menus, footer, intro, floating call-out, video, the shared sections in `Sections.jsx`, and the rolling and scroll-driven pieces in `Motion.jsx` (`Marquee`, `FactCarousel`, `WorksWith`, `ScrollPath`, `ScrollSteps`). |
 | `src/lib/` | Motion engines: the canvas engines (`fx5.js`), the Zenstra core (`core5.js`), text effects (`text.js`) and page motion (`pagefx.js`). Each page mounts them on load and removes them when you leave. |
 | `src/styles/` | `v5.css` is the design system, `pages.css` holds page-specific styles, and `enterprise.css` holds the menus, template, call-out and video. |
 | `public/` | Images, `boot.js` (theme and intro, run before first paint) and anything served as-is. |

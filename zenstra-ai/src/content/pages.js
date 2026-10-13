@@ -5,30 +5,30 @@
    Screens: overview | detections | investigation | agent (full console),
             coverage | grants | kpis | riskiest | run (crops). */
 
-const DECIDE_FACT = 'Every decision is made inline, at 18 ms p95, before the action runs. If Zenstra cannot be reached, the action is held, not allowed.';
+const DECIDE_FACT = 'Decided inline at 18 ms p95, before the action runs. If Zenstra is unreachable, the action is held.';
 
 export const CAPABILITY_PAGES = {
   'agent-discovery': {
     eyebrow: 'Agent discovery & inventory',
     title: ['Every agent you run,', 'found and owned.'],
-    lede: 'Zenstra builds one living inventory of every AI agent, copilot, MCP server and no-code flow across your workflows, your cloud and your devices, with an owner and a scope for each.',
+    lede: 'One living inventory of every AI agent, copilot, MCP server and no-code flow, each with an owner and a scope.',
     roll: { lead: 'Finds agents in', words: ['n8n and Zapier.', 'Copilot Studio.', 'MCP servers.', 'Cursor and Claude Code.'] },
     shot: 'coverage',
     chips: [['hold', 'Unregistered agent found', 'n8n:card-dispute · writes to core'], ['allow', 'Owner assigned', 'sar-prep-agent · Ana Ortiz'], ['block', 'Shadow MCP server', 'laptop-114 · cursor · unapproved']],
     problem: {
       h: ['You cannot govern', 'what you cannot see.'],
-      p: 'Agents arrive with the platforms you already use: core-banking add-ons, employee copilots, no-code automations and coding assistants. Most are not malicious. They are simply unreviewed, running with access nobody tracked.',
+      p: 'Agents arrive with the platforms you already use. Most aren’t malicious, just unreviewed, with access nobody tracked.',
       cards: [
-        { icon: 'eyeoff', h: 'Built without asking', p: 'No-code flows wire agents into core systems before IT sees them being built.' },
+        { icon: 'eyeoff', h: 'Built without asking', p: 'No-code flows wire agents into core systems before IT sees them.' },
         { icon: 'key', h: 'Access nobody tracked', p: 'Standing credentials and broad scopes, granted at rollout and never revisited.' },
-        { icon: 'user', h: 'No owner on record', p: 'When something goes wrong, nobody can say who approved the agent or what it should do.' },
+        { icon: 'user', h: 'No owner on record', p: 'Nobody can say who approved an agent or what it should do.' },
       ],
     },
     how: {
       h: ['From discovery', 'to governed, in one place.'],
       p: 'Discovery is only the first step. Zenstra connects what it finds to an owner, a policy and a record.',
       tabs: [
-        { label: 'Discover', h: 'One inventory across every platform', p: 'Zenstra maps agents, tools, MCP servers and connections in workflows, in your cloud and on staff devices, and shows how much of each platform is governed.', feats: ['Coverage by platform: governed versus discovered', 'Every agent, tool and MCP hop mapped in n8n, Zapier, LangGraph and CrewAI', 'AI on Windows and macOS found by the Zenstra EDR app'], shot: 'coverage' },
+        { label: 'Discover', h: 'One inventory across every platform', p: 'Zenstra maps agents, tools, MCP servers and connections in workflows, in your cloud and on staff devices, and shows how much of each platform is governed.', feats: ['Coverage by platform: governed versus discovered', 'Every hop in n8n, Zapier, LangGraph and CrewAI', 'AI on Windows and macOS, found by the EDR app'], shot: 'coverage' },
         { label: 'Decide', h: 'An owner and a scope for each agent', p: 'Each agent gets an owner, a declared task and the grants it needs. Agents without an owner are flagged until someone takes them.', feats: ['Highest-risk agents ranked, with the main factor', 'Unregistered agents flagged when they write to core systems', 'Agents without an owner shown on the overview'], shot: 'riskiest' },
         { label: 'Prove', h: 'An inventory your examiner can read', p: 'The inventory is kept current automatically and exported as evidence, with the owner and the platform for every agent.', feats: ['Living inventory, tracked automatically', 'Export as PDF and CSV', 'Every change to an agent on the decision record'], shot: 'overview' },
       ],
@@ -46,7 +46,7 @@ export const CAPABILITY_PAGES = {
     },
     related: [['cap', 'agent-identity'], ['use', 'shadow-ai'], ['use', 'audit-readiness']],
     faq: [
-      { q: 'How does Zenstra find agents nobody registered?', a: 'Three ways, depending on where they run: the gateway sees calls to models, MCP servers and APIs in your cloud; Workflow Security maps flows in automation platforms; and the Zenstra EDR app finds AI tools and agents on Windows and macOS devices.' },
+      { q: 'How does Zenstra find agents nobody registered?', a: 'Three ways, by where they run: the gateway sees calls in your cloud, Workflow Security maps automation flows, and the Zenstra EDR app finds AI on Windows and macOS devices.' },
       { q: 'Does discovery need agents to be rewritten?', a: 'No. Discovery and enforcement work with the agents you already have, through the SDK, the gateway or the EDR app.' },
       { q: 'What happens to an agent once it is found?', a: 'It appears in the inventory, is checked against your policy straight away, and stays flagged until it has an owner and a declared scope.' },
     ],
@@ -55,15 +55,15 @@ export const CAPABILITY_PAGES = {
   'agent-identity': {
     eyebrow: 'Agent identity & access',
     title: ['Every agent gets an identity.', 'Every grant expires.'],
-    lede: 'Zenstra gives each agent a cryptographic identity and replaces standing credentials with scoped, expiring grants, so an agent can reach only what its task needs, and only while it needs it.',
+    lede: 'Each agent gets a cryptographic identity and scoped, expiring grants instead of standing credentials.',
     roll: { lead: 'Scoped grants for', words: ['AWS Bedrock.', 'Azure OpenAI.', 'Vertex AI.', 'core, LOS and CRM.'] },
     shot: 'grants',
     chips: [['allow', 'Agent identity verified', 'copilot-hr-assist · attested 2 ms ago'], ['block', 'Grant out of scope', 'email.send · domain not approved'], ['hold', 'Step-up requested', 'dev-agent-ci · shell.exec (prod)']],
     problem: {
       h: ['Agents inherit', 'more access than any person.'],
-      p: 'Most agents run on a shared service account or a long-lived API key. One key reaches everything the integration was ever allowed to touch, long after the task that needed it.',
+      p: 'Most agents run on a shared service account or a long-lived key that reaches far more than any task needs.',
       cards: [
-        { icon: 'key', h: 'Standing credentials', p: 'Keys that never expire, shared by several agents and nobody can rotate safely.' },
+        { icon: 'key', h: 'Standing credentials', p: 'Keys that never expire, shared by several agents.' },
         { icon: 'layers', h: 'Over-scoped by default', p: 'An agent that answers questions can also write, export and email.' },
         { icon: 'search', h: 'No way to tell agents apart', p: 'Logs show the service account, not which agent acted, or for whom.' },
       ],
@@ -72,7 +72,7 @@ export const CAPABILITY_PAGES = {
       h: ['Least privilege,', 'per agent and per call.'],
       p: 'Identity and access are decided by the same policy engine as every other action.',
       tabs: [
-        { label: 'Identify', h: 'An identity for every agent', p: 'Each agent is attested when it starts and carries its own identity, so every action can be traced to one agent and the person or task it acted for.', feats: ['Cryptographic identity per agent', 'Attestation checked before actions run', 'Revoked the moment access drifts'], shot: 'run' },
+        { label: 'Identify', h: 'An identity for every agent', p: 'Each agent is attested when it starts, so every action traces back to one agent and the task it acted for.', feats: ['Cryptographic identity per agent', 'Attestation checked before actions run', 'Revoked the moment access drifts'], shot: 'run' },
         { label: 'Scope', h: 'Grants that fit the task', p: 'Every tool an agent uses becomes a scoped grant: which collection, which member, which queue, and for how long.', feats: ['Per-call and per-session grants', 'Short-lived credentials for Bedrock, Azure OpenAI and Vertex AI', 'Approved destinations for outbound actions'], shot: 'grants' },
         { label: 'Revoke', h: 'One switch across every platform', p: 'Stop one agent everywhere it runs with a single revocation, instead of a switch per vendor.', feats: ['Revocation in seconds', 'Grants listed for your risk register', 'Every grant and revocation on the record'], shot: 'agent' },
       ],
@@ -99,7 +99,7 @@ export const CAPABILITY_PAGES = {
   'runtime-enforcement': {
     eyebrow: 'Runtime policy enforcement',
     title: ['Every action decided', 'before it runs.'],
-    lede: 'One policy engine checks every agent action against the agent’s identity, the task it was given and your policy, inline, in 18 ms at p95. Actions are allowed, held for a person or blocked before they reach your systems.',
+    lede: 'One policy engine checks every agent action against identity, task and policy, inline at 18 ms p95. Allowed, held for a person, or blocked.',
     roll: { lead: 'Decides every', words: ['tool call.', 'agent hand-off.', 'MCP request.', 'outbound action.'] },
     shot: 'run',
     chips: [['block', 'Policy enforced', 'n8n:card-dispute · write:core · denied'], ['hold', 'Held for approval', 'sar-prep-agent · core.txn.query (90d)'], ['allow', 'Allowed within scope', 'loan-doc-classifier · los.read · 6 ms']],
@@ -116,7 +116,7 @@ export const CAPABILITY_PAGES = {
       h: ['Your policy,', 'enforced as code.'],
       p: DECIDE_FACT,
       tabs: [
-        { label: 'Check', h: 'Identity, task and policy together', p: 'Each action is checked against who the agent is, what it was asked to do and what your institution allows. A tool call outside the declared task is caught before it runs.', feats: ['Inline decision, 18 ms at p95', 'Intent checked against the declared task', 'Agent-to-agent hand-offs checked against the original task'], shot: 'run' },
+        { label: 'Check', h: 'Identity, task and policy together', p: 'Each action is checked against who the agent is, what it was asked to do and what your policy allows.', feats: ['Inline decision, 18 ms at p95', 'Intent checked against the declared task', 'Agent-to-agent hand-offs checked against the original task'], shot: 'run' },
         { label: 'Decide', h: 'Allow, hold or block', p: 'Routine actions pass. Sensitive ones wait for a person. Anything outside policy is stopped, and the agent continues safely where it can.', feats: ['Hold payments and production changes for approval', 'Block data leaving to unapproved destinations', 'Fails closed: if Zenstra is unreachable, actions are held'], shot: 'detections' },
         { label: 'Record', h: 'Why, for every decision', p: 'Every decision lands on the record with the policy version that made it, so you can show what was allowed and why.', feats: ['Policy version on every entry', 'Approvals recorded with who and when', 'Tamper-evident, chained record'], shot: 'investigation' },
       ],
@@ -126,7 +126,7 @@ export const CAPABILITY_PAGES = {
       items: [
         { h: 'Task scope', p: 'deny tool.call when outside(task.scope).' },
         { h: 'Human approval', p: 'hold payments.* for human approval.' },
-        { h: 'Member data', p: 'allow crm.read for the member in the task, and only that member.' },
+        { h: 'Member data', p: 'allow crm.read for the member in the task only.' },
         { h: 'Outbound data', p: 'Block email and exports to unapproved destinations.' },
         { h: 'Production access', p: 'Step-up before shell or deploy actions in production.' },
         { h: 'Acceptable use', p: 'Your AI acceptable-use policy as enforced code, not a PDF.' },
@@ -143,13 +143,13 @@ export const CAPABILITY_PAGES = {
   'mcp-security': {
     eyebrow: 'MCP & tool security',
     title: ['A gateway in your cloud', 'for every tool call.'],
-    lede: 'Zenstra Cloud Security runs a gateway in your VPC or Kubernetes cluster, in front of every MCP server, model and API your agents call. Prompts and payloads never leave your environment.',
+    lede: 'A gateway in your VPC sits in front of every MCP server, model and API your agents call. Payloads never leave your environment.',
     roll: { lead: 'Deployed with', words: ['Helm.', 'Terraform.', 'AWS.', 'Azure and Google Cloud.'] },
     shot: 'grants',
     chips: [['block', 'Tool not in grant', 'mcp core-banking · accounts.transfer'], ['block', 'Poisoned tool description', 'mcp kb-sync · instruction quarantined'], ['allow', 'Allowed within scope', 'kb.search · member-faq · 4 ms']],
     problem: {
       h: ['Every tool is', 'a way in.'],
-      p: 'MCP made it easy to give agents tools. It also made every tool server a place where an attacker can hide instructions, widen access or pull data out.',
+      p: 'MCP made it easy to give agents tools. It also gave attackers a place to hide instructions, widen access or pull data out.',
       cards: [
         { icon: 'flask', h: 'Poisoned tools', p: 'A tool description or result carries instructions the agent follows.' },
         { icon: 'key', h: 'Over-scoped keys', p: 'One MCP server key reaches far more than any task needs.' },
@@ -187,13 +187,13 @@ export const CAPABILITY_PAGES = {
   'detection-response': {
     eyebrow: 'AI detection & response',
     title: ['Tell a helpful agent', 'from a hijacked one.'],
-    lede: 'Classic EDR sees a coding agent read credentials and cannot tell help from hijack. Zenstra sees the prompt, the tool call and the device together, ranks what matters and contains one agent on one device in seconds.',
+    lede: 'Classic EDR can’t tell a helpful coding agent from a hijacked one. Zenstra sees the prompt, the tool call and the device together, and contains one agent in seconds.',
     roll: { lead: 'Watches', words: ['Copilot.', 'ChatGPT.', 'Claude Code.', 'Cursor.'] },
     shot: 'investigation',
     chips: [['block', 'Shadow agent contained', 'cursor · laptop-114 · unregistered MCP'], ['block', 'Prompt injection blocked', 'member-chat-assist · kb.article #4471'], ['hold', 'Investigation opened', 'copilot-hr-assist · poisoned document']],
     problem: {
       h: ['Agent attacks look like', 'normal work.'],
-      p: 'A hijacked agent uses the same tools, the same credentials and the same device as a helpful one. Without the prompt and the plan, every alert is a guess.',
+      p: 'A hijacked agent uses the same tools, credentials and device as a helpful one. Without the prompt, every alert is a guess.',
       cards: [
         { icon: 'eyeoff', h: 'No context', p: 'Endpoint tools see processes and files, not prompts and intent.' },
         { icon: 'bolt', h: 'Too much noise', p: 'Every agent action looks unusual to tools built for people.' },
@@ -231,13 +231,13 @@ export const CAPABILITY_PAGES = {
   'decision-record': {
     eyebrow: 'Decision record & evidence',
     title: ['Every decision,', 'on one record.'],
-    lede: 'Every action Zenstra decides, allowed, held or blocked, lands on one tamper-evident record. Each entry is chained to the one before it, so any change shows. Export it as evidence for auditors and examiners.',
+    lede: 'Every decision Zenstra makes lands on one tamper-evident record, each entry chained to the one before it. Export it as evidence.',
     roll: { lead: 'Ready for', words: ['your auditors.', 'your examiner.', 'your board.', 'incident review.'] },
     shot: 'overview',
     chips: [['allow', 'Hash chain verified', 'ledger · 1.2M entries'], ['hold', 'Approval recorded', 'payments.* · approved by J. Rao'], ['block', 'Decision recorded', 'POL-114 v7 · member-data-egress']],
     problem: {
       h: ['“Show me what it did”', 'should take minutes.'],
-      p: 'When an examiner asks what an agent did, the answer is usually spread across vendor logs that do not agree and cannot prove they were not changed.',
+      p: 'When an examiner asks what an agent did, the answer sits in vendor logs that disagree and can’t prove they weren’t changed.',
       cards: [
         { icon: 'layers', h: 'Logs spread across vendors', p: 'Each platform keeps its own partial history.' },
         { icon: 'doc', h: 'Only the flagged events', p: 'Most logs keep alerts, not every decision.' },
@@ -277,7 +277,7 @@ export const USE_CASE_PAGES = {
   'shadow-ai': {
     eyebrow: 'Shadow AI',
     title: ['Shadow AI is', 'a governance gap, not a mystery.'],
-    lede: 'Staff use AI tools nobody approved, and no-code flows wire agents into core systems before IT sees them. Zenstra finds them, puts them under the same policy as everything else and gives each one an owner.',
+    lede: 'Staff use AI nobody approved, and no-code flows wire agents into core systems unseen. Zenstra finds them and brings each under policy, with an owner.',
     roll: { lead: 'Found in', words: ['browser copilots.', 'no-code flows.', 'coding assistants.', 'unapproved MCP servers.'] },
     shot: 'riskiest',
     chips: [['hold', 'Unregistered agent found', 'n8n:card-dispute · no owner'], ['block', 'Shadow agent contained', 'cursor · laptop-114 · unregistered MCP'], ['allow', 'Agent brought under policy', 'copilot-hr-assist · owner assigned']],
@@ -292,7 +292,7 @@ export const USE_CASE_PAGES = {
     },
     how: {
       h: ['Find it, govern it,', 'prove it.'],
-      p: 'Closing shadow AI is not about finding more tools. It is about bringing each one under policy the moment it is found.',
+      p: 'Closing shadow AI isn’t about finding more tools. It’s bringing each one under policy the moment it’s found.',
       tabs: [
         { label: 'Find', h: 'Everything that is running', p: 'The EDR app finds AI on staff devices, Workflow Security maps automation flows and the gateway sees calls in your cloud.', feats: ['AI tools and agents on Windows and macOS', 'No-code flows in n8n, Zapier and Copilot Studio', 'Unapproved MCP servers'], shot: 'coverage' },
         { label: 'Govern', h: 'The same policy, immediately', p: 'A newly found agent is checked against your acceptable-use policy straight away, not left in a holding pattern.', feats: ['Acceptable-use policy as enforced code', 'Agents without an owner flagged', 'Contain one agent on one device'], shot: 'riskiest' },
@@ -321,13 +321,13 @@ export const USE_CASE_PAGES = {
   'prompt-injection': {
     eyebrow: 'Prompt injection',
     title: ['Hidden instructions,', 'stopped before the tool runs.'],
-    lede: 'An agent reads a document, an email or a web page carrying instructions written for it. Zenstra checks the action the agent then plans against the task it was given, and blocks it before anything leaves.',
+    lede: 'An agent reads a document, email or web page carrying hidden instructions. Zenstra checks the action it then plans against its task, and blocks it before anything leaves.',
     roll: { lead: 'Hidden in', words: ['retrieved documents.', 'inbound email.', 'web pages.', 'tool results.'] },
     shot: 'run',
     chips: [['block', 'Prompt injection blocked', 'member-chat-assist · kb.article #4471'], ['block', 'Intent check failed', 'email.send · not in declared task'], ['allow', 'Safe answer returned', 'quarantined span removed']],
     problem: {
       h: ['The model looks fine.', 'The action is the problem.'],
-      p: 'Injection does not need to break the model. It only needs the agent to take one action outside its task, with the access it already has.',
+      p: 'Injection doesn’t need to break the model. It only needs one action outside the task, using access the agent already has.',
       cards: [
         { icon: 'doc', h: 'Indirect injection', p: 'Instructions planted in content the agent retrieves.' },
         { icon: 'flow', h: 'Spreads between agents', p: 'An injected instruction handed from one agent to the next.' },
@@ -365,13 +365,13 @@ export const USE_CASE_PAGES = {
   'tool-poisoning': {
     eyebrow: 'Tool poisoning',
     title: ['Compromised tools,', 'contained at the gateway.'],
-    lede: 'A tool server can carry instructions in its descriptions and results, or quietly widen what it does. Zenstra’s gateway checks every MCP and API call against the agent’s grant, inside your cloud.',
+    lede: 'A tool server can hide instructions in its descriptions and results. Zenstra’s gateway checks every MCP and API call against the agent’s grant, inside your cloud.',
     roll: { lead: 'Checks every', words: ['MCP server.', 'tool description.', 'tool result.', 'API call.'] },
     shot: 'grants',
     chips: [['block', 'Tool not in grant', 'mcp core-banking · accounts.transfer'], ['block', 'Instruction in tool result', 'mcp kb-sync · quarantined'], ['hold', 'New MCP server', 'awaiting review · laptop-114']],
     problem: {
       h: ['Agents trust', 'their tools.'],
-      p: 'An agent follows what its tools tell it. Poison one tool, or swap one server, and every agent that uses it is now taking orders from someone else.',
+      p: 'An agent follows what its tools tell it. Poison one tool and every agent using it takes orders from someone else.',
       cards: [
         { icon: 'flask', h: 'Poisoned descriptions', p: 'Instructions hidden in how a tool describes itself.' },
         { icon: 'plug', h: 'Rogue servers', p: 'An MCP server added without review, or quietly replaced.' },
@@ -409,13 +409,13 @@ export const USE_CASE_PAGES = {
   'data-leakage': {
     eyebrow: 'Data & credential leakage',
     title: ['Member data and secrets', 'stay where they belong.'],
-    lede: 'Agents move data as part of their work, and that is how it leaks: a record emailed to the wrong address, a key read by a coding agent, a payload sent to an unapproved model. Zenstra decides each of those actions before it runs.',
+    lede: 'Agents move data as part of their work, and that is how it leaks. Zenstra decides each email, export and model call before it runs.',
     roll: { lead: 'Stops leaks through', words: ['email.', 'exports.', 'model calls.', 'coding agents.'] },
     shot: 'run',
     chips: [['block', 'Member data egress blocked', 'POL-114 · email.send · external'], ['block', 'Secret access contained', 'laptop-114 · cursor · read ~/.aws'], ['allow', 'Read within scope', 'crm.read · member in task']],
     problem: {
       h: ['Leaks look like', 'ordinary actions.'],
-      p: 'Sending an email, exporting a file and calling a model are normal agent actions. Whether they are a leak depends on the task, the data and the destination.',
+      p: 'Sending an email, exporting a file and calling a model are normal actions. Whether they leak depends on task, data and destination.',
       cards: [
         { icon: 'drop', h: 'Member data', p: 'Account references sent outside the institution.' },
         { icon: 'key', h: 'Credentials', p: 'Keys and secrets read or pasted into AI tools.' },
@@ -459,7 +459,7 @@ export const USE_CASE_PAGES = {
     chips: [['block', 'Policy enforced', 'n8n:card-dispute · write:core · denied'], ['block', 'Hop blocked', 'hop 7 · crm.export → outside email'], ['allow', 'Hand-off within task', 'intake-agent → triage-agent']],
     problem: {
       h: ['One bad hop', 'and the whole flow follows.'],
-      p: 'Workflows chain agents, tools and MCP calls. An injected instruction at one step travels to the next, with each agent trusting the one before it.',
+      p: 'Workflows chain agents, tools and MCP calls. An injected instruction at one step travels to the next.',
       cards: [
         { icon: 'flow', h: 'Built outside IT', p: 'No-code flows wired into core systems without review.' },
         { icon: 'inject', h: 'Spreads between agents', p: 'Injected instructions passed along every hand-off.' },
@@ -497,7 +497,7 @@ export const USE_CASE_PAGES = {
   'cloud-agents': {
     eyebrow: 'Cloud & homegrown agents',
     title: ['Runtime protection,', 'inside your cloud.'],
-    lede: 'The agents your teams build on AWS Bedrock, Azure OpenAI and Vertex AI call models, MCP servers and internal APIs. Zenstra Cloud Security decides those calls at a gateway in your VPC. Payloads never leave your environment.',
+    lede: 'Agents built on AWS Bedrock, Azure OpenAI and Vertex AI call models, MCP servers and internal APIs. Zenstra decides those calls at a gateway in your VPC; payloads never leave.',
     roll: { lead: 'Built on', words: ['AWS Bedrock.', 'Azure OpenAI.', 'Vertex AI.', 'Kubernetes.'] },
     shot: 'grants',
     chips: [['block', 'Tool not in grant', 'mcp core-banking · accounts.transfer'], ['allow', 'Short-lived grant issued', 'loan-doc-classifier · Bedrock · 15 min'], ['hold', 'Held for approval', 'payments.* · human approval']],
@@ -547,7 +547,7 @@ export const USE_CASE_PAGES = {
     chips: [['block', 'Shadow agent contained', 'cursor · laptop-114 · unregistered MCP'], ['block', 'Secret access blocked', 'claude-code · read ~/.aws'], ['hold', 'Step-up requested', 'dev-agent-ci · shell.exec (prod)']],
     problem: {
       h: ['Coding agents hold', 'the keys to production.'],
-      p: 'A coding agent can read secrets, run shell commands and push changes. When it is hijacked, it does all of that with the developer’s own access.',
+      p: 'A coding agent can read secrets, run shell commands and push changes. Hijacked, it does all that with the developer’s own access.',
       cards: [
         { icon: 'key', h: 'Secrets on disk', p: 'Cloud keys and tokens a coding agent can read.' },
         { icon: 'plug', h: 'Local MCP servers', p: 'Tools added to agents on a laptop without review.' },
@@ -585,13 +585,13 @@ export const USE_CASE_PAGES = {
   'audit-readiness': {
     eyebrow: 'Audit & examination readiness',
     title: ['Ready for the examiner’s', 'first question.'],
-    lede: 'Examiners already check that you run safely, treat customers fairly and know what your vendors do. Zenstra creates that proof for AI agents as they work: an inventory, scoped access, recorded approvals and a tamper-evident record.',
+    lede: 'Examiners check that you run safely and know what your vendors do. Zenstra creates that proof for AI agents as they work.',
     roll: { lead: 'Evidence for', words: ['your examiner.', 'internal audit.', 'your board.', 'vendor reviews.'] },
     shot: 'overview',
     chips: [['allow', 'Examination pack ready', 'Q3 2026 · PDF + CSV'], ['allow', 'Hash chain verified', 'ledger · 1.2M entries'], ['hold', 'Review recorded', 'sar-prep-agent · approved before production']],
     problem: {
       h: ['Vendor defaults are not', 'institutional governance.'],
-      p: 'Platforms describe what an agent can do. They do not say what your institution should allow, who owns the risk or how drift is caught six months from now.',
+      p: 'Platforms describe what an agent can do, not what your institution should allow, who owns the risk or how drift is caught.',
       cards: [
         { icon: 'layers', h: 'Spread across vendors', p: 'Each platform holds part of the story.' },
         { icon: 'doc', h: 'Policy written once', p: 'A policy written at rollout and never enforced.' },

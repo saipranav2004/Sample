@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import A from '../components/A.jsx';
+import { FactCarousel } from '../components/Motion.jsx';
 import { usePageFx } from '../lib/usePage.js';
 
 export default function Company() {
@@ -23,6 +24,14 @@ export default function Company() {
       <div><dt>Focus</dt><dd>AI-native security<small>Serving organisations globally</small></dd></div>
       </dl>
       </div>
+      </section>
+      <section className="facts-sec after-hero" aria-label="Deep Algorithms in numbers">
+      <FactCarousel label="Deep Algorithms in numbers" seconds={30} facts={[
+        { n: '2022', u: '', c: 'Founded in Hyderabad', t: 'Company' },
+        { n: '4', u: '', c: 'Platforms on one architecture', t: 'Products' },
+        { n: '3', u: '', c: 'Offices: Hyderabad, Bangalore, Maryland', t: 'Presence' },
+        { n: '6', u: '', c: 'Certifications and compliance programmes', t: 'Assurance' },
+      ]} />
       </section>
       <section className="sec" aria-labelledby="story-h" style={{ paddingTop: "clamp(56px,6vw,88px)" }}>
       <div className="wrap story">

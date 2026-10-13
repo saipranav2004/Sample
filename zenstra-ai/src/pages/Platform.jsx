@@ -2,14 +2,15 @@ import { useRef } from 'react';
 import A from '../components/A.jsx';
 import Icon from '../components/Icon.jsx';
 import VideoTour from '../components/VideoTour.jsx';
+import { WorksWith, ScrollPath, ScrollSteps } from '../components/Motion.jsx';
 import { usePageFx } from '../lib/usePage.js';
 import { PageHero, HeroVisual, Two, Arrow, Proof, Faq, Cta } from '../components/Sections.jsx';
 import { CAPABILITIES, capabilityPath, useCasePath } from '../content/site.js';
 
 const LAYERS = [
-  { n: '01', h: 'Discover', p: 'One inventory of every agent, tool, MCP server and connection, with an owner and a scope.', icon: 'radar' },
-  { n: '02', h: 'Decide', p: 'Every action checked inline against identity, task and policy: allowed, held for a person or blocked.', icon: 'gate' },
-  { n: '03', h: 'Prove', p: 'Every decision on one tamper-evident record, ready for your auditors and examiners.', icon: 'ledger' },
+  { h: 'Discover', p: 'Every agent, tool and MCP server, with an owner.' },
+  { h: 'Decide', p: 'Each action checked inline: allow, hold or block.' },
+  { h: 'Prove', p: 'Every decision on one tamper-evident record.' },
 ];
 
 const WAYS = [
@@ -39,25 +40,14 @@ export default function Platform() {
         secondary={<a href="#capabilities" className="btn secondary lg">Explore capabilities</a>}
       />
 
-      <section className="sec" aria-labelledby="layers-h">
-        <div className="wrap">
-          <div className="sec-head center">
-            <span className="eyebrow" data-reveal="">How it fits together</span>
-            <h2 className="h2" id="layers-h" data-reveal=""><Two t={['Every layer feeds', 'one decision.']} /></h2>
-            <p className="lede" data-words="">What an agent can reach, who it acts for and what it was asked to do all meet at one decision point, before the action runs.</p>
-          </div>
-          <ol className="layers">
-            {LAYERS.map((l, i) => (
-              <li key={l.h} data-reveal="" data-delay={i * 120}>
-                <span className="layers-ic"><Icon name={l.icon} /></span>
-                <span className="mono-label">{l.n}</span>
-                <h3>{l.h}</h3>
-                <p>{l.p}</p>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </section>
+      <section className="works-band"><div className="wrap"><WorksWith standalone /></div></section>
+
+      <ScrollSteps
+        id="layers"
+        h={['Every layer feeds', 'one decision.']}
+        p="What an agent can reach, who it acts for and what it was asked to do meet at one decision point."
+        steps={LAYERS}
+      />
 
       <section className="sec alt" id="capabilities" aria-labelledby="caps-h">
         <div className="wrap">
@@ -114,6 +104,19 @@ export default function Platform() {
           <VideoTour />
         </div>
       </section>
+
+      <ScrollPath
+        id="changes"
+        eyebrow="What changes"
+        h={['What changes when every', 'action is decided.']}
+        items={[
+          { icon: 'radar', h: 'Every agent, found and owned', p: 'See every agent, tool and MCP server, with an owner for each.' },
+          { icon: 'gate', h: 'Risk stopped before runtime', p: 'Scope access and block risky setups before an agent runs.' },
+          { icon: 'pulse', h: 'Detections with context', p: 'Prompt, plan and action together, so an alert means something.' },
+          { icon: 'bolt', h: 'Contain one agent in seconds', p: 'Stop one agent on one device or flow, not the whole system.' },
+          { icon: 'ledger', h: 'Evidence on every decision', p: 'One tamper-evident record your auditors can read.' },
+        ]}
+      />
 
       <section className="sec" aria-labelledby="gap-h">
         <div className="wrap">

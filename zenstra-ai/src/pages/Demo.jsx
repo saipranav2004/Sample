@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import A from '../components/A.jsx';
+import { WorksWith } from '../components/Motion.jsx';
 import { usePageFx } from '../lib/usePage.js';
 import { anim, reduced, EASE, $, $$ } from '../lib/env.js';
 import { getLenis } from '../lib/scroll.js';
@@ -195,6 +196,7 @@ export default function Demo() {
           </div>
         </div>
       </section>
+      <section className="works-band"><div className="wrap"><WorksWith standalone /></div></section>
       <section className="sec alt" aria-labelledby="faq-h">
         <div className="wrap faq">
           <div style={{ display: 'grid', gap: '18px', alignContent: 'start' }}><span className="eyebrow" data-reveal="">Before you book</span><h2 className="h2" id="faq-h" style={{ fontSize: 'clamp(28px,3vw,42px)' }} data-reveal="">Common questions.</h2></div>

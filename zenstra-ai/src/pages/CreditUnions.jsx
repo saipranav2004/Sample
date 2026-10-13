@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import A from '../components/A.jsx';
+import { FactCarousel } from '../components/Motion.jsx';
 import { usePageFx } from '../lib/usePage.js';
 
 export default function CreditUnions() {
@@ -31,14 +32,14 @@ export default function CreditUnions() {
       </div>
       </div>
       </section>
-      <section style={{ padding: "clamp(56px,7vw,96px) 0 0" }} aria-label="Credit unions and agentic AI">
-      <div className="wrap">
-      <div className="stats">
-      <div data-reveal=""><b><span data-count="59">59</span>%</b><span>of credit unions run generative AI in production</span></div>
-      <div data-reveal="" data-delay="100"><b><span data-count="17">17</span>%</b><span>have already deployed agentic AI</span></div>
-      <div data-reveal="" data-delay="200"><b>{"<1 in 5"}</b><span>call their deployment enterprise-ready</span></div>
-      </div>
-      </div>
+      <section className="facts-sec after-hero" aria-label="Credit unions and agentic AI">
+      <FactCarousel label="Credit unions and agentic AI" seconds={30} facts={[
+        { n: '59', u: '%', c: 'of credit unions run generative AI in production', t: 'Industry' },
+        { n: '17', u: '%', c: 'have already deployed agentic AI', t: 'Industry' },
+        { n: '<1', u: ' in 5', c: 'call their deployment enterprise-ready', t: 'Industry' },
+        { n: '18', u: 'ms', c: 'p95 decision latency, inline', t: 'Zenstra' },
+        { n: '0', u: '', c: 'Agents to rewrite', t: 'Zenstra' },
+      ]} />
       </section>
       <section className="sec" id="products-cu" aria-labelledby="map-h">
       <div className="wrap">

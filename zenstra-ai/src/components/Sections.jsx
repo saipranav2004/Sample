@@ -3,15 +3,14 @@
 import { useEffect, useRef, useState } from 'react';
 import A from './A.jsx';
 import Icon from './Icon.jsx';
+import Two from './Two.jsx';
 import { reduced } from '../lib/env.js';
+import { Marquee, FactCarousel, WorksWith } from './Motion.jsx';
 import { CAPABILITIES, USE_CASES, INDUSTRIES, capabilityPath, useCasePath } from '../content/site.js';
 
 export const Arrow = () => (<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" /></svg>);
 
-/* A heading in two tones: the first part in ink, the second in the brand gradient. */
-export function Two({ t }) {
-  return (<>{t[0]}<br /><span className="grad">{t[1]}</span></>);
-}
+export { Two };
 
 const SHOTS = {
   overview: ['screen-overview', 1600, 1000], detections: ['screen-detections', 1600, 1000], investigation: ['screen-investigation', 1600, 1000], agent: ['screen-agent', 1600, 1000],
@@ -168,52 +167,42 @@ export function HowTabs({ id = 'how', eyebrow = 'How Zenstra handles it', h, p, 
   );
 }
 
-/* Six-card grid (scenarios, coverage, questions). */
-export function Grid({ eyebrow, h, items, numbered = true }) {
+/* Scenario cards that roll sideways (the loop pauses on hover). */
+export function Grid({ eyebrow, h, items }) {
   return (
-    <section className="sec" aria-labelledby="grid-h">
+    <section className="sec scen" aria-labelledby="grid-h">
       <div className="wrap">
-        <div className="sec-head">
+        <div className="sec-head center">
           <span className="eyebrow" data-reveal="">{eyebrow}</span>
           <h2 className="h2" id="grid-h" data-reveal=""><Two t={h} /></h2>
         </div>
-        <div className="sgrid">
-          {items.map((x, i) => (
-            <div className="scard" key={x.h} data-reveal="" data-delay={(i % 3) * 80}>
-              {numbered ? <span className="scard-n">{String(i + 1).padStart(2, '0')}</span> : null}
-              <h3>{x.h}</h3>
-              <p>{x.p}</p>
-            </div>
-          ))}
-        </div>
       </div>
+      <Marquee label={eyebrow} seconds={items.length * 8} gap={24} className="rm-scen">
+        {items.map((x, i) => (
+          <article className="scard" key={x.h}>
+            <span className="scard-n">{String(i + 1).padStart(2, '0')}</span>
+            <h3>{x.h}</h3>
+            <p>{x.p}</p>
+          </article>
+        ))}
+      </Marquee>
     </section>
   );
 }
 
-/* Proof band: the numbers and guarantees that hold on every page. */
-export const FACTS = [
-  { n: '18', u: 'ms', l: 'p95 decision latency, inline' },
-  { w: 'Fail-closed', l: 'If Zenstra is unreachable, actions are held, not allowed' },
-  { w: 'No rewrite', l: 'Works with the agents you already run, through SDK, gateway or EDR app' },
-  { w: 'Your cloud', l: 'Prompts and payloads never leave your environment' },
-];
-export function Proof({ h = ['Built for regulated', 'environments.'], p = 'Every control runs inline, before a tool call executes, and leaves evidence your security team, auditors and examiners can read.' }) {
+/* Proof: big-number cards that roll sideways, then the certifications. */
+export function Proof({ h = ['Built for regulated', 'environments.'], p = 'Every control runs inline, before a tool call executes, and leaves evidence your auditors can read.' }) {
   return (
-    <section className="band sec proof" aria-labelledby="proof-h">
+    <section className="sec proof" aria-labelledby="proof-h">
       <div className="wrap">
-        <div className="sec-head split">
-          <div style={{ display: 'grid', gap: 20 }}>
-            <span className="eyebrow" data-reveal="">Why teams choose Zenstra</span>
-            <h2 className="h2" id="proof-h" data-reveal=""><Two t={h} /></h2>
-          </div>
+        <div className="sec-head center">
+          <span className="eyebrow" data-reveal="">Why teams choose Zenstra</span>
+          <h2 className="h2" id="proof-h" data-reveal=""><Two t={h} /></h2>
           <p className="lede" data-reveal="">{p}</p>
         </div>
-        <div className="facts4">
-          {FACTS.map((f, i) => (
-            <div key={f.l} data-reveal="" data-delay={i * 90}>{f.w ? <b className="word">{f.w}</b> : <b>{f.n}<small>{f.u}</small></b>}<span>{f.l}</span></div>
-          ))}
-        </div>
+      </div>
+      <FactCarousel />
+      <div className="wrap">
         <ul className="certs-line" data-reveal="" aria-label="Certifications">
           <li>SOC 2 Type II</li><li>ISO/IEC 27001</li><li>ISO/IEC 42001</li><li>ISO/IEC 27701</li><li>HIPAA and GDPR programmes</li>
         </ul>

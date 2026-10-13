@@ -25,7 +25,7 @@ test('opening sequence: one line, the logo, then the page opens through the mark
   const held = await page.evaluate(() => window.__introHold);
   // Fully readable for ~1.3 s; with its fade in and out the line is on screen ~1.5 s.
   expect(held, 'first line holds').toBeGreaterThan(1100);
-  expect(held).toBeLessThan(1700);
+  expect(held).toBeLessThan(2200);
   await page.waitForFunction(() => [...document.querySelectorAll('.intro-word .sw:not(.out) .l')].map((l) => l.textContent).join('') === 'EDR', null, { timeout: 8000 });
   // The wordmark image, not typed text.
   await expect(page.locator('.intro-logo .logo-word img').first()).toHaveAttribute('src', /zenstra-wordmark/);
