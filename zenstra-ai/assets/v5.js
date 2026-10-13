@@ -40,7 +40,13 @@
     lenis = new Lenis({ duration: 1.1, easing: function (t) { return Math.min(1, 1.001 - Math.pow(2, -10 * t)); } });
     var raf = function (t) { lenis.raf(t); requestAnimationFrame(raf); }; requestAnimationFrame(raf);
   }
-  var scrollToEl = function (el) { if (lenis) lenis.scrollTo(el, { offset: -90 }); else el.scrollIntoView({ behavior: REDUCE ? 'auto' : 'smooth' }); };
+  // Going down the page the header slides away, so land on the target itself (a
+  // padded section needs no gap); going up it stays, so leave room under it.
+  var scrollToEl = function (el) {
+    var top = el.getBoundingClientRect().top + window.scrollY, down = top > window.scrollY && top > 480;
+    var gap = down ? (parseFloat(getComputedStyle(el).paddingTop) >= 24 ? 0 : 24) : 90, y = Math.max(0, top - gap);
+    if (lenis) lenis.scrollTo(y); else window.scrollTo({ top: y, behavior: REDUCE ? 'auto' : 'smooth' });
+  };
   document.addEventListener('click', function (e) {
     var a = e.target.closest('a[href*="#"]'); if (!a) return;
     var url = new URL(a.href, location.href); if (url.pathname !== location.pathname || url.hash.length < 2) return;
