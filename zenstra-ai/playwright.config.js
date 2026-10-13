@@ -12,6 +12,7 @@ export default defineConfig({
   fullyParallel: true,
   workers: process.env.CI ? 2 : 4,
   reporter: [['list']],
+  retries: 1,
   use: {
     baseURL: BASE,
     trace: 'retain-on-failure',

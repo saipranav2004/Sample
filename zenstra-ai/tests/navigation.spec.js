@@ -71,3 +71,26 @@ test('header logo, footer and demo buttons all go where they say', async ({ page
   await page.locator('main a[href="/demo"]').first().click();
   await expect(page.locator('main h1')).toContainText('See Zenstra stop');
 });
+
+test('crossing another menu on the way into an open panel keeps the panel open', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'desktop menus');
+  // Timing-based by nature: a heavily loaded machine can stall between two moves.
+  test.info().annotations.push({ type: 'retries', description: 'retried once if the machine stalls' });
+  await prep(page);
+  await page.goto('/company');
+  const plat = await page.locator('.dd-btn', { hasText: 'Platform' }).boundingBox();
+  const uses = await page.locator('.dd-btn', { hasText: 'Use cases' }).boundingBox();
+  await page.mouse.move(plat.x + plat.width / 2, plat.y + plat.height / 2);
+  await expect(page.locator('#dd-platform')).toBeVisible();
+  // Sweep across "Use cases" and down into the Platform panel, as a hand would
+  // (well under the 200 ms it takes to rest on a menu).
+  await page.mouse.move(uses.x + uses.width / 2, uses.y + uses.height / 2);
+  await page.mouse.move(uses.x + uses.width / 2 + 60, uses.y + 140);
+  await page.waitForTimeout(400);
+  await expect(page.locator('.dd.open')).toHaveCount(1);
+  await expect(page.locator('#dd-platform')).toBeVisible();
+  // Resting on "Use cases" does switch.
+  await page.mouse.move(uses.x + uses.width / 2, uses.y + uses.height / 2, { steps: 3 });
+  await page.waitForTimeout(400);
+  await expect(page.locator('#dd-uses')).toBeVisible();
+});

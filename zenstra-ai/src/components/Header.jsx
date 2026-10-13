@@ -15,13 +15,22 @@ const Chevron = () => (
    menu the pointer already opened keeps it open: the user is reaching for it. */
 function Dropdown({ id, label, open, setOpen, active, children, wide }) {
   const tm = useRef(0);
+  const enter = useRef(0);
   const byHover = useRef(false);
   const isOpen = open === id;
+  // Hover intent: while another menu is open, this one only takes over if the pointer
+  // rests on it, so crossing it on the way into the open panel does not switch menus.
+  const onEnter = () => {
+    clearTimeout(tm.current);
+    if (isOpen) return;
+    const show = () => { setOpen(id); byHover.current = true; };
+    if (open && open !== id) enter.current = setTimeout(show, 200); else show();
+  };
   return (
     <div
       className={'dd' + (wide ? ' mega' : '') + (isOpen ? ' open' : '')}
-      onMouseEnter={() => { clearTimeout(tm.current); if (!isOpen) { setOpen(id); byHover.current = true; } }}
-      onMouseLeave={() => { tm.current = setTimeout(() => { setOpen((o) => (o === id ? null : o)); byHover.current = false; }, 180); }}
+      onMouseEnter={onEnter}
+      onMouseLeave={() => { clearTimeout(enter.current); tm.current = setTimeout(() => { setOpen((o) => (o === id ? null : o)); byHover.current = false; }, 180); }}
     >
       <button
         className={'nav-link dd-btn' + (active ? ' is-active' : '')}
