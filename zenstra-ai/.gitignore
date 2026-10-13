@@ -1,3 +1,12 @@
+# Dependencies and build output
+node_modules/
+dist/
+dist-ssr/
+
+# Test output
+test-results/
+playwright-report/
+
 # OS and editor files
 .DS_Store
 Thumbs.db
@@ -10,6 +19,3 @@ Thumbs.db
 *.zip
 .env
 .env.*
-
-# Dependencies (none are needed today)
-node_modules/

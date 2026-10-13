@@ -1,18 +1,18 @@
-/* Zenstra core: an exploded, line-drawn reactor driven by scroll.
+/* Zenstra core (ES module; mountCore(section) returns a teardown function): an exploded, line-drawn reactor driven by scroll.
    One canvas draws a 3D wireframe of five coaxial layers (policy engine, Workflow
    Security, Cloud Security, Zenstra EDR, decision record). Scroll progress p (0 to 1)
    assembles, explodes, rotates and travels along the axis; time adds the small
    motions that make it feel alive (spin, pulses, packets). HTML labels and cards sit
    on top so the words stay crisp and readable by assistive technology. */
-(function () {
-  'use strict';
-  var sec = document.querySelector('[data-core]'); if (!sec) return;
+export function mountCore(sec) {
+  var noop = function () {};
+  if (!sec) return noop;
   var root = document.documentElement;
   var REDUCE = root.classList.contains('reduce');
   var track = sec.querySelector('.core-track'), pin = sec.querySelector('.core-pin'), box = sec.querySelector('.core-stage'), cv = sec.querySelector('canvas');
   var labels = [].slice.call(sec.querySelectorAll('.core-label')), cards = [].slice.call(sec.querySelectorAll('.core-card'));
   var hudN = sec.querySelector('[data-core-n]'), hudT = sec.querySelector('[data-core-t]'), hudBar = sec.querySelector('.core-hud i');
-  if (!cv || !cv.getContext) return;
+  if (!cv || !cv.getContext) return noop;
   var ctx = cv.getContext('2d');
 
   /* ---------- helpers ---------- */
@@ -403,17 +403,20 @@
     sec.classList.add('core-static');
     var still = function () { size(); render(0.28, 0); labels.forEach(function (el) { el.style.opacity = mobile ? 0 : 1; }); };
     still(); window.addEventListener('resize', still);
-    return;
+    return function () { window.removeEventListener('resize', still); };
   }
   var visible = false, raf = 0, t0 = performance.now(), last = t0, shown = progress();
   // Pointer tilt (desktop): the object leans a little toward the cursor.
-  sec.addEventListener('pointermove', function (e) {
+  var dead = false;
+  var onPtr = function (e) {
     if (e.pointerType !== 'mouse') return;
     var r = box.getBoundingClientRect(); tilt.tx = clamp((e.clientX - r.left) / r.width * 2 - 1, -1, 1); tilt.ty = clamp((e.clientY - r.top) / r.height * 2 - 1, -1, 1);
-  }, { passive: true });
-  sec.addEventListener('pointerleave', function () { tilt.tx = 0; tilt.ty = 0; });
+  };
+  var onLeave = function () { tilt.tx = 0; tilt.ty = 0; };
+  sec.addEventListener('pointermove', onPtr, { passive: true });
+  sec.addEventListener('pointerleave', onLeave);
   var frame = function (now) {
-    raf = 0; if (!visible) return;
+    raf = 0; if (dead || !visible) return;
     var dt = Math.min(0.05, (now - last) / 1000); last = now;
     // Inertia: the scene follows the scroll position with a short, smooth lag, so
     // stepped mouse wheels still read as one continuous camera move.
@@ -425,8 +428,16 @@
     raf = requestAnimationFrame(frame);
   };
   var start = function () { if (!raf) raf = requestAnimationFrame(frame); };
-  if ('IntersectionObserver' in window) new IntersectionObserver(function (es) { visible = es[0].isIntersecting; if (visible) start(); }, { rootMargin: '100px 0px' }).observe(track);
+  var io = null;
+  if ('IntersectionObserver' in window) { io = new IntersectionObserver(function (es) { visible = es[0].isIntersecting; if (visible) start(); }, { rootMargin: '100px 0px' }); io.observe(track); }
   else { visible = true; start(); }
-  window.addEventListener('resize', function () { size(); render(lastP, (performance.now() - t0) / 1000); });
+  var onResize = function () { size(); render(lastP, (performance.now() - t0) / 1000); };
+  window.addEventListener('resize', onResize);
   render(0, 0); setStage(0);
-})();
+  return function () {
+    dead = true; if (raf) cancelAnimationFrame(raf); raf = 0;
+    if (io) io.disconnect();
+    window.removeEventListener('resize', onResize);
+    sec.removeEventListener('pointermove', onPtr); sec.removeEventListener('pointerleave', onLeave);
+  };
+}

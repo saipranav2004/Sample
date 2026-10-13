@@ -1,5 +1,10 @@
-# Only the site goes into the image: pages, assets and the nginx config.
+# Only what the build needs goes into the build context.
 *
-!*.html
-!assets/
+!package.json
+!package-lock.json
+!index.html
+!vite.config.js
+!public/
+!src/
+!scripts/
 !nginx/

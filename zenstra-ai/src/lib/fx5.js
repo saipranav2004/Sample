@@ -9,9 +9,8 @@
  * Each engine pauses off screen or in a hidden tab, and draws one still frame
  * under prefers-reduced-motion.
  */
-(function () {
-  'use strict';
-  var REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
+/* ES module port of the site's canvas engines (was assets/fx5.js). */
+  var REDUCE = document.documentElement.classList.contains('reduce') || matchMedia('(prefers-reduced-motion: reduce)').matches;
   var DPR = function () { return Math.min(window.devicePixelRatio || 1, 2); };
   var css = function (n, fb) { var v = getComputedStyle(document.documentElement).getPropertyValue(n).trim(); return v || fb; };
   function rgba(hex, a) { hex = hex.replace('#', ''); if (hex.length === 3) hex = hex.replace(/./g, '$&$&'); return 'rgba(' + parseInt(hex.slice(0, 2), 16) + ',' + parseInt(hex.slice(2, 4), 16) + ',' + parseInt(hex.slice(4, 6), 16) + ',' + a + ')'; }
@@ -23,10 +22,21 @@
     this.el = el; this.draw = draw; this.c = document.createElement('canvas'); el.appendChild(this.c);
     this.g = this.c.getContext('2d'); this.vis = false; this.running = false; this.t = 0; this.active = opts.active !== false;
     var self = this;
-    if ('ResizeObserver' in window) new ResizeObserver(function () { self.resize(); }).observe(el); else window.addEventListener('resize', function () { self.resize(); });
-    if ('IntersectionObserver' in window) new IntersectionObserver(function (e) { self.vis = e[0].isIntersecting; self.loop(); }, { rootMargin: '100px' }).observe(el); else { this.vis = true; }
-    document.addEventListener('visibilitychange', function () { self.loop(); });
+    this.onWinResize = function () { self.resize(); };
+    this.onVis = function () { self.loop(); };
+    if ('ResizeObserver' in window) { this.ro = new ResizeObserver(this.onWinResize); this.ro.observe(el); } else window.addEventListener('resize', this.onWinResize);
+    if ('IntersectionObserver' in window) { this.io = new IntersectionObserver(function (e) { self.vis = e[0].isIntersecting; self.loop(); }, { rootMargin: '100px' }); this.io.observe(el); } else { this.vis = true; }
+    document.addEventListener('visibilitychange', this.onVis);
   }
+  // Stop drawing and release observers and listeners (a page unmounting).
+  Host.prototype.destroy = function () {
+    this.dead = true; this.active = false;
+    if (this.ro) this.ro.disconnect(); else window.removeEventListener('resize', this.onWinResize);
+    if (this.io) this.io.disconnect();
+    document.removeEventListener('visibilitychange', this.onVis);
+    if (this.extra) this.extra();
+    if (this.c.parentNode) this.c.parentNode.removeChild(this.c);
+  };
   Host.prototype.resize = function () {
     var w = this.el.clientWidth, h = this.el.clientHeight; if (!w || !h) return;
     var d = DPR(); this.w = w; this.h = h; this.d = d;
@@ -37,11 +47,12 @@
   Host.prototype.frame = function (dt) { if (!this.w) return; var g = this.g; g.setTransform(this.d, 0, 0, this.d, 0, 0); g.clearRect(0, 0, this.w, this.h); this.draw(g, this.w, this.h, dt, this.t); };
   Host.prototype.loop = function () {
     var self = this;
+    if (this.dead) return;
     if (REDUCE) { if (!this.stilled) { this.stilled = true; this.t = 6; if (this.warm) this.warm(); this.frame(0); } return; }
     if (this.running || !this.vis || document.hidden || !this.active) return;
     this.running = true; var last = performance.now();
     var step = function (now) {
-      if (!self.vis || document.hidden || !self.active) { self.running = false; return; }
+      if (self.dead || !self.vis || document.hidden || !self.active) { self.running = false; return; }
       var dt = Math.min(0.05, (now - last) / 1000); last = now; self.t += dt;
       self.frame(dt); requestAnimationFrame(step);
     };
@@ -298,8 +309,10 @@
       if (e.clientY < r.top || e.clientY > r.bottom) { ptr = null; return; }
       ptr = [e.clientX - r.left, e.clientY - r.top]; lastMove = host.t;
     };
+    var onLeave = function () { ptr = null; };
     window.addEventListener('pointermove', onMove, { passive: true });
-    document.addEventListener('pointerleave', function () { ptr = null; });
+    document.addEventListener('pointerleave', onLeave);
+    host.extra = function () { window.removeEventListener('pointermove', onMove); document.removeEventListener('pointerleave', onLeave); };
     host.theme = function () { theme(); if (!host.running) host.frame(0); };
     return host;
   }
@@ -409,5 +422,4 @@
     };
   }
 
-  window.ZX5 = { IntroField: IntroField, LensField: LensField, GateStream: GateStream, WorkflowViz: WorkflowViz, CloudViz: CloudViz, EdrViz: EdrViz, REDUCE: REDUCE };
-})();
+  export { IntroField, LensField, GateStream, WorkflowViz, CloudViz, EdrViz, REDUCE };
