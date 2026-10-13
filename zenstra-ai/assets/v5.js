@@ -271,8 +271,17 @@
       var lm = $('.logo-mark', logo);
       anim(lm, [{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(1.18)' }], { duration: 260, delay: 60, easing: 'ease-in' });
       if (!field) { var f = anim(intro, [{ opacity: 1 }, { opacity: 0 }], { duration: 500 }); if (f) f.onfinish = finish; else finish(); startHero(); return; }
-      field.open(m.x, m.y, Math.max(16, m.s * 0.9), fast ? 900 : 1150).then(finish);
-      setTimeout(startHero, fast ? 200 : 380);
+      var OPEN = fast ? 900 : 1800;
+      field.open(m.x, m.y, Math.max(16, m.s * 0.9), OPEN).then(finish);
+      // The page zooms in toward the viewer as the star window opens over it.
+      if (!REDUCE) [$('.head'), $('main')].forEach(function (el) {
+        if (!el) return; var r = el.getBoundingClientRect();
+        el.style.transformOrigin = (m.x - r.left) + 'px ' + (m.y - r.top) + 'px';
+        var z = anim(el, [{ transform: 'scale(1.14)' }, { transform: 'scale(1)' }], { duration: OPEN + 200, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' });
+        var clear = function () { el.style.transformOrigin = ''; };
+        if (z) z.onfinish = clear; else clear();
+      });
+      setTimeout(startHero, fast ? 200 : 700);
     };
     var toLogo = function () {
       anim(logo, [{ opacity: 0, transform: 'translateY(-0.6em)', filter: 'blur(10px)' }, { opacity: 1, transform: 'translateY(0)', filter: 'blur(0)' }], { duration: 520, easing: DROP });
@@ -288,24 +297,14 @@
     intro.addEventListener('click', open);
     window.addEventListener('keydown', open, { once: true });
 
-    // Cadence after go.ai: the lead words arrive alone, the first product holds
-    // longest, the next ones move faster, then the line gives way to the logo.
-    var HOLD_FOR = 380, HOLD_FIRST = 1300, HOLD_NEXT = [440, 560];
-    var drop = function (ls, delay) {
-      ls.forEach(function (l, i) { l.style.opacity = 0; anim(l, [{ transform: 'translateY(-0.45em)', filter: 'blur(12px)', opacity: 0 }, { transform: 'translateY(0)', filter: 'blur(0)', opacity: 1 }], { duration: 560, delay: delay + i * 12, easing: DROP }); });
-      return delay + ls.length * 12 + 560;
-    };
-    var settle = function (ls) { ls.forEach(function (l) { l.style.opacity = ''; }); };
-    // 1. "Zenstra for" ripples in alone and holds.
-    var fl = letters(forEl, forEl.textContent), cur = swapSlot(word, words[0]), wl = $$('.l', cur);
-    wl.forEach(function (l) { l.style.opacity = 0; });
-    var tFor = drop(fl, 160);
-    // 2. "workflow security" drops in and holds the longest.
-    var seq = wait(tFor + HOLD_FOR).then(function () {
-      if (done) return; settle(fl);
-      return wait(drop(wl, 0) + HOLD_FIRST);
-    }).then(function () { settle(wl); });
-    // 3. cloud security, then EDR, each for less time.
+    // "Zenstra for workflow security" arrives as one line and holds the longest;
+    // the next products move faster, then the line gives way to the logo.
+    var HOLD_FIRST = 1950, HOLD_NEXT = [560, 680];
+    var fl = letters(forEl, forEl.textContent), cur = swapSlot(word, words[0]), all = fl.concat($$('.l', cur));
+    var k = 0;
+    all.forEach(function (l) { l.style.opacity = 0; anim(l, [{ transform: 'translateY(-0.45em)', filter: 'blur(12px)', opacity: 0 }, { transform: 'translateY(0)', filter: 'blur(0)', opacity: 1 }], { duration: 560, delay: 160 + k * 8, easing: DROP }); k++; });
+    var seq = wait(160 + k * 8 + 560 + HOLD_FIRST).then(function () { all.forEach(function (l) { l.style.opacity = ''; }); });
+    // cloud security, then EDR, each for less time.
     words.slice(1).forEach(function (w, i) {
       seq = seq.then(function () { if (!done) return swapTo(word, w); })
         .then(function () { if (!done) return wait(HOLD_NEXT[i] || 600); });
@@ -320,7 +319,7 @@
       if (done) return;
       if (!field) return wait(600);
       var m = mark();
-      return field.converge(m.x, m.y, 720).then(function () { return wait(60); });
+      return field.converge(m.x, m.y, 720).then(function () { return wait(380); });
     }).then(function () { if (!done) { done = true; reveal(false); } });
   }
 

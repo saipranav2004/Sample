@@ -27,6 +27,8 @@
     return kf[kf.length - 1][1];
   };
   var win = function (p, a, b) { return clamp((p - a) / (b - a), 0, 1); };
+  // Ease out with a small overshoot: a part travels a touch past its mark and settles.
+  var back = function (t) { var c1 = 1.25, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); };
 
   /* ---------- model ---------- */
   // Each layer: assembled z (z0), exploded z (z1), a slow spin, and polylines in
@@ -44,38 +46,30 @@
     for (var w = 1; w <= (windings || 0); w++) { var a = a0 + (a1 - a0) * w / (windings + 1); out.push({ pts: [polar(r0, a, zf), polar(r1, a, zf)], k: k + 'w', i: i }); }
   };
   var L = [];
-  // 0 · Policy engine: the Zenstra mark (a concave four-point star, 138 x 126 like
-  // the logo, each arm split into a light and a dark facet) inside two discs.
-  var MARK = (function () {
-    var w = 50, h = 46, k = 0.13, tips = [[0, -h], [w, 0], [0, h], [-w, 0]], curves = [];
-    for (var q = 0; q < 4; q++) {
-      var a = tips[q], b = tips[(q + 1) % 4], c = [(a[0] + b[0]) * k, (a[1] + b[1]) * k], pts = [];
-      for (var i = 0; i <= 14; i++) { var t = i / 14, u = 1 - t; pts.push([u * u * a[0] + 2 * u * t * c[0] + t * t * b[0], u * u * a[1] + 2 * u * t * c[1] + t * t * b[1]]); }
-      curves.push(pts);
-    }
-    return { tips: tips, curves: curves };
-  })();
-  var markLines = function (z, back) {
-    var out = [];
-    var outline = []; MARK.curves.forEach(function (c, q) { c.forEach(function (pt, i) { if (q === 0 || i > 0) outline.push([pt[0], pt[1], z]); }); });
-    out.push({ pts: outline, k: 'star', back: back });
-    if (!back) MARK.tips.forEach(function (t) { out.push({ pts: [[0, 0, z], [t[0], t[1], z]], k: 'star' }); });
-    return out;
-  };
-  // Facets: each quadrant splits at its curve's midpoint, so every arm has one light and one dark half.
-  var FACETS = [];
-  MARK.curves.forEach(function (c, q) {
-    var mid = 7;
-    FACETS.push({ pts: [[0, 0, 6]].concat(c.slice(0, mid + 1).map(function (p) { return [p[0], p[1], 6]; })), light: q % 2 === 0 });
-    FACETS.push({ pts: [[0, 0, 6]].concat(c.slice(mid).map(function (p) { return [p[0], p[1], 6]; })), light: q % 2 === 1 });
-  });
+  // 0 · Policy engine: the Zenstra mark, traced from the logo file itself: four
+  // separate curved blades around a star-shaped hollow, each with the logo's own
+  // colours (measured near its inner and outer edge). Units: the mark's half width.
+  var MARK_BLADES = [
+    { q: 'TR', inner: '25,149,220', outer: '35,164,232', pts: [[0.02,-0.785],[0.047,-0.682],[0.104,-0.543],[0.151,-0.465],[0.223,-0.37],[0.322,-0.271],[0.482,-0.15],[0.499,-0.146],[0.559,-0.107],[0.577,-0.103],[0.587,-0.092],[0.609,-0.088],[0.654,-0.062],[0.678,-0.061],[0.691,-0.047],[0.721,-0.046],[0.743,-0.031],[0.775,-0.031],[0.791,-0.014],[0.842,-0.012],[0.836,-0.005],[0.816,-0.005],[0.743,-0.018],[0.7,-0.018],[0.507,-0.018],[0.453,-0.033],[0.363,-0.033],[0.339,-0.047],[0.304,-0.047],[0.291,-0.061],[0.263,-0.064],[0.184,-0.111],[0.119,-0.174],[0.061,-0.267],[0.032,-0.37],[0.015,-0.586],[0.015,-0.77]] },
+    { q: 'BR', inner: '13,91,154', outer: '15,106,172', pts: [[0.734,0.014],[0.993,0.014],[1.0,0.021],[0.993,0.027],[0.927,0.027],[0.901,0.042],[0.855,0.042],[0.84,0.055],[0.804,0.057],[0.782,0.072],[0.754,0.072],[0.737,0.087],[0.713,0.087],[0.693,0.101],[0.672,0.101],[0.655,0.115],[0.631,0.118],[0.618,0.131],[0.601,0.131],[0.587,0.146],[0.572,0.146],[0.561,0.159],[0.542,0.163],[0.533,0.174],[0.514,0.18],[0.423,0.237],[0.315,0.327],[0.236,0.409],[0.181,0.48],[0.104,0.606],[0.074,0.671],[0.052,0.742],[0.03,0.815],[0.024,0.861],[0.015,0.863],[0.011,0.845],[0.017,0.569],[0.032,0.418],[0.061,0.31],[0.091,0.254],[0.136,0.195],[0.182,0.15],[0.225,0.12],[0.281,0.09],[0.302,0.088],[0.318,0.074],[0.352,0.072],[0.365,0.059],[0.413,0.059],[0.439,0.044],[0.514,0.044],[0.544,0.029],[0.685,0.029]] },
+    { q: 'BL', inner: '13,102,169', outer: '14,106,173', pts: [[-0.955,0.001],[-0.827,0.001],[-0.838,0.007],[-0.827,0.014],[-0.749,0.027],[-0.564,0.029],[-0.527,0.044],[-0.454,0.044],[-0.428,0.059],[-0.378,0.059],[-0.356,0.074],[-0.324,0.075],[-0.309,0.088],[-0.291,0.088],[-0.277,0.101],[-0.261,0.103],[-0.25,0.116],[-0.212,0.135],[-0.123,0.224],[-0.095,0.267],[-0.063,0.336],[-0.048,0.386],[-0.034,0.487],[-0.024,0.757],[-0.024,0.861],[-0.028,0.826],[-0.041,0.807],[-0.063,0.722],[-0.106,0.621],[-0.153,0.537],[-0.212,0.45],[-0.268,0.385],[-0.395,0.265],[-0.523,0.178],[-0.594,0.144],[-0.605,0.133],[-0.624,0.129],[-0.635,0.118],[-0.657,0.115],[-0.68,0.1],[-0.696,0.1],[-0.708,0.087],[-0.739,0.085],[-0.752,0.072],[-0.78,0.072],[-0.799,0.057],[-0.844,0.055],[-0.857,0.042],[-0.905,0.042],[-0.927,0.027],[-0.994,0.027],[-0.998,0.016],[-0.972,0.012]] },
+    { q: 'TL', inner: '13,97,161', outer: '14,108,176', pts: [[-0.024,-0.865],[-0.017,-0.841],[-0.019,-0.669],[-0.034,-0.433],[-0.048,-0.342],[-0.065,-0.286],[-0.093,-0.226],[-0.155,-0.146],[-0.242,-0.079],[-0.261,-0.075],[-0.276,-0.062],[-0.292,-0.062],[-0.307,-0.047],[-0.339,-0.047],[-0.363,-0.033],[-0.413,-0.033],[-0.441,-0.018],[-0.551,-0.018],[-0.601,-0.003],[-0.801,-0.003],[-0.95,-0.001],[-0.879,-0.001],[-0.858,-0.016],[-0.816,-0.016],[-0.795,-0.031],[-0.764,-0.031],[-0.747,-0.044],[-0.721,-0.046],[-0.696,-0.061],[-0.678,-0.061],[-0.665,-0.074],[-0.644,-0.075],[-0.628,-0.088],[-0.575,-0.107],[-0.408,-0.211],[-0.32,-0.286],[-0.257,-0.351],[-0.151,-0.496],[-0.091,-0.612],[-0.047,-0.748]] }
+  ];
+  var MS = 56;   // the mark's half width in layer units
+  var BLADES = MARK_BLADES.map(function (b) { return { inner: b.inner, outer: b.outer, pts: b.pts.map(function (p) { return [p[0] * MS, p[1] * MS]; }) }; });
   (function () {
     var o = [];
-    o = o.concat(markLines(6, 0), markLines(-6, 1));
-    MARK.tips.forEach(function (t) { o.push({ pts: [[t[0], t[1], 6], [t[0], t[1], -6]], k: 'star', back: 1 }); });
-    o.push({ pts: ring(58, 4, 90), k: 'disc' }); o.push({ pts: ring(58, -4, 90), k: 'disc', back: 1 });
-    for (var i = 0; i < 24; i++) { var a = i / 24 * TAU; o.push({ pts: [polar(60, a, 0), polar(66, a, 0)], k: 'tick' }); }
-    L.push({ z0: 26, z1: 236, spin: 0, lines: o, rim: 66 });
+    BLADES.forEach(function (b) {
+      var loop = function (z) { var q = b.pts.map(function (p) { return [p[0], p[1], z]; }); q.push(q[0]); return q; };
+      o.push({ pts: loop(5), k: 'star' }); o.push({ pts: loop(-5), k: 'star', back: 1 });
+      // Join front and back at each blade's two tips, so it reads as a solid piece.
+      var far = b.pts.slice().sort(function (p, q) { return Math.abs(q[0]) + 0.001 * Math.abs(q[1]) - Math.abs(p[0]); })[0];
+      var tall = b.pts.slice().sort(function (p, q) { return Math.abs(q[1]) - Math.abs(p[1]); })[0];
+      [far, tall].forEach(function (t) { o.push({ pts: [[t[0], t[1], 5], [t[0], t[1], -5]], k: 'star', back: 1 }); });
+    });
+    o.push({ pts: ring(64, 4, 96), k: 'disc' }); o.push({ pts: ring(64, -4, 96), k: 'disc', back: 1 });
+    for (var i = 0; i < 24; i++) { var a = i / 24 * TAU; o.push({ pts: [polar(66, a, 0), polar(72, a, 0)], k: 'tick' }); }
+    L.push({ z0: 26, z1: 236, spin: 0, lines: o, rim: 72 });
   })();
   // 1 · Workflow Security: ten coils (the hops) on a chain.
   (function () {
@@ -151,10 +145,17 @@
   /* ---------- projection ---------- */
   var F = 1300;
   var proj = function (pt, s, layerZ, spin) {
-    var x = pt[0] * s.cs[spin] - pt[1] * s.sn[spin], y = pt[0] * s.sn[spin] + pt[1] * s.cs[spin], z = pt[2] + layerZ;
-    // yaw around y, then pitch around x
-    var x1 = x * s.cy + z * s.sy, z1 = -x * s.sy + z * s.cy;
-    var y2 = y * s.cp - z1 * s.sp, z2 = y * s.sp + z1 * s.cp;
+    var x = pt[0] * s.cs[spin] - pt[1] * s.sn[spin], y = pt[0] * s.sn[spin] + pt[1] * s.cs[spin], x1, y2, z2;
+    if (spin === 0) {
+      // The mark's disc keeps its centre on the axis but turns its face toward the
+      // viewer by its own (gentler) angle, so the logo reads in every stage.
+      var zc = layerZ * s.cy, xa = x * s.fcy + pt[2] * s.fsy, za = -x * s.fsy + pt[2] * s.fcy;
+      x1 = layerZ * s.sy + xa; y2 = -zc * s.sp + y * s.fcp - za * s.fsp; z2 = zc * s.cp + y * s.fsp + za * s.fcp;
+    } else {
+      // yaw around y, then pitch around x
+      var z = pt[2] + layerZ, z1 = -x * s.sy + z * s.cy;
+      x1 = x * s.cy + z * s.sy; y2 = y * s.cp - z1 * s.sp; z2 = y * s.sp + z1 * s.cp;
+    }
     var f = F / (F - z2 * s.k);
     return [s.ox + x1 * s.k * f, s.oy + y2 * s.k * f, z2];
   };
@@ -197,14 +198,23 @@
   };
 
   var lastP = 0;
+  // State that carries between frames: pointer tilt, each layer's last light level
+  // (to fire an activation wave when it powers on), and the assembly "lock".
+  var tilt = { x: 0, y: 0, tx: 0, ty: 0 }, prevLit = [0, 0, 0, 0, 0], waveAt = [-9, -9, -9, -9, -9], prevEx = 0, lockAt = -9;
   var render = function (p, t) {
     var mob = mobile ? 1 : 0;
     var ex = at(K.ex, p), sc = at(K.sc, p), yaw = at(K.yaw, p), pitch = at(K.pitch, p);
     var minDim = mob ? Math.min(W * 0.92, H * 0.56) : Math.min(W * 0.44, H * 0.8);
     var k = minDim / 2 / 214 * sc * (mob ? 0.9 : 1);
-    var s = { k: k, cy: Math.cos(yaw), sy: Math.sin(yaw), cp: Math.cos(pitch), sp: Math.sin(pitch), cs: [], sn: [], ox: 0, oy: 0 };
+    if (!REDUCE) { yaw += Math.sin(t * 0.23) * 0.035 + tilt.x * 0.09; pitch += Math.sin(t * 0.17 + 1) * 0.02 + tilt.y * 0.06; }
+    // While the layers are apart, the mark's disc turns most of the way to face you.
+    var fyaw = yaw * (1 - 0.7 * ex), fpitch = pitch * (1 - 0.65 * ex);
+    var s = { k: k, cy: Math.cos(yaw), sy: Math.sin(yaw), cp: Math.cos(pitch), sp: Math.sin(pitch), fcy: Math.cos(fyaw), fsy: Math.sin(fyaw), fcp: Math.cos(fpitch), fsp: Math.sin(fpitch), cs: [], sn: [], ox: 0, oy: 0 };
     L.forEach(function (l, i) { var a = REDUCE ? 0 : l.spin * t; s.cs[i] = Math.cos(a); s.sn[i] = Math.sin(a); });
-    var lz = L.map(function (l) { return mix(l.z0, l.z1, ex); });
+    // Layers separate one after another (inner pair first, the outer two follow) and
+    // each settles with a slight spring; assembling runs the same way in reverse.
+    var DELAY = [0.16, 0, 0, 0, 0.16];
+    var lz = L.map(function (l, i) { var e = clamp((ex - DELAY[i]) / (1 - DELAY[i]), 0, 1); return mix(l.z0, l.z1, REDUCE ? e : back(e)); });
     // Travel along the axis: put the focus point (between layers) at the target spot.
     var fz = at(K.fz, p), fi = Math.floor(clamp(fz, 0, 3.999)), ff = fz - fi, zf = mix(lz[fi], lz[fi + 1], ff);
     var cx = W / 2, cy = mob ? H * 0.33 : H / 2;
@@ -215,11 +225,17 @@
     var dim = at(K.dim, p), focus = focusOf(p);
     var lit = [at(K.core, p), at(K.l1, p), at(K.l2, p), at(K.l3, p), at(K.l4, p)];
     var pulse = REDUCE ? 1 : 0.88 + 0.12 * Math.sin(t * 2.4);
+    // A layer that powers on sends a wave around its rim; the layers locking back
+    // together sends a flash through the whole core.
+    lit.forEach(function (v, i) { if (v > 0.55 && prevLit[i] <= 0.55) waveAt[i] = t; prevLit[i] = v; });
+    if (ex < 0.02 && prevEx >= 0.02 && p > 0.5) lockAt = t;
+    prevEx = ex;
+    var lockK = clamp((t - lockAt) / 1.1, 0, 1), lockOn = lockK < 1 ? 1 - lockK : 0;
 
     // Core light behind everything.
     var c0 = proj([0, 0, 0], s, lz[0], 0);
     ctx.globalCompositeOperation = 'lighter';
-    glowDot(c0[0], c0[1], 170 * k, '0,168,239', 0.34 * lit[0] * pulse);
+    glowDot(c0[0], c0[1], 170 * k * (1 + lockOn * 0.6), '0,168,239', (0.34 * lit[0] * pulse) + 0.35 * lockOn);
     glowDot(c0[0], c0[1], 60 * k, '190,240,255', 0.55 * lit[0] * pulse);
     ctx.globalCompositeOperation = 'source-over';
 
@@ -260,16 +276,40 @@
       }
     }
     flush();
-    // The mark itself, filled like the logo once the core is lit.
+    // The mark itself, in the logo's own colours once the core is lit.
     if (lit[0] > 0.02) {
-      FACETS.forEach(function (f) {
+      var mr = MS * k;
+      BLADES.forEach(function (b) {
+        var g = ctx.createRadialGradient(c0[0], c0[1], mr * 0.18, c0[0], c0[1], mr * 0.62);
+        g.addColorStop(0, 'rgba(' + b.inner + ',' + (0.96 * lit[0]).toFixed(3) + ')');
+        g.addColorStop(1, 'rgba(' + b.outer + ',' + (0.96 * lit[0]).toFixed(3) + ')');
         ctx.beginPath();
-        f.pts.forEach(function (pt, i) { var q = proj(pt, s, lz[0], 0); if (i) ctx.lineTo(q[0], q[1]); else ctx.moveTo(q[0], q[1]); });
-        ctx.closePath();
-        ctx.fillStyle = f.light ? 'rgba(92,210,255,' + (0.92 * lit[0]).toFixed(3) + ')' : 'rgba(0,120,205,' + (0.88 * lit[0]).toFixed(3) + ')';
-        ctx.fill();
+        b.pts.forEach(function (pt, i) { var q = proj([pt[0], pt[1], 5], s, lz[0], 0); if (i) ctx.lineTo(q[0], q[1]); else ctx.moveTo(q[0], q[1]); });
+        ctx.closePath(); ctx.fillStyle = g; ctx.fill();
       });
     }
+
+    ctx.globalCompositeOperation = 'lighter';
+    // Activation waves: a bright ring sweeps outward over the layer that just powered on.
+    waveAt.forEach(function (w0, i) {
+      var wk = (t - w0) / 0.9; if (wk < 0 || wk >= 1 || REDUCE) return;
+      var rr = L[i].rim * (0.82 + wk * 0.3), pts = ring(rr, 0, 72).map(function (pt) { return proj(pt, s, lz[i], i); });
+      stroke(pts, CY, 0.75 * (1 - wk), 2.2); stroke(pts, '0,168,239', 0.25 * (1 - wk), 7);
+    });
+    // The lock: when the layers meet again, a ring of light runs out from the core.
+    if (lockOn > 0) { var lpts = ring(216 * (1 + lockK * 0.35), 0, 96).map(function (pt) { return proj(pt, s, lz[2], 2); }); stroke(lpts, CY, 0.8 * lockOn, 2.4); stroke(lpts, '0,168,239', 0.3 * lockOn, 9); }
+    // Energy: while a platform is in focus, light travels from the engine along the
+    // axis to that layer, then out to its ring: the one engine powering each way in.
+    if (focus > 0 && !REDUCE) {
+      var RIM = [0, 84, 132, 192], fa = dim;
+      for (var e = 0; e < 14; e++) {
+        var ph = (t * 0.55 + e / 14) % 1, ang = e * 2.399 + t * 0.15;
+        var zA = mix(lz[0], lz[focus], ease(clamp(ph / 0.55, 0, 1))), rA = ph < 0.55 ? 4 : mix(4, RIM[focus], ease((ph - 0.55) / 0.45));
+        var pe = proj(polar(rA, ang, 0), s, zA, focus), al2 = fa * (ph < 0.08 ? ph / 0.08 : ph > 0.9 ? (1 - ph) / 0.1 : 1);
+        glowDot(pe[0], pe[1], 9 * k + 2, CY, 0.65 * al2);
+      }
+    }
+    ctx.globalCompositeOperation = 'source-over';
 
     // Activity overlays for the focused platform.
     ctx.globalCompositeOperation = 'lighter';
@@ -365,11 +405,23 @@
     still(); window.addEventListener('resize', still);
     return;
   }
-  var visible = false, raf = 0, t0 = performance.now();
+  var visible = false, raf = 0, t0 = performance.now(), last = t0, shown = progress();
+  // Pointer tilt (desktop): the object leans a little toward the cursor.
+  sec.addEventListener('pointermove', function (e) {
+    if (e.pointerType !== 'mouse') return;
+    var r = box.getBoundingClientRect(); tilt.tx = clamp((e.clientX - r.left) / r.width * 2 - 1, -1, 1); tilt.ty = clamp((e.clientY - r.top) / r.height * 2 - 1, -1, 1);
+  }, { passive: true });
+  sec.addEventListener('pointerleave', function () { tilt.tx = 0; tilt.ty = 0; });
   var frame = function (now) {
     raf = 0; if (!visible) return;
-    var p = progress(); lastP = p;
-    render(p, (now - t0) / 1000); setStage(p);
+    var dt = Math.min(0.05, (now - last) / 1000); last = now;
+    // Inertia: the scene follows the scroll position with a short, smooth lag, so
+    // stepped mouse wheels still read as one continuous camera move.
+    var target = progress(), f = 1 - Math.exp(-dt * 7.5);
+    shown += (target - shown) * f; if (Math.abs(target - shown) < 0.0004) shown = target;
+    tilt.x += (tilt.tx - tilt.x) * (1 - Math.exp(-dt * 3)); tilt.y += (tilt.ty - tilt.y) * (1 - Math.exp(-dt * 3));
+    lastP = shown;
+    render(shown, (now - t0) / 1000); setStage(shown);
     raf = requestAnimationFrame(frame);
   };
   var start = function () { if (!raf) raf = requestAnimationFrame(frame); };
